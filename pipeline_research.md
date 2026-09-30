@@ -2,6 +2,8 @@
 
 Compiled 2026-10-01 from web searches. Links were checked unless marked **[U]** (unverified). Mentions of BNSS section numbers should be checked against the bare act.
 
+> **Note:** this is the research landscape. The system design and scope in §1 and §3 were an early draft. They are **superseded by `plan.md` (v2)**, which cuts the judge simulator, the treatment classifier, the full citation graph and several RQs.
+
 ---
 
 ## 0. Findings that should shape the project
@@ -16,8 +18,9 @@ Compiled 2026-10-01 from web searches. Links were checked unless marked **[U]** 
 8. **Practical constraints:**
    - No public FIR text corpus exists; the ICDAR FIR dataset is scanned images.
    - Charge sheets are not public.
-   - eCourts has no official API; only the openjustice-in scraper or paid third-party APIs.
-   - The Indian Kanoon API gives ₹10k/month free for non-commercial use once verified, and exposes `cites:` and `citedby:`.
+   - eCourts has no official API. The options are the free openjustice-in scraper, or paid third-party APIs, which we exclude.
+   - **No paid APIs.** The Indian Kanoon API is paid per request, so it is excluded. So are all paid LLM APIs.
+   - Open India Law has **no citation graph**, and the AWS HC dump is **PDF only**. We therefore build our own Indian citation extractor and citation graph from the corpus text, merged with LeCNet. All models are self-hosted open-weight models.
    - eyecite and CourtListener only handle US citations, so you need your own Indian citation parser.
 
 ---
@@ -43,7 +46,7 @@ Compiled 2026-10-01 from web searches. Links were checked unless marked **[U]** 
 │ 6. Issue planner      bail-factor / issue tree (gravity, custody,    │
 │                       antecedents, parity, flight risk, 479/436A…)   │
 │ 7. Retriever          statutes (closed-set, AALawyer-style) +        │
-│                       precedents (Indian Kanoon / HC corpus), with a │
+│                       precedents (local HC/SC corpus), with a        │
 │                       DATE CUTOFF = order date                        │
 │ 8. Drafter            grounds, each tied to dossier facts + citations │
 │ 9. Prosecutor critic  attacks grounds, finds missing counter-facts   │
@@ -60,9 +63,10 @@ Compiled 2026-10-01 from web searches. Links were checked unless marked **[U]** 
 
 | Tool | Purpose |
 |---|---|
-| `ik_search(query, doctype, fromdate, todate)` | Indian Kanoon search |
-| `ik_doc(id)` | Fetch one document |
-| `ik_citedby(id)` | Documents that cite a given document |
+| `search_precedents(query, court, fromdate, todate)` | Search the local corpus |
+| `get_doc(id)` | Fetch one document |
+| `resolve_citation(citation)` | Map a citation string to a document in the corpus |
+| `citedby(id, before)` | Documents that cite a given document, from our citation graph |
 | `statute_lookup(code, section)` | Look up statute text |
 | `map_section(code, section, offence_date)` | IPC↔BNS / CrPC↔BNSS mapping by offence date |
 | `case_status(cnr)` | Mock eCourts case status |
@@ -82,10 +86,10 @@ Compiled 2026-10-01 from web searches. Links were checked unless marked **[U]** 
 
 | Failure mode | Guard in the system | How it's measured |
 |---|---|---|
-| Fabricated case citation | Verifier resolves every citation via `ik_doc`; unresolved ones are dropped or flagged | CLERC CFP (citation false-positive rate) |
+| Fabricated case citation | Verifier resolves every citation via `resolve_citation`; unresolved ones are dropped or flagged | CLERC CFP (citation false-positive rate) |
 | Real case cited for a proposition it doesn't support ("misgrounded", Magesh) | NLI check of the claim against the retrieved paragraph; ratio vs obiter from the rhetorical-role label | Misgrounded rate on a human-labelled sample |
 | Repealed or wrong-era section (IPC vs BNS) | Date-aware `map_section`; the dossier holds offence date and FIR date | Temporal-correctness rate |
-| Overruled or distinguished precedent | `ik_citedby` + treatment classifier over citing paragraphs | Bad-law citation rate |
+| Overruled or distinguished precedent | `citedby` (local graph) + treatment classifier over citing paragraphs | Bad-law citation rate |
 | Argument uses a "fact" not in the record | Drafter may only cite dossier field IDs; verifier rejects free facts | Unsupported-fact rate (FActScore-style) |
 | Defense-favourable fact omitted (costly in defense work) | Issue planner checklist; critic asked "what did we miss?" | Dossier-fact utilisation / omission rate (Zhang et al. 3-ply) |
 | Wrong date arithmetic (custody days, 479/436A thresholds) | Only the `date_calc` tool does arithmetic, never the LLM | Exact-match accuracy of period calculations |
@@ -103,7 +107,7 @@ Compiled 2026-10-01 from web searches. Links were checked unless marked **[U]** 
 Each idea can be the main research question with the others as supporting infrastructure. They are kept short on purpose, for ideation.
 
 ### Idea A: Verified dossiers from raw criminal records
-- **RQ:** Does extract-then-verify with span grounding and tool-based date arithmetic beat single-pass long-context extraction on field accuracy, timeline accuracy and unsupported-fact rate? Can a QLoRA 7–8B extractor match a frontier model?
+- **RQ:** Does extract-then-verify with span grounding and tool-based date arithmetic beat single-pass long-context extraction on field accuracy, timeline accuracy and unsupported-fact rate? Can a QLoRA 7–8B extractor match a prompted 70B-class open model?
 - **Gap:** LexChronos is limited to Supreme Court judgments, uses synthetic gold data and has no verification. TathyaNyaya explicitly excludes fact extraction from raw records.
 - **Data:**
   - InLegalNER (14 entity types)
@@ -115,7 +119,7 @@ Each idea can be the main research question with the others as supporting infras
 - **Risk:** Order-sheet scraping may be brittle. Fallback: judgments plus DDL metadata only.
 
 ### Idea B: Temporal statute grounding (IPC→BNS, CrPC→BNSS)
-- **RQ:** Does a date-aware section-mapping tool plus closed-set statute RAG reduce temporally wrong or non-existent citations, compared with plain RAG and with a prompted frontier model?
+- **RQ:** Does a date-aware section-mapping tool plus closed-set statute RAG reduce temporally wrong or non-existent citations, compared with plain RAG and with a prompted large open model?
 - **Gap:** No NLP paper exists on this; the only related work is a law-review article (Mohanty & Stephen, *Statute Law Review* 2025).
 - **Data:**
   - IPC2BNS-Verify (a CSV covering 1:1, split, merged and repealed sections, plus a 1,140-query benchmark; check it against NCRB)
@@ -132,7 +136,7 @@ Each idea can be the main research question with the others as supporting infras
   - Tuvey & Sen (2023) report 63% overlap with no grounding, which makes a good weak baseline.
   - LEGIT-style issue trees have not been built for Indian bail.
 - **Data:**
-  - Post-July-2024 High Court bail orders (AWS Indian HC Judgments, 17.8M docs, CC BY 4.0; or Indian Kanoon)
+  - Post-July-2024 High Court bail orders (Open India Law; AWS Indian HC Judgments, 17.8M PDFs, CC BY 4.0, converted to text ourselves)
   - IndianBailJudgments-1200 (attribute schema; GPT-4o labels with only 12.5% expert-checked, so treat them as silver)
   - HLDC bail subset (176K, Hindi)
   - IBPS (150K bail judgments; data release **[U]**)
@@ -166,7 +170,7 @@ Each idea can be the main research question with the others as supporting infras
 - **Data:**
   - LeCNet (26K-node Indian citation graph)
   - InIRAC typed edges (DISTINGUISHES, CONFLICTS_WITH)
-  - Indian Kanoon `citedby`
+  - our own citation graph, built from corpus text with an Indian citation extractor (replaces the paid Indian Kanoon `citedby`)
   - IL-PCR
   - A self-built planted-error set: 300–500 drafts with injected errors, so ground truth is known
 - **Metrics:** detection precision, recall and F1 per error type; steps and cost per check; results as a function of DB coverage (reporting coverage is required).
@@ -177,7 +181,7 @@ Each idea can be the main research question with the others as supporting infras
 - **Why it's secondary:** It is mostly an evaluation and safety contribution. It could be a strong analysis section rather than the main RQ.
 
 ### Idea G: Small fine-tuned model vs large prompted model on narrow parts of the pipeline
-- **RQ:** Does a QLoRA 7–8B model match a frontier model on specific sub-tasks, such as dossier field extraction, statute mapping or treatment classification, at a fraction of the cost?
+- **RQ:** Does a QLoRA 7–8B model match a much larger prompted open model on specific sub-tasks, such as dossier field extraction, statute mapping or treatment classification, at a fraction of the cost?
 - **Precedent:**
   - Aalap: Mistral-7B, LoRA, 22K instructions, 4×A100 for 86 h
   - FactLegalLlama: Llama-3-8B, QLoRA, 1×A100 for about 38 h
@@ -199,7 +203,7 @@ Each idea can be the main research question with the others as supporting infras
 
 | Capability | Why the problem needs it | Metric | Ablation |
 |---|---|---|---|
-| Fine-tuning | A cheap, local extractor or statute mapper handles volume and keeps sensitive records on local hardware (privacy) | Field F1 vs frontier model; cost per case | QLoRA 8B vs prompted frontier vs base 8B |
+| Fine-tuning | A cheap, local extractor or statute mapper handles volume and keeps sensitive records on local hardware (privacy) | Field F1 vs 70B-class model; GPU memory and latency per case | QLoRA 8B vs prompted 70B-class vs base 8B |
 | RAG | Grounds must cite real statutes and precedents | Precedent recall@k, CLERC CR/CP/CFP | No-RAG; dense-only vs role-aware chunking |
 | Reasoning | Issue planning, and applying bail factors to facts | Ground-coverage recall; LEGIT-style issue coverage; per-round critique analysis | No planner; no revise loop |
 | Agentic | Multi-stage records → defense workflow with a bounded critique loop and a human gate | Task completion; progress rate (AgentBoard) | Single agent vs pipeline, same token budget |
@@ -214,8 +218,8 @@ Each idea can be the main research question with the others as supporting infras
 
 **Compute (rough):**
 - **Fine-tuning:** 1 QLoRA run on 7–8B for a narrow extraction task. About 5–15 GPU-hours on an A100/L4 (Colab or Kaggle); a few runs for ablations.
-- **API:** about 30–60K tokens per case × 200 cases × about 6 configs ≈ 40–70M tokens. Price it against the model you choose. A cheaper model for critic and verifier roles cuts the cost.
-- **Indian Kanoon:** fits within the ₹10k/month non-commercial credit if documents are cached.
+- **LLM inference:** about 30–60K tokens per case × 200 cases × about 6 configs ≈ 40–70M tokens. All of it runs on self-hosted open models via vLLM, with no paid APIs. A smaller model for the critic and verifier roles cuts GPU time.
+- **Retrieval and citations:** a local corpus and our own citation graph, with no paid legal APIs.
 
 **Main risks and fallbacks:**
 - **Gold grounds too noisy.** Use a narrower slice: one High Court, one offence family (e.g. NDPS or 420/cheating), regular bail only.

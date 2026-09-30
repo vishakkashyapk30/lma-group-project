@@ -98,7 +98,7 @@ This is lower on novelty but high on the safety angle TAs like. It also fits nat
 
 ### Idea 6: Small fine-tuned model vs large prompted model on explanation
 
-This is narrower. Take the PredEx instruction data plus IL-TUR tasks, QLoRA-tune a 7–8B model, and ask whether it matches a frontier model on explanation quality specifically, not just the label. Measure explanation quality against expert rationales. It works better as the fine-tuning component inside Ideas 1–3 than as a standalone project.
+This is narrower. Take the PredEx instruction data plus IL-TUR tasks, QLoRA-tune a 7–8B model, and ask whether it matches a much larger prompted open model on explanation quality specifically, not just the label. Measure explanation quality against expert rationales. It works better as the fine-tuning component inside Ideas 1–3 than as a standalone project.
 
 ---
 
@@ -114,6 +114,6 @@ A coherent pitch would be: "Bail preparation assistant for BNS-era criminal case
 
 **General benchmarks worth citing for related work:** LegalBench (Guha et al.), Harvey's LAB, J1-Bench, and LexAgentHallu (EMNLP 2026, on hallucination in legal agents). LawBench and DISC-LawLLM are Chinese, but their evaluation designs are useful to borrow.
 
-**Compute:** Everything above is feasible on a few Colab or Kaggle GPU sessions for QLoRA on a 7–8B model, plus API calls for agents. None of it needs the full 12.8M-judgment corpus. Subset by court and year.
+**Compute:** Everything above is feasible on a few Colab or Kaggle GPU sessions for QLoRA on a 7–8B model, with agents running on self-hosted open models (no paid APIs). None of it needs the full 12.8M-judgment corpus. Subset by court and year.
 
 **On citations:** I checked the GitHub repos for IL-TUR, ILDC/CJPE, HLDC, LeSICiN/ILSI, IL-PCR, rhetorical roles, LegalSeg, PredEx, NyayaRAG, InLegalNER, In-Abs, MILDSum, MILPaC, IndianBailJudgments-1200, J1-Bench, Harvey LAB, AALawyer, LexAgentHallu, LegalBench, and reglab's legal hallucinations repo. Author names, venues and dataset sizes for AILA, InLegalBERT, NyayaAnumana, AgentCourt, SimuCourt, Magesh et al., and the IPC–BNS correspondence table come from memory. I don't have web search in this session, so please double-check those before putting them in your proposal.

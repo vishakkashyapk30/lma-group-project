@@ -9,6 +9,7 @@ The system combines RAG, tool calling, multi-step reasoning, a QLoRA-fine-tuned 
 
 | File | Contents |
 |---|---|
+| [proposal.md](proposal.md) | **Project proposal for TA review**, covering every item required by announcement §8 |
 | [plan.md](plan.md) | Full project plan: users, research questions, architecture, tools, fine-tuning, evaluation sets, metrics, ablations, compute, timeline, risks |
 | [datasets_sources.md](datasets_sources.md) | Datasets, benchmarks, tools/APIs, baseline papers and metric sources, arranged by category |
 | [pipeline_research.md](pipeline_research.md) | Research landscape, gaps, candidate research ideas, failure modes |
