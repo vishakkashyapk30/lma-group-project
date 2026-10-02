@@ -5,3 +5,10 @@ __pycache__/
 .venv/
 data/raw/
 ada.md
+
+# LaTeX build output
+docs/proposal/build/
+*.aux
+*.log
+*.out
+*.toc

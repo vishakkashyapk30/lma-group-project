@@ -1,4 +1,4 @@
-# NyayaSahayak: A Bail-Preparation Assistant for Legal-Aid Lawyers
+# Vakeel-Sahayak.ai: A Bail-Preparation Assistant for Legal-Aid Lawyers
 
 **LMA Group Project 2026: Project Proposal**
 
@@ -10,7 +10,7 @@
 
 ## 1. Summary
 
-NyayaSahayak helps a lawyer prepare a regular bail application in the Delhi High Court. The lawyer uploads the court orders in a case, types out the facts in a chat, or does both.
+Vakeel-Sahayak.ai helps a lawyer prepare a regular bail application in the Delhi High Court. The lawyer uploads the court orders in a case, types out the facts in a chat, or does both.
 
 The system works in two stages:
 
@@ -19,7 +19,15 @@ The system works in two stages:
 
 The system also deals with the 2024 change from the IPC to the BNS. A case charged under a new BNS section still finds the older IPC case law that applies to it, and the lawyer is warned when the wording of the law has changed.
 
-The project uses all five capabilities: a fine-tuned extractor that runs on a laptop GPU, retrieval for every authority, a plan, draft and check loop, two agents with two approval steps, and deterministic tools for dates and sections. All models are open-weight, and no manual annotation is needed: training data and test labels are built automatically from the court orders themselves.
+The project uses all five capabilities:
+
+- **Fine-tuning:** a small extractor that runs on a laptop GPU.
+- **RAG:** retrieval for every authority the brief cites.
+- **Reasoning:** a plan, draft and check loop.
+- **Agentic:** two agents, with two approval steps for the lawyer.
+- **Tool calling:** deterministic tools for dates and section numbers.
+
+All models are open-weight, and no manual annotation is needed: training data and test labels are built automatically from the court orders themselves.
 
 ## 2. Domain and target user
 
@@ -45,6 +53,8 @@ A useful tool for legal-aid lawyers must therefore tie every fact to its source,
 
 ## 4. Research questions and hypotheses
 
+### 4.1 Research questions
+
 **RQ1.** Suppose the system first builds a source-checked dossier, then argues only from it and checks and repairs each claim. Compared with giving the same model the raw case file, do the grounds it produces:
 
 - (a) match the grounds that defense counsel actually argued more closely, and
@@ -52,7 +62,7 @@ A useful tool for legal-aid lawyers must therefore tie every fact to its source,
 
 **RQ2.** For cases charged under the BNS, does retrieval that expands each section to its IPC equivalent find the precedents that the court actually relied on more often than plain retrieval? And how often would an older precedent be applied to a changed provision without any warning?
 
-**Hypotheses**
+### 4.2 Hypotheses
 
 - **H1.** The full system has higher recall of argued factors and a lower unsupported-fact rate than both baselines (B0 and B1, described in Section 10).
 - **H2.** On the BNS-era cases, our retrieval has higher recall@10 of court-cited precedents than plain hybrid retrieval. Our retrieval combines section expansion, a filter that keeps only the court's own reasoning, and a filter for the bail factor.
@@ -61,11 +71,13 @@ We fix the exact thresholds on the development set before running the test set, 
 
 ## 5. Why it matters, and what is missing
 
-**Why it matters.** Undertrial prisoners made up 75.8 percent of India's prison population at the end of 2022 (NCRB, *Prison Statistics India 2022*). Many of them depend on legal-aid lawyers with heavy caseloads, so a weak or late bail application can mean months more in custody.
+### 5.1 Why it matters
+
+Undertrial prisoners made up 75.8 percent of India's prison population at the end of 2022 (NCRB, *Prison Statistics India 2022*). Many of them depend on legal-aid lawyers with heavy caseloads, so a weak or late bail application can mean months more in custody.
 
 The IPC-to-BNS change adds a new source of mistakes that is easy to miss. A lawyer, or a tool, may cite the wrong section number, or rely on a judgment about wording that no longer exists.
 
-**What is missing in existing approaches.**
+### 5.2 What is missing in existing approaches
 
 | Existing work | What it does | What is missing |
 |---|---|---|
@@ -114,7 +126,7 @@ flowchart TB
   class G1,G2 gate;
 ```
 
-*Diagram source: `architecture.mmd`. The PDF uses a rendered copy, `architecture.pdf`.*
+*Diagram source: [`figures/architecture.mmd`](figures/architecture.mmd). The PDF uses the rendered copy, `figures/architecture.pdf`.*
 
 ### 7.1 Data
 
@@ -182,9 +194,7 @@ This answers the question a lawyer actually has, for example "where has this cou
 
 **Case file.** The case file itself is read in full, because a typical bail file of two to five orders fits in the model's context. A keyword search over its paragraphs is used only for unusually long files.
 
-### 7.4 The two agents
-
-**Agent 1: the Case-File Agent.**
+### 7.4 Agent 1: the Case-File Agent
 
 - **Tools:** `parse_pdf`, `pseudonymise`, `extract_dossier` (the fine-tuned model), `map_section`, `date_calc`, `span_check` and `ask_user` (at most three questions per case).
 - **Output:** a `CaseDossier` with about 15 fields:
@@ -212,14 +222,8 @@ Each field holds a value, a source quote and one status:
 | `USER_STATED` | Typed in the chat, with no court record behind it |
 | `USER_EDITED` | Corrected by the lawyer |
 
-```json
-"custody_days": {"value": 167, "source": {"tool": "date_calc"}, "status": "COMPUTED"},
-"charge_sheet": {"value": {"filed": true, "date": "2024-11-02"},
-                 "source": {"doc": "order_2.pdf", "quote": "charge sheet stands filed on 02.11.2024"},
-                 "status": "VERIFIED"}
-```
 
-**Agent 2: the Bail-Brief Agent.**
+### 7.5 Agent 2: the Bail-Brief Agent
 
 - **Tools:** `get_statute`, `map_section`, `search_precedents`, `get_paragraph`, `check_claim`, `transfer_check`, `request_approval`, and `export_brief`, which works only after approval.
 - **Steps:**
@@ -238,7 +242,7 @@ Each field holds a value, a source quote and one status:
 
 The model writes only document IDs, and the citation text is filled in from corpus metadata, so it cannot invent a case name.
 
-### 7.5 Features and user flows
+### 7.6 Features
 
 The prototype is a Streamlit app with six features:
 
@@ -248,6 +252,8 @@ The prototype is a Streamlit app with six features:
 - a case chat that gives short answers with citations;
 - a brief view with clickable citations, transfer badges and an objections panel;
 - approval and export to DOCX or PDF.
+
+### 7.7 User flows
 
 **Flow 1: a new case.**
 
@@ -277,7 +283,9 @@ The prototype is a Streamlit app with six features:
 
 ## 9. Dataset and evaluation environment
 
-**Building the test set automatically.** Each test order is split, using cue-phrase rules, into four parts: facts, defense submissions, prosecution submissions, and the court's reasoning with the outcome. Orders that do not split cleanly are discarded.
+### 9.1 Building the test set automatically
+
+Each test order is split, using cue-phrase rules, into four parts: facts, defense submissions, prosecution submissions, and the court's reasoning with the outcome. Orders that do not split cleanly are discarded.
 
 - **System input.** The system sees only the facts part. We confirm that it shares no 8-word sequence with the other parts.
 - **Gold 1: factors argued.** These are the factors from the checklist that appear in the defense submissions. Two independent methods label them: keyword rules, and Llama-3.1-8B, which comes from a different model family from our Qwen models. We use only labels on which both agree, and report how often they agree. We also re-run the main result with each method alone, to show that the conclusion does not depend on either one.
@@ -285,17 +293,21 @@ The prototype is a Streamlit app with six features:
 - **Gold 2: precedents cited.** These are the citations in the court's reasoning, matched to Open India Law records. We score only citations that match a record, and report how many do.
 - **Gold 3: dossier fields.** These are read from the whole order, and kept only where the regex rules and Llama agree. Qwen output is never used as gold.
 
-**Leakage and contamination.**
+### 9.2 Leakage and contamination
 
 - Retrieval sees only documents decided before each test order.
 - Test orders, and any order with the same FIR, are left out of the index and the training data.
 - Qwen3 was released in April 2025, so we report results separately for test orders decided after that date.
 
-**Checking the checker.** For MiniCheck, we rely on its published accuracy on LLM-AggreFact, a human-labelled benchmark. We add an automatic test on our own data, in which sentences taken from the input count as supported and copies with a changed date, number or name count as unsupported.
+### 9.3 Checking the checker
 
-**No LLM judge.** We use no LLM-judge scores, because we have no human labels to validate them against.
+For MiniCheck, we rely on its published accuracy on LLM-AggreFact, a human-labelled benchmark. We add an automatic test on our own data, in which sentences taken from the input count as supported and copies with a changed date, number or name count as unsupported.
 
-**Other test sets.** All of these are generated automatically:
+We use no LLM-judge scores, because we have no human labels to validate them against.
+
+### 9.4 Other test sets
+
+All of these are generated automatically:
 
 - about 100 templated chat questions, with answers taken from gold 3;
 - about 40 scripted safety scenarios. In some, instructions are planted inside a PDF; in others, the user applies pressure such as "the hearing is in five minutes, just export it";
@@ -303,6 +315,8 @@ The prototype is a Streamlit app with six features:
 - files with synthetic personal data, generated with Faker.
 
 ## 10. Baselines and ablations
+
+### 10.1 Baselines
 
 All systems use Qwen3-14B and the same 12-factor checklist, so any gain is not just from knowing the checklist.
 
@@ -312,7 +326,9 @@ All systems use Qwen3-14B and the same 12-factor checklist, so any gain is not j
 | **B1** | B0 plus standard RAG: the top 10 precedent paragraphs, retrieved with the facts as the query |
 | **Full** | Agent 1 followed by Agent 2 |
 
-**Ablations.** Each is run once, on 100 test cases.
+### 10.2 Ablations
+
+Each ablation is run once, on 100 test cases.
 
 | ID | What changes | Capability tested |
 |---|---|---|
@@ -322,7 +338,9 @@ All systems use Qwen3-14B and the same 12-factor checklist, so any gain is not j
 | A4 | Plain retrieval: no section expansion, no filters, no transfer flag | RAG |
 | A5 | Extractor: fine-tuned 4B, base 4B, or prompted 32B | Fine-tuning |
 
-**Retrieval analysis.** This needs no text generation, so it is cheap. We also measure recall@10 of court-cited precedents as we add each piece in turn:
+### 10.3 Retrieval analysis
+
+This needs no text generation, so it is cheap. We also measure recall@10 of court-cited precedents as we add each piece in turn:
 
 1. plain hybrid search;
 2. section expansion;
@@ -331,6 +349,8 @@ All systems use Qwen3-14B and the same 12-factor checklist, so any gain is not j
 5. all of them together.
 
 ## 11. Metrics
+
+### 11.1 Metrics by area
 
 | Area | Metric |
 |---|---|
@@ -342,12 +362,12 @@ All systems use Qwen3-14B and the same 12-factor checklist, so any gain is not j
 | Agentic | Task completion (valid output and all checks run); pass^3 on 50 cases; share of flagged claims fixed by repair |
 | Safety | Rate of export attempts without approval in the scripted scenarios; refusal rate for prediction and lay-advice requests; leak rate of the planted personal data |
 
-**Statistics.**
+### 11.2 Statistics
 
 - We use paired bootstrap 95 percent confidence intervals and the Wilcoxon signed-rank test.
 - The full system, B0 and B1 each get three runs, averaged per case before testing.
 
-**Failure analysis.**
+### 11.3 Failure analysis
 
 - Each error is typed automatically as one of:
   - a wrong section or date;
@@ -359,43 +379,33 @@ All systems use Qwen3-14B and the same 12-factor checklist, so any gain is not j
 
 ## 12. Safety and ethics plan
 
-- **Approvals.**
-  - Export works only after the lawyer approves, and this is enforced in the code, not in a prompt.
-  - We measure how often the agent tries to export without approval.
-- **Privacy.**
-  - Names are replaced with pseudonyms before any model sees the text.
-  - The extractor runs on the lawyer's own machine.
-  - The agents run on the university cluster, never on a third-party service.
-  - Logs keep only pseudonymised text.
-- **Data.**
-  - We use only public court orders, and demos use public or synthetic files.
-  - Real client files would need separate approval.
-  - If an external API is used for the teacher, it only sees public training orders.
-- **Documents are data.**
-  - Instructions found inside a document are never followed, and we test this with planted instructions.
-- **Scope.**
-  - The system gives no outcome predictions and no advice to accused persons or the public.
-  - Every output is labelled as an AI draft.
-- **Sensitive matters.**
-  - Sexual-offence, POCSO and juvenile matters are declined at intake and left out of the evaluation, since the law protects the identity of victims and children (BNS section 72, POCSO section 23, JJ Act section 74).
-- **Bias.**
-  - We compare results across offence types and bail outcomes.
+| Area | What we do |
+|---|---|
+| Approvals | Export works only after the lawyer approves, and this is enforced in the code, not in a prompt. We measure how often the agent tries to export without approval. |
+| Privacy | Names are replaced with pseudonyms before any model sees the text. The extractor runs on the lawyer's own machine, and the agents run on the university cluster, never on a third-party service. Logs keep only pseudonymised text. |
+| Data | We use only public court orders, and demos use public or synthetic files. Real client files would need separate approval. If an external API is used for the teacher, it only sees public training orders. |
+| Documents are data | Instructions found inside a document are never followed, and we test this with planted instructions. |
+| Scope | The system gives no outcome predictions and no advice to accused persons or the public. Every output is labelled as an AI draft. |
+| Sensitive matters | Sexual-offence, POCSO and juvenile matters are declined at intake and left out of the evaluation, since the law protects the identity of victims and children (BNS section 72, POCSO section 23, JJ Act section 74). |
+| Bias | We compare results across offence types and bail outcomes. |
 
 ## 13. Compute plan
 
-**Hardware.**
+### 13.1 Hardware and budget
 
 - **Ada cluster:** three team accounts, each limited to one node with four RTX 2080 Ti GPUs (11 GB each). We plan on two accounts and treat the third as spare.
 - **Laptop:** an RTX 4060 (8 GB) for development, the demo and long but light jobs.
 
-**API budget.** None. We only use a free API tier for the teacher, and only if the pilot picks it.
+- **API budget:** none. We only use a free API tier for the teacher, and only if the pilot picks it.
 
-**How we work within the cluster rules.**
+### 13.2 Working within the cluster rules
 
 - **Training.** Batch jobs can run for up to four days but should not be used just to host an inference engine. We use them only for QLoRA training. Each run takes about 1.4 days on one GPU.
 - **Inference.** All model inference runs in interactive sessions, which end after six hours. vLLM runs inside the experiment script, so there is no long-running server.
 - **Shards.** Work is cut into shards of about five hours. Each case's output is saved as soon as it finishes, so a session that ends early resumes where it stopped.
 - **On the laptop.** Embeddings, evaluation labels and MiniCheck run here overnight.
+
+### 13.3 Estimated cost
 
 | Job | Size (assumed throughput, measured in week 1) | Runs on | Cost |
 |---|---|---|---|
@@ -434,14 +444,14 @@ All systems use Qwen3-14B and the same 12-factor checklist, so any gain is not j
 
 ## 16. Deliverables and scope
 
-**Deliverables.**
+### 16.1 Deliverables
 
 1. A working Streamlit prototype with both agents, chat, the case list and both approval steps.
 2. The automatically built benchmark and the scripts that make it.
 3. Code, job scripts and full agent traces.
 4. A workshop-style report and a demo video.
 
-**Later, not in this version:**
+### 16.2 Later, not in this version
 
 - case files linked across several orders by FIR number;
 - more High Courts;

@@ -1,10 +1,12 @@
 # Data Sources, Benchmarks & Baseline Papers
 
+> **Background research (ideation phase).** Section references to `plan.md` in this file point to the earlier detailed plan (v3, git commit `ac5d15c`). The current plan is [`../plan.md`](../plan.md), and the proposal is in [`../proposal/`](../proposal/).
+
 Reference list for the project in `plan.md`: a records agent and a defense-preparation agent for regular-bail preparation.
 
 **Columns**
 - **Role**: how the plan uses each item.
-- **E1–E6**: the core evaluation sets defined in `plan.md` §5.2 (X1 user study and X2 counterfactual records are optional).
+- **E1–E6**: the core evaluation sets defined in `plan.md` Section 5.2 (X1 user study and X2 counterfactual records are optional).
 
 **Markers**
 - **[U]**: link, size or release status not confirmed.
@@ -12,13 +14,13 @@ Reference list for the project in `plan.md`: a records agent and a defense-prepa
 
 Links were checked on 2026-10-01.
 
-**Constraint: no paid APIs or services.** Everything listed here as *used* is free and open to download. Anything paid is kept in §7.2 for reference only.
+**Constraint: no paid APIs or services.** Everything listed here as *used* is free and open to download. Anything paid is kept in Section 7.2 for reference only.
 
 ---
 
 ## 0. Data flow: which source feeds which step
 
-Item numbers point to the tables below. Sizes marked "est." are planning assumptions, measured in week 0. Full detail is in `plan.md` §4.4.
+Item numbers point to the tables below. Sizes marked "est." are planning assumptions, measured in week 0. Full detail is in `plan.md` Section 4.4.
 
 | Step / store | Fed by | Notes |
 |---|---|---|
@@ -30,7 +32,7 @@ Item numbers point to the tables below. Sizes marked "est." are planning assumpt
 | **S4 Per-case index** | The user's uploaded PDF | Built at run time, in memory |
 | **FT1 fine-tuning pairs** (est. 1.2–1.8K kept) | Qwen3-32B silver pass over ~3K orders; only fully verified examples | E1 cases excluded by CNR and FIR + police station |
 | **Segmentation, NER** | 4.1 IL-TUR, 4.2 InLegalNER, 4.3 rhetorical roles (off-the-shelf models) | Accuracy checked on 20 hand-labelled bail orders |
-| **PII pseudonymisation** | 4.2 InLegalNER + Presidio patterns (§7.1) | Recall tested on 40 documents with planted PII |
+| **PII pseudonymisation** | 4.2 InLegalNER + Presidio patterns (Section 7.1) | Recall tested on 40 documents with planted PII |
 | **Statute test set (E3)** | 2.3 benchmark (1,140 queries) + 3.4 PROSLEX + 3.5 ILSI fact patterns + 100 hand-built cases | |
 | **Retriever sanity check** | 5.1 IL-PCR (7,070 cases), 5.3 AILA (3,257 documents) | Compare with published numbers |
 | **Evaluation sets E1–E6** | Corpus subset | All E1 cases excluded from S2, S3 and FT1 (by CNR and FIR + police station) |
@@ -167,14 +169,14 @@ Item numbers point to the tables below. Sizes marked "est." are planning assumpt
 
 | Service | Why excluded | What we use instead |
 |---|---|---|
-| **Indian Kanoon API** | Paid per request (search ₹0.50, document ₹0.20, …). Free credits are limited, and bulk-scraping the website is not a sanctioned alternative **[check its terms of service]**. | Local corpus tools; the system cites only retrieved docs (§7.1) |
-| **Paid LLM APIs** (Claude, GPT, Gemini paid tiers, etc.) | Paid | Self-hosted open-weight models via vLLM. The "larger prompted model" comparison uses Qwen3-32B-AWQ, which fits the 4× 2080 Ti nodes (`plan.md` §4.3). |
+| **Indian Kanoon API** | Paid per request (search ₹0.50, document ₹0.20, …). Free credits are limited, and bulk-scraping the website is not a sanctioned alternative **[check its terms of service]**. | Local corpus tools; the system cites only retrieved docs (Section 7.1) |
+| **Paid LLM APIs** (Claude, GPT, Gemini paid tiers, etc.) | Paid | Self-hosted open-weight models via vLLM. The "larger prompted model" comparison uses Qwen3-32B-AWQ, which fits the 4× 2080 Ti nodes (`plan.md` Section 4.3). |
 | **Commercial eCourts APIs** (e.g. ecourtsindia.com) | Paid | CNR-linked earlier orders from the AWS HC metadata (1.2) |
 | CourtListener citation-lookup API | US only (and not needed) | Design reference for `resolve_citation` |
 
 ---
 
-## 8. Baselines (`plan.md` §6) and reference papers
+## 8. Baselines (`plan.md` Section 6) and reference papers
 
 | ID | Paper | Venue | What we reimplement as the baseline | Link |
 |---|---|---|---|---|

@@ -1,8 +1,10 @@
 # Court-Records Agent → Defense-Preparation Agent: Research Landscape & Pipeline Ideas
 
+> **Background research (ideation phase).** Section references to `plan.md` in this file point to the earlier detailed plan (v3, git commit `ac5d15c`). The current plan is [`../plan.md`](../plan.md), and the proposal is in [`../proposal/`](../proposal/).
+
 Compiled 2026-10-01 from web searches. Links were checked unless marked **[U]** (unverified). Mentions of BNSS section numbers should be checked against the bare act.
 
-> **Note:** this is the research landscape. The system design and scope in §1 and §3 were an early draft. They are **superseded by `plan.md` (v3)**, which cuts the judge simulator, the treatment classifier, the full citation graph and several RQs. Compute and model sizes below (A100, 70B-class) are also superseded by `plan.md` §8 (IIIT Ada 2080 Ti nodes, Qwen3-14B/32B).
+> **Note:** this is the research landscape. The system design and scope in Section 1 and Section 3 were an early draft. They are **superseded by `plan.md` (v3)**, which cuts the judge simulator, the treatment classifier, the full citation graph and several RQs. Compute and model sizes below (A100, 70B-class) are also superseded by `plan.md` Section 8 (IIIT Ada 2080 Ti nodes, Qwen3-14B/32B).
 
 ---
 

@@ -1,4 +1,4 @@
-# plan.md (v4, simple): NyayaSahayak, a bail-preparation assistant for legal-aid counsel
+# plan.md (v4, simple): Vakeel-Sahayak.ai, a bail-preparation assistant for legal-aid counsel
 
 > **In one line.** Counsel uploads a bail case and gets back:
 > - a **source-checked case dossier** (fixed JSON schema), built by a small fine-tuned model that runs on a laptop GPU;
