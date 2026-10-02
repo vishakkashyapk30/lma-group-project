@@ -35,15 +35,7 @@ All models are open-weight, and no manual annotation is needed: training data an
 
 ## 3. Problem statement
 
-To write a bail application, a lawyer has to collect facts that are spread across several court orders. These include how long the accused has been in custody, whether the charge sheet has been filed, and whether co-accused have already been released. These facts then have to be argued against the factors that courts weigh, with case law to support each point.
-
-Since 1 July 2024, the Bharatiya Nyaya Sanhita (BNS) and the Bharatiya Nagarik Suraksha Sanhita (BNSS) have replaced the IPC and the CrPC. New FIRs therefore cite new section numbers, while almost all bail case law still discusses the old ones.
-
-General-purpose language models are a poor fit for this work, because they invent facts and case citations. Studies of US law found hallucination rates of 58 to 88 percent on case-specific questions (Dahl et al., 2024), and 17 to 33 percent even in commercial legal research tools (Magesh et al., 2025).
-
-Existing Indian legal AI work mostly predicts case outcomes or simulates courtroom debate. It is judged on the verdict, not on whether each argument is backed by the record. We are not aware of any system that links BNS-era cases to the IPC-era precedents that still apply, or that warns when the wording of a provision has changed.
-
-A useful tool for legal-aid lawyers must therefore tie every fact to its source, cite only real and applicable authority, and say clearly what it could not verify.
+To write a bail application, a lawyer has to collect facts that are spread across several court orders, such as how long the accused has been in custody, whether the charge sheet has been filed, and whether co-accused have already been released. These facts then have to be argued against the factors that courts weigh, with case law to support each point. Since 1 July 2024 the Bharatiya Nyaya Sanhita (BNS) and the Bharatiya Nagarik Suraksha Sanhita (BNSS) have replaced the IPC and the CrPC, so new FIRs cite new section numbers while almost all bail case law still discusses the old ones. General-purpose language models are a poor fit for this work, because they invent facts and case citations: studies of US law found hallucination rates of 58 to 88 percent on case-specific questions (Dahl et al., 2024), and 17 to 33 percent even in commercial legal research tools (Magesh et al., 2025). Existing Indian legal AI work mostly predicts case outcomes or simulates courtroom debate, and is judged on the verdict rather than on whether each argument is backed by the record. We are not aware of any system that links BNS-era cases to the IPC-era precedents that still apply, or that warns when the wording of a provision has changed. A useful tool for legal-aid lawyers must therefore tie every fact to its source, cite only real and applicable authority, and say clearly what it could not verify.
 
 ## 4. Research questions and hypotheses
 
@@ -400,15 +392,15 @@ This needs no text generation, so it is cheap. We also measure recall@10 of cour
 
 ### 13.3 Estimated cost
 
-| Job | Size (assumed throughput, measured in week 1) | Runs on | Cost |
+| Job | Size (estimates; throughput measured in week 1) | Runs on | Cost |
 |---|---|---|---|
-| Teacher dossiers | 4,000 orders × 12K tokens on Qwen3-32B | Ada, interactive | ~60 node-hours (12 sessions); none if the API is used |
-| QLoRA training | 2,000 pairs × 2 epochs, 2 to 3 runs | Ada, batch | ~100 GPU-hours |
-| Main test runs | Full, B0 and B1 × 200 cases × 3 runs (full system ~100K tokens per run) | Ada, interactive | ~40 node-hours (8 sessions) |
-| Ablations | 5 ablations × 100 cases × 1 run | Ada, interactive | ~25 node-hours (5 sessions) |
-| Embeddings, evaluation labels, MiniCheck | Up to 300K paragraphs; 250 orders | Laptop | ~35 hours |
+| Teacher dossiers | 4,000 orders × 12K tokens on Qwen3-32B | Ada, interactive | 60 node-hours (12 sessions); 0 with the API |
+| QLoRA training | 2,000 pairs × 2 epochs, 2 to 3 runs | Ada, batch | 100 GPU-hours |
+| Main test runs | Full, B0 and B1 × 200 cases × 3 runs (full system ~100K tokens per run) | Ada, interactive | 40 node-hours (8 sessions) |
+| Ablations | 5 ablations × 100 cases × 1 run | Ada, interactive | 25 node-hours (5 sessions) |
+| Embeddings, evaluation labels, MiniCheck | Up to 300K paragraphs; 250 orders | Laptop | 35 hours |
 
-**Total on Ada.** About 25 interactive sessions (13 if the API is used) plus two or three training jobs. With a 30 percent buffer, that is two to three sessions per account per week from week 2 to week 6.
+**Total on Ada.** About 600 RTX 2080 Ti GPU-hours (360 if the teacher uses the API), which is about 25 interactive sessions (13 with the API) plus two or three training jobs. With a 30 percent buffer, that is two to three sessions per account per week from week 2 to week 6.
 
 ## 14. Timeline
 
