@@ -20,7 +20,7 @@ The project combines all five course capabilities: a QLoRA-fine-tuned extractor,
     ├── proposal/                  Proposal for TA review
     │   ├── proposal.md            Markdown version (renders on GitHub, Mermaid diagram included)
     │   ├── proposal.tex           LaTeX source
-    │   ├── proposal.pdf           Compiled proposal (8 pages)
+    │   ├── proposal.pdf           Compiled proposal (8 pages plus references)
     │   ├── build.sh               Rebuilds the diagram (if changed) and the PDF
     │   └── figures/
     │       ├── architecture.mmd   Mermaid source of the architecture diagram

@@ -202,7 +202,7 @@ This lets counsel ask, in effect, "where has this court accepted *parity* in a *
      - no citation that wasn't retrieved.
   6. **Repair or flag**, at most 2 rounds:
      - re-retrieve or reword to what the source supports;
-     - otherwise, mark the claim `NEEDS_COUNSEL`.
+     - otherwise, mark the claim `NEEDS_REVIEW`.
      - **Nothing is ever dropped silently.**
 
 **Output: `BailBrief`.**
@@ -226,10 +226,10 @@ This lets counsel ask, in effect, "where has this court accepted *parity* in a *
     {"factor": "gravity", "objection": "Offence involves Rs X lakh ...", "response": "...", "authorities": [...]}
   ],
   "open_issues": [
-    {"type": "NEEDS_COUNSEL", "item": "Antecedents unknown: confirm no other pending cases."},
+    {"type": "NEEDS_REVIEW", "item": "Antecedents unknown: confirm no other pending cases."},
     {"type": "CHANGED_PROVISION", "item": "Precedent DLHC-2021-0420 interprets IPC 420; BNS 318(4) wording differs: qualify."}
   ],
-  "label": "AI-generated draft for counsel review. Not legal advice."
+  "label": "AI-generated draft. Not legal advice."
 }
 ```
 
@@ -261,7 +261,7 @@ Citation text is always **rendered from corpus metadata**: the model writes only
 2. **Quick questions.** At any point counsel asks the case chat a question and gets a one-line cited answer, e.g. "Custody: 167 days [date_calc from arrest 20.08.2024]; not yet eligible under BNSS 479".
 3. **Generate the brief.**
    1. Counsel clicks *Draft bail brief*, and the agent plans, retrieves, drafts, objects, checks and repairs, streaming its progress.
-   2. Counsel reads the grounds, opens the cited paragraphs, and resolves the `NEEDS_COUNSEL` items.
+   2. Counsel reads the grounds, opens the cited paragraphs, and resolves the `NEEDS_REVIEW` items.
    3. Counsel approves (**Gate 2**) and exports.
 4. **Case moves on.**
    1. A week later the charge sheet is filed. Counsel uploads the new order.
@@ -363,7 +363,6 @@ The split uses cue-phrase rules, and orders where the rules don't produce a clea
 - **Data.**
   - Only public court orders are used.
   - Demos use public or synthetic files.
-  - Real client files would need separate approval.
 - **Documents are data.** Instructions found inside a PDF are never followed; this is tested with planted instructions.
 - **Scope.** No outcome predictions and no advice to accused persons or the public; such requests are refused.
 - **Sensitive matters.** Sexual-offence, POCSO and juvenile matters are declined at intake and excluded from evaluation, because the law protects the identity of victims and children (BNS section 72, POCSO section 23, JJ Act section 74).
@@ -448,7 +447,6 @@ With a 30% buffer this is about 33 sessions. Spread over 3 accounts and weeks 2â
 - A structured bail-records store.
 - A study of the verifier "tax": verifier policies vs silently dropped grounds.
 - Counterfactual-record tests.
-- A user study with lawyers.
 - Anticipatory bail, district courts, Hindi.
 
 ---
