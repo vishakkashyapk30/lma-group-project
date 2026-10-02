@@ -4,7 +4,6 @@
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
 \usepackage{microtype}
-\linespread{0.98}
 \usepackage[margin=1.7cm]{geometry}
 \usepackage{booktabs}
 \usepackage{tabularx}
@@ -13,23 +12,23 @@
 \usepackage{array}
 \usepackage{enumitem}
 \usepackage{multicol}
-\setlength{\multicolsep}{2pt plus 1pt}
+\setlength{\multicolsep}{4pt plus 1pt}
 \usepackage{titlesec}
 \usepackage{xcolor}
 \usepackage{graphicx}
 \usepackage[font=small,skip=3pt]{caption}
-\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\textfloatsep}{6pt plus 2pt minus 2pt}
 \usepackage[hidelinks]{hyperref}
 
 % Lists
-\setlist{itemsep=0pt,topsep=1pt,parsep=0pt,partopsep=0pt,leftmargin=1.5em}
+\setlist{itemsep=0.5pt,topsep=2pt,parsep=0pt,partopsep=0pt,leftmargin=1.5em}
 \setlist[2]{leftmargin=1.3em}
 
 % Headings
 \titleformat{\section}{\large\bfseries}{\thesection.}{0.5em}{}
 \titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
-\titlespacing*{\section}{0pt}{7pt}{2pt}
-\titlespacing*{\subsection}{0pt}{4pt}{1pt}
+\titlespacing*{\section}{0pt}{8.5pt}{3pt}
+\titlespacing*{\subsection}{0pt}{5pt}{2pt}
 % A small unnumbered heading on its own line
 \newcommand{\minorhead}[1]{\par\smallskip\noindent\textbf{#1}\par\nopagebreak}
 
@@ -37,7 +36,7 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{2pt}
 \renewcommand{\arraystretch}{1.15}
-\setlength{\LTpre}{3pt}\setlength{\LTpost}{3pt}
+\setlength{\LTpre}{4pt}\setlength{\LTpost}{4pt}
 \newcolumntype{L}{>{\raggedright\arraybackslash}X}
 \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 \newcommand{\st}[1]{\texttt{\small #1}}
@@ -62,16 +61,7 @@ Vakeel-Sahayak.ai helps a lawyer prepare a regular bail application in the Delhi
 
 The system also deals with the 2024 change from the IPC to the BNS. A case charged under a new BNS section still finds the older IPC case law that applies to it, and the lawyer is warned when the wording of the law has changed.
 
-The project uses all five capabilities:
-\begin{multicols}{2}\raggedright
-\begin{itemize}
-\item \textbf{Fine-tuning:} a small extractor that runs on a laptop GPU.
-\item \textbf{RAG:} retrieval for every authority the brief cites.
-\item \textbf{Reasoning:} a plan, draft and check loop.
-\item \textbf{Agentic:} two agents, with two approval steps for the lawyer.
-\item \textbf{Tool calling:} deterministic tools for dates and section numbers.
-\end{itemize}
-\end{multicols}
+The project uses all five course capabilities (fine-tuning, RAG, reasoning, agentic behaviour and tool calling); Section~6 explains where each one is used and how it is measured.
 
 All models are open-weight, and no manual annotation is needed: training data and test labels are built automatically from the court orders themselves.
 
@@ -158,7 +148,7 @@ Tool calling & Dates, custody periods and section mapping must be exact, so tool
 
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=0.82\linewidth]{figures/architecture.pdf}
+\includegraphics[width=0.8\linewidth]{figures/architecture.pdf}
 \caption{Architecture of Vakeel-Sahayak.ai.}
 \label{fig:arch}
 \end{figure}
@@ -229,7 +219,7 @@ Every Delhi High Court bail order and Supreme Court bail judgment except the tes
 \item \textbf{Rank.} Order the remaining paragraphs with BM25 and BGE-M3.
 \item \textbf{Relax if needed.} If fewer than five results remain, the filters are relaxed one at a time, and the brief says so.
 \end{enumerate}
-This answers the question a lawyer actually has, for example ``where has this court accepted parity in a cheating case?''. Generic chunk search does this badly.
+This answers the question a lawyer actually asks, such as ``where has this court accepted parity in a cheating case?'', which generic chunk search handles badly.
 
 \minorhead{Transfer flag}
 Each retrieved precedent gets one of three flags, worked out from the concordance and a text comparison of the old and new sections:
@@ -295,7 +285,7 @@ Each field holds a value, a source quote and one status:
 \item \raggedright\textbf{Tools:} \st{get\_statute}, \st{map\_section}, \st{search\_precedents}, \st{get\_paragraph}, \st{check\_claim}, \st{transfer\_check}, \st{request\_approval}, and \st{export\_brief}, which works only after approval.
 \item \textbf{Steps:}
   \begin{enumerate}
-  \item Go through a 12-factor checklist (Appendix A) and pick the factors that the dossier supports.
+  \item Go through a 12-factor bail checklist (for example custody period, parity with co-accused and whether the charge sheet is filed) and pick the factors that the dossier supports.
   \item Retrieve authority for each factor.
   \item Draft one ground per factor, where every sentence cites dossier fields and paragraphs.
   \item Write the prosecution's likely objections and a reply to each.
@@ -353,7 +343,7 @@ When the charge sheet is filed, the lawyer uploads the new order. The changed fi
 With no PDFs, the facts come only from the chat. They are marked \st{USER\_STATED}, and the brief labels them as ``per counsel, not on record''.
 
 %=====================================================================
-\section{Expected novelty}
+\section{Novelty}
 
 \begin{enumerate}
 \item \textbf{Case law that crosses the IPC to BNS change.} For a BNS-era case, the system retrieves IPC-era precedents through section families and flags those whose provision has changed.
@@ -527,7 +517,7 @@ Bias & We compare results across offence types and bail outcomes. \\
 \subsection{Working within the cluster rules}
 
 \begin{itemize}
-\item \textbf{Training.} Batch jobs can run for up to four days but should not be used just to host an inference engine. We use them only for QLoRA training. Each run takes about 1.4 days on one GPU.
+\item \textbf{Training.} Batch jobs (up to four days) are used only for QLoRA training, never just to host an inference engine. Each run takes about 1.4 days on one GPU.
 \item \textbf{Inference.} All model inference runs in interactive sessions, which end after six hours. vLLM runs inside the experiment script, so there is no long-running server.
 \item \textbf{Shards.} Work is cut into shards of about five hours. Each case's output is saved as soon as it finishes, so a session that ends early resumes where it stopped.
 \item \textbf{On the laptop.} Embeddings, evaluation labels and MiniCheck run here overnight.
@@ -552,7 +542,6 @@ Embeddings, evaluation labels, MiniCheck & Up to 300K paragraphs; 250 orders & L
 \textbf{Total on Ada.} About 25 interactive sessions (13 if the API is used) plus two or three training jobs. With a 30 percent buffer, that is two to three sessions per account per week from week 2 to week 6.
 
 %=====================================================================
-\needspace{8\baselineskip}
 \section{Timeline}
 
 {\small
@@ -605,12 +594,12 @@ The teacher API's terms or limits do not suit us & Use Qwen3-32B on Ada as plann
 
 \subsection{Later, not in this version}
 
-\begin{multicols}{2}\raggedright
+\begin{multicols}{3}\raggedright
 \begin{itemize}
-\item case files linked across several orders by FIR number;
+\item case files linked by FIR;
 \item more High Courts;
-\item a study of how much valid content verification removes;
-\item counterfactual tests of the records;
+\item a verification-cost study;
+\item counterfactual record tests;
 \item a user study with lawyers;
 \item anticipatory bail;
 \item district courts;
@@ -619,14 +608,5 @@ The teacher API's terms or limits do not suit us & Use Qwen3-32B on Ada as plann
 \end{multicols}
 
 %=====================================================================
-\section*{Appendix A: The 12 bail factors (the agent's checklist and the label set)}
-
-{\small
-\begin{tabularx}{\linewidth}{@{}L L L@{}}
-1. Gravity of the offence and punishment & 5. Parity with co-accused & 9. Weak prima facie case \\
-2. Period in custody & 6. Antecedents & 10. Health, age, gender or family \\
-3. Charge sheet filed & 7. Flight risk & 11. Statutory bars (NDPS 37, UAPA 43D(5), PMLA 45) \\
-4. Delay in trial & 8. Risk of tampering with witnesses & 12. Undertrial limit (BNSS 479, formerly CrPC 436A) \\
-\end{tabularx}}
 
 \end{document}

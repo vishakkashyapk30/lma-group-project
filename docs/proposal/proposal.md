@@ -19,13 +19,7 @@ The system works in two stages:
 
 The system also deals with the 2024 change from the IPC to the BNS. A case charged under a new BNS section still finds the older IPC case law that applies to it, and the lawyer is warned when the wording of the law has changed.
 
-The project uses all five capabilities:
-
-- **Fine-tuning:** a small extractor that runs on a laptop GPU.
-- **RAG:** retrieval for every authority the brief cites.
-- **Reasoning:** a plan, draft and check loop.
-- **Agentic:** two agents, with two approval steps for the lawyer.
-- **Tool calling:** deterministic tools for dates and section numbers.
+The project uses all five course capabilities (fine-tuning, RAG, reasoning, agentic behaviour and tool calling); Section 6 explains where each one is used and how it is measured.
 
 All models are open-weight, and no manual annotation is needed: training data and test labels are built automatically from the court orders themselves.
 
@@ -101,17 +95,16 @@ Our related-work search for the last row has been quick, so we will do a full ch
 ## 7. Proposed system
 
 ```mermaid
-%%{init: {"theme": "neutral", "flowchart": {"wrappingWidth": 360, "nodeSpacing": 28, "rankSpacing": 30, "padding": 10}}}%%
+%%{init: {"theme": "neutral", "flowchart": {"wrappingWidth": 360, "nodeSpacing": 26, "rankSpacing": 34, "padding": 10}}}%%
 flowchart TB
   subgraph S1["Stage 1: case file to dossier"]
     direction LR
     U["Lawyer uploads PDFs<br/>or types in the chat"] --> I["Intake<br/>PDF to text,<br/>names to pseudonyms"]
-    I --> A1["<b>Agent 1: Case-File Agent</b><br/>fine-tuned Qwen3-4B<br/>extracts fields with source quotes,<br/>checks each quote, asks up to 3 questions"]
-    A1 <--> T["Tools<br/>map_section, date_calc,<br/>span_check, ask_user"]
+    I --> A1["<b>Agent 1: Case-File Agent</b><br/>fine-tuned Qwen3-4B<br/>extracts fields with source quotes,<br/>checks each quote, asks up to 3 questions<br/><i>tools: map_section, date_calc, span_check, ask_user</i>"]
+    A1 -->|CaseDossier| G1("<b>Approval 1:</b><br/>lawyer checks and<br/>edits the dossier")
   end
 
-  S1 -->|CaseDossier| G1("<b>Approval 1:</b> lawyer checks and edits the dossier")
-  G1 --> S2
+  S1 -->|approved dossier| S2
 
   subgraph S2["Stage 2: dossier to bail brief"]
     direction LR
@@ -182,7 +175,7 @@ The teacher is Qwen3-32B on the Ada cluster, or a Mistral model through its free
 2. **Rank.** Order the remaining paragraphs with BM25 and BGE-M3.
 3. **Relax if needed.** If fewer than five results remain, the filters are relaxed one at a time, and the brief says so.
 
-This answers the question a lawyer actually has, for example "where has this court accepted parity in a cheating case?". Generic chunk search does this badly.
+This answers the question a lawyer actually asks, such as "where has this court accepted parity in a cheating case?", which generic chunk search handles badly.
 
 **Transfer flag.** Each retrieved precedent gets one of three flags, worked out from the concordance and a text comparison of the old and new sections:
 
@@ -227,7 +220,7 @@ Each field holds a value, a source quote and one status:
 
 - **Tools:** `get_statute`, `map_section`, `search_precedents`, `get_paragraph`, `check_claim`, `transfer_check`, `request_approval`, and `export_brief`, which works only after approval.
 - **Steps:**
-  1. Go through a 12-factor checklist (Appendix A) and pick the factors that the dossier supports.
+  1. Go through a 12-factor bail checklist (for example custody period, parity with co-accused and whether the charge sheet is filed) and pick the factors that the dossier supports.
   2. Retrieve authority for each factor.
   3. Draft one ground per factor, where every sentence cites dossier fields and paragraphs.
   4. Write the prosecution's likely objections and a reply to each.
@@ -274,7 +267,7 @@ The prototype is a Streamlit app with six features:
 
 **Flow 5: a typed case.** With no PDFs, the facts come only from the chat. They are marked `USER_STATED`, and the brief labels them as "per counsel, not on record".
 
-## 8. Expected novelty
+## 8. Novelty
 
 1. **Case law that crosses the IPC to BNS change.** For a BNS-era case, the system retrieves IPC-era precedents through section families and flags those whose provision has changed.
 2. **A dossier-first design that never drops a claim silently.** Every fact traces back to a quote, and a claim that cannot be verified is flagged for the lawyer instead of being deleted.
@@ -400,7 +393,7 @@ This needs no text generation, so it is cheap. We also measure recall@10 of cour
 
 ### 13.2 Working within the cluster rules
 
-- **Training.** Batch jobs can run for up to four days but should not be used just to host an inference engine. We use them only for QLoRA training. Each run takes about 1.4 days on one GPU.
+- **Training.** Batch jobs (up to four days) are used only for QLoRA training, never just to host an inference engine. Each run takes about 1.4 days on one GPU.
 - **Inference.** All model inference runs in interactive sessions, which end after six hours. vLLM runs inside the experiment script, so there is no long-running server.
 - **Shards.** Work is cut into shards of about five hours. Each case's output is saved as soon as it finishes, so a session that ends early resumes where it stopped.
 - **On the laptop.** Embeddings, evaluation labels and MiniCheck run here overnight.
@@ -453,28 +446,11 @@ This needs no text generation, so it is cheap. We also measure recall@10 of cour
 
 ### 16.2 Later, not in this version
 
-- case files linked across several orders by FIR number;
+- case files linked by FIR;
 - more High Courts;
-- a study of how much valid content verification removes;
-- counterfactual tests of the records;
+- a verification-cost study;
+- counterfactual record tests;
 - a user study with lawyers;
 - anticipatory bail;
 - district courts;
 - Hindi.
-
-## Appendix A: The 12 bail factors
-
-These factors are both the agent's checklist and the label set:
-
-1. gravity of the offence and punishment;
-2. period in custody;
-3. charge sheet filed or investigation complete;
-4. delay in trial;
-5. parity with co-accused;
-6. antecedents;
-7. flight risk;
-8. risk of tampering with witnesses;
-9. weakness of the prima facie case;
-10. health, age, gender or family circumstances;
-11. statutory bars (NDPS section 37, UAPA section 43D(5), PMLA section 45);
-12. the undertrial limit in BNSS section 479 (formerly CrPC section 436A).

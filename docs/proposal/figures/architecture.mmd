@@ -1,14 +1,13 @@
-%%{init: {"theme": "neutral", "flowchart": {"wrappingWidth": 360, "nodeSpacing": 28, "rankSpacing": 30, "padding": 10}}}%%
+%%{init: {"theme": "neutral", "flowchart": {"wrappingWidth": 360, "nodeSpacing": 26, "rankSpacing": 34, "padding": 10}}}%%
 flowchart TB
   subgraph S1["Stage 1: case file to dossier"]
     direction LR
     U["Lawyer uploads PDFs<br/>or types in the chat"] --> I["Intake<br/>PDF to text,<br/>names to pseudonyms"]
-    I --> A1["<b>Agent 1: Case-File Agent</b><br/>fine-tuned Qwen3-4B<br/>extracts fields with source quotes,<br/>checks each quote, asks up to 3 questions"]
-    A1 <--> T["Tools<br/>map_section, date_calc,<br/>span_check, ask_user"]
+    I --> A1["<b>Agent 1: Case-File Agent</b><br/>fine-tuned Qwen3-4B<br/>extracts fields with source quotes,<br/>checks each quote, asks up to 3 questions<br/><i>tools: map_section, date_calc, span_check, ask_user</i>"]
+    A1 -->|CaseDossier| G1("<b>Approval 1:</b><br/>lawyer checks and<br/>edits the dossier")
   end
 
-  S1 -->|CaseDossier| G1("<b>Approval 1:</b> lawyer checks and edits the dossier")
-  G1 --> S2
+  S1 -->|approved dossier| S2
 
   subgraph S2["Stage 2: dossier to bail brief"]
     direction LR
