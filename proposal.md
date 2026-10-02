@@ -1,225 +1,470 @@
-# Project Proposal: LMA Group Project 2026
+# NyayaSahayak: A Bail-Preparation Assistant for Legal-Aid Lawyers
 
-## NyayaSahayak: Verified Bail Preparation for Legal-Aid Counsel
+**LMA Group Project 2026: Project Proposal**
 
-- **Team:** Harshita Kumari, Satvik Rao, Shravani K, Vishak Kashyap K
-- **Domain:** Legal (Indian criminal procedure) 
+**Team:** Harshita Kumari, Satvik Rao, Shravani K, Vishak Kashyap K
+
+**Domain:** Legal (Indian criminal procedure)
+
+---
 
 ## 1. Summary
 
-Two agents for High Court regular bail:
+NyayaSahayak helps a lawyer prepare a regular bail application in the Delhi High Court. The lawyer uploads the court orders in a case, types out the facts in a chat, or does both.
 
-1. A **Court-Records Agent** turns a case file into a *verified dossier* (every fact linked to a source span). Counsel uploads PDFs and/or describes the case in a chat, answers clarifying questions and asks cited questions about the file.
-2. A **Defense-Preparation Agent** turns the dossier into a *grounded bail brief*: every claim cites a dossier fact or a retrieved authority.
+The system works in two stages:
 
-Counsel approves at two code-enforced gates. Models are open-weight and run on the IIIT Ada cluster or our workstation; we use no paid APIs.
+- **The first agent builds a case dossier.** It reads the file and fills a fixed set of fields, such as the arrest date, the sections charged, whether the charge sheet has been filed, and whether co-accused have been granted bail. Every value comes with the sentence it was taken from.
+- **The second agent drafts the bail brief.** It works only after the lawyer has checked and approved the dossier. Every ground in the brief points to dossier facts and to paragraphs from real judgments, and every claim is checked before the lawyer sees it.
+
+The system also deals with the 2024 change from the IPC to the BNS. A case charged under a new BNS section still finds the older IPC case law that applies to it, and the lawyer is warned when the wording of the law has changed.
+
+The project uses all five capabilities: a fine-tuned extractor that runs on a laptop GPU, retrieval for every authority, a plan, draft and check loop, two agents with two approval steps, and deterministic tools for dates and sections. All models are open-weight, and no manual annotation is needed: training data and test labels are built automatically from the court orders themselves.
 
 ## 2. Domain and target user
 
-**Domain:** regular bail in one High Court (CrPC s.439, now BNSS s.483). **Users:** legal-aid panel counsel and junior advocates drafting bail applications under heavy caseloads from records spread across several orders; supervised law-clinic students as secondary users. **Not users:** accused persons, the public and judges. The chat is for counsel only, and the system never predicts outcomes.
+**Domain.** Regular bail in the Delhi High Court, under section 439 of the CrPC (now section 483 of the BNSS).
+
+**Primary users.** Legal-aid panel lawyers and junior advocates. They draft many bail applications a month, often with little research support.
+
+**Secondary users.** Law students working in supervised legal-aid clinics.
+
+**Not users.** The system is not meant for accused persons, the public or judges. It prepares material for a lawyer, who reads, edits and approves everything. It never predicts whether bail will be granted.
 
 ## 3. Problem statement
 
-Preparing a bail application means pulling scattered facts (custody dates, charge-sheet status, earlier bail rounds, co-accused bail) out of earlier court orders and arguing them against the factors courts weigh, with precedent. Since 1 July 2024 the BNS and BNSS have replaced the IPC and CrPC, so the correct section depends on the offence date and transition rules, while most bail case law still discusses the old IPC sections. General-purpose LLMs invent facts and authorities: US-law studies report 58–88% hallucination on case-specific questions (Dahl et al., 2024) and 17–33% in commercial legal RAG tools (Magesh et al., 2025). Indian legal-AI systems mostly predict outcomes or simulate courtroom debate, and are scored on the verdict, not on whether arguments are grounded in the record and valid authority. Verification loops can cut hallucination, but a verifier that silently drops a valid defense ground has a real cost, and this omission side of the trade-off is rarely measured in legal argument generation. We also found no work that carries IPC-era case law to BNS-era cases or flags when an old precedent no longer transfers. Counsel need a system that is verifiably grounded, temporally correct about statutes, explicit about uncertainty, and honest about what its verification removes.
+To write a bail application, a lawyer has to collect facts that are spread across several court orders. These include how long the accused has been in custody, whether the charge sheet has been filed, and whether co-accused have already been released. These facts then have to be argued against the factors that courts weigh, with case law to support each point.
+
+Since 1 July 2024, the Bharatiya Nyaya Sanhita (BNS) and the Bharatiya Nagarik Suraksha Sanhita (BNSS) have replaced the IPC and the CrPC. New FIRs therefore cite new section numbers, while almost all bail case law still discusses the old ones.
+
+General-purpose language models are a poor fit for this work, because they invent facts and case citations. Studies of US law found hallucination rates of 58 to 88 percent on case-specific questions (Dahl et al., 2024), and 17 to 33 percent even in commercial legal research tools (Magesh et al., 2025).
+
+Existing Indian legal AI work mostly predicts case outcomes or simulates courtroom debate. It is judged on the verdict, not on whether each argument is backed by the record. We are not aware of any system that links BNS-era cases to the IPC-era precedents that still apply, or that warns when the wording of a provision has changed.
+
+A useful tool for legal-aid lawyers must therefore tie every fact to its source, cite only real and applicable authority, and say clearly what it could not verify.
 
 ## 4. Research questions and hypotheses
 
-**RQ1 (main): grounding and the verification tax.** Does arguing from a verified dossier, with a verification loop, improve grounding over a self-refining agent with the same compute? What does each verifier failure policy cost in omitted valid grounds?
+**RQ1.** Suppose the system first builds a source-checked dossier, then argues only from it and checks and repairs each claim. Compared with giving the same model the raw case file, do the grounds it produces:
 
-- **(a) Grounding:** full system vs B3 (ReAct + Self-Refine) and B1 (single-pass RAG).
-- **(b) Verification tax:** a rejected claim is handled by **V1** delete, **V2** repair, **V3** escalate to counsel, or **V4** repair-then-escalate plus a missing-factor check. Each is scored on hallucination, omission and escalation burden. Errors are asymmetric: a fabricated authority embarrasses counsel, but a dropped valid ground can keep an undertrial in custody.
+- (a) match the grounds that defense counsel actually argued more closely, and
+- (b) contain fewer unsupported facts?
 
-**RQ2 (exploratory): the recodification bridge.** For BNS-era cases, does concordance-aware retrieval recover the IPC-era precedents the court cited, and does a *transfer check* flag precedents whose provision changed?
+**RQ2.** For cases charged under the BNS, does retrieval that expands each section to its IPC equivalent find the precedents that the court actually relied on more often than plain retrieval? And how often would an older precedent be applied to a changed provision without any warning?
 
 **Hypotheses**
 
-- **H1:** the full system beats B3 on answerable-factor recall and on the unsupported-claim rate (validated MiniCheck, with a human-audit fallback). Every baseline gets the same 12-factor checklist, so any gain is net of the checklist.
-- **H2:** V1 has the lowest hallucination and the highest omission. V4 omits less than V1 while staying non-inferior on hallucination (pre-registered margin), but only if its escalation burden is below V3's and its escalation precision is ≥ p (pre-registered). This means escalating everything cannot satisfy H2.
-- **H3 (exploratory):** on the BNS-era subset, section-family expansion beats unfiltered dense retrieval and a popularity baseline on recall@10 of court-cited *offence-specific* precedents.
+- **H1.** The full system has higher recall of argued factors and a lower unsupported-fact rate than both baselines (B0 and B1, described in Section 10).
+- **H2.** On the BNS-era cases, our retrieval has higher recall@10 of court-cited precedents than plain hybrid retrieval. Our retrieval combines section expansion, a filter that keeps only the court's own reasoning, and a filter for the bail factor.
 
-**Critic vs verifier** is only an ablation (A2 vs A3): an inference-time analogue of Kim's (2026) training-time finding. **Thresholds** come from a 30-dev-case pilot and are pre-registered (hashed commit) at the week-5 freeze.
+We fix the exact thresholds on the development set before running the test set, and we will report a null result as a finding.
 
-## 5. Why it matters and what is missing
+## 5. Why it matters, and what is missing
 
-Undertrials were 75.8% of India's prisoners at the end of 2022 (NCRB, *Prison Statistics India 2022*). Poorly prepared bail applications prolong detention.
+**Why it matters.** Undertrial prisoners made up 75.8 percent of India's prison population at the end of 2022 (NCRB, *Prison Statistics India 2022*). Many of them depend on legal-aid lawyers with heavy caseloads, so a weak or late bail application can mean months more in custody.
 
-| Existing work | Gap |
-|---|------------|
-| NyayaRAG, PredEx, IBPS; SAMVAD, AgentCourt, OBJECTION | These predict outcomes or simulate courtrooms and are judged on verdicts. SAMVAD grounds its arguments in retrieved text, but none of these prepares counsel's case from records. |
-| Zhang, Gray, Savelka & Ashley (2025); RARR (2023); Huang et al. (2024) | These cover factor use and abstention, attribution vs preservation, and self-correction that hurts. None measures omission caused by a verifier. |
-| IPC2BNS-Verify; a local statute RAG (2026) | These map *statute sections*. We found none that carries *case law* across, but the search was quick, so a full check comes before any "first" claim. |
+The IPC-to-BNS change adds a new source of mistakes that is easy to miss. A lawyer, or a tool, may cite the wrong section number, or rely on a judgment about wording that no longer exists.
+
+**What is missing in existing approaches.**
+
+| Existing work | What it does | What is missing |
+|---|---|---|
+| NyayaRAG, PredEx, bail outcome predictors | Predict judgments, sometimes with explanations | None of them prepare a defense lawyer's case from the record |
+| SAMVAD, AgentCourt and other courtroom simulations | Multi-agent debate | Scored on the verdict, not on whether each argument is grounded |
+| Legal hallucination studies (Dahl et al.; Magesh et al.) | Measure how often legal tools invent content | Mostly US law; no working pipeline for Indian court records |
+| IPC2BNS-Verify and statute retrieval systems | Map old sections to new sections | Map statutes, not case law; nothing carries precedents across the change |
+
+Our related-work search for the last row has been quick, so we will do a full check before calling the case-law bridge new.
 
 ## 6. The five capabilities
 
-| Capability | Where; why needed | Metric (ablation) |
-|---|----------|------|
-| **Fine-tuning** | A QLoRA Qwen3-4B extractor builds the bail store for the whole court subset in ≈30 node-h (the 32B teacher would need ≈295) and runs on the 8 GB workstation | E4 field F1 (hard orders separately); S2 size and precision (A6) |
-| **RAG** | Date-cut statute, bail and precedent stores: authority valid at the order date | Recall@10 of court-cited precedents (A5, A7) |
-| **Reasoning** | Factor planner; span check; verify-revise loop | Factor recall; unsupported claims; false-fill rate (A1–A3, A10, A12) |
-| **Agentic** | Tool choice per factor; repair vs escalate; stopping; hand-off via chat and gates | Task completion; pass^3; progress rate (B2/B3, A11) |
-| **Tool calling** | Deterministic `map_section`, `date_calc`; store queries; `ask_user`; gated mock filing tools | Accuracy vs annotated calls; recovery; **attempted-unsafe-action rate** (A4) |
+| Capability | Where it is used, and why the task needs it | How we measure it (ablation) |
+|---|---|---|
+| **Fine-tuning** | Qwen3-4B, fine-tuned with QLoRA, turns a case file into the dossier. Extraction runs on every case, and a small model on an 8 GB laptop GPU keeps client files on the lawyer's own machine. | Field accuracy and GPU memory and latency, for the fine-tuned 4B vs the base 4B vs a prompted 32B model (A5) |
+| **RAG** | Every authority must be a real judgment decided before the hearing, and statute text must be exact. Retrieval must also bridge the IPC to BNS renumbering. | Recall@10 of precedents cited by the court; share of citations that are the court's reasoning rather than a lawyer's submission (A4) |
+| **Reasoning** | The agent plans which bail factors apply, drafts one ground per factor, checks each claim against its source, then repairs it or flags it. | Factor recall and precision; unsupported-fact rate (A1 no dossier, A2 no check-and-repair loop) |
+| **Agentic** | The agents decide which fields need a second extraction, which questions to ask the lawyer, which retrieval tool to use for each factor, and whether to repair or flag a claim. Two approval steps hand control back to the lawyer. | Task completion; pass^3 (success in all three repeated runs); share of flagged claims fixed by repair (baseline B0, a single call) |
+| **Tool calling** | Dates, custody periods and section mapping must be exact, so tools do them, not the model. Export is a tool that needs approval. | Section-mapping accuracy on 1,140 IPC2BNS-Verify queries; tool-call accuracy; recovery from tool errors; unapproved export attempts (A3 no tools) |
 
 ## 7. Proposed system
 
+```mermaid
+%%{init: {"theme": "neutral", "flowchart": {"wrappingWidth": 360, "nodeSpacing": 28, "rankSpacing": 30, "padding": 10}}}%%
+flowchart TB
+  subgraph S1["Stage 1: case file to dossier"]
+    direction LR
+    U["Lawyer uploads PDFs<br/>or types in the chat"] --> I["Intake<br/>PDF to text,<br/>names to pseudonyms"]
+    I --> A1["<b>Agent 1: Case-File Agent</b><br/>fine-tuned Qwen3-4B<br/>extracts fields with source quotes,<br/>checks each quote, asks up to 3 questions"]
+    A1 <--> T["Tools<br/>map_section, date_calc,<br/>span_check, ask_user"]
+  end
+
+  S1 -->|CaseDossier| G1("<b>Approval 1:</b> lawyer checks and edits the dossier")
+  G1 --> S2
+
+  subgraph S2["Stage 2: dossier to bail brief"]
+    direction LR
+    R[("Statute store<br/>Precedent index")] <--> A2["<b>Agent 2: Bail-Brief Agent</b><br/>Qwen3-14B<br/>plans factors, retrieves, drafts, objects,<br/>checks every claim, repairs or flags"]
+    A2 -->|BailBrief| G2("<b>Approval 2:</b><br/>lawyer approves")
+    G2 --> E["Export<br/>DOCX or PDF"]
+  end
+
+  classDef agent fill:#e8e8e8,stroke:#333,stroke-width:2px;
+  classDef gate fill:#ffffff,stroke:#333,stroke-dasharray:5 4;
+  class A1,A2 agent;
+  class G1,G2 gate;
 ```
-Input: PDF upload and/or chat            (minimal case list: create / open / resume)
-INTAKE  PDF→text (OCR) | chat → pseudonymise PII → per-case index
-        sexual-offence / POCSO / juvenile matters → declined
-COURT-RECORDS AGENT
-  R1 Segment + NER        rhetorical-role model, InLegalNER
-  R2 Extract              fine-tuned Qwen3-4B; ~15 fields, each with a span
-  R3 map_section  [tool]  IPC↔BNS, CrPC↔BNSS by offence date; else AMBIGUOUS
-  R4 date_calc    [tool]  custody days, BNSS s.479 check
-  R5 Span verifier        DeBERTa NLI; re-extract once, else UNSUPPORTED
-  CHAT                    ≤3 clarifying questions; cited answers to counsel
-  == HUMAN GATE 1: counsel corrects the dossier ==
-DEFENSE-PREPARATION AGENT (Qwen3-14B)
-  D1 Factor planner       12-factor checklist → favourable / adverse
-  D2 Retrieve             tool choice per factor; IPC↔BNS family expansion;
-                          only documents dated before the order
-  D3 Draft                every sentence cites [F#] facts, [A#] authorities
-  D4 Prosecutor critic    objections, counter-authorities, missed facts
-  D5 Verifier             NLI support, ratio/obiter, good law, statute
-                          validity, transfer status, untagged citations
-  D6 Revise               ≤2 rounds under policy V1–V4; open issues listed
-  == HUMAN GATE 2: counsel approves; export only after approval ==
-STORES  S1 statutes (≈1,000 rows) · S2 bail-order rows (est. 8–12K) · S3 chunks
+
+*Diagram source: `architecture.mmd`. The PDF uses a rendered copy, `architecture.pdf`.*
+
+### 7.1 Data
+
+We use only two data sources.
+
+1. **Open India Law** (CC BY 4.0). It gives us:
+   - Delhi High Court bail orders from 2019 to 2025;
+   - Supreme Court judgments on bail;
+   - the text of the IPC, BNS, CrPC and BNSS.
+2. **IPC2BNS-Verify** (MIT licence). It gives us the IPC to BNS concordance and a benchmark of 1,140 mapping queries.
+
+A ten-row table maps the bail provisions of the CrPC to the BNSS (436 to 478, 436A to 479, 437 to 480, 438 to 482, 439 to 483). We write it from the bare acts as part of the tool's configuration.
+
+The orders are split by date:
+
+| Split | Orders | Use |
+|---|---|---|
+| Training | Before 2024 | Fine-tuning |
+| Development | Early 2024 (50 orders) | Tuning prompts and thresholds |
+| Test | Mid-2024 to 2025 (200 orders) | Evaluation; at least 60 are for offences committed after 1 July 2024 |
+
+### 7.2 Models
+
+**Extractor.** Qwen3-4B with QLoRA (rank 16, two epochs), trained on one RTX 2080 Ti and served in 4-bit on the laptop. Its training data is made automatically, in three steps:
+
+1. A larger teacher model reads the facts section of about 4,000 training orders. It fills in the dossier and quotes a source sentence for every field.
+2. An entailment model (DeBERTa-v3) checks each quote against its value.
+3. We keep only the orders where every field passes, which should leave about 2,000 training pairs.
+
+The teacher is Qwen3-32B on the Ada cluster, or a Mistral model through its free API if a week-1 pilot shows it gives more verified pairs per day. The teacher only ever sees public court orders.
+
+**Other models.**
+
+- **Agents:** Qwen3-14B in 4-bit, served with vLLM on Ada.
+- **Checking:** DeBERTa-v3 inside the system. MiniCheck is used for evaluation only.
+- **Retrieval:** BM25 plus BGE-M3 embeddings.
+- **Privacy:** Microsoft Presidio and InLegalNER.
+
+### 7.3 Retrieval
+
+**Statute store.** About 1,000 rows, one per section of the four codes. Each row holds the section text, the maximum punishment, whether the offence is bailable, and the matching section in the other code. It is an exact lookup, not a vector search, because statute text must match exactly.
+
+**Precedent index.** Every Delhi High Court bail order and Supreme Court bail judgment except the test orders, split into paragraphs of up to 400 tokens. We expect 100,000 to 300,000 paragraphs. Each paragraph is tagged automatically with:
+
+- its date, court and outcome;
+- which part of the order it comes from: facts, defense submissions, prosecution submissions or the court's reasoning. This is found from cue phrases such as "learned counsel for the applicant submits";
+- the bail factors it discusses, found with keyword rules;
+- the sections it mentions, together with their IPC or BNS equivalents. We call this the *section family*: for example, BNS 318(4) and IPC 420.
+
+**Searching for one factor.** The search works in three steps:
+
+1. **Filter.** Keep only the court's reasoning paragraphs from orders decided before the case, that share the case's section family and that discuss the factor.
+2. **Rank.** Order the remaining paragraphs with BM25 and BGE-M3.
+3. **Relax if needed.** If fewer than five results remain, the filters are relaxed one at a time, and the brief says so.
+
+This answers the question a lawyer actually has, for example "where has this court accepted parity in a cheating case?". Generic chunk search does this badly.
+
+**Transfer flag.** Each retrieved precedent gets one of three flags, worked out from the concordance and a text comparison of the old and new sections:
+
+| Flag | Meaning |
+|---|---|
+| `SAME_TEXT` | The provision was carried over unchanged, so the precedent applies |
+| `CHANGED` | The provision was split, merged or reworded, so the brief must qualify its use |
+| `NEW` | The provision has no IPC equivalent |
+
+**Case file.** The case file itself is read in full, because a typical bail file of two to five orders fits in the model's context. A keyword search over its paragraphs is used only for unusually long files.
+
+### 7.4 The two agents
+
+**Agent 1: the Case-File Agent.**
+
+- **Tools:** `parse_pdf`, `pseudonymise`, `extract_dossier` (the fine-tuned model), `map_section`, `date_calc`, `span_check` and `ask_user` (at most three questions per case).
+- **Output:** a `CaseDossier` with about 15 fields:
+  - parties;
+  - FIR number, police station and date;
+  - offence date;
+  - sections, with their mapped equivalents;
+  - arrest date and custody days;
+  - charge sheet status;
+  - trial stage;
+  - earlier bail applications;
+  - co-accused bail status;
+  - antecedents;
+  - personal circumstances;
+  - the BNSS section 479 undertrial check.
+
+Each field holds a value, a source quote and one status:
+
+| Status | Meaning |
+|---|---|
+| `VERIFIED` | The quote supports the value |
+| `COMPUTED` | Produced by a tool |
+| `UNSUPPORTED` | Not found, or the check failed |
+| `AMBIGUOUS` | Conflicting documents or an unclear section mapping |
+| `USER_STATED` | Typed in the chat, with no court record behind it |
+| `USER_EDITED` | Corrected by the lawyer |
+
+```json
+"custody_days": {"value": 167, "source": {"tool": "date_calc"}, "status": "COMPUTED"},
+"charge_sheet": {"value": {"filed": true, "date": "2024-11-02"},
+                 "source": {"doc": "order_2.pdf", "quote": "charge sheet stands filed on 02.11.2024"},
+                 "status": "VERIFIED"}
 ```
 
-**Design decisions** (details in `plan.md` §4)
+**Agent 2: the Bail-Brief Agent.**
 
-1. **Citations.** The drafter may cite only retrieved IDs, and citation text is rendered from metadata, so fabricated citation metadata is prevented by construction. A post-check counts any untagged case name or section as a fabrication.
-2. **Deterministic tools.** They build on the IPC2BNS-Verify concordance, checked against NCRB/BPRD, plus our own CrPC↔BNSS bail mapping. Unclear cases return `AMBIGUOUS`.
-3. **Statuses.** Each fact is marked `VERIFIED`, `COMPUTED`, `UNSUPPORTED`, `AMBIGUOUS`, `USER_STATED` (typed in chat; no record behind it, so labelled in the brief) or `USER_ASSERTED`.
-4. **Counsel-only chat.** Answers cite the case file, S1 or `date_calc`; the chat abstains outside scope and never predicts or advises laypeople. Mock filing tools are gated, and each case is isolated.
+- **Tools:** `get_statute`, `map_section`, `search_precedents`, `get_paragraph`, `check_claim`, `transfer_check`, `request_approval`, and `export_brief`, which works only after approval.
+- **Steps:**
+  1. Go through a 12-factor checklist (Appendix A) and pick the factors that the dossier supports.
+  2. Retrieve authority for each factor.
+  3. Draft one ground per factor, where every sentence cites dossier fields and paragraphs.
+  4. Write the prosecution's likely objections and a reply to each.
+  5. Check every claim. Facts are checked against the dossier quote and authorities against the cited paragraph, together with the transfer flag.
+  6. Repair a failed claim, by retrieving again or rewording it, for at most two rounds. A claim that still fails is marked `NEEDS_COUNSEL`. **Nothing is dropped silently.**
+- **Output:** a `BailBrief` containing:
+  - the statutory position (sections, whether bailable, maximum punishment, section 479 status);
+  - the grounds, each with its factor, argument, fact IDs, authority IDs with transfer flags, and check status (`SUPPORTED`, `REPAIRED` or `NEEDS_COUNSEL`);
+  - anticipated objections with replies;
+  - open issues;
+  - the label "AI draft for counsel review".
 
-**Verifier policies.** All four policies branch from **the same pre-verification draft**, so any differences come from the policy alone. **Omission** (at claim and factor level) means content that was valid before verification, absent after it, and not listed in the open issues. Claim IDs are tracked, so a rewritten claim counts as kept. **Escalation burden** is the number of escalated items per brief, together with their precision. The **shown-unverified rate** is reported separately from hallucination.
+The model writes only document IDs, and the citation text is filled in from corpus metadata, so it cannot invent a case name.
 
-**Recodification bridge.** Queries expand to the section family (e.g. BNS 318(4) ↔ IPC 420). Each authority is tagged `SAME_TEXT` (transfers), `CHANGED` (diff shown; qualified use only) or `NEW`.
+### 7.5 Features and user flows
+
+The prototype is a Streamlit app with six features:
+
+- a case list showing each case's status and an "items need attention" count;
+- upload and chat;
+- a dossier view, where each field shows its status and clicking it highlights the source sentence;
+- a case chat that gives short answers with citations;
+- a brief view with clickable citations, transfer badges and an objections panel;
+- approval and export to DOCX or PDF.
+
+**Flow 1: a new case.**
+
+1. The lawyer creates a case and uploads two orders: the Sessions Court bail rejection and a later order.
+2. The system replaces names with pseudonyms, extracts the dossier, and shows its progress as it goes.
+3. It asks up to three questions, such as "When was the accused arrested?".
+4. The lawyer answers, fixes any field marked `UNSUPPORTED`, and approves the dossier.
+
+**Flow 2: quick questions.** At any time the lawyer can ask "How many days has my client been in custody?" or "What is the BNS equivalent of section 420 IPC?". The answer is short and cited, for example: "167 days, counted from the arrest on 20.08.2024. Not yet eligible under BNSS section 479."
+
+**Flow 3: the brief.**
+
+1. The lawyer clicks *Draft bail brief*.
+2. The lawyer reads the grounds, opens the cited paragraphs, and resolves any `NEEDS_COUNSEL` items.
+3. The lawyer approves the brief and exports it.
+
+**Flow 4: the case moves on.** When the charge sheet is filed, the lawyer uploads the new order. The changed fields are highlighted, and after the lawyer approves the updated dossier, the regenerated brief gains an "investigation complete" ground.
+
+**Flow 5: a typed case.** With no PDFs, the facts come only from the chat. They are marked `USER_STATED`, and the brief labels them as "per counsel, not on record".
 
 ## 8. Expected novelty
 
-1. **The verification tax, posed as a question.** We aim for the first measurement of verifier-induced omission of court-accepted grounds under alternative failure policies, in a real-record defense setting.
-2. **A recodification bridge** that carries IPC-era case law to BNS-era cases and flags changed provisions (subject to a full related-work check).
-3. **A counsel-grounded, leakage-controlled benchmark** with factor-level labels restricted to factors answerable from the stripped input.
+1. **Case law that crosses the IPC to BNS change.** For a BNS-era case, the system retrieves IPC-era precedents through section families and flags those whose provision has changed.
+2. **A dossier-first design that never drops a claim silently.** Every fact traces back to a quote, and a claim that cannot be verified is flagged for the lawyer instead of being deleted.
+3. **A fully automatic benchmark grounded in court records.** The input is only the facts section of a real order, and the answers are what the court itself recorded: the grounds defense counsel argued, and the precedents the court cited. No manual annotation is needed, so anyone can rebuild it.
+4. **A local extractor.** A 4B model on an 8 GB GPU comes close to a much larger prompted model on dossier extraction.
 
-## 9. Data and evaluation environment
+## 9. Dataset and evaluation environment
 
-**Sources** (all free): Open India Law (judgments to 2025, statutes), AWS Indian HC Judgments (PDFs, CNR metadata), IPC2BNS-Verify, NCRB/BPRD tables, IndianBailJudgments-1200, IBPS, IL-TUR, InLegalNER.
+**Building the test set automatically.** Each test order is split, using cue-phrase rules, into four parts: facts, defense submissions, prosecution submissions, and the court's reasoning with the outcome. Orders that do not split cleanly are discarded.
 
-**Corpus and stores** (est. = measured in week 0; `plan.md` §4.4). One HC plus the SC (est. 20–60K documents). Case files link earlier orders mainly by **FIR number + police station**, since a new bail application gets a new CNR. Qwen3-32B silver labels on ~3K orders yield est. 1.2–1.8K fully verified fine-tuning pairs; the tuned extractor then builds S2 (est. 8–12K rows).
+- **System input.** The system sees only the facts part. We confirm that it shares no 8-word sequence with the other parts.
+- **Gold 1: factors argued.** These are the factors from the checklist that appear in the defense submissions. Two independent methods label them: keyword rules, and Llama-3.1-8B, which comes from a different model family from our Qwen models. We use only labels on which both agree, and report how often they agree. We also re-run the main result with each method alone, to show that the conclusion does not depend on either one.
+- **Answerable factors.** A factor is scored only if the fact behind it appears in the input, so the system is not penalised for information it never saw. The same two methods decide this.
+- **Gold 2: precedents cited.** These are the citations in the court's reasoning, matched to Open India Law records. We score only citations that match a record, and report how many do.
+- **Gold 3: dossier fields.** These are read from the whole order, and kept only where the regex rules and Llama agree. Qwen output is never used as gold.
 
-| Set | Size | Tests |
-|---|----------|----|
-| **E1: Bail cases** | 120 (30 dev / 90 test); sexual-offence, POCSO and juvenile matters excluded; est. 25–40 BNS-era test cases | RQ1, RQ2 |
-| **E2: Citation errors** | ~100 real (from baselines on dev and non-E1 orders) + ~150 planted; ⅓ for tuning, ⅔ for evaluation | Verifier; real and planted reported separately |
-| **E3: Statutes and stores** | 1,140 concordance queries + 100 date cases + 50 S2 rows | Tool accuracy; S2 precision |
-| **E4: Gold dossiers** | 40 (20 dev / 20 test) | Extraction; oracle Gate 1 |
-| **E5: Safety and chat** | 40 scenarios (pressure, injection, tool failures, invalid input, out of scope, cross-case); 116 chat queries (80 generated from E4 dossiers, 6 statute/date, 30 to refuse); 40 PII documents | Attempted unsafe actions, recovery, refusals, PII recall |
-| **E6: Text input** | 20 test cases rewritten as chat descriptions from the stripped input | Factor recall vs PDF input |
-| *If time permits* | X1: user study (4 cases × 6–8 people). X2: counterfactual records (30 × 3 edits). | |
+**Leakage and contamination.**
 
-**E1 construction.** The *input* is the current order's facts plus earlier orders. Both sides' arguments and the court's reasoning are *removed*; a leak check requires no 8-gram overlap with the removed text, and 20 cases are checked by hand. The *gold* labels mark each factor (Appendix A) as argued, raised or accepted, and as **answerable from the input**. κ is measured on 30 double-annotated cases. **Leakage controls:** retrieval sees only documents dated before the order; the case's own order, documents citing it, and same-FIR orders are excluded from the fine-tuning data, S2 and S3; MinHash near-duplicate audit; 2025–26 test orders, split by the Qwen3 release date.
+- Retrieval sees only documents decided before each test order.
+- Test orders, and any order with the same FIR, are left out of the index and the training data.
+- Qwen3 was released in April 2025, so we report results separately for test orders decided after that date.
 
-**Legal reviewer** (~16 h): guidelines, E1 adjudication, **[verify]** items, spot-checks, and blind ratings of 36 briefs (12 cases × full system, B3 and B1; 6 contain planted bad citations). **Fallback:** the team annotates from guidelines, adds law students if possible, and states the limitation. Team annotation totals ≈180 person-hours (`plan.md` §5.3).
+**Checking the checker.** For MiniCheck, we rely on its published accuracy on LLM-AggreFact, a human-labelled benchmark. We add an automatic test on our own data, in which sentences taken from the input count as supported and copies with a changed date, number or name count as unsupported.
+
+**No LLM judge.** We use no LLM-judge scores, because we have no human labels to validate them against.
+
+**Other test sets.** All of these are generated automatically:
+
+- about 100 templated chat questions, with answers taken from gold 3;
+- about 40 scripted safety scenarios. In some, instructions are planted inside a PDF; in others, the user applies pressure such as "the hearing is in five minutes, just export it";
+- templated requests for outcome predictions or lay advice, which the system should refuse;
+- files with synthetic personal data, generated with Faker.
 
 ## 10. Baselines and ablations
 
-All use Qwen3-14B, the same corpus and cutoff, and **the same 12-factor checklist**.
+All systems use Qwen3-14B and the same 12-factor checklist, so any gain is not just from knowing the checklist.
 
-| ID | Baseline | Controls for |
-|---|--------|------|
-| B0 | Zero-shot LLM | Lower bound |
-| B1 | Single-pass RAG (NyayaRAG-style) | Standard RAG |
-| B2 | ReAct agent with the same tools | Tool access |
-| B3 | B2 + Self-Refine, matched token budget | Compute, self-critique (**key**) |
+| ID | System |
+|---|---|
+| **B0** | "Just ask an LLM": the raw facts and the checklist go into one call, which returns a brief |
+| **B1** | B0 plus standard RAG: the top 10 precedent paragraphs, retrieved with the facts as the query |
+| **Full** | Agent 1 followed by Agent 2 |
 
-**Ablations** (1 run on a 60-case test subset unless noted): A1 no dossier · A2 no verifier · A3 no critic · A4 no tools · A5 no RAG · A6 extractor variants (on E4; downstream on 20 E4-test cases) · **A12 "just ask an LLM"**: prompted 14B/32B fill the dossier schema with no spans or span check (on E4) · A7 no bail store · A10 no planner · A11 fixed retrieval script · **A8 policies V1–V4 (all 90 cases, 3 runs)** · A9 no section-family expansion or transfer status (BNS-era subset; also compared with unfiltered dense retrieval and the 10 most-cited precedents) · oracle Gate 1 from gold dossiers (20 cases).
+**Ablations.** Each is run once, on 100 test cases.
 
-**Automated runs.** Gate 1 auto-passes and Gate 2 is not simulated. `request_approval` returns "pending", so any gated call counts as an attempted unsafe action. `ask_user` returns "unknown"; in E6, a scripted responder answers from the stripped input only. All systems share the same per-factor context strategy. Single-run ablations are compared with run 1 of the full system, using the same seed.
+| ID | What changes | Capability tested |
+|---|---|---|
+| A1 | No dossier: Agent 2 reads the raw facts | Reasoning and agentic |
+| A2 | No check-and-repair loop | Reasoning |
+| A3 | No tools: the model maps sections and counts days itself | Tool calling |
+| A4 | Plain retrieval: no section expansion, no filters, no transfer flag | RAG |
+| A5 | Extractor: fine-tuned 4B, base 4B, or prompted 32B | Fine-tuning |
+
+**Retrieval analysis.** This needs no text generation, so it is cheap. We also measure recall@10 of court-cited precedents as we add each piece in turn:
+
+1. plain hybrid search;
+2. section expansion;
+3. reasoning-only paragraphs;
+4. the factor filter;
+5. all of them together.
 
 ## 11. Metrics
 
-| Area | Metrics |
-|---|------------|
-| **Grounding** | **Answerable-factor recall** (primary) and precision against defense-argued factors; court-accepted recall; critic recall of adverse factors |
-| **Faithfulness** | **Unsupported-claim rate, scored against the source case file and the cited paragraph, never against the system's dossier.** Primary measure: **MiniCheck** (not the verifier's family) on all briefs, validated by a human audit of 900 sentences (30 cases × full system, B3, V1). If κ < 0.6 for any system, the audit is used instead. Also: misgrounded, bad-law and untagged-citation rates. |
-| **Verification tax** | Per policy: hallucination, shown-unverified rate, **omission (claim and factor level)**, escalation burden and precision. Claim level is primary if V1 drops whole factors in <5% of pilot briefs. |
-| **Recodification** | Recall@10 for offence-specific vs generic precedents, with n and CIs; wrong-transfer rate on 30 labelled transfers |
-| **Components** | Recall@10 (coverage reported); S2 precision; E4 field F1, wrong-value and false-fill rates (A6, A12); tool-call accuracy; recovery; task completion; pass^3 |
-| **Safety** | **Attempted-unsafe-action rate** (blocked attempts reported too); injection success; chat refusals; PII leaks; cross-case leakage |
-| **Overall** | Reviewer rubric (1–5) and planted-citation catch rate on 36 blind briefs. An LLM judge scores run 1 of the main systems and is validated by weighted κ; any dimension with κ < 0.6 is reported from human ratings only. |
+| Area | Metric |
+|---|---|
+| Argument quality (RQ1) | Recall and precision of argued factors (gold 1), on answerable factors only |
+| Faithfulness (RQ1) | Unsupported-fact rate: the share of factual sentences that MiniCheck finds unsupported by the input |
+| Retrieval (RQ2) | Recall@10 of court-cited precedents (gold 2) on BNS-era cases; share of `CHANGED` precedents used without a qualification; share of citations that are the court's reasoning |
+| Fine-tuning | Field accuracy against gold 3; memory and latency on the laptop GPU |
+| Tool calling | Section-mapping accuracy on the 1,140 IPC2BNS-Verify queries; right tool with valid arguments on the chat set; recovery from injected tool errors |
+| Agentic | Task completion (valid output and all checks run); pass^3 on 50 cases; share of flagged claims fixed by repair |
+| Safety | Rate of export attempts without approval in the scripted scenarios; refusal rate for prediction and lay-advice requests; leak rate of the planted personal data |
 
-**Statistics.** The primary endpoints form one Holm family of four tests. Two test H1 (full system vs B3), on recall and on MiniCheck-unsupported claims. Two test H2 (V4 vs V1), on omission and on hallucination non-inferiority. The 30-case audit alone would have been underpowered, which is why MiniCheck is the primary measure. Everything else gets paired-bootstrap 95% CIs. Runs are averaged per case before Wilcoxon or McNemar tests. The MDE is set from the pilot. Assuming a paired-difference SD of ≈0.25 at Holm α=0.0125 and n=90, power is ≈90% for a 10-point gain and ≈27% for a 5-point gain. Rubric agreement uses weighted κ or Krippendorff's α. Failure analysis tags 30 cases with LexAgentHallu categories plus our own types, and adds 4–5 case studies.
+**Statistics.**
+
+- We use paired bootstrap 95 percent confidence intervals and the Wilcoxon signed-rank test.
+- The full system, B0 and B1 each get three runs, averaged per case before testing.
+
+**Failure analysis.**
+
+- Each error is typed automatically as one of:
+  - a wrong section or date;
+  - an unsupported fact;
+  - a missed factor;
+  - a misgrounded authority;
+  - a wrong transfer.
+- We also write up four or five example cases, including failures.
 
 ## 12. Safety and ethics plan
 
-**Approval and framing.** Counsel approves each case before export or any mock action, and this is enforced in code. The system makes no predictions and gives no lay advice; the chat refuses lay-style requests (E5). Outputs are labelled as AI drafts. Sexual-offence, POCSO and juvenile matters are declined at intake (BNS s.72, POCSO s.23, JJ Act s.74 **[verify]**).
-
-**Privacy and use.** Text is pseudonymised before inference using encrypted name maps, and only public orders are used. Released data replaces all party names, including the accused's, and we build no profiles. We assume a counsel-only local install with no public endpoint. **Dual use:** the pipeline could help prosecution, so we release it as a defense aid.
-
-**Robustness, bias, ethics.** Documents are treated as data, never as instructions. We compare quality across offence type, outcome, custody band and gender, pooling any group with n < 10. In week 0 we will ask the institute whether annotation needs approval; X1 needs approval regardless.
+- **Approvals.**
+  - Export works only after the lawyer approves, and this is enforced in the code, not in a prompt.
+  - We measure how often the agent tries to export without approval.
+- **Privacy.**
+  - Names are replaced with pseudonyms before any model sees the text.
+  - The extractor runs on the lawyer's own machine.
+  - The agents run on the university cluster, never on a third-party service.
+  - Logs keep only pseudonymised text.
+- **Data.**
+  - We use only public court orders, and demos use public or synthetic files.
+  - Real client files would need separate approval.
+  - If an external API is used for the teacher, it only sees public training orders.
+- **Documents are data.**
+  - Instructions found inside a document are never followed, and we test this with planted instructions.
+- **Scope.**
+  - The system gives no outcome predictions and no advice to accused persons or the public.
+  - Every output is labelled as an AI draft.
+- **Sensitive matters.**
+  - Sexual-offence, POCSO and juvenile matters are declined at intake and left out of the evaluation, since the law protects the identity of victims and children (BNS section 72, POCSO section 23, JJ Act section 74).
+- **Bias.**
+  - We compare results across offence types and bail outcomes.
 
 ## 13. Compute plan
 
-**API budget:** INR 0. All throughput figures are **assumptions, measured in week 1** (derivation in `plan.md` §8).
+**Hardware.**
 
-**Hardware and models.** IIIT Ada (`-A research --qos=medium`) gives us 3 accounts, never shared, each capped at **one 4× RTX 2080 Ti node** (11 GB per GPU; Turing, so no BF16). We plan on 2 nodes, with the third as upside: A runs the data build and fine-tuning; B the pilot and main runs; C the ablations and judge. A 4060 workstation (8 GB) handles development and the demo. The generator is **Qwen3-14B-AWQ** (TP=2, 2 instances per node). Qwen3-32B-AWQ (TP=4) is the silver teacher and A6 model, and the Qwen3-4B QLoRA extractor is served in int4. Evaluation uses a Mistral-Small-3.2-24B judge and MiniCheck. We use no 70B model, because its ~35–40 GB of weights would leave no room for the KV cache. **Tokens per run:** ≈170K for the full system (`plan.md` §8.2); 13K / 18K / 90K / 170K for B0–B3; +52K for each of V1–V3.
+- **Ada cluster:** three team accounts, each limited to one node with four RTX 2080 Ti GPUs (11 GB each). We plan on two accounts and treat the third as spare.
+- **Laptop:** an RTX 4060 (8 GB) for development, the demo and long but light jobs.
 
-**Node-hours.** We *assume* 500/120 tok/s (prefill/decode) per instance at 80% utilisation, which gives **≈12 runs (2.0M tokens) per node-hour**.
+**API budget.** None. We only use a free API tier for the teacher, and only if the pilot picks it.
 
-| Item | Generator tokens | Node-h |
-|-----------|----|---|
-| Full system and B3 (2 × 90 × 3 × 170K) | 91.8M | 46 |
-| B0, B1, B2 | 14.1M | 7 |
-| V1–V3, branched (810 × 52K) | 42.1M | 21 |
-| Ablations | 86.0M | 43 |
-| E2, E5, E6, chat | 17.6M | 9 |
-| Pilot and debugging | 51M | 26 |
-| Silver labels (3K × 18K tokens) · QLoRA · corpus S2 (int4 4B) · other (embeddings, A6, judge, MiniCheck) | – | 70 · 38 · 30 · 24 |
-| **Total** | **≈303M generator tokens** | **314 node-h, all GPU work (≈408 with 30% buffer)** |
+**How we work within the cluster rules.**
 
-**Does it fit?** We assume ~30% node availability per account, about 50 node-h a week, with 4–5 concurrent cases per instance. Pre-freeze work needs 224 buffered node-h, against ≈450 from 2 accounts. Post-freeze needs 185, against ≈200 from 2 accounts or ≈300 from 3. **Sensitivity:** at half the decode rate, post-freeze needs ≈245, which the third account or cuts 1–5 cover. After all cuts, 2 accounts are enough down to ≈20% availability. **Already shrunk:** only the full system, B1, B3 and V1–V3 get 3 runs; ablations use 60 cases; policy branching saves 48 node-h; the judge scores 1 run. **Further cuts, in order:** drop A6 downstream (−3); secondary ablations on 40 cases (−9); V1–V3 at 2 runs (−7); B1 at 1 run and a smaller E5 (−5); full system and B3 at 2 runs (−15).
+- **Training.** Batch jobs can run for up to four days but should not be used just to host an inference engine. We use them only for QLoRA training. Each run takes about 1.4 days on one GPU.
+- **Inference.** All model inference runs in interactive sessions, which end after six hours. vLLM runs inside the experiment script, so there is no long-running server.
+- **Shards.** Work is cut into shards of about five hours. Each case's output is saved as soon as it finishes, so a session that ends early resumes where it stopped.
+- **On the laptop.** Embeddings, evaluation labels and MiniCheck run here overnight.
 
-**Storage.** About 10–17 GB lives on /share1 and is staged to node /scratch for each job (staging and purge rules in `plan.md` §8.6).
+| Job | Size (assumed throughput, measured in week 1) | Runs on | Cost |
+|---|---|---|---|
+| Teacher dossiers | 4,000 orders × 12K tokens on Qwen3-32B | Ada, interactive | ~60 node-hours (12 sessions); none if the API is used |
+| QLoRA training | 2,000 pairs × 2 epochs, 2 to 3 runs | Ada, batch | ~100 GPU-hours |
+| Main test runs | Full, B0 and B1 × 200 cases × 3 runs (full system ~100K tokens per run) | Ada, interactive | ~40 node-hours (8 sessions) |
+| Ablations | 5 ablations × 100 cases × 1 run | Ada, interactive | ~25 node-hours (5 sessions) |
+| Embeddings, evaluation labels, MiniCheck | Up to 300K paragraphs; 250 orders | Laptop | ~35 hours |
 
-## 14. Timeline (8 weeks)
+**Total on Ada.** About 25 interactive sessions (13 if the API is used) plus two or three training jobs. With a 30 percent buffer, that is two to three sessions per account per week from week 2 to week 6.
 
-| Week | Milestones |
-|---|------------|
-| 0 | Approval; feasibility checks (a)–(g) (`plan.md` §5.1); ethics query; reviewer; hpc.admin OK for coursework use |
-| 1 | Corpus and case files; **throughput measured**; guidelines and pilot κ; intake, chat, S1, tools |
-| 2 | Records Agent; **silver pass** (A/B); E1 dev labels; B0/B1; skeleton |
-| 3 | D1–D3, S3; QLoRA (8B non-blocking); E1 test labels; E4; B2 |
-| 4 | D4–D6, V1–V4; B3; **extractor fixed** (E4-dev rule); corpus S2; E2, E5; UI |
-| 5 | Pilot → thresholds → **freeze and pre-register**; test runs start |
-| 6 | All test runs |
-| 7 | Judge, audit, reviewer ratings, failure analysis; X1/X2 if time permits |
-| 8 | Write-up, demo, release |
+## 14. Timeline
+
+| Week | Work |
+|---|---|
+| 0 | Proposal approval. Count the usable Delhi HC bail orders (we need at least 250 that split cleanly, 60 of them BNS-era). Ask hpc.admin whether offline batch inference is allowed. |
+| 1 | Data and splits, statute store, date and section tools, vLLM on Ada, throughput measured, teacher pilot |
+| 2 | Agent 1 with the prompted 14B model; teacher dossiers; test-set and label pipeline |
+| 3 | QLoRA extractor; precedent index; Agent 2 drafting loop |
+| 4 | Check and repair, objections, transfer flag; Streamlit app with both approval steps |
+| 5 | Tuning on the development set, then freeze the system |
+| 6 | All test runs and ablations |
+| 7 | Metrics, failure analysis, example cases |
+| 8 | Report and demo video |
 
 ## 15. Risks and fallback plans
 
 | Risk | Fallback |
 |---|---|
-| Too few usable orders; low κ or citation coverage | Second HC or 2024–26; merge factors; RQ2 as a pilot |
-| Throughput, queue or AWQ problems; weak 14B | Ordered cuts (§13); GPTQ or llama.cpp; 32B for D3 |
-| FP16 QLoRA unstable; weak extractor | BF16 on the 4060; report the negative result |
-| No legal reviewer | Team annotation from guidelines; limitation stated |
+| Too few BNS-era bail orders (Open India Law runs to 2025) | Add a second High Court from the same source, or report RQ2 as a pilot study |
+| Many orders do not split cleanly | Use a non-Qwen model to split the failed orders; report how many |
+| The two labeling methods often disagree | Use only agreed labels, report coverage, and merge factors that get confused |
+| The fine-tuned 4B extractor is weak | Use the prompted 14B model as the extractor and report the negative result |
+| Slow GPUs or long queues for sessions | Saved progress means a lost session costs one shard; cut ablations to 60 cases and main runs to two |
+| The teacher API's terms or limits do not suit us | Use Qwen3-32B on Ada as planned |
 
-## 16. Deliverables
+## 16. Deliverables and scope
 
-(1) A Streamlit prototype (both agents and gates, chat, case list); (2) E1–E6 with guidelines; (3) code, Slurm scripts and traces; (4) a workshop-style paper and a demo video.
+**Deliverables.**
 
-**Out of scope:** case groups, judge simulation, GraphRAG, real client files, eCourts scraping, district courts, Hindi, anticipatory bail.
+1. A working Streamlit prototype with both agents, chat, the case list and both approval steps.
+2. The automatically built benchmark and the scripts that make it.
+3. Code, job scripts and full agent traces.
+4. A workshop-style report and a demo video.
 
-## Glossary
+**Later, not in this version:**
 
-**CNR:** eCourts case number. **FIR + PS:** first information report + police station. **Ratio / obiter:** binding reasoning / passing remarks. **RR:** rhetorical role. **NLI:** entailment check. **pass^3:** solved in all 3 runs. **AWQ / TP:** 4-bit quantisation / tensor parallelism.
+- case files linked across several orders by FIR number;
+- more High Courts;
+- a study of how much valid content verification removes;
+- counterfactual tests of the records;
+- a user study with lawyers;
+- anticipatory bail;
+- district courts;
+- Hindi.
 
-## Appendix A: The 12 bail factors (also the annotation scheme)
+## Appendix A: The 12 bail factors
 
-(1) gravity and punishment; (2) custody period; (3) charge sheet filed; (4) trial delay; (5) parity with co-accused; (6) antecedents; (7) flight risk; (8) witness tampering; (9) weak prima facie case; (10) health, age, gender or family; (11) statutory bar (NDPS s.37, UAPA s.43D(5), PMLA s.45) **[verify]**; (12) BNSS s.479 / CrPC s.436A.
+These factors are both the agent's checklist and the label set:
 
-## Key references
-
-Dahl et al., JLA 2024 (arXiv:2401.01301) · Magesh et al., JELS 2025 (arXiv:2405.20362) · Zhang, Gray, Savelka & Ashley, ASAIL@ICAIL 2025 (arXiv:2506.00694) · Gao et al., *RARR*, ACL 2023 · Huang et al., ICLR 2024 (arXiv:2310.01798) · Kim, arXiv:2608.01559 · Nigam et al., *NyayaRAG*, IJCNLP-AACL 2025 · Devadiga et al., *SAMVAD*, arXiv:2509.03793 · Yao et al., *ReAct*, ICLR 2023 · Madaan et al., *Self-Refine*, NeurIPS 2023 · Tang et al., *MiniCheck*, EMNLP 2024 · NCRB, *Prison Statistics India 2022*. Full catalogue: `datasets_sources.md`.
+1. gravity of the offence and punishment;
+2. period in custody;
+3. charge sheet filed or investigation complete;
+4. delay in trial;
+5. parity with co-accused;
+6. antecedents;
+7. flight risk;
+8. risk of tampering with witnesses;
+9. weakness of the prima facie case;
+10. health, age, gender or family circumstances;
+11. statutory bars (NDPS section 37, UAPA section 43D(5), PMLA section 45);
+12. the undertrial limit in BNSS section 479 (formerly CrPC section 436A).

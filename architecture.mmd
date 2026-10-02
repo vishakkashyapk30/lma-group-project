@@ -1,0 +1,23 @@
+%%{init: {"theme": "neutral", "flowchart": {"wrappingWidth": 360, "nodeSpacing": 28, "rankSpacing": 30, "padding": 10}}}%%
+flowchart TB
+  subgraph S1["Stage 1: case file to dossier"]
+    direction LR
+    U["Lawyer uploads PDFs<br/>or types in the chat"] --> I["Intake<br/>PDF to text,<br/>names to pseudonyms"]
+    I --> A1["<b>Agent 1: Case-File Agent</b><br/>fine-tuned Qwen3-4B<br/>extracts fields with source quotes,<br/>checks each quote, asks up to 3 questions"]
+    A1 <--> T["Tools<br/>map_section, date_calc,<br/>span_check, ask_user"]
+  end
+
+  S1 -->|CaseDossier| G1("<b>Approval 1:</b> lawyer checks and edits the dossier")
+  G1 --> S2
+
+  subgraph S2["Stage 2: dossier to bail brief"]
+    direction LR
+    R[("Statute store<br/>Precedent index")] <--> A2["<b>Agent 2: Bail-Brief Agent</b><br/>Qwen3-14B<br/>plans factors, retrieves, drafts, objects,<br/>checks every claim, repairs or flags"]
+    A2 -->|BailBrief| G2("<b>Approval 2:</b><br/>lawyer approves")
+    G2 --> E["Export<br/>DOCX or PDF"]
+  end
+
+  classDef agent fill:#e8e8e8,stroke:#333,stroke-width:2px;
+  classDef gate fill:#ffffff,stroke:#333,stroke-dasharray:5 4;
+  class A1,A2 agent;
+  class G1,G2 gate;
