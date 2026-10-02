@@ -4,7 +4,7 @@ Reference list for the project in `plan.md`: a records agent and a defense-prepa
 
 **Columns**
 - **Role**: how the plan uses each item.
-- **E1–E6**: the evaluation sets defined in `plan.md` §5.2.
+- **E1–E6**: the core evaluation sets defined in `plan.md` §5.2 (X1 user study and X2 counterfactual records are optional).
 
 **Markers**
 - **[U]**: link, size or release status not confirmed.
@@ -25,15 +25,15 @@ Item numbers point to the tables below. Sizes marked "est." are planning assumpt
 | **Corpus subset** (one HC + SC; est. 20–60K docs) | 1.1 Open India Law (text) + 1.2 AWS HC (PDFs → text) + 1.3 SC | Bail orders selected by case type and keywords; duplicates removed by CNR or case number + date |
 | **Case files** (earlier orders per case) | 1.2 AWS HC metadata, keyed by CNR | Grouped by CNR and sorted by date |
 | **S1 Statute Store** (≈1,000 rows) | 1.1 legislation text + 2.3 IPC2BNS-Verify concordance, checked against 2.1 / 2.2 NCRB and BPRD tables | IPC 511 and BNS 358 sections; BNSS/CrPC bail provisions ~160; ~10 special-act bars |
-| **S2 Bail Records Store** (est. 2–3K rows) | Corpus subset, run through the Records Agent; only rows where every field passes the span verifier | Schema follows 3.1 IndianBailJudgments-1200 and 3.3 IBPS attributes |
+| **S2 Bail Records Store** (est. 8–12K rows) | Corpus subset, run through the fine-tuned extractor; only rows where every field passes the span verifier; E1-linked orders excluded | Schema follows 3.1 IndianBailJudgments-1200 and 3.3 IBPS attributes |
 | **S3 Precedent index** (est. 0.3–1M chunks) | Corpus subset, chunked by rhetorical role using 4.1 / 4.3 models | BM25 + BGE-M3 embeddings |
 | **S4 Per-case index** | The user's uploaded PDF | Built at run time, in memory |
-| **FT1 fine-tuning pairs** (est. 2–3K kept) | Same 70B pass as S2; only fully verified examples | E1 cases excluded by CNR |
+| **FT1 fine-tuning pairs** (est. 1.2–1.8K kept) | Qwen3-32B silver pass over ~3K orders; only fully verified examples | E1 cases excluded by CNR and FIR + police station |
 | **Segmentation, NER** | 4.1 IL-TUR, 4.2 InLegalNER, 4.3 rhetorical roles (off-the-shelf models) | Accuracy checked on 20 hand-labelled bail orders |
 | **PII pseudonymisation** | 4.2 InLegalNER + Presidio patterns (§7.1) | Recall tested on 40 documents with planted PII |
 | **Statute test set (E3)** | 2.3 benchmark (1,140 queries) + 3.4 PROSLEX + 3.5 ILSI fact patterns + 100 hand-built cases | |
 | **Retriever sanity check** | 5.1 IL-PCR (7,070 cases), 5.3 AILA (3,257 documents) | Compare with published numbers |
-| **Evaluation sets E1–E6** | Corpus subset | All E1 CNRs excluded from S2, S3 and FT1 |
+| **Evaluation sets E1–E6** | Corpus subset | All E1 cases excluded from S2, S3 and FT1 (by CNR and FIR + police station) |
 
 
 ---
@@ -47,7 +47,7 @@ Item numbers point to the tables below. Sizes marked "est." are planning assumpt
 | 1.3 | **Indian Supreme Court Judgments** (AWS / Kaggle) | SC judgments 1950–2025 with metadata | all SC | CC BY 4.0 | Supplements the precedent index | https://registry.opendata.aws/indian-supreme-court-judgments/ · https://www.kaggle.com/datasets/vangap/indian-supreme-court-judgments |
 | 1.4 | **DDL Judicial Data** (Development Data Lab) | District-court eCourts metadata: filing, hearing and decision dates, acts and sections, disposition | 81.2M cases (about 10M criminal) | CC BY-NC-SA 4.0 | Realistic timeline and section distributions for custody-calculator (`date_calc`) tests | https://www.devdatalab.org/judicial-data |
 | 1.5 | **NyayaAnumana** (COLING 2025) | SC, HC, tribunal, district and daily-order cases with outcome labels; explanation subset | 702,945 | [U] | Extra corpus; source of daily orders | https://huggingface.co/datasets/L-NLProc/NyayaAnumana-Classification-Data · https://huggingface.co/datasets/L-NLProc/NyayaAnumana-Explanation-Data |
-| 1.6 | **FIR_Dataset_ICDAR2023** | Scanned FIRs, handwritten and printed, with boxes for statutes, police station and complainant | 544 images | MIT | Future work (FIR OCR is out of scope in v2) | https://github.com/LegalDocumentProcessing/FIR_Dataset_ICDAR2023 |
+| 1.6 | **FIR_Dataset_ICDAR2023** | Scanned FIRs, handwritten and printed, with boxes for statutes, police station and complainant | 544 images | MIT | Future work (FIR OCR is out of scope) | https://github.com/LegalDocumentProcessing/FIR_Dataset_ICDAR2023 |
 
 **Inspiration only (not a data source):** Adalat AI, https://www.adalat.ai/. It builds courtroom transcription and workflow tools for Indian courts, but has no public dataset.
 
@@ -70,7 +70,7 @@ Item numbers point to the tables below. Sizes marked "est." are planning assumpt
 |---|---|---|---|---|---|
 | 3.1 | **IndianBailJudgments-1200** | Bail orders with 20+ attributes (sections, custody, antecedents, outcome). Labelled by GPT-4o, with 12.5% checked by experts | 1,200 | Template for the dossier schema; silver labels | https://github.com/SnehaDeshmukh28/IndianBailJudgments-1200 · https://arxiv.org/abs/2507.02506 |
 | 3.2 | **HLDC** (Findings ACL 2022) | Hindi district-court documents with a bail-prediction subset | about 900K docs / 176K bail | Future work (Hindi) | https://github.com/Exploration-Lab/HLDC · https://aclanthology.org/2022.findings-acl.278/ |
-| 3.3 | **IBPS** (Indian Bail Prediction System) | HC bail judgments annotated for age, health, antecedents, custody and reasoning | 150,430 | Schema reference (data release [U]) | https://arxiv.org/abs/2508.07592 |
+| 3.3 | **IBPS** (Indian Bail Prediction System) | HC bail judgments annotated for age, health, antecedents, custody and reasoning | 150,430 | Schema reference (data release stated by the authors; link to confirm) | https://arxiv.org/abs/2508.07592 |
 | 3.4 | **PROSLEX** (ICAIL 2026) | Facts with expert labels for 7 IPC sections, plus explanation spans | 1,623 docs | Extra **E3** cases (fact → section → which code applies) | https://github.com/subinay494/Legal_Statute_Prediction_Explanation · https://arxiv.org/abs/2608.08830 |
 | 3.5 | **ILSI / LeSICiN** (AAAI 2022) | Statute identification across 100 IPC sections | about 66K [U] | Extra **E3** fact patterns | https://github.com/Law-AI/LeSICiN |
 
@@ -131,7 +131,7 @@ Item numbers point to the tables below. Sizes marked "est." are planning assumpt
 | **LegalAgentBench** (ACL 2025) | 37 tools, 300 tasks; keyword-based progress | Tool-use evaluation design | https://github.com/CSHaitao/LegalAgentBench |
 | **AgentCourt** (ACL-F 2025) | Adversarial lawyer agents, 550 cases | Adversarial-loop comparison | https://github.com/relic-yuexi/AgentCourt · https://huggingface.co/datasets/youzi517/AgentCourt |
 | **AgentsCourt / SimuCourt** (EMNLP-F 2024) | Court-debate agents, 420 judgments | Multi-agent debate design | https://github.com/Zhitao-He/AgentsCourt |
-| **OBJECTION "Natural Innocent"** (EMNLP 2026) | Cases for testing guilty bias | Related work (the judge simulator is future work in v2) | https://arxiv.org/abs/2609.02158 |
+| **OBJECTION "Natural Innocent"** (EMNLP 2026) | Cases for testing guilty bias | Related work (the judge simulator is future work) | https://arxiv.org/abs/2609.02158 |
 
 ### 6.4 Tool-calling & agent-safety benchmarks (metric definitions)
 | Benchmark | Metric we adopt | Link |
@@ -152,7 +152,7 @@ Item numbers point to the tables below. Sizes marked "est." are planning assumpt
 |---|---|---|---|
 | **Local corpus tools (ours)** | `search_precedents`, `get_doc`, `resolve_citation`, `statute_lookup` | Built on 1.1 + 1.2 + 1.3. They replace the Indian Kanoon API. | `src/tools/` |
 | **Indian citation extractor (ours, best-effort)** | Parse neutral citations, reporter-style cites and case name + year, then fuzzy-match to corpus metadata | SCC/AIR→case mappings are proprietary, so coverage is partial and reported. eyecite is US-only (design reference only). | `src/citations/` |
-| **openjustice-in eCourts toolkit** | Future work: order-sheet scraping (out of scope in v2) | Open source. No official eCourts API; check terms of service. | https://github.com/openjustice-in |
+| **openjustice-in eCourts toolkit** | Future work: order-sheet scraping (out of scope) | Open source. No official eCourts API; check terms of service. | https://github.com/openjustice-in |
 | **OpenNyAI library** | NER, rhetorical roles, summaries | Open source | https://github.com/OpenNyAI/Opennyai |
 | **InLegalBERT** (ICAIL 2023) | Embeddings / encoder | Pretrained on 5.4M Indian SC and HC documents | https://huggingface.co/law-ai/InLegalBERT |
 | **BGE-M3 / bge-reranker** | Dense retrieval + reranking | Open weights | https://huggingface.co/BAAI/bge-m3 |
@@ -168,7 +168,7 @@ Item numbers point to the tables below. Sizes marked "est." are planning assumpt
 | Service | Why excluded | What we use instead |
 |---|---|---|
 | **Indian Kanoon API** | Paid per request (search ₹0.50, document ₹0.20, …). Free credits are limited, and bulk-scraping the website is not a sanctioned alternative **[check its terms of service]**. | Local corpus tools; the system cites only retrieved docs (§7.1) |
-| **Paid LLM APIs** (Claude, GPT, Gemini paid tiers, etc.) | Paid | Self-hosted open-weight models via vLLM. The "large prompted model" comparison uses a 70B-class open model. |
+| **Paid LLM APIs** (Claude, GPT, Gemini paid tiers, etc.) | Paid | Self-hosted open-weight models via vLLM. The "larger prompted model" comparison uses Qwen3-32B-AWQ, which fits the 4× 2080 Ti nodes (`plan.md` §4.3). |
 | **Commercial eCourts APIs** (e.g. ecourtsindia.com) | Paid | CNR-linked earlier orders from the AWS HC metadata (1.2) |
 | CourtListener citation-lookup API | US only (and not needed) | Design reference for `resolve_citation` |
 
@@ -195,10 +195,14 @@ Item numbers point to the tables below. Sizes marked "est." are planning assumpt
 
 | Paper | Venue | Why it matters to us | Link |
 |---|---|---|---|
-| Kim: *Does the Competitive Component of Adversarial Self-Play Improve Legal Reasoning?* | arXiv 2026 | Found that verification, not competition, drives the gains. Motivates the secondary critic-vs-verifier ablation | https://arxiv.org/abs/2608.01559 |
-| *Structure Enables Effective Self-Localization of Errors in LLMs* | arXiv 2026 | Self-verification can break correct answers (recall vs specificity trade-off). Motivates **RQ2**, the verification tax | https://arxiv.org/pdf/2602.02416 |
-| Sonawane et al.: *Fully Local Multi-Agent RAG for Indian Criminal Law (IPC, CrPC, BNS, BNSS)* | Zenodo, May 2026 | Retrieves statute sections across the recodification, tested on 20 queries. Closest related work for **RQ3**, which concerns case law | https://zenodo.org/records/20043064 |
+| Kim: *Does the Competitive Component of Adversarial Self-Play Improve Legal Reasoning?* | arXiv 2026 | Found (for training-time self-play) that verification, not competition, drives the gains. Our critic-vs-verifier ablation (A2 vs A3) is an inference-time analogue | https://arxiv.org/abs/2608.01559 |
+| *Structure Enables Effective Self-Localization of Errors in LLMs* | arXiv 2026 | Error self-localisation in LLM reasoning. Background only; **not** cited as evidence that verifiers break correct answers (the verification-tax motivation comes from RARR and Huang et al., below) | https://arxiv.org/pdf/2602.02416 |
+| Gao et al.: **RARR**, *Researching and Revising What Language Models Say* | ACL 2023 | Attribution vs preservation trade-off when revising unsupported claims. Motivates **RQ1b**, the verification tax | https://arxiv.org/abs/2210.08726 |
+| Huang et al.: *Large Language Models Cannot Self-Correct Reasoning Yet* | ICLR 2024 | Self-correction without external feedback can make answers worse. Motivates **RQ1b** | https://arxiv.org/abs/2310.01798 |
+| Wei et al.: *Long-form Factuality in Large Language Models* (SAFE, F1@K) | NeurIPS 2024 | A factuality metric that rewards recall as well as precision; related to measuring omission | https://arxiv.org/abs/2403.18802 |
+| Sonawane et al.: *Fully Local Multi-Agent RAG for Indian Criminal Law (IPC, CrPC, BNS, BNSS)* | Zenodo, May 2026 | Retrieves statute sections across the recodification, tested on 20 queries. Closest related work for **RQ2** (exploratory), which concerns case law | https://zenodo.org/records/20043064 |
 | **OBJECTION!** Lawyer agents mitigate guilty bias | EMNLP 2026 | A defense agent evaluated on verdicts only; its grounding is untested | https://arxiv.org/abs/2609.02158 |
+| NCRB: *Prison Statistics India 2022* | NCRB, 2023 | Undertrials were 75.8% of prisoners (4,34,302 of 5,73,220) at the end of 2022. Motivation | https://www.ncrb.gov.in/uploads/nationalcrimerecordsbureau/custom/psiyearwise2022/1701613297PSI2022ason01122023.pdf |
 | Magesh et al.: *Hallucination-Free?* | J. Empirical Legal Studies 2025 | "Misgrounded" citations; commercial legal RAG hallucinates 17–33% | https://arxiv.org/abs/2405.20362 |
 | Dahl et al.: *Large Legal Fictions* | J. Legal Analysis 2024 | Hallucination rates of 58–88% on case-specific questions | https://arxiv.org/abs/2401.01301 |
 | **AALawyer**: Huang et al. | ACL 2026 | Retrieval over a closed set of statutes (our statute index) | https://aclanthology.org/2026.acl-long.633/ |
@@ -208,7 +212,7 @@ Item numbers point to the tables below. Sizes marked "est." are planning assumpt
 | Suttle & Lillis: *Persuadability of LLMs as Legal Decision Tools* | ICAIL 2026 | Related work (why a judge simulator is not used as ground truth) | https://arxiv.org/abs/2604.26233 |
 | Juvekar et al.: *Are LLMs Court-Ready?* (Indian) | arXiv 2025 | Rubric axes: procedure and format, citation discipline, register suited to the court | https://arxiv.org/abs/2510.17900 |
 | **LEGIT**: Lee et al. | ACL 2026 | Rubrics based on issue trees. Basis for our issue planner and coverage metric | https://arxiv.org/abs/2512.01020 |
-| Zhang et al.: *Faithfulness & Abstention for 3-ply Legal Arguments* | ICAIL-W 2025 | Metrics for how many available facts an argument uses, and for omitted facts | https://arxiv.org/abs/2506.00694 |
+| Zhang, Gray, Savelka & Ashley: *Measuring Faithfulness and Abstention: An Automated Pipeline for Evaluating LLM-Generated 3-ply Case-Based Legal Arguments* | ASAIL @ ICAIL 2025 | Hallucinated factors, factor utilisation and abstention. Closest prior work for **RQ1b**; we add verifier-induced omission under alternative failure policies | https://arxiv.org/abs/2506.00694 |
 | Zhang & Ashley: *Reflective Multi-Agent Legal Argument* | ICAIL-W 2025 | Reflective critique loop for argument generation | https://arxiv.org/abs/2506.02992 |
 | **CaseGen**: Li et al. | arXiv 2025 | Drafting defense statements, with a validated LLM judge | https://arxiv.org/abs/2502.17943 |
 | **Falkor-IRAC**: Bose | arXiv 2026 | Precedent verification backed by an Indian IRAC graph | https://arxiv.org/abs/2605.14665 |
@@ -229,6 +233,7 @@ Item numbers point to the tables below. Sizes marked "est." are planning assumpt
 | Argument quality taxonomy | Wachsmuth et al., EACL 2017 | https://aclanthology.org/E17-1017/ |
 | Argument coverage | Key Point Analysis: Bar-Haim et al., ACL 2020 | https://arxiv.org/abs/2005.01619 |
 | LLM-judge validation (use κ) | Thakur et al., GEM 2025 | https://arxiv.org/abs/2406.12624 |
+| Sentence-level grounding check (our evaluation claim checker, a different family from the DeBERTa verifier) | **MiniCheck**: Tang, Laban & Durrett, EMNLP 2024 | https://aclanthology.org/2024.emnlp-main.499/ |
 | LLM judges | G-Eval (EMNLP 2023); Prometheus 2 (EMNLP 2024) | https://arxiv.org/abs/2303.16634 · https://arxiv.org/abs/2405.01535 |
 | Temporal awareness | TempEval-3: UzZaman et al., SemEval 2013 | https://arxiv.org/abs/1206.5333 |
 | Legal event ordering | **LexTime**: Barale et al., EMNLP-F 2025 | https://arxiv.org/abs/2506.04041 |

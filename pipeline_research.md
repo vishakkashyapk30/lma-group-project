@@ -2,7 +2,7 @@
 
 Compiled 2026-10-01 from web searches. Links were checked unless marked **[U]** (unverified). Mentions of BNSS section numbers should be checked against the bare act.
 
-> **Note:** this is the research landscape. The system design and scope in §1 and §3 were an early draft. They are **superseded by `plan.md` (v2)**, which cuts the judge simulator, the treatment classifier, the full citation graph and several RQs.
+> **Note:** this is the research landscape. The system design and scope in §1 and §3 were an early draft. They are **superseded by `plan.md` (v3)**, which cuts the judge simulator, the treatment classifier, the full citation graph and several RQs. Compute and model sizes below (A100, 70B-class) are also superseded by `plan.md` §8 (IIIT Ada 2080 Ti nodes, Qwen3-14B/32B).
 
 ---
 
