@@ -1,0 +1,10 @@
+# Evidence contract 2: Custody period (plan §6.1, Appendix B)
+factor: custody_period
+number: 2
+name: "Custody period"
+applies_if: "custody is long relative to the likely sentence or trial time"
+slots:
+  custody_days: {need: required, stores: [case.timeline], tools: [date_calc]}
+  authority: {need: 2, stores: [caselaw.reasoning]}  # prolonged custody
+  likely_objection: {need: 1, stores: [advocacy.objections]}
+budget: {store_calls: 8, tokens: 12000}

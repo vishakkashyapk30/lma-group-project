@@ -1,0 +1,13 @@
+# Evidence contract 5: Parity with co-accused (plan §6.1, Appendix B)
+factor: parity_with_co_accused
+number: 5
+name: "Parity with co-accused"
+applies_if: "a co-accused has been granted bail"
+slots:
+  co_accused_order: {need: required, stores: [case.docs, case.timeline]}
+  role_comparison: {need: required, stores: [case.docs]}
+  authority: {need: 2, stores: [caselaw.reasoning, caselaw.similar]}
+  good_law: {need: required, stores: [caselaw.citations]}
+  likely_objection: {need: 1, stores: [advocacy.objections]}
+  argument_patterns: {need: optional, stores: [advocacy.arguments]}  # coverage and phrasing only; never cited as authority
+budget: {store_calls: 8, tokens: 12000}

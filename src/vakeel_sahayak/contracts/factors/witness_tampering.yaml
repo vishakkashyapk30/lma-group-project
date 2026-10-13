@@ -1,0 +1,11 @@
+# Evidence contract 8: Witness tampering (plan §6.1, Appendix B)
+factor: witness_tampering
+number: 8
+name: "Witness tampering"
+applies_if: "the State is likely to allege tampering, or key witnesses are examined"
+slots:
+  trial_stage: {need: required, stores: [case.docs]}
+  witness_examination: {need: required, stores: [case.docs]}  # whether key witnesses have been examined
+  conditions: {need: 1, stores: [caselaw.reasoning]}
+  likely_objection: {need: 1, stores: [advocacy.objections]}
+budget: {store_calls: 8, tokens: 12000}

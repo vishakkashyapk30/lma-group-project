@@ -1,0 +1,12 @@
+# Evidence contract 1: Gravity and punishment (plan §6.1, Appendix B)
+factor: gravity_and_punishment
+number: 1
+name: "Gravity and punishment"
+applies_if: "always"
+slots:
+  statutory_position: {need: required, stores: [law.statutes]}  # max punishment and bailability
+  antil_category: {need: required, stores: [law.statutes], tools: [rights_check]}  # Rights Radar Antil category
+  authority: {need: 2, stores: [caselaw.reasoning]}  # gravity alone does not bar bail
+  good_law: {need: required, stores: [caselaw.citations]}
+  likely_objection: {need: 1, stores: [advocacy.objections]}
+budget: {store_calls: 8, tokens: 12000}

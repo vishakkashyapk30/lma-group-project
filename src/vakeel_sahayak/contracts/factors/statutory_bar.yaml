@@ -1,0 +1,10 @@
+# Evidence contract 11: Statutory bar (NDPS s.37, UAPA s.43D(5), PMLA s.45) (plan §6.1, Appendix B)
+factor: statutory_bar
+number: 11
+name: "Statutory bar (NDPS s.37, UAPA s.43D(5), PMLA s.45)"
+applies_if: "a special-act bar section is charged"
+slots:
+  bar_provision: {need: required, stores: [law.statutes]}
+  authority: {need: 2, stores: [caselaw.reasoning]}  # twin conditions
+  sc_root: {need: required, stores: [caselaw.citations]}
+budget: {store_calls: 8, tokens: 12000}

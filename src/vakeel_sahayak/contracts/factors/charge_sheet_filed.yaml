@@ -1,0 +1,10 @@
+# Evidence contract 3: Charge sheet filed / investigation complete (plan §6.1, Appendix B)
+factor: charge_sheet_filed
+number: 3
+name: "Charge sheet filed / investigation complete"
+applies_if: "a charge sheet has been filed"
+slots:
+  charge_sheet_date: {need: required, stores: [case.timeline, case.docs]}
+  authority: {need: 2, stores: [caselaw.reasoning]}  # custodial interrogation no longer needed
+  likely_objection: {need: 1, stores: [advocacy.objections]}
+budget: {store_calls: 8, tokens: 12000}

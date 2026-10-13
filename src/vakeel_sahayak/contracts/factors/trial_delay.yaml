@@ -1,0 +1,10 @@
+# Evidence contract 4: Trial delay (plan §6.1, Appendix B)
+factor: trial_delay
+number: 4
+name: "Trial delay"
+applies_if: "trial has not progressed or is unlikely to conclude soon"
+slots:
+  trial_stage: {need: required, stores: [case.docs, case.timeline]}  # stage, number of witnesses, pace
+  authority: {need: 2, stores: [caselaw.reasoning]}  # delay and Art. 21
+  sc_root: {need: 1, stores: [caselaw.citations]}  # SC authority behind the HC paragraph
+budget: {store_calls: 8, tokens: 12000}

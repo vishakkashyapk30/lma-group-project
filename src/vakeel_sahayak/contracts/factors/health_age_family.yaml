@@ -1,0 +1,10 @@
+# Evidence contract 10: Health, age, gender or family circumstances (plan §6.1, Appendix B)
+factor: health_age_family
+number: 10
+name: "Health, age, gender or family circumstances"
+applies_if: "medical or personal papers are on file"
+slots:
+  personal_papers: {need: required, stores: [case.facts]}  # medical or personal papers
+  s480_proviso: {need: required, stores: [law.statutes]}  # BNSS s.480 proviso
+  authority: {need: 1, stores: [caselaw.reasoning]}
+budget: {store_calls: 8, tokens: 12000}

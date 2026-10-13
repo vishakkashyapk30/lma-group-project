@@ -1,0 +1,10 @@
+# Evidence contract 9: Weak prima facie case (plan §6.1, Appendix B)
+factor: weak_prima_facie
+number: 9
+name: "Weak prima facie case"
+applies_if: "FIR allegations do not make out the sections charged"
+slots:
+  fir_allegations: {need: required, stores: [case.docs]}
+  sections_text: {need: required, stores: [law.statutes]}  # statute text of sections charged
+  authority: {need: 1, stores: [caselaw.reasoning]}  # limited scope of a bail inquiry
+budget: {store_calls: 8, tokens: 12000}

@@ -1,0 +1,10 @@
+# Evidence contract 7: Flight risk (plan §6.1, Appendix B)
+factor: flight_risk
+number: 7
+name: "Flight risk"
+applies_if: "the State is likely to allege flight risk, or counsel has roots to show"
+slots:
+  community_roots: {need: required, stores: [case.facts]}  # family, work, address
+  conditions: {need: 1, stores: [caselaw.reasoning, caselaw.similar]}  # conditions courts impose
+  likely_objection: {need: 1, stores: [advocacy.objections]}
+budget: {store_calls: 8, tokens: 12000}

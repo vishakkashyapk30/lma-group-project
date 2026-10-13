@@ -1,0 +1,10 @@
+# Evidence contract 12: BNSS s.479 / CrPC s.436A undertrial period (plan §6.1, Appendix B)
+factor: undertrial_period
+number: 12
+name: "BNSS s.479 / CrPC s.436A undertrial period"
+applies_if: "custody approaches or exceeds the s.479 threshold"
+slots:
+  rights_report: {need: required, stores: [], tools: [rights_check]}  # RightsReport entry for undertrial_limit
+  statute_text: {need: required, stores: [law.statutes]}
+  authority: {need: 1, stores: [caselaw.reasoning]}
+budget: {store_calls: 8, tokens: 12000}

@@ -1,0 +1,10 @@
+# Evidence contract 6: Antecedents (plan §6.1, Appendix B)
+factor: antecedents
+number: 6
+name: "Antecedents"
+applies_if: "always (absence of antecedents is itself a ground, or a question to counsel)"
+slots:
+  antecedents: {need: required, stores: [case.facts], tools: [ask_user]}  # or a question to counsel
+  authority: {need: 1, stores: [caselaw.reasoning]}
+  likely_objection: {need: 1, stores: [advocacy.objections]}
+budget: {store_calls: 8, tokens: 12000}
