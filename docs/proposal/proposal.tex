@@ -48,15 +48,16 @@
 \begin{document}
 
 \begin{center}
-{\color{accent}\rule{\linewidth}{1.2pt}}\\[8pt]
-{\fontfamily{CormorantGaramond-LF}\fontseries{bold}\fontsize{32}{36}\selectfont\color{accent} Vakeel-Sahayak.ai}\\[6pt]
-{\Large A Bail-Preparation Assistant For Legal-Aid Lawyers}\\[7pt]
-{\large LMA Group Project Proposal}\\[4pt]
-{\color{accent}\rule{\linewidth}{0.5pt}}\\[7pt]
+{\color{accent}\rule{\linewidth}{1.2pt}}\\[4pt]
+{\fontfamily{CormorantGaramond-LF}\fontseries{bold}\fontsize{32}{36}\selectfont\color{accent} Vakeel-Sahayak.ai}\\[3pt]
+{\Large A Bail-Preparation Assistant For Legal-Aid Lawyers}\\[4pt]
+{\large LMA Group Project Proposal}\\[3pt]
+{\large\textbf{Team Optimus Prompt}}\\[2pt]
+{\color{accent}\rule{\linewidth}{0.5pt}}\\[4pt]
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}cccc@{}}
 \textbf{Harshita Kumari} & \textbf{Satvik Rao} & \textbf{Shravani K} & \textbf{Vishak Kashyap K} \\[1pt]
 {\small 2023102073} & {\small 2023115005} & {\small 2023115009} & {\small 2023113012} \\
-\end{tabular*}\\[7pt]
+\end{tabular*}\\[3pt]
 {\small \textbf{Domain:} Legal (Indian criminal procedure)}
 \end{center}
 \vspace{-2pt}
@@ -64,7 +65,7 @@
 %=====================================================================
 \section{Summary}
 
-Vakeel-Sahayak.ai helps a lawyer prepare a regular bail application in the Delhi High Court. The lawyer uploads the court orders in a case, types out the facts in a chat, or does both. The system works in two stages:
+Vakeel-Sahayak.ai helps a lawyer prepare a regular bail application in an Indian court. The user uploads the client's earlier court orders, types the facts into a chat, or does both. The system works in two stages:
 \begin{itemize}
 \item \textbf{The first agent builds a case dossier.} It reads the file and fills a fixed set of fields, such as the arrest date, the sections charged, whether the charge sheet has been filed, and whether co-accused have been granted bail. Every value comes with the sentence it was taken from.
 \item \textbf{The second agent drafts the bail brief.} It works only after the user has checked and approved the dossier. Every ground in the brief points to dossier facts and to paragraphs from real judgments, and every claim is checked before the lawyer sees it.
@@ -80,7 +81,7 @@ All models are open-weight, and no manual annotation is needed: training data an
 \section{Domain and Target User}
 
 \begin{itemize}
-\item \textbf{Domain:} Regular bail in the Delhi High Court, under section 439 of the CrPC (now section 483 of the BNSS).
+\item \textbf{Domain:} Regular bail in Indian courts, under section 439 of the CrPC (now section 483 of the BNSS). Our data and evaluation use High Court orders, because these are publicly available in bulk.
 \item \textbf{Primary users:} Legal-aid panel lawyers and junior advocates. They draft many bail applications a month, often with little research support.
 \item \textbf{Secondary users:} Law students working in supervised legal-aid clinics.
 \item \textbf{Not users:} The system is not meant for accused persons, the public or judges. It prepares draft material that the user reviews and edits, and it never predicts whether bail will be granted.
@@ -170,7 +171,7 @@ We use only two data sources:
 \begin{itemize}
 \item \textbf{Open India Law} [\href{https://huggingface.co/datasets/vaquill/open-india-law}{12}] (CC BY 4.0). It gives us:
   \begin{itemize}
-  \item Delhi High Court bail orders from 2019 to 2025;
+  \item bail orders from Indian High Courts, 2019 to 2025;
   \item Supreme Court judgments on bail;
   \item the text of the IPC, BNS, CrPC and BNSS.
   \end{itemize}
@@ -187,7 +188,7 @@ A ten-row table maps the bail provisions of the CrPC to the BNSS (436 to 478, 43
 \endhead
 Training & Before 2024 & Fine-tuning \\
 Development & Early 2024 (50 orders) & Tuning prompts and thresholds \\
-Test & Mid-2024 to 2025 (200 orders) & Evaluation; at least 60 are for offences committed after 1 July 2024 \\
+Test & Mid-2024 to 2025 (200 orders, sampled across High Courts) & Evaluation; at least 60 are for offences committed after 1 July 2024 \\
 \bottomrule
 \end{xltabular}}
 
@@ -216,7 +217,7 @@ The teacher is Qwen3-32B on the Ada cluster, or a Mistral model through its free
 About 1,000 rows, one per section of the four codes. Each row holds the section text, the maximum punishment, whether the offence is bailable, and the matching section in the other code. It is an exact lookup, not a vector search, because statute text must match exactly.
 
 \minorhead{Precedent Index}
-Every Delhi High Court bail order and Supreme Court bail judgment except the test orders, split into paragraphs of up to 400 tokens. We expect 100,000 to 300,000 paragraphs. Each paragraph is tagged automatically with:
+High Court bail orders and Supreme Court bail judgments, excluding the test orders, split into paragraphs of up to 400 tokens. To fit our compute we cap the index at about 300,000 paragraphs, sampled across courts. Each paragraph is tagged automatically with:
 \begin{itemize}
 \item its date, court and outcome;
 \item which part of the order it comes from: facts, defense submissions, prosecution submissions or the court's reasoning. This is found from cue phrases such as ``learned counsel for the applicant submits'';
@@ -227,10 +228,10 @@ Every Delhi High Court bail order and Supreme Court bail judgment except the tes
 \minorhead{Searching For One Factor}
 \begin{itemize}
 \item \textbf{Filter:} Keep only the court's reasoning paragraphs from orders decided before the case, that share the case's section family and that discuss the factor.
-\item \textbf{Rank:} Order the remaining paragraphs with BM25 and BGE-M3.
+\item \textbf{Rank:} Order the remaining paragraphs with BM25 and BGE-M3, placing the Supreme Court and the case's own High Court first, since their rulings carry the most weight.
 \item \textbf{Relax if needed:} If fewer than five results remain, the filters are relaxed one at a time, and the brief says so.
 \end{itemize}
-This answers the question a lawyer actually asks, such as ``where has this court accepted parity in a cheating case?'', which generic chunk search handles badly.
+This answers the question a lawyer actually asks, such as ``where have courts accepted parity in a cheating case?'', which generic chunk search handles badly.
 
 \minorhead{Transfer Flag}
 Each retrieved precedent gets one of three flags, worked out from the concordance and a text comparison of the old and new sections:
@@ -556,7 +557,7 @@ Embeddings, evaluation labels, MiniCheck & Up to 300K paragraphs; 250 orders & L
 \textbf{Week} & \textbf{Work} \\
 \midrule
 \endhead
-0 & Data feasibility check: count the usable Delhi HC bail orders (we need at least 250 that split cleanly, 60 of them BNS-era) \\
+0 & Data feasibility check: count the usable High Court bail orders (we need at least 250 that split cleanly, 60 of them BNS-era) \\
 1 & Data and splits, statute store, date and section tools, vLLM on Ada, throughput measured, teacher pilot \\
 2 & Agent 1 with the prompted 14B model; teacher dossiers; test-set and label pipeline \\
 3 & QLoRA extractor; precedent index; Agent 2 drafting loop \\
@@ -577,7 +578,7 @@ Embeddings, evaluation labels, MiniCheck & Up to 300K paragraphs; 250 orders & L
 \textbf{Risk} & \textbf{Fallback} \\
 \midrule
 \endhead
-Too few BNS-era bail orders (Open India Law runs to 2025) & Add a second High Court from the same source, or report RQ2 as a pilot study \\
+Too few BNS-era bail orders (Open India Law runs to 2025) & Report RQ2 as a pilot study on the cases available \\
 Many orders do not split cleanly & Use a non-Qwen model to split the failed orders; report how many \\
 The two labelling methods often disagree & Use only agreed labels, report coverage, and merge factors that get confused \\
 The fine-tuned 4B extractor is weak & Use the prompted 14B model as the extractor and report the negative result \\
@@ -603,7 +604,6 @@ The teacher API's terms or limits do not suit us & Use Qwen3-32B on Ada as plann
 \begin{multicols}{3}\raggedright
 \begin{itemize}
 \item case files linked by FIR;
-\item more High Courts;
 \item a verification-cost study;
 \item counterfactual record tests;
 \item anticipatory bail;

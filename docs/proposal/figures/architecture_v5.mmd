@@ -1,0 +1,46 @@
+%%{init: {"theme": "neutral", "flowchart": {"wrappingWidth": 400, "nodeSpacing": 24, "rankSpacing": 40, "padding": 12}}}%%
+flowchart TB
+  subgraph CLI["Client"]
+    direction LR
+    UI["Next.js web app<br/>landing · workspace · batch desk"] --> API["FastAPI backend<br/>SSE stream"]
+  end
+
+  subgraph LAP["Laptop (RTX 4060)"]
+    direction LR
+    PA["<b>Pairokar</b><br/>Batch triage"] --> MU["<b>Munshi</b><br/>Ingestion"]
+    MU --> PE["<b>Peshkar</b><br/>Dossier + Rights Radar"]
+    MU --> CASE[("Case shelf<br/>private")]
+    PE <--> CASE
+  end
+
+  G1{{"Gate 1: dossier"}}
+
+  subgraph ADA["Ada cluster (2080 Ti)"]
+    direction LR
+    LAW[("Law")]
+    CL[("Case law")]
+    ADV[("Advocacy")]
+    SU["<b>Sutradhar</b><br/>Orchestrator"]
+    VA["<b>Vakeel</b><br/>Drafter"]
+    AB["<b>Abhiyojak</b><br/>Prosecution sparring"]
+    LAW <--> SU
+    CL <--> SU
+    ADV <--> SU
+    SU --> VA
+    VA <--> AB
+  end
+
+  G2{{"Gate 2: export"}}
+  OUT["DOCX application"]
+  LOG[("Event log<br/>SQLite")]
+
+  API --> LAP
+  LAP --> G1 --> ADA
+  ADA --> G2 --> OUT
+  LAP -.-> LOG
+  ADA -.-> LOG
+
+  classDef agent fill:#e8e8e8,stroke:#333,stroke-width:2px;
+  classDef gate fill:#ffffff,stroke:#333,stroke-dasharray:5 4;
+  class MU,PE,SU,VA,AB,PA agent;
+  class G1,G2 gate;
