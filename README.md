@@ -2,7 +2,7 @@
 
 **A bail-preparation assistant for legal-aid lawyers (LMA Group Project 2026).**
 
-Vakeel-Sahayak.ai helps a lawyer prepare a regular bail application in the Delhi High Court. It has two agents:
+Vakeel-Sahayak.ai helps a lawyer prepare a regular bail application in an Indian court. It has two agents:
 
 1. **Case-File Agent.** It reads the uploaded court orders, or facts typed into a chat, and builds a case dossier. Every field in the dossier comes with the source sentence it was taken from.
 2. **Bail-Brief Agent.** It drafts a bail brief from the approved dossier. Every claim in the brief is checked against the dossier or against a retrieved judgment. IPC-era case law is carried over to BNS-era cases, and the brief warns when a provision has changed.
@@ -16,23 +16,59 @@ The project combines all five course capabilities: a QLoRA-fine-tuned extractor,
 ```
 .
 ├── README.md
+├── pyproject.toml                 Package `vakeel_sahayak` (Python >= 3.10); extras: ocr, speech, models, train, eval, dev
+├── Makefile                       Stub targets: setup, stores, testsets, eval-*, api, frontend, lint, test
+├── .env.example  .gitignore
+├── configs/                       YAML: models, stores, budgets, thresholds, paths, tools, rights rules, splits
+│   ├── finetune/                  QLoRA and teacher-pilot configs
+│   └── eval/                      Run registry (shards, node-hours) and hypotheses
+├── src/vakeel_sahayak/
+│   ├── schemas/                   IngestionReport, CaseDossier, RightsReport, RetrievalPlan, BailBrief,
+│   │                              SparringRecord, TriageCard, Event, store rows, enums
+│   ├── record/                    Event log, case state (views), SQLite checkpointer
+│   ├── orchestration/             LangGraph wiring, approval gates, budgets, ablation switches
+│   ├── agents/                    munshi/ peshkar/ sutradhar/ vakeel/ abhiyojak/ pairokar/ (+ base, registry)
+│   ├── tools/                     39 tools by domain: intake/, dossier, case/, law/, caselaw/, advocacy/, drafting/
+│   ├── stores/                    Ten stores on four shelves, one module each, plus base, registry, chunking
+│   ├── contracts/                 Evidence-contract loader and factors/*.yaml (12 factors)
+│   ├── rights/                    Rights Radar engine and rules/ (7 rules)
+│   ├── ingestion/                 Routing ladder, page signals, routes/, bundles, gaps, Hindi, voice
+│   ├── truth_maintenance/         Dependencies, staleness, incremental redraft
+│   ├── batch/                     Pairokar queue, retrieval cache, scheduler, urgency rule
+│   ├── privacy/                   Pseudonymisation, leak check, injection guard, sensitive-matter decline
+│   ├── models/                    Model clients: vLLM, local 4B, VLM, OCR, ASR, translation, NLI, embeddings
+│   ├── export/                    DOCX application, List of Dates, hearing card, PDF
+│   ├── api/                       FastAPI app and routers (cases, upload, chat, events, gates, export, desk, library)
+│   ├── pipelines/                 Open India Law ingest, order splitter, factor tagger, gold G1-G7, store builders
+│   ├── finetune/                  Teacher dossiers, span-check filter, noise augmentation, QLoRA
+│   ├── testsets/                  Construction of T1-T9
+│   ├── eval/                      baselines B0-B4, ablations A1-A10, ingestion P1-P6, features F1-F8, metrics, stats, runners
+│   └── config.py
+├── frontend/                      Next.js (App Router, TypeScript): app/ routes, components/{landing,agents,workspace,...},
+│                                  lib/ (API client, SSE hook, types), styles/tokens.css ("Manuscript" palette)
+├── scripts/                       Local helpers; scripts/ada/ holds interactive shard runners and the QLoRA sbatch
+├── data/                          raw/ interim/ stores/ testsets/ cases/ (contents gitignored; see data/README.md)
 └── docs/
-    ├── proposal/                  Proposal for TA review
-    │   ├── proposal.md            Markdown version (renders on GitHub, Mermaid diagram included)
-    │   ├── proposal.tex           LaTeX source
-    │   ├── proposal.pdf           Compiled proposal (8 pages plus references)
-    │   ├── build.sh               Rebuilds the diagram (if changed) and the PDF
-    │   └── figures/
-    │       ├── architecture.mmd   Mermaid source of the architecture diagram
-    │       └── architecture.pdf   Rendered diagram used by the LaTeX file
-    ├── plan.md                    Working project plan: data, models, schemas, user flows, evaluation, compute
+    ├── plan.md                    Working project plan (v5)
+    ├── architecture/skeleton.md   Plan-section to module map and conventions for coding agents
+    ├── proposal/                  Proposal for TA review (md, tex, pdf, build.sh, figures/)
     ├── research/                  Background research from the ideation phase
-    │   ├── datasets_sources.md    Datasets, benchmarks, tools and papers
-    │   ├── pipeline_research.md   Research landscape and gaps
-    │   └── ideas.md               Early ideation notes
-    └── course/
-        └── project_announcement.md   Course project brief
+    └── course/                    Course project brief
 ```
+
+## Getting started (skeleton)
+
+The repository is a skeleton: every module has typed signatures and docstrings, and every body raises `NotImplementedError`. Nothing runs end to end yet.
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install pydantic pyyaml fastapi httpx python-multipart   # light deps only
+.venv/bin/pip install -e . --no-deps                                   # or `pip install -e ".[dev]"` for everything
+.venv/bin/python -c "import vakeel_sahayak"                            # every submodule imports cleanly
+cd frontend && npm install                                             # optional; then `npm run dev`
+```
+
+Heavy ML dependencies (vLLM, torch, Docling, Surya) are in optional extras and are imported lazily. Read `docs/architecture/skeleton.md` before adding code.
 
 ## Building the proposal PDF
 
