@@ -1,9 +1,54 @@
-.claude/
+# Python
 __pycache__/
 *.pyc
-.env
+*.egg-info/
 .venv/
-data/raw/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Secrets and local config
+.env
+settings.local.json
+
+# Node / Next.js
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results/
+*.tsbuildinfo
+.lighthouseci/
+
+# Data: contents are ignored; keep README and .gitkeep files
+data/*
+!data/README.md
+!data/*/
+data/*/*
+!data/*/.gitkeep
+
+# Models and weights
+/models/
+*.safetensors
+*.gguf
+*.bin
+*.pt
+*.pth
+*.ckpt
+/adapters/
+
+# Run outputs and logs
+/results/
+/logs/
+*.sqlite
+*.lance/
+
+# Existing entries
 ada.md
 
 # LaTeX build output

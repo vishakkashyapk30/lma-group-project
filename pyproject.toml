@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vakeel_sahayak"
+version = "0.0.1"
+description = "Vakeel-Sahayak.ai: an agentic bail-preparation engine for legal-aid counsel (skeleton)."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pydantic>=2",
+  "pyyaml>=6",
+  "fastapi>=0.110",
+  "uvicorn>=0.29",
+  "python-multipart>=0.0.9",
+  "httpx>=0.27",
+  "langgraph>=0.2",
+  "langgraph-checkpoint-sqlite>=2",
+  "networkx>=3",
+  "pymupdf>=1.24",
+  "python-docx>=1.1",
+]
+
+[project.optional-dependencies]
+# Optional dense backend for the hybrid stores and a faster cosine search; SQLite (FTS5 + vectors) works without it (plan §5.5)
+lance = ["lancedb>=0.8", "numpy>=1.26"]
+# Ingestion: layout parsing, OCR, image clean-up, Hindi translation (plan §4.2, §4.5)
+ocr = ["docling>=2", "surya-ocr>=0.6", "pytesseract>=0.3", "opencv-python-headless>=4", "pillow>=10", "IndicTransToolkit"]
+# Voice intake (plan §4.5)
+speech = ["faster-whisper>=1", "torchaudio>=2"]
+# Model clients: vLLM on Ada, local 4B, embeddings, NLI, privacy (plan §12)
+models = ["vllm>=0.6", "transformers>=4.45", "sentence-transformers>=3", "FlagEmbedding>=1.2", "presidio-analyzer>=2", "presidio-anonymizer>=2", "bitsandbytes>=0.43"]
+# QLoRA fine-tuning (plan §12)
+train = ["torch>=2.3", "transformers>=4.45", "peft>=0.12", "trl>=0.10", "bitsandbytes>=0.43", "datasets>=3", "accelerate>=0.34"]
+# Test-set construction and evaluation (plan §15)
+eval = ["augraphy>=8", "faker>=25", "reportlab>=4", "jiwer>=3", "scipy>=1.11", "numpy>=1.26", "pandas>=2", "minicheck", "rapidfuzz>=3"]
+dev = ["ruff>=0.5", "mypy>=1.10", "pytest>=8", "pytest-asyncio>=0.23", "hypothesis>=6", "pre-commit>=3"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+vakeel_sahayak = ["contracts/factors/*.yaml", "testsets/specs/*.yaml", "export/templates/*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501", "B027"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers -m 'not gpu and not models'"
+asyncio_mode = "auto"
+filterwarnings = ["ignore::DeprecationWarning"]
+markers = [
+  "unit: fast, isolated tests mirroring the package layout (tests/unit)",
+  "integration: several modules wired together with fakes (tests/integration)",
+  "system: end-to-end scenarios of plan §13.6 flows and the T7 safety suite (tests/system)",
+  "gpu: needs a GPU (vLLM, vision model); skipped by default",
+  "models: needs real model weights (OCR, NLI, embeddings, LLM); skipped by default",
+  "slow: takes more than a few seconds",
+]
