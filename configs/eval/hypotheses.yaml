@@ -1,0 +1,6 @@
+# Hypotheses fixed on dev before the test run; null results are still reported (plan §14.2).
+H1a: "Full has higher factor recall (G1) and lower unsupported-fact rate than each of B0-B4"
+H1b: "Full uses fewer tokens and store calls than B4 at equal or better quality"
+H1c: "On BNS-era cases, section-family + reasoning-only + factor filter has higher recall@10 (G2) than plain hybrid"
+H2: "On degraded, photographed, Hindi and bundled inputs, Munshi beats P1-P3 and P5 and is within a dev-fixed margin of P4 at a fraction of its GPU time"
+margin_vs_p4: null  # TODO: fix on dev

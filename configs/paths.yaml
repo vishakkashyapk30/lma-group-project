@@ -1,0 +1,11 @@
+# Filesystem layout. data/ contents are gitignored (see data/README.md).
+data: data
+raw: data/raw             # Open India Law dumps, HLDC, Kathbath, etc. Public data only.
+interim: data/interim
+stores: data/stores
+testsets: data/testsets
+cases: data/cases         # laptop only: client files NEVER leave the laptop
+models: models            # adapters and weights, gitignored
+ada:
+  scratch: /scratch/${USER}/vakeel_sahayak   # model weights are loaded from node /scratch
+  results: results

@@ -1,0 +1,10 @@
+# QLoRA on Qwen3-4B (plan §12, §17). One 2080 Ti, FP16, checkpoint every epoch. Launched by scripts/ada/sbatch_qlora.sbatch.
+base_model: Qwen/Qwen3-4B
+quantization: {bits: 4, type: nf4}
+lora: {r: 16, alpha: null, dropout: null, target_modules: null}  # TODO: set on dev
+epochs: 2
+precision: fp16
+checkpoint_every: epoch
+data: {train: data/interim/finetune/train.jsonl, dev: data/interim/finetune/dev.jsonl, noisy_fraction: 0.3}
+runs: 3
+output: models/extractor-qlora

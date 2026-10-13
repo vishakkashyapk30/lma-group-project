@@ -1,0 +1,6 @@
+# Week-1 teacher pilot (plan §17): same 50 train orders; pick whichever gives more verified pairs per day.
+orders: 50
+arms: [qwen3-32b-awq-ada, mistral-api]
+metrics: [share_all_fields_pass_span_check, tokens_per_hour, rate_limit_stalls]
+api_conditions: [terms_allow_training_use, free_or_stated_budget, versions_pinned_and_outputs_cached]
+family_rule: teacher and eval labeler must not be the same model family

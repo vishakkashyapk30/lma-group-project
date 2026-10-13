@@ -1,0 +1,20 @@
+# Model roles (plan §12). Agents' LLM calls resolve roles here via vakeel_sahayak.models.factory.
+llm:
+  agents_14b:     {model: Qwen/Qwen3-14B-AWQ, runtime: vllm, where: ada, used_by: [sutradhar, vakeel, abhiyojak, pairokar]}
+  munshi_4b:      {model: Qwen/Qwen3-4B, quant: int4, runtime: local, where: laptop, adapter: null, used_by: [munshi]}
+  extractor_4b:   {model: Qwen/Qwen3-4B, quant: int4, runtime: local, where: laptop, adapter: models/extractor-qlora, used_by: [peshkar]}
+  fallback_8b:    {model: Qwen/Qwen3-8B, quant: int4, runtime: local, where: laptop}  # demo fallback if Ada is unavailable
+  teacher:        {model: Qwen/Qwen3-32B-AWQ, runtime: vllm, where: ada, api_alternative: mistral-small, pilot: week-1, public_orders_only: true}
+  eval_labeler:   {model: meta-llama/Llama-3.1-8B-Instruct, quant: int4, runtime: local, where: laptop, system_use: false}  # never used by the system; must differ in family from the teacher
+vision:
+  default: {model: Qwen/Qwen3-VL-4B-Instruct, quant: 4bit, where: laptop}   # TODO: pick in week 1 on quality per GPU-second
+  ada_eval: {model: Qwen/Qwen3-VL-8B-Instruct, where: ada}
+  alternative: {model: Qwen/Qwen2.5-VL-7B-Instruct}
+ocr: {primary: surya (en+hi), fallback: tesseract (eng+hin), layout: docling}
+translation: {model: ai4bharat/indictrans2-indic-en, direction: hi-en}
+asr: {candidates: [openai/whisper-large-v3-turbo, ai4bharat/indic-conformer], choice: TODO pick on dev}
+embeddings: {model: BAAI/bge-m3, where: laptop, max_tokens_whole_doc: 8192}
+bm25: {engine: tantivy via LanceDB}
+nli: {system: microsoft/deberta-v3-large-mnli (TODO exact checkpoint), evaluation_only: MiniCheck}
+privacy: {pii: presidio, legal_ner: InLegalNER}
+test_construction_only: {translation_en_hi: facebook/nllb-200-distilled-600M, tts: ai4bharat/indic-parler-tts}

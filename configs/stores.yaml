@@ -1,0 +1,20 @@
+# The ten stores on four shelves (plan §5.1). Paths are relative to paths.data.stores.
+law:
+  statutes:    {index: exact+bm25, path: law/statutes.sqlite, est_rows: 1000}
+  concordance: {index: graph, path: law/concordance.sqlite, est_edges: 600}
+caselaw:
+  reasoning:   {index: hybrid(bm25+bge-m3), path: caselaw/reasoning.lance, est_rows: "100-300K", chunk_max_tokens: 400}
+  citations:   {index: graph+authority, path: caselaw/citations.sqlite, est_edges: "100-300K"}
+  similar:     {index: vectors+signature, path: caselaw/similar.lance, est_rows: "50-100K"}
+advocacy:
+  arguments:   {index: hybrid, path: advocacy/arguments.lance, est_rows: 100000, never_cited_as_authority: true}
+  objections:  {index: hybrid, path: advocacy/objections.lance, est_rows: 80000}
+case:  # per case, private, laptop only
+  docs:        {index: hybrid, path: "cases/{case_id}/docs.lance"}
+  timeline:    {index: exact, path: "cases/{case_id}/case.sqlite#timeline"}
+  facts:       {index: exact, path: "cases/{case_id}/case.sqlite#facts"}
+event_log: {path: "cases/{case_id}/events.sqlite"}
+checkpointer: {path: "cases/{case_id}/graph.sqlite"}
+leakage:
+  exclude: [test_orders, same_fir_as_test]
+  query_filter: before_case_order_date

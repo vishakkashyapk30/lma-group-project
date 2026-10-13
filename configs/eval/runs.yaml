@@ -1,0 +1,27 @@
+# Eval run registry (plan §15, §17). Each job runs as resumable shards of about 5 h on an Ada interactive session.
+shard_hours: 5
+jobs:
+  teacher_dossiers: {where: ada, model: teacher, node_hours: 60}
+  rq1_full:         {where: ada, systems: [full, b0, b1, b4], runs: 3, cases: 200, testset: T1, node_hours: 82}
+  rq1_b2_b3:        {where: ada, systems: [b2, b3], runs: 1, cases: 200, testset: T1}
+  ablations:        {where: ada, ids: [A1, A2, A3, A4, A6, A7, A8, A9], cases: 100, node_hours: 50}
+  a5_extractors:    {where: ada, variants: [finetuned_4b, base_4b, prompted_32b], inputs: 400, node_hours: 6}
+  a10_knockouts:    {where: laptop+ada, level: retrieval_and_slot_fill}
+  rq2_vision:       {where: ada, pages: 2400, node_hours: 3}
+  rq2_full:         {where: ada, bundles: 100, node_hours: 7.5}
+  f2_change_sets:   {where: ada, updates: 180, noop_controls: 60, node_hours: 18}
+  f1_f5_f6:         {where: ada, cases: 200, node_hours: 6.5}
+  f3_baselines:     {where: ada, scenarios: 1000, node_hours: 10}
+  f4_nocache:       {where: ada, node_hours: 5}
+  t6_tool_calling:  {where: ada, questions: 150, runs: 3, node_hours: 2}
+  t7_safety:        {where: ada, scenarios: 60, runs: 3, node_hours: 9}
+  qlora:            {where: ada-batch, gpus: 1, runs: 3, max_days: 1.5}
+laptop_jobs:
+  embeddings: 20h
+  eval_labels_llama: 30h
+  minicheck: 10h
+  t2_and_p1_p3_p5_p6: 15h
+  extractor_on_t2_and_ocr_for_noise: 8h
+  indictrans2_speech: 5h
+  triage_and_ui_checks: 2h
+statistics: {bootstrap_ci: 0.95, test: wilcoxon_signed_rank, correction: holm_bonferroni, repeats: {full: 3, b0: 3, b1: 3, b4: 3, others: 1}}

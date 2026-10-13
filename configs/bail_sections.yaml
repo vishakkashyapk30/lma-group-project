@@ -1,0 +1,13 @@
+# Ten-row bail-related CrPC -> BNSS table, coded from the bare acts as tool configuration, not a dataset (plan §2).
+# TODO: verify each row against the bare acts in week 0, including the edge `type` (default SAME when omitted).
+rows:
+  - {crpc: "436",  bnss: "478", topic: "bail in bailable offences"}
+  - {crpc: "436A", bnss: "479", topic: "maximum period of detention of undertrial", type: REWORDED}  # one-third limit for first-time offenders is new
+  - {crpc: "437",  bnss: "480", topic: "bail in non-bailable offences by magistrate"}
+  - {crpc: "438",  bnss: "482", topic: "anticipatory bail (out of scope for v5)"}
+  - {crpc: "439",  bnss: "483", topic: "special powers of High Court or Sessions Court regarding bail"}
+  - {crpc: "167(2)", bnss: "187(3)", topic: "default bail"}
+  - {crpc: "41A", bnss: "35(3)", topic: "notice of appearance"}
+  - {crpc: "50",  bnss: "47",  topic: "grounds of arrest"}
+  - {crpc: "57",  bnss: "58",  topic: "24-hour production"}
+  - {crpc: "437(1) proviso", bnss: "480(1) proviso", topic: "age, sickness, infirmity, woman"}

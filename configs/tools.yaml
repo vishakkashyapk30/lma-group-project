@@ -1,0 +1,78 @@
+# Tools each agent may call (plan §4.3, §6-§9). Must be a subset of each tool's SPEC.agents.
+# Abhiyojak is context-isolated (plan §9): it may read objections, refusal reasoning, statutes and the dossier only.
+munshi:
+  - inspect_page
+  - read_text_layer
+  - parse_layout
+  - clean_image
+  - ocr_page
+  - vision_read_page
+  - detect_script
+  - translate
+  - transcribe
+  - split_bundle
+  - classify_document
+  - file_item
+  - search_pages
+  - pseudonymise
+  - ask_user
+  - search_case_docs
+peshkar:
+  - ask_user
+  - extract_dossier
+  - span_check
+  - rights_check
+  - diff_case_state
+  - date_calc
+  - get_timeline
+  - get_fact
+  - search_case_docs
+  - get_statute
+  - map_section
+  - request_approval
+sutradhar:
+  - rights_check
+  - date_calc
+  - get_timeline
+  - get_fact
+  - search_case_docs
+  - get_statute
+  - search_statutes
+  - map_section
+  - transfer_check
+  - search_reasoning
+  - citations
+  - good_law_check
+  - similar_orders
+  - search_arguments
+  - search_objections
+vakeel:
+  - rights_check
+  - date_calc
+  - get_timeline
+  - get_fact
+  - search_case_docs
+  - get_statute
+  - map_section
+  - transfer_check
+  - search_reasoning
+  - get_paragraph
+  - citations
+  - good_law_check
+  - similar_orders
+  - search_arguments
+  - check_claim
+  - render_citation
+  - assemble_application
+  - request_approval
+  - export
+abhiyojak:
+  - get_fact
+  - search_case_docs
+  - get_statute
+  - search_statutes
+  - search_reasoning
+  - search_objections
+pairokar:  # drives Munshi, Peshkar and Rights Radar per file (plan §11)
+  - get_timeline
+  - get_fact

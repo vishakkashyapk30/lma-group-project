@@ -1,0 +1,6 @@
+# Date splits (plan §2). Test orders and same-FIR orders are excluded from every store and the fine-tuning data.
+train: {before: "2024-01-01"}
+dev:   {from: "2024-01-01", to: "2024-04-01", n: 50}
+test:  {from: "2024-06-01", to: "2025-12-31", n: 200, min_bns_era: 60}
+bns_era_offence_on_or_after: "2024-07-01"
+qwen3_release_for_contamination_report: "2025-04-01"

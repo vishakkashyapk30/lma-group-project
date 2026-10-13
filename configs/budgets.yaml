@@ -1,0 +1,7 @@
+# Budgets (plan §6.2, §8.1, §9, §4.3).
+case: {tokens: 150000}
+factor: {store_calls: 8, tokens: 12000}
+questions_per_round: 3        # shared by Munshi and Peshkar
+repair_rounds: 2              # Vakeel check-and-repair
+sparring: {rounds: 2, objections_per_ground: 2}
+ui: {show_spend: true, log_budget_hits: true}

@@ -1,0 +1,21 @@
+# All thresholds are tuned on the dev set before the test run (plan §2, §14.2).
+ingestion:
+  text_layer_word_share: 0.85      # fixed by plan §4.2 step 1
+  text_coverage_min: null          # TODO: tune on dev
+  ocr_conf_min: null               # TODO: tune on dev
+  dict_word_share_min: null        # TODO: tune on dev
+  script_consistency_min: null     # TODO: tune on dev
+  chars_per_area_min: null         # TODO: tune on dev
+  vision_escalation_conf: null     # TODO: tune on dev
+  doc_type_conf_min: null          # TODO: tune on dev
+  boundary_sensitivity: null       # TODO: tune on dev
+nli:
+  fact_support_min: null           # TODO: tune on dev
+  authority_support_min: null      # TODO: tune on dev
+  span_check_min: null             # TODO: tune on dev
+retrieval:
+  top_k_reasoning: 10
+  weak_slot_min_score: null        # TODO: tune on dev
+  authority_weights: {court_level: null, bench_size: null, citations: null, recency: null}  # TODO: tune on dev
+safety:
+  max_questions_per_round: 3
