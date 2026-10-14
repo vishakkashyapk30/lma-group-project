@@ -1,0 +1,32 @@
+{
+  "case_id": "case-0042",
+  "statutory_position": {
+    "sections": [
+      "318(4) BNS (IPC 420)"
+    ],
+    "bailable": false,
+    "max_punishment": "7 years"
+  },
+  "grounds": [
+    {
+      "id": "G1",
+      "factor": "health_age_family",
+      "stance": "favourable",
+      "argument": "The applicant is the sole earning member of his family (per counsel, not on record) [F:personal].",
+      "authorities": [],
+      "depends_on": {
+        "facts": {
+          "personal": "h:5c1d"
+        },
+        "events": [],
+        "rights": [],
+        "authorities": [],
+        "claims": []
+      },
+      "check": "SUPPORTED",
+      "state": "CURRENT"
+    }
+  ],
+  "open_issues": [],
+  "label": "AI-generated draft for counsel. Not legal advice."
+}

@@ -1,0 +1,40 @@
+{
+  "case_id": "case-0042",
+  "court": "Delhi High Court",
+  "as_of": "2025-02-03",
+  "open_questions": [],
+  "fields": {
+    "arrest_date": {
+      "value": "2024-08-20",
+      "source": {
+        "chat": "turn 1"
+      },
+      "status": "USER_STATED"
+    },
+    "sections": {
+      "value": [
+        {
+          "as_written": "318(4) BNS",
+          "code": "BNS",
+          "section": "318(4)",
+          "equivalent": "IPC 420",
+          "bailable": false,
+          "max_punishment": "7 years"
+        }
+      ],
+      "source": {
+        "chat": "turn 1"
+      },
+      "status": "USER_STATED"
+    },
+    "personal": {
+      "value": [
+        "sole earning member"
+      ],
+      "source": {
+        "chat": "turn 1"
+      },
+      "status": "USER_STATED"
+    }
+  }
+}

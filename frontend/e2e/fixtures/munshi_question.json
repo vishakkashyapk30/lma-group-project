@@ -1,0 +1,9 @@
+{
+  "message_id": "m-0002",
+  "case_id": "case-0042",
+  "role": "agent",
+  "agent": "MUNSHI",
+  "text": "Page 3 of the FIR is unreadable. Can you upload a clearer copy or type the FIR number and date?",
+  "chips": [],
+  "refused": false
+}

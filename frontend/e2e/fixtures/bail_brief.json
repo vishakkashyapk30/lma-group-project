@@ -1,0 +1,104 @@
+{
+  "case_id": "case-0007",
+  "statutory_position": {
+    "sections": [
+      "318(4) BNS (IPC 420)"
+    ],
+    "bailable": false,
+    "max_punishment": "7 years",
+    "rights": "Category A (Antil); undertrial threshold 852 days (first-time)"
+  },
+  "grounds": [
+    {
+      "id": "G1",
+      "factor": "custody_period",
+      "stance": "favourable",
+      "argument": "The applicant has been in custody for 167 days and the charge sheet was filed on 02.11.2024.",
+      "authorities": [
+        {
+          "doc_id": "SC-2022-0001",
+          "para": 12,
+          "citation": "Satender Kumar Antil v. CBI (2022)",
+          "transfer": "SAME_TEXT",
+          "good_law": "OK"
+        }
+      ],
+      "depends_on": {
+        "facts": {
+          "custody_days": "167"
+        },
+        "events": [
+          "e3",
+          "e6"
+        ],
+        "rights": [
+          "undertrial_limit"
+        ],
+        "authorities": [
+          "SC-2022-0001:12"
+        ],
+        "claims": []
+      },
+      "check": "SUPPORTED",
+      "state": "CURRENT"
+    },
+    {
+      "id": "G2",
+      "factor": "parity_with_co_accused",
+      "stance": "favourable",
+      "argument": "Co-accused-1, similarly placed, was admitted to bail on 05.12.2024.",
+      "authorities": [
+        {
+          "doc_id": "DLHC-2024-0042",
+          "para": 7,
+          "citation": "Delhi High Court bail order (2024)",
+          "good_law": "OK"
+        }
+      ],
+      "depends_on": {
+        "facts": {
+          "co_accused_bail": "granted 2024-12-05"
+        },
+        "events": [
+          "e7"
+        ],
+        "rights": [],
+        "authorities": [
+          "DLHC-2024-0042:7"
+        ],
+        "claims": []
+      },
+      "check": "REPAIRED",
+      "state": "CURRENT"
+    },
+    {
+      "id": "G3",
+      "factor": "antecedents",
+      "stance": "favourable",
+      "argument": "The applicant has no criminal antecedents (per counsel, not on record).",
+      "authorities": [],
+      "depends_on": {
+        "facts": {
+          "antecedents": "unknown"
+        },
+        "events": [],
+        "rights": [],
+        "authorities": [],
+        "claims": []
+      },
+      "check": "NEEDS_REVIEW",
+      "state": "CURRENT"
+    }
+  ],
+  "open_issues": [
+    {
+      "type": "NEEDS_REVIEW",
+      "item": "G3: antecedents are not supported by the file"
+    },
+    {
+      "type": "MISSING_EVIDENCE",
+      "item": "Arrest memo"
+    }
+  ],
+  "label": "AI-generated draft for counsel. Not legal advice."
+}

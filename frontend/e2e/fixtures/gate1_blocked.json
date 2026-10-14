@@ -1,0 +1,9 @@
+{
+  "gate": "GATE_1_DOSSIER",
+  "open": false,
+  "unresolved_unsupported": [
+    "antecedents"
+  ],
+  "unresolved_needs_review": [],
+  "unresolved_unanswered": []
+}

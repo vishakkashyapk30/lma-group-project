@@ -1,0 +1,199 @@
+{
+  "case_id": "case-0007",
+  "court": "Delhi High Court",
+  "as_of": "2025-02-03",
+  "fields": {
+    "fir": {
+      "value": {
+        "number": "112/2024",
+        "police_station": "PS-1",
+        "date": "2024-08-14"
+      },
+      "source": {
+        "doc": "d1 (FIR)",
+        "page": 1,
+        "box": [
+          64,
+          120,
+          540,
+          152
+        ],
+        "lang": "hi",
+        "route": "ocr: surya-hi",
+        "quote": "प्रथम सूचना रिपोर्ट सं. 112/2024 दिनांक 14.08.2024",
+        "quote_en": "FIR No. 112/2024 dated 14.08.2024"
+      },
+      "status": "VERIFIED"
+    },
+    "offence_date": {
+      "value": "2024-08-10",
+      "source": {
+        "doc": "d1 (FIR)",
+        "page": 1,
+        "box": null,
+        "lang": "hi",
+        "route": "ocr: surya-hi",
+        "quote": "घटना दिनांक 10.08.2024",
+        "quote_en": "date of occurrence 10.08.2024"
+      },
+      "status": "VERIFIED"
+    },
+    "sections": {
+      "value": [
+        {
+          "as_written": "318(4) BNS",
+          "code": "BNS",
+          "section": "318(4)",
+          "equivalent": "IPC 420",
+          "bailable": false,
+          "max_punishment": "7 years"
+        }
+      ],
+      "source": {
+        "doc": "d1 (FIR)",
+        "page": 1,
+        "box": null,
+        "lang": "hi",
+        "route": "ocr: surya-hi",
+        "quote": "धारा 318(4) बी.एन.एस.",
+        "quote_en": "Section 318(4) BNS"
+      },
+      "status": "VERIFIED"
+    },
+    "arrest_date": {
+      "value": "2024-08-20",
+      "source": {
+        "doc": "d2 (remand order)",
+        "page": 4,
+        "box": null,
+        "lang": "en",
+        "route": "text_layer",
+        "quote": "...arrested on 20.08.2024...",
+        "quote_en": null
+      },
+      "status": "VERIFIED"
+    },
+    "first_remand": {
+      "value": "2024-08-21",
+      "source": {
+        "doc": "d2 (remand order)",
+        "page": 4,
+        "box": null,
+        "lang": "en",
+        "route": "text_layer",
+        "quote": "...produced and remanded to judicial custody on 21.08.2024...",
+        "quote_en": null
+      },
+      "status": "VERIFIED"
+    },
+    "custody_days": {
+      "value": 167,
+      "source": {
+        "tool": "date_calc"
+      },
+      "status": "COMPUTED"
+    },
+    "charge_sheet": {
+      "value": {
+        "filed": true,
+        "date": "2024-11-02"
+      },
+      "source": {
+        "doc": "d4 (order sheet)",
+        "page": 9,
+        "box": null,
+        "lang": "en",
+        "route": "text_layer",
+        "quote": "Charge sheet filed on 02.11.2024",
+        "quote_en": null
+      },
+      "status": "VERIFIED"
+    },
+    "trial_stage": {
+      "value": "charges not framed",
+      "source": {
+        "doc": "d4 (order sheet)",
+        "page": 9,
+        "box": null,
+        "lang": "en",
+        "route": "text_layer",
+        "quote": "Charges not framed.",
+        "quote_en": null
+      },
+      "status": "VERIFIED"
+    },
+    "previous_bail": {
+      "value": [
+        {
+          "court": "Sessions Court",
+          "date": "2024-09-30",
+          "outcome": "rejected"
+        }
+      ],
+      "source": {
+        "doc": "d3 (bail order)",
+        "page": 7,
+        "box": null,
+        "lang": "en",
+        "route": "text_layer",
+        "quote": "bail application is rejected",
+        "quote_en": null
+      },
+      "status": "VERIFIED"
+    },
+    "co_accused_bail": {
+      "value": [
+        {
+          "id": "Co-accused-1",
+          "outcome": "granted",
+          "date": "2024-12-05"
+        }
+      ],
+      "source": {
+        "doc": "d5 (bail order)",
+        "page": 12,
+        "box": null,
+        "lang": "en",
+        "route": "text_layer",
+        "quote": "Co-accused-1 is admitted to bail",
+        "quote_en": null
+      },
+      "status": "VERIFIED"
+    },
+    "antecedents": {
+      "value": null,
+      "source": null,
+      "status": "UNSUPPORTED"
+    },
+    "personal": {
+      "value": [
+        "sole earning member"
+      ],
+      "source": {
+        "chat": "turn 3"
+      },
+      "status": "USER_STATED"
+    },
+    "parties": {
+      "value": [
+        "Accused-1",
+        "Co-accused-1",
+        "Complainant-1",
+        "IO-1"
+      ],
+      "source": {
+        "doc": "d1 (FIR)",
+        "page": 1,
+        "box": null,
+        "lang": "hi",
+        "route": "ocr: surya-hi",
+        "quote": "आरोपी, सह-आरोपी, शिकायतकर्ता",
+        "quote_en": null
+      },
+      "status": "VERIFIED"
+    }
+  },
+  "open_questions": [
+    "Does the accused have any other pending cases?"
+  ]
+}

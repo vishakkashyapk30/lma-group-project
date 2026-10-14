@@ -1,0 +1,187 @@
+{
+  "case_id": "case-0042",
+  "file": "bundle_14pp.pdf",
+  "documents": [
+    {
+      "doc_id": "d1",
+      "type": "FIR",
+      "pages": [
+        1,
+        5
+      ],
+      "lang": "hi",
+      "type_confidence": 0.94,
+      "page_routes": [
+        {
+          "page": 1,
+          "kind": "scanned",
+          "route": [
+            "ocr"
+          ],
+          "ocr_conf": 0.91,
+          "status": "OK"
+        },
+        {
+          "page": 2,
+          "kind": "scanned",
+          "route": [
+            "ocr"
+          ],
+          "ocr_conf": 0.88,
+          "status": "OK"
+        },
+        {
+          "page": 3,
+          "kind": "degraded",
+          "route": [
+            "ocr",
+            "vision",
+            "ask_counsel"
+          ],
+          "ocr_conf": 0.31,
+          "status": "UNREADABLE"
+        },
+        {
+          "page": 4,
+          "kind": "scanned",
+          "route": [
+            "ocr"
+          ],
+          "ocr_conf": 0.9,
+          "status": "OK"
+        },
+        {
+          "page": 5,
+          "kind": "scanned",
+          "route": [
+            "vision"
+          ],
+          "status": "OK"
+        }
+      ]
+    },
+    {
+      "doc_id": "d2",
+      "type": "REMAND_ORDER",
+      "pages": [
+        6,
+        8
+      ],
+      "lang": "en",
+      "type_confidence": 0.97,
+      "page_routes": [
+        {
+          "page": 6,
+          "kind": "born_digital",
+          "route": [
+            "layout"
+          ],
+          "status": "OK"
+        },
+        {
+          "page": 7,
+          "kind": "born_digital",
+          "route": [
+            "layout"
+          ],
+          "status": "OK"
+        },
+        {
+          "page": 8,
+          "kind": "born_digital",
+          "route": [
+            "layout"
+          ],
+          "status": "OK"
+        }
+      ]
+    },
+    {
+      "doc_id": "d3",
+      "type": "REMAND_ORDER",
+      "pages": [
+        9,
+        11
+      ],
+      "lang": "en",
+      "type_confidence": 0.96,
+      "page_routes": [
+        {
+          "page": 9,
+          "kind": "born_digital",
+          "route": [
+            "text_layer"
+          ],
+          "status": "OK"
+        },
+        {
+          "page": 10,
+          "kind": "born_digital",
+          "route": [
+            "text_layer"
+          ],
+          "status": "OK"
+        },
+        {
+          "page": 11,
+          "kind": "born_digital",
+          "route": [
+            "text_layer"
+          ],
+          "status": "OK"
+        }
+      ]
+    },
+    {
+      "doc_id": "d4",
+      "type": "BAIL_ORDER",
+      "pages": [
+        12,
+        14
+      ],
+      "lang": "en",
+      "type_confidence": 0.98,
+      "page_routes": [
+        {
+          "page": 12,
+          "kind": "born_digital",
+          "route": [
+            "text_layer"
+          ],
+          "status": "OK"
+        },
+        {
+          "page": 13,
+          "kind": "born_digital",
+          "route": [
+            "text_layer"
+          ],
+          "status": "OK"
+        },
+        {
+          "page": 14,
+          "kind": "born_digital",
+          "route": [
+            "text_layer"
+          ],
+          "status": "OK"
+        }
+      ]
+    }
+  ],
+  "filed": {
+    "timeline_events": 7,
+    "parties": 4,
+    "sections": 1,
+    "chunks": 38
+  },
+  "gaps": [
+    {
+      "item": "Arrest memo",
+      "action": "Asked counsel"
+    }
+  ],
+  "questions": [
+    "Page 3 of the FIR is unreadable. Can you upload a clearer copy or type the FIR number and date?"
+  ]
+}

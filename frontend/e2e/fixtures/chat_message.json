@@ -1,0 +1,17 @@
+{
+  "message_id": "m-0001",
+  "case_id": "case-0007",
+  "role": "agent",
+  "agent": "PESHKAR",
+  "text": "Custody: 167 days [date_calc from arrest 20.08.2024]; s.479 not yet reached.",
+  "chips": [
+    {
+      "tool": "date_calc",
+      "store": "case.timeline"
+    },
+    {
+      "tool": "rights_check"
+    }
+  ],
+  "refused": false
+}

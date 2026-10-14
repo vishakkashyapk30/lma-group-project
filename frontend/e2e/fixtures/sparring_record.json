@@ -1,0 +1,65 @@
+{
+  "case_id": "case-0007",
+  "rounds": 2,
+  "objections": [
+    {
+      "id": "O1",
+      "against": "G1",
+      "factor": "custody_period",
+      "objection": "Custody of 167 days is short relative to the 7-year maximum.",
+      "grounds": [
+        {
+          "store": "law.statutes",
+          "fact": "max_punishment: 7 years"
+        }
+      ],
+      "reply": {
+        "text": "Antil Category A offences do not require long custody before bail.",
+        "authorities": [
+          {
+            "doc_id": "SC-2022-0001",
+            "para": 12,
+            "good_law": "OK"
+          }
+        ],
+        "check": "SUPPORTED"
+      },
+      "verdict": "ANSWERED",
+      "reason": "Reply cites binding authority."
+    },
+    {
+      "id": "O2",
+      "against": "G2",
+      "factor": "parity_with_co_accused",
+      "objection": "The co-accused's role may differ.",
+      "grounds": [
+        {
+          "doc_id": "DLHC-2024-0042",
+          "para": 7
+        }
+      ],
+      "reply": {
+        "text": "Both are charged under the same section on the same allegations.",
+        "authorities": [],
+        "check": "REPAIRED"
+      },
+      "verdict": "PARTLY",
+      "reason": "Role-level similarity not shown."
+    },
+    {
+      "id": "O3",
+      "against": "G3",
+      "factor": "antecedents",
+      "objection": "Antecedents are unverified.",
+      "grounds": [
+        {
+          "fact": "antecedents: unknown"
+        }
+      ],
+      "reply": null,
+      "verdict": "UNANSWERED",
+      "reason": "No supporting document."
+    }
+  ],
+  "discarded": []
+}

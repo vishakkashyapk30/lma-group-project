@@ -1,0 +1,11 @@
+{
+  "gate": "GATE_2_EXPORT",
+  "open": false,
+  "unresolved_unsupported": [],
+  "unresolved_needs_review": [
+    "G3"
+  ],
+  "unresolved_unanswered": [
+    "O3"
+  ]
+}

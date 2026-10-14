@@ -1,0 +1,100 @@
+[
+  {
+    "event_id": "ev001",
+    "case_id": "case-0007",
+    "ts": "2025-02-03T10:01:00Z",
+    "kind": "AGENT_MESSAGE",
+    "actor": "SUTRADHAR",
+    "tool": null,
+    "inputs": {},
+    "outputs": {
+      "text": "Plan: custody_period, parity_with_co_accused, antecedents"
+    },
+    "sources": [],
+    "parent_id": null
+  },
+  {
+    "event_id": "ev002",
+    "case_id": "case-0007",
+    "ts": "2025-02-03T10:02:00Z",
+    "kind": "TOOL_CALL",
+    "actor": "SUTRADHAR",
+    "tool": "get_fact",
+    "inputs": {
+      "field": "custody_days"
+    },
+    "outputs": {},
+    "sources": [],
+    "parent_id": null
+  },
+  {
+    "event_id": "ev003",
+    "case_id": "case-0007",
+    "ts": "2025-02-03T10:03:00Z",
+    "kind": "TOOL_CALL",
+    "actor": "SUTRADHAR",
+    "tool": "search_reasoning",
+    "inputs": {
+      "factor": "custody_period"
+    },
+    "outputs": {},
+    "sources": [],
+    "parent_id": null
+  },
+  {
+    "event_id": "ev004",
+    "case_id": "case-0007",
+    "ts": "2025-02-03T10:04:00Z",
+    "kind": "TOOL_CALL",
+    "actor": "SUTRADHAR",
+    "tool": "similar_orders",
+    "inputs": {
+      "factor": "parity_with_co_accused"
+    },
+    "outputs": {},
+    "sources": [],
+    "parent_id": null
+  },
+  {
+    "event_id": "ev005",
+    "case_id": "case-0007",
+    "ts": "2025-02-03T10:05:00Z",
+    "kind": "TOOL_CALL",
+    "actor": "SUTRADHAR",
+    "tool": "good_law_check",
+    "inputs": {
+      "doc_id": "SC-2022-0001"
+    },
+    "outputs": {},
+    "sources": [],
+    "parent_id": null
+  },
+  {
+    "event_id": "ev006",
+    "case_id": "case-0007",
+    "ts": "2025-02-03T10:06:00Z",
+    "kind": "AGENT_MESSAGE",
+    "actor": "VAKEEL",
+    "tool": null,
+    "inputs": {},
+    "outputs": {
+      "text": "Drafting grounds G1-G3"
+    },
+    "sources": [],
+    "parent_id": null
+  },
+  {
+    "event_id": "ev007",
+    "case_id": "case-0007",
+    "ts": "2025-02-03T10:07:00Z",
+    "kind": "AGENT_MESSAGE",
+    "actor": "ABHIYOJAK",
+    "tool": null,
+    "inputs": {},
+    "outputs": {
+      "text": "Raised objections O1-O3"
+    },
+    "sources": [],
+    "parent_id": null
+  }
+]

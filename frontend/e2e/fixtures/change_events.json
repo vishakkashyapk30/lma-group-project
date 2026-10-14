@@ -1,0 +1,108 @@
+[
+  {
+    "event_id": "ch001",
+    "case_id": "case-0007",
+    "ts": "2025-02-04T10:30:01Z",
+    "kind": "STORE_WRITE",
+    "actor": "PESHKAR",
+    "tool": null,
+    "inputs": {
+      "document": "order_sheet_2.pdf"
+    },
+    "outputs": {
+      "view": "change_set",
+      "change_set": {
+        "case_id": "case-0007",
+        "trigger": "new_document",
+        "fields": [
+          {
+            "field": "charge_sheet",
+            "old_hash": "h:0000",
+            "new_hash": "h:1111"
+          }
+        ],
+        "new_event_ids": [
+          "e8"
+        ],
+        "rights_changed": [
+          "default_bail"
+        ]
+      }
+    },
+    "sources": [],
+    "parent_id": null
+  },
+  {
+    "event_id": "ch002",
+    "case_id": "case-0007",
+    "ts": "2025-02-04T10:30:02Z",
+    "kind": "CHANGE_SET_APPROVED",
+    "actor": "counsel",
+    "tool": null,
+    "inputs": {
+      "gate": "GATE_1_DOSSIER"
+    },
+    "outputs": {
+      "fields": [
+        "charge_sheet"
+      ]
+    },
+    "sources": [],
+    "parent_id": null
+  },
+  {
+    "event_id": "ch003",
+    "case_id": "case-0007",
+    "ts": "2025-02-04T10:30:03Z",
+    "kind": "CLAIM_STALED",
+    "actor": "PESHKAR",
+    "tool": null,
+    "inputs": {
+      "claim": "G2"
+    },
+    "outputs": {
+      "reason": "depends on charge sheet, which changed",
+      "depends_on_changed": [
+        "charge_sheet"
+      ]
+    },
+    "sources": [],
+    "parent_id": null
+  },
+  {
+    "event_id": "ch004",
+    "case_id": "case-0007",
+    "ts": "2025-02-04T10:30:04Z",
+    "kind": "AGENT_MESSAGE",
+    "actor": "SUTRADHAR",
+    "tool": null,
+    "inputs": {},
+    "outputs": {
+      "text": "Re-planning only the reopened factor: charge_sheet_filed"
+    },
+    "sources": [],
+    "parent_id": null
+  },
+  {
+    "event_id": "ch005",
+    "case_id": "case-0007",
+    "ts": "2025-02-04T10:30:05Z",
+    "kind": "STORE_WRITE",
+    "actor": "VAKEEL",
+    "tool": null,
+    "inputs": {},
+    "outputs": {
+      "view": "brief",
+      "redrafted": [
+        "G2"
+      ],
+      "unchanged": [
+        "G1",
+        "G3"
+      ],
+      "tokens": 3100
+    },
+    "sources": [],
+    "parent_id": null
+  }
+]

@@ -1,0 +1,44 @@
+[
+  {
+    "case_id": "case-0103",
+    "urgency_rank": 3,
+    "reasons": [
+      "Charge sheet not yet filed"
+    ],
+    "flags": [
+      "Production within 24h: CHECK"
+    ],
+    "missing_docs": [
+      "Arrest memo"
+    ],
+    "next_step": "Request the arrest memo"
+  },
+  {
+    "case_id": "case-0101",
+    "urgency_rank": 1,
+    "reasons": [
+      "Default-bail window: 6 days",
+      "167 days in custody"
+    ],
+    "flags": [
+      "Default bail: ELIGIBLE"
+    ],
+    "missing_docs": [],
+    "next_step": "File the default-bail application"
+  },
+  {
+    "case_id": "case-0102",
+    "urgency_rank": 2,
+    "reasons": [
+      "Co-accused granted bail (parity)"
+    ],
+    "flags": [
+      "Antecedents unknown"
+    ],
+    "missing_docs": [
+      "Custody certificate",
+      "Charge sheet cover"
+    ],
+    "next_step": "Confirm antecedents with client"
+  }
+]

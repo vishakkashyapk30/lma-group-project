@@ -1,0 +1,85 @@
+{
+  "case_id": "case-0007",
+  "statutory_position": {
+    "sections": [
+      "318(4) BNS (IPC 420)"
+    ],
+    "bailable": false,
+    "max_punishment": "7 years",
+    "rights": "Category A (Antil); undertrial threshold 852 days (first-time)"
+  },
+  "grounds": [
+    {
+      "id": "G1",
+      "factor": "parity_with_co_accused",
+      "stance": "favourable",
+      "argument": "Co-accused-1, with an identical role, was granted bail on 05.12.2024 [F:co_accused_bail].",
+      "authorities": [
+        {
+          "doc_id": "DLHC-2022-1187",
+          "para": 14,
+          "citation": "Delhi High Court bail order (2022)",
+          "transfer": "SAME_TEXT",
+          "good_law": "OK",
+          "sc_root": "SC-2014-0463"
+        }
+      ],
+      "depends_on": {
+        "facts": {
+          "co_accused_bail": "h:3f2a",
+          "sections": "h:91c0"
+        },
+        "events": [
+          "e7"
+        ],
+        "rights": [],
+        "authorities": [
+          "DLHC-2022-1187#14"
+        ],
+        "claims": []
+      },
+      "check": "SUPPORTED",
+      "state": "CURRENT"
+    },
+    {
+      "id": "G2",
+      "factor": "charge_sheet_filed",
+      "stance": "adverse",
+      "argument": "The charge sheet has not been filed, so the investigation is not complete [F:charge_sheet].",
+      "authorities": [],
+      "depends_on": {
+        "facts": {
+          "charge_sheet": "h:0000"
+        },
+        "events": [],
+        "rights": [
+          "default_bail"
+        ],
+        "authorities": [],
+        "claims": []
+      },
+      "check": "SUPPORTED",
+      "state": "CURRENT"
+    },
+    {
+      "id": "G3",
+      "factor": "antecedents",
+      "stance": "favourable",
+      "argument": "The applicant has no prior cases [F:antecedents].",
+      "authorities": [],
+      "depends_on": {
+        "facts": {
+          "antecedents": "h:77aa"
+        },
+        "events": [],
+        "rights": [],
+        "authorities": [],
+        "claims": []
+      },
+      "check": "SUPPORTED",
+      "state": "CURRENT"
+    }
+  ],
+  "open_issues": [],
+  "label": "AI-generated draft for counsel. Not legal advice."
+}
