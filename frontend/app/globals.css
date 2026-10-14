@@ -1,0 +1,7 @@
+@import "../styles/tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* TODO: base styles: parchment background, ink text, visible focus ring (WCAG 2.1 AA, plan §13.7) */

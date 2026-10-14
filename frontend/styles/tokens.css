@@ -1,0 +1,31 @@
+/* "Manuscript" design tokens (plan §13.2). Config, not code. */
+:root {
+  /* Palette */
+  --color-parchment: #F6EEDC; /* page background */
+  --color-cream: #FBF7EE;     /* cards, panels; text on dark (14.4:1 on oxblood) */
+  --color-maroon: #7A1626;    /* primary: headings, buttons, links, active stage (9.2:1 on parchment) */
+  --color-oxblood: #4A0E17;   /* hero panel, stats band, footer */
+  --color-gold-leaf: #B08D57; /* borders, ornaments, line art; text only on oxblood (5.0:1); 2.7:1 on parchment = decoration only */
+  --color-ink: #231A16;       /* body text (14.8:1 on parchment) */
+
+  /* Status colours: always paired with an icon and a label, never colour alone */
+  --color-neem: #3D6B45;   /* VERIFIED, SUPPORTED, OK (5.8:1 on cream)            icon: check */
+  --color-indigo: #2E3A6B; /* COMPUTED (10.2:1 on cream)                          icon: f */
+  --color-sindoor: #B3261E;/* UNSUPPORTED, UNANSWERED, FLAG (6.1:1 on cream)      icon: cross */
+  --color-haldi: #8C5A0B;  /* AMBIGUOUS, CHECK, NEEDS_REVIEW, UNKNOWN (5.5:1)     icon: ? */
+  --color-clay: #6B5E55;   /* USER_STATED, USER_EDITED (5.9:1 on cream)           icon: pencil */
+
+  /* Type (all SIL OFL). Families are loaded in app/layout.tsx via next/font and set these variables. */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-devanagari-display: "Tiro Devanagari Hindi", serif;
+  --font-devanagari-body: "Noto Sans Devanagari", sans-serif;
+  --font-ui: "DM Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Motion */
+  --motion-working-loop-max: 2s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --motion-working-loop-max: 0s; }
+}
