@@ -1,0 +1,3 @@
+# T4 rights-scenario specs (plan §15.2). TODO: written from the bare acts by a team member who does NOT write the Radar code.
+# Each scenario: id, rule, inputs (dates, sections, antecedents), designed_answer.
+scenarios: []
