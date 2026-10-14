@@ -1,0 +1,93 @@
+[
+  {
+    "event_id": "e1",
+    "date": "2024-08-10",
+    "label": "Offence",
+    "source": {
+      "doc": "d1 (FIR)",
+      "page": 1,
+      "lang": "en",
+      "route": "text_layer"
+    },
+    "status": "VERIFIED",
+    "conflicts_with": []
+  },
+  {
+    "event_id": "e2",
+    "date": "2024-08-14",
+    "label": "FIR registered",
+    "source": {
+      "doc": "d1 (FIR)",
+      "page": 1,
+      "lang": "en",
+      "route": "text_layer"
+    },
+    "status": "VERIFIED",
+    "conflicts_with": []
+  },
+  {
+    "event_id": "e3",
+    "date": "2024-08-20",
+    "label": "Arrest",
+    "source": {
+      "doc": "d2 (remand order)",
+      "page": 4,
+      "lang": "en",
+      "route": "text_layer"
+    },
+    "status": "VERIFIED",
+    "conflicts_with": []
+  },
+  {
+    "event_id": "e4",
+    "date": "2024-08-21",
+    "label": "First remand",
+    "source": {
+      "doc": "d2 (remand order)",
+      "page": 4,
+      "lang": "en",
+      "route": "text_layer"
+    },
+    "status": "VERIFIED",
+    "conflicts_with": []
+  },
+  {
+    "event_id": "e5",
+    "date": "2024-09-30",
+    "label": "Sessions Court rejected bail",
+    "source": {
+      "doc": "d3 (bail order)",
+      "page": 7,
+      "lang": "en",
+      "route": "text_layer"
+    },
+    "status": "VERIFIED",
+    "conflicts_with": []
+  },
+  {
+    "event_id": "e6",
+    "date": "2024-11-02",
+    "label": "Charge sheet filed",
+    "source": {
+      "doc": "d4 (order sheet)",
+      "page": 9,
+      "lang": "en",
+      "route": "text_layer"
+    },
+    "status": "VERIFIED",
+    "conflicts_with": []
+  },
+  {
+    "event_id": "e7",
+    "date": "2024-12-05",
+    "label": "Co-accused-1 granted bail",
+    "source": {
+      "doc": "d5 (bail order)",
+      "page": 12,
+      "lang": "en",
+      "route": "text_layer"
+    },
+    "status": "VERIFIED",
+    "conflicts_with": []
+  }
+]

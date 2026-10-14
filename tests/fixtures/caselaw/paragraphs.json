@@ -1,0 +1,192 @@
+[
+  {
+    "doc_id": "DLHC-2022-1187",
+    "para": 14,
+    "court": "Delhi HC",
+    "date": "2022-06-03",
+    "outcome": "granted",
+    "part": "reasoning",
+    "sections": [
+      "IPC 420",
+      "IPC 406"
+    ],
+    "section_family": [
+      "IPC 420",
+      "BNS 318(4)",
+      "IPC 406",
+      "BNS 316(2)"
+    ],
+    "factors": [
+      "parity_with_co_accused",
+      "charge_sheet_filed"
+    ],
+    "cites": [
+      "SC-2014-0463"
+    ],
+    "authority": 0.71,
+    "text": "[synthetic] Co-accused with an identical role has been enlarged on bail; parity requires the same relief."
+  },
+  {
+    "doc_id": "DLHC-2022-1187",
+    "para": 9,
+    "court": "Delhi HC",
+    "date": "2022-06-03",
+    "outcome": "granted",
+    "part": "defense_submissions",
+    "sections": [
+      "IPC 420"
+    ],
+    "section_family": [
+      "IPC 420",
+      "BNS 318(4)"
+    ],
+    "factors": [
+      "parity_with_co_accused"
+    ],
+    "cites": [],
+    "authority": 0.0,
+    "text": "[synthetic] Counsel for the petitioner submits that co-accused was granted bail."
+  },
+  {
+    "doc_id": "DLHC-2021-0420",
+    "para": 11,
+    "court": "Delhi HC",
+    "date": "2021-03-10",
+    "outcome": "granted",
+    "part": "reasoning",
+    "sections": [
+      "IPC 420"
+    ],
+    "section_family": [
+      "IPC 420",
+      "BNS 318(4)"
+    ],
+    "factors": [
+      "custody_period"
+    ],
+    "cites": [],
+    "authority": 0.4,
+    "text": "[synthetic] Prolonged custody without trial weighs in favour of bail."
+  },
+  {
+    "doc_id": "DLHC-2023-0911",
+    "para": 6,
+    "court": "Delhi HC",
+    "date": "2023-05-19",
+    "outcome": "rejected",
+    "part": "prosecution_submissions",
+    "sections": [
+      "IPC 420"
+    ],
+    "section_family": [
+      "IPC 420",
+      "BNS 318(4)"
+    ],
+    "factors": [
+      "parity_with_co_accused"
+    ],
+    "cites": [],
+    "authority": 0.0,
+    "text": "[synthetic] The State submits that the petitioner, unlike the co-accused, received the money into his own account."
+  },
+  {
+    "doc_id": "DLHC-2023-0911",
+    "para": 12,
+    "court": "Delhi HC",
+    "date": "2023-05-19",
+    "outcome": "rejected",
+    "part": "reasoning",
+    "sections": [
+      "IPC 420"
+    ],
+    "section_family": [
+      "IPC 420",
+      "BNS 318(4)"
+    ],
+    "factors": [
+      "gravity_and_punishment"
+    ],
+    "cites": [],
+    "authority": 0.3,
+    "text": "[synthetic] The role attributed to the petitioner distinguishes him from the co-accused."
+  },
+  {
+    "doc_id": "SC-2014-0463",
+    "para": 21,
+    "court": "Supreme Court",
+    "date": "2014-07-02",
+    "outcome": "granted",
+    "part": "reasoning",
+    "sections": [],
+    "section_family": [],
+    "factors": [
+      "charge_sheet_filed"
+    ],
+    "cites": [],
+    "authority": 0.95,
+    "text": "[synthetic] Once the charge sheet is filed custodial interrogation is no longer required."
+  },
+  {
+    "doc_id": "BOMHC-2024-0355",
+    "para": 8,
+    "court": "Bombay HC",
+    "date": "2024-09-01",
+    "outcome": "granted",
+    "part": "reasoning",
+    "sections": [
+      "BNS 318(4)"
+    ],
+    "section_family": [
+      "IPC 420",
+      "BNS 318(4)"
+    ],
+    "factors": [
+      "trial_delay"
+    ],
+    "cites": [],
+    "authority": 0.2,
+    "text": "[synthetic] Delay in trial; Article 21."
+  },
+  {
+    "doc_id": "DLHC-2025-0099",
+    "para": 5,
+    "court": "Delhi HC",
+    "date": "2025-03-01",
+    "outcome": "granted",
+    "part": "reasoning",
+    "sections": [
+      "BNS 318(4)"
+    ],
+    "section_family": [
+      "IPC 420",
+      "BNS 318(4)"
+    ],
+    "factors": [
+      "parity_with_co_accused"
+    ],
+    "cites": [],
+    "authority": 0.2,
+    "text": "[synthetic] After case date: must never be retrieved for case-0007 (as of 2025-02-03)."
+  },
+  {
+    "doc_id": "TESTORD-2024-0001",
+    "para": 3,
+    "court": "Delhi HC",
+    "date": "2024-11-20",
+    "outcome": "granted",
+    "part": "reasoning",
+    "sections": [
+      "BNS 318(4)"
+    ],
+    "section_family": [
+      "IPC 420",
+      "BNS 318(4)"
+    ],
+    "factors": [
+      "parity_with_co_accused"
+    ],
+    "cites": [],
+    "authority": 0.2,
+    "text": "[synthetic] A test-split order: excluded from every store."
+  }
+]

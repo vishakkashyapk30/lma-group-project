@@ -1,0 +1,50 @@
+[
+  {
+    "old_ref": "IPC 420",
+    "new_ref": "BNS 318(4)",
+    "type": "REWORDED",
+    "text_diff": "- cheating and dishonestly inducing delivery\n+ cheating and thereby dishonestly inducing delivery (wording differs)"
+  },
+  {
+    "old_ref": "IPC 406",
+    "new_ref": "BNS 316(2)",
+    "type": "SAME",
+    "text_diff": ""
+  },
+  {
+    "old_ref": "IPC 999",
+    "new_ref": "BNS 888(1)",
+    "type": "SPLIT",
+    "text_diff": "[synthetic split]"
+  },
+  {
+    "old_ref": "IPC 999",
+    "new_ref": "BNS 888(2)",
+    "type": "SPLIT",
+    "text_diff": "[synthetic split]"
+  },
+  {
+    "old_ref": "IPC 777",
+    "new_ref": "BNS 666",
+    "type": "MERGED",
+    "text_diff": "[synthetic merge]"
+  },
+  {
+    "old_ref": "IPC 778",
+    "new_ref": "BNS 666",
+    "type": "MERGED",
+    "text_diff": "[synthetic merge]"
+  },
+  {
+    "old_ref": "CrPC 439",
+    "new_ref": "BNSS 483",
+    "type": "SAME",
+    "text_diff": ""
+  },
+  {
+    "old_ref": "CrPC 436A",
+    "new_ref": "BNSS 479",
+    "type": "REWORDED",
+    "text_diff": "[synthetic] first-time offender proviso added"
+  }
+]

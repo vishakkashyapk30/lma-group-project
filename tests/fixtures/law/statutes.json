@@ -1,0 +1,106 @@
+[
+  {
+    "code": "BNS",
+    "section": "318(4)",
+    "text": "[synthetic] Cheating and thereby dishonestly inducing the person deceived to deliver property.",
+    "max_punishment": "7 years",
+    "bailable": false,
+    "cognisable": true
+  },
+  {
+    "code": "IPC",
+    "section": "420",
+    "text": "[synthetic] Cheating and dishonestly inducing delivery of property.",
+    "max_punishment": "7 years",
+    "bailable": false,
+    "cognisable": true
+  },
+  {
+    "code": "BNS",
+    "section": "316(2)",
+    "text": "[synthetic] Criminal breach of trust.",
+    "max_punishment": "5 years",
+    "bailable": false,
+    "cognisable": true
+  },
+  {
+    "code": "IPC",
+    "section": "406",
+    "text": "[synthetic] Punishment for criminal breach of trust.",
+    "max_punishment": "3 years",
+    "bailable": false,
+    "cognisable": true
+  },
+  {
+    "code": "BNS",
+    "section": "103",
+    "text": "[synthetic] Punishment for murder.",
+    "max_punishment": "death",
+    "bailable": false,
+    "cognisable": true
+  },
+  {
+    "code": "BNS",
+    "section": "115(2)",
+    "text": "[synthetic] Voluntarily causing hurt.",
+    "max_punishment": "1 year",
+    "bailable": true,
+    "cognisable": false
+  },
+  {
+    "code": "CrPC",
+    "section": "439",
+    "text": "[synthetic] Special powers of High Court or Court of Session regarding bail.",
+    "max_punishment": null,
+    "bailable": null,
+    "cognisable": null
+  },
+  {
+    "code": "BNSS",
+    "section": "483",
+    "text": "[synthetic] Special powers of High Court or Court of Session regarding bail.",
+    "max_punishment": null,
+    "bailable": null,
+    "cognisable": null
+  },
+  {
+    "code": "CrPC",
+    "section": "436A",
+    "text": "[synthetic] Maximum period for which an undertrial prisoner can be detained.",
+    "max_punishment": null,
+    "bailable": null,
+    "cognisable": null
+  },
+  {
+    "code": "BNSS",
+    "section": "479",
+    "text": "[synthetic] Maximum period for which an undertrial prisoner can be detained.",
+    "max_punishment": null,
+    "bailable": null,
+    "cognisable": null
+  },
+  {
+    "code": "NDPS",
+    "section": "37",
+    "text": "[synthetic] Offences to be cognizable and non-bailable; twin conditions for bail.",
+    "max_punishment": null,
+    "bailable": null,
+    "cognisable": null
+  },
+  {
+    "code": "UAPA",
+    "section": "43D(5)",
+    "text": "[synthetic] Bail restriction: no release if the accusation appears prima facie true.",
+    "max_punishment": null,
+    "bailable": null,
+    "cognisable": null
+  },
+  {
+    "code": "PMLA",
+    "section": "45",
+    "text": "[synthetic] Offences cognizable and non-bailable; twin conditions for bail.",
+    "max_punishment": null,
+    "bailable": null,
+    "cognisable": null
+  }
+]

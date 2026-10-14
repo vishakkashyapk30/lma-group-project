@@ -1,0 +1,5 @@
+{"doc_id": "DLHC-2022-1187", "court": "Delhi High Court", "date": "2022-06-03", "police_station": "PS-A", "fir_number": "55", "fir_year": 2021, "split": "train"}
+{"doc_id": "DLHC-2023-0911", "court": "Delhi High Court", "date": "2023-05-19", "police_station": "PS-B", "fir_number": "10", "fir_year": 2022, "split": "train"}
+{"doc_id": "TESTORD-2024-0001", "court": "Delhi High Court", "date": "2024-11-20", "police_station": "PS-1", "fir_number": "112", "fir_year": 2024, "split": "test"}
+{"doc_id": "SAMEFIR-2024-0002", "court": "Delhi High Court", "date": "2024-10-02", "police_station": "PS-1", "fir_number": "112", "fir_year": 2024, "split": "train"}
+{"doc_id": "DLHC-2025-0099", "court": "Delhi High Court", "date": "2025-03-01", "police_station": "PS-Z", "fir_number": "7", "fir_year": 2025, "split": "train"}
