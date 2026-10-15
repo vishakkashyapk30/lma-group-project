@@ -1,19 +1,122 @@
-"""Evaluation labeler Llama-3.1-8B (4-bit). Never used by the system; non-Qwen so gold is not Qwen output (plan §12, §15.1)."""
+"""Evaluation labeler Llama-3.1-8B (4-bit). Never used by the system; non-Qwen so gold is not Qwen output (plan §12, §15.1).
+
+`EvalLabeler` (alias `LabelerClient`) labels a text against a closed label set. It refuses to run when called from the
+system's own packages (agents, orchestration, tools, api, batch, truth maintenance), so it can only feed `pipelines/gold`
+and `eval/`. When Llama cannot run here (no transformers/torch, no weights, or `VS_MODELS=offline`) it raises
+`LabelerUnavailable`, which is also a NotImplementedError: the gold pipeline then keeps provisional rule-only records
+instead of pretending two labelers agreed. There is deliberately no offline labeler: a rule-based stand-in would agree
+with the rules by construction.
+"""
 
 from __future__ import annotations
+
+import os
+import sys
+
+from vakeel_sahayak.models.base import LabelerUnavailable, LLMClient, ModelUnavailable, model_family
+
+DEFAULT_LABELER = "meta-llama/Llama-3.1-8B-Instruct"
+SYSTEM_PACKAGES = (
+    "vakeel_sahayak.agents", "vakeel_sahayak.orchestration", "vakeel_sahayak.tools", "vakeel_sahayak.api",
+    "vakeel_sahayak.batch", "vakeel_sahayak.truth_maintenance", "vakeel_sahayak.export",
+)  # fmt: skip
+
+
+class SystemUseError(PermissionError):
+    """The evaluation labeler was called from the running system (plan §12: never used by the system)."""
+
+
+def assert_not_system_use() -> None:
+    """Raise SystemUseError when any caller on the stack belongs to a system package."""
+    frame = sys._getframe(2) if hasattr(sys, "_getframe") else None
+    while frame is not None:
+        module = str(frame.f_globals.get("__name__", ""))
+        if any(module == p or module.startswith(p + ".") for p in SYSTEM_PACKAGES):
+            raise SystemUseError(f"the evaluation labeler may not be used by the system (called from {module})")
+        frame = frame.f_back
 
 
 class EvalLabeler:
     """Llama-3.1-8B labeler for G1, G3-G7 and citation treatments."""
 
+    name = "llama-3.1-8b-labeler"
+    SYSTEM_USE = False
+
+    def __init__(self, model: str | None = None, llm: LLMClient | None = None) -> None:
+        """Configure the labeler; nothing loads yet.
+
+        Args:
+            model: checkpoint (default configs/models.yaml `llm.eval_labeler.model`)
+            llm: an LLMClient to use instead of loading Llama locally (e.g. a VllmClient serving Llama on Ada)
+        """
+        self.model_id = model
+        self._llm = llm
+
+    def _model_name(self) -> str:
+        if self.model_id:
+            return self.model_id
+        from vakeel_sahayak.config import load_config
+
+        cfg = ((load_config().models.get("llm") or {}).get("eval_labeler") or {})
+        return str(cfg.get("model") or DEFAULT_LABELER)
+
+    def client(self) -> LLMClient:
+        """The underlying LLM client (built on first use)."""
+        if self._llm is not None:
+            return self._llm
+        if os.environ.get("VS_MODELS", "auto").lower() == "offline":
+            raise LabelerUnavailable("VS_MODELS=offline: the Llama evaluation labeler is not run; gold stays rule-only")
+        from vakeel_sahayak.models.local_llm import LocalLLMClient
+
+        name = self._model_name()
+        if model_family(name) == "qwen":
+            raise ValueError("the evaluation labeler must not be a Qwen model (plan §15.1: no Qwen gold)")
+        if not LocalLLMClient.available():
+            raise LabelerUnavailable("transformers and torch are not installed, so the Llama labeler cannot run", "models")
+        self._llm = LocalLLMClient(model=name, role="eval_labeler", quant="int4")
+        return self._llm
+
     def label(self, text: str, label_set: list[str]) -> list[str]:
         """Label text against a closed label set; agreed-labels-only logic lives in pipelines/gold.
 
         Args:
-            text: see behaviour
-            label_set: see behaviour
+            text: the text to label (public court text)
+            label_set: the allowed labels
 
         Returns:
-            Labels.
+            Labels from `label_set`, in label-set order.
+
+        Raises:
+            SystemUseError: when called from the system's packages.
+            LabelerUnavailable: Llama cannot run here.
         """
-        raise NotImplementedError
+        assert_not_system_use()
+        if not label_set:
+            return []
+        from vakeel_sahayak.models.prompting import render_prompt
+        from vakeel_sahayak.orchestration.structured_output import StructuredOutputError, constrained_generate
+
+        schema = {
+            "type": "object",
+            "properties": {"labels": {"type": "array", "items": {"enum": list(label_set)}}},
+            "required": ["labels"],
+        }
+        prompt = render_prompt(
+            "eval.label",
+            "Choose every label from the allowed set that the text clearly discusses. Choose none if none applies. "
+            "Answer only with the JSON object.",
+            {"allowed_labels": list(label_set), "text": text[:6000]},
+            system="You are an annotator of Indian court orders.",
+            schema=schema,
+        )
+        try:
+            out = constrained_generate(self.client(), prompt, schema, max_tokens=256)
+        except ModelUnavailable as exc:
+            raise LabelerUnavailable(str(exc)) from exc
+        except StructuredOutputError:
+            return []
+        chosen = set(out.get("labels", [])) if isinstance(out, dict) else set()
+        return [lbl for lbl in label_set if lbl in chosen]
+
+
+LabelerClient = EvalLabeler
