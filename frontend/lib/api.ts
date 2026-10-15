@@ -1,33 +1,364 @@
-// Typed API client for the FastAPI backend (plan §13.1). Mirrors src/vakeel_sahayak/api/routers/.
+// Typed client for the FastAPI backend (plan §13.1), one function per route in src/vakeel_sahayak/api/routers/.
+//
+// Mode: when NEXT_PUBLIC_API_BASE (or the older NEXT_PUBLIC_API_BASE_URL) is unset, or a request fails with a network
+// error (or a 5xx from a backend whose routes are still stubs), the client switches to demo mode for the rest of the
+// session and answers from the in-browser demo backend in lib/mock/server.ts. Demo mode is sticky so that the event
+// stream, the gates and the data stay consistent. Set NEXT_PUBLIC_DEMO_FALLBACK=strict to fall back on network errors
+// only (5xx then surface as ApiError).
+import { ApiError } from "./errors";
+import * as demo from "./mock/server";
 import type {
-  BailBrief, CaseDossier, CaseSummary, ChatMessage, GateId, GateStatus, IngestionReport, RightsReport, SparringRecord, TriageCard,
+  ApproveRequest, BailBrief, BridgeData, BudgetState, CaseDossier, CaseSummary, ChatMessage, CitationGraphData,
+  DeskBoard, DraftStartResponse, ExportFormat, GateId, GateStatus, GroundRevision, HearingPrepCard, IngestionReport,
+  LibrarySearchHit, MockPage, RightsReport, SparringRecord, TimelineEvent, UploadResponse,
 } from "./types";
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+/* ── Mode ───────────────────────────────────────────────────────────────────────────────────────────────────────── */
 
-const todo = (name: string): never => { throw new Error(`api.${name}: not implemented (skeleton)`); };
+/** Backend origin without a trailing slash, or null when unset (demo mode). */
+export const API_BASE: string | null = (() => {
+  const raw = process.env.NEXT_PUBLIC_API_BASE ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+  const trimmed = raw.trim().replace(/\/+$/, "");
+  return trimmed ? trimmed : null;
+})();
+
+const STRICT = process.env.NEXT_PUBLIC_DEMO_FALLBACK === "strict";
+
+export type ApiMode = "live" | "demo";
+
+let mode: ApiMode = API_BASE ? "live" : "demo";
+let demoReason: string | null = API_BASE ? null : "NEXT_PUBLIC_API_BASE is not set";
+const modeListeners = new Set<(m: ApiMode) => void>();
+
+/** "live" while the real backend answers; "demo" once the client has fallen back to the demo backend. */
+export function getApiMode(): ApiMode {
+  return mode;
+}
+
+export function isDemoMode(): boolean {
+  return mode === "demo";
+}
+
+/** Why the client is in demo mode (for the "Demo mode" badge tooltip). */
+export function getDemoReason(): string | null {
+  return demoReason;
+}
+
+/** Switch to demo mode for the rest of the session. */
+export function enterDemoMode(reason: string): void {
+  if (mode === "demo") return;
+  mode = "demo";
+  demoReason = reason;
+  if (typeof console !== "undefined") console.info(`[vakeel-sahayak] demo mode: ${reason}`);
+  modeListeners.forEach((l) => l(mode));
+}
+
+export function onApiModeChange(listener: (m: ApiMode) => void): () => void {
+  modeListeners.add(listener);
+  return () => modeListeners.delete(listener);
+}
+
+/** Absolute URL of a backend path ("/api/cases"), or null in demo mode. */
+export function apiUrl(path: string): string | null {
+  return API_BASE && mode === "live" ? `${API_BASE}${path}` : null;
+}
+
+/** SSE endpoint for a case's agent events (GET /api/cases/{case_id}/events); null in demo mode. */
+export function eventsUrl(caseId: string, lastEventId?: string | null): string | null {
+  const base = apiUrl(`/api/cases/${encodeURIComponent(caseId)}/events`);
+  if (!base) return null;
+  return lastEventId ? `${base}?last_event_id=${encodeURIComponent(lastEventId)}` : base;
+}
+
+/* ── Transport ──────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+class FallBack extends Error {}
+
+type Body = { json: unknown } | { form: FormData } | undefined;
+
+async function http<T>(method: string, path: string, body?: Body, signal?: AbortSignal): Promise<T> {
+  const url = apiUrl(path);
+  if (!url) throw new FallBack("demo");
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      signal,
+      headers: body && "json" in body ? { "Content-Type": "application/json", Accept: "application/json" } : { Accept: "application/json" },
+      body: body ? ("json" in body ? JSON.stringify(body.json) : body.form) : undefined,
+    });
+  } catch (e) {
+    if (signal?.aborted) throw e;
+    enterDemoMode(`the API at ${API_BASE} is unreachable`);
+    throw new FallBack("network");
+  }
+  if (!res.ok) {
+    if (res.status >= 500 && !STRICT) {
+      enterDemoMode(`the API answered ${res.status} for ${method} ${path}`);
+      throw new FallBack("server");
+    }
+    let detail: unknown = null;
+    try {
+      detail = await res.json();
+    } catch {
+      /* not JSON */
+    }
+    const message =
+      detail && typeof detail === "object" && "detail" in detail && typeof (detail as { detail: unknown }).detail === "string"
+        ? (detail as { detail: string }).detail
+        : `${method} ${path} failed with ${res.status}`;
+    throw new ApiError(res.status, message, detail);
+  }
+  if (res.status === 204) return undefined as T;
+  const type = res.headers.get("content-type") ?? "";
+  return (type.includes("application/json") ? await res.json() : await res.text()) as T;
+}
+
+/** Call the backend; in demo mode, or after a network failure, answer from the demo backend instead. */
+async function call<T>(live: () => Promise<T>, offline: () => Promise<T>): Promise<T> {
+  if (mode === "demo") return offline();
+  try {
+    return await live();
+  } catch (e) {
+    if (e instanceof FallBack) return offline();
+    throw e;
+  }
+}
+
+const enc = encodeURIComponent;
+const c = (caseId: string) => `/api/cases/${enc(caseId)}`;
+
+/* ── /api/cases (routers/cases.py) ──────────────────────────────────────────────────────────────────────────────── */
+
+/** GET /api/cases: the cause list. */
+export function listCases(): Promise<CaseSummary[]> {
+  return call(() => http("GET", "/api/cases"), () => demo.listCases());
+}
+
+/** POST /api/cases: create a case. */
+export function createCase(title?: string | null): Promise<CaseSummary> {
+  const body = { title: title ?? null };
+  return call(() => http("POST", "/api/cases", { json: body }), () => demo.createCase(body));
+}
+
+/** GET /api/cases/{case_id}. */
+export function getCase(caseId: string): Promise<CaseSummary> {
+  return call(() => http("GET", c(caseId)), () => demo.getCase(caseId));
+}
+
+/** GET /api/cases/{case_id}/ingestion: the latest IngestionReport. */
+export function getIngestion(caseId: string): Promise<IngestionReport> {
+  return call(() => http("GET", `${c(caseId)}/ingestion`), () => demo.getIngestion(caseId));
+}
+
+/** GET /api/cases/{case_id}/dossier. */
+export function getDossier(caseId: string): Promise<CaseDossier> {
+  return call(() => http("GET", `${c(caseId)}/dossier`), () => demo.getDossier(caseId));
+}
+
+/** PATCH /api/cases/{case_id}/dossier/{field}: counsel edits a field; its status becomes USER_EDITED. */
+export function editField(caseId: string, field: string, value: unknown): Promise<CaseDossier> {
+  const body = { value };
+  return call(() => http("PATCH", `${c(caseId)}/dossier/${enc(field)}`, { json: body }), () => demo.editField(caseId, field, body));
+}
+
+/** GET /api/cases/{case_id}/dates: the List of Dates and Events. */
+export function getDates(caseId: string): Promise<TimelineEvent[]> {
+  return call(() => http("GET", `${c(caseId)}/dates`), () => demo.getDates(caseId));
+}
+
+/** GET /api/cases/{case_id}/rights: the RightsReport. */
+export function getRights(caseId: string): Promise<RightsReport> {
+  return call(() => http("GET", `${c(caseId)}/rights`), () => demo.getRights(caseId));
+}
+
+/** POST /api/cases/{case_id}/draft: Sutradhar plans, Vakeel drafts, Abhiyojak spars (needs Gate 1). */
+export function startDraft(caseId: string): Promise<DraftStartResponse> {
+  return call(() => http("POST", `${c(caseId)}/draft`), () => demo.startDraft(caseId) as Promise<DraftStartResponse>);
+}
+
+/** GET /api/cases/{case_id}/brief: the BailBrief. */
+export function getBrief(caseId: string): Promise<BailBrief> {
+  return call(() => http("GET", `${c(caseId)}/brief`), () => demo.getBrief(caseId));
+}
+
+/**
+ * Change highlights for the Brief tab (plan §10). There is no backend route for these yet: the live backend returns
+ * [] and the demo returns its revisions (listed as a shared change).
+ */
+export function getBriefRevisions(caseId: string): Promise<GroundRevision[]> {
+  return call(async () => [], () => demo.getBriefRevisions(caseId));
+}
+
+/** GET /api/cases/{case_id}/spar: the SparringRecord. */
+export function getSpar(caseId: string): Promise<SparringRecord> {
+  return call(() => http("GET", `${c(caseId)}/spar`), () => demo.getSpar(caseId));
+}
+
+/** GET /api/cases/{case_id}/prep: the hearing-prep card. */
+export function getPrep(caseId: string): Promise<HearingPrepCard> {
+  return call(() => http("GET", `${c(caseId)}/prep`), () => demo.getPrep(caseId));
+}
+
+/** GET /api/cases/{case_id}/budget: spend and budget hits. */
+export function getBudget(caseId: string): Promise<BudgetState> {
+  return call(() => http("GET", `${c(caseId)}/budget`), () => demo.getBudget(caseId));
+}
+
+/** What the PDF viewer shows for one page: the backend's page image, or a demo facsimile with text boxes. */
+export type PageSource = { kind: "image"; url: string } | { kind: "mock"; page: MockPage };
+
+/** URL of GET /api/cases/{case_id}/files/{doc_id}/pages/{page} (a page image), or null in demo mode. */
+export function pageImageUrl(caseId: string, docId: string, page: number): string | null {
+  return apiUrl(`${c(caseId)}/files/${enc(docId)}/pages/${page}`);
+}
+
+/** GET /api/cases/{case_id}/files/{doc_id}/pages/{page}. */
+export async function getPage(caseId: string, docId: string, page: number): Promise<PageSource> {
+  const url = pageImageUrl(caseId, docId, page);
+  if (url) return { kind: "image", url };
+  return { kind: "mock", page: await demo.getPage(caseId, docId, page) };
+}
+
+/* ── Upload (routers/upload.py) ─────────────────────────────────────────────────────────────────────────────────── */
+
+/** POST /api/cases/{case_id}/upload: PDFs, photos, DOCX (multipart field "files"). */
+export function uploadFiles(caseId: string, files: File[]): Promise<UploadResponse> {
+  return call(
+    () => {
+      const form = new FormData();
+      files.forEach((f) => form.append("files", f, f.name));
+      return http("POST", `${c(caseId)}/upload`, { form });
+    },
+    () => demo.uploadFiles(caseId, files.map((f) => f.name)),
+  );
+}
+
+/** POST /api/cases/{case_id}/audio: dictation (multipart field "file"); audio is deleted after transcription. */
+export function uploadAudio(caseId: string, file: Blob, fileName = "dictation.webm"): Promise<UploadResponse> {
+  return call(
+    () => {
+      const form = new FormData();
+      form.append("file", file, fileName);
+      return http("POST", `${c(caseId)}/audio`, { form });
+    },
+    () => demo.uploadAudio(caseId, fileName),
+  );
+}
+
+/* ── Chat (routers/chat.py) ─────────────────────────────────────────────────────────────────────────────────────── */
+
+/** POST /api/cases/{case_id}/chat: Sutradhar routes the question; a short cited answer (or a refusal). */
+export function postChat(caseId: string, text: string): Promise<ChatMessage> {
+  const body = { text };
+  return call(() => http("POST", `${c(caseId)}/chat`, { json: body }), () => demo.postChat(caseId, body));
+}
+
+/** GET /api/cases/{case_id}/chat: chat history. */
+export function getChatHistory(caseId: string): Promise<ChatMessage[]> {
+  return call(() => http("GET", `${c(caseId)}/chat`), () => demo.getChatHistory(caseId));
+}
+
+/* ── Gates (routers/gates.py) ───────────────────────────────────────────────────────────────────────────────────── */
+
+/** GET /api/cases/{case_id}/gates/{gate}: the gate checklist. */
+export function getGate(caseId: string, gate: GateId): Promise<GateStatus> {
+  return call(() => http("GET", `${c(caseId)}/gates/${gate}`), () => demo.getGate(caseId, gate));
+}
+
+/** POST /api/cases/{case_id}/gates/{gate}/approve: 409 while the checklist has unresolved items. */
+export function approveGate(caseId: string, gate: GateId, acknowledged: string[] = []): Promise<GateStatus> {
+  const body: ApproveRequest = { acknowledged_fields: acknowledged };
+  return call(() => http("POST", `${c(caseId)}/gates/${gate}/approve`, { json: body }), () => demo.approveGate(caseId, gate, body));
+}
+
+/* ── Export (routers/export.py) ─────────────────────────────────────────────────────────────────────────────────── */
+
+/** POST /api/cases/{case_id}/export: 403 unless Gate 2 is approved for this case (plan §16). Returns file paths. */
+export function exportCase(caseId: string, format: ExportFormat = "DOCX"): Promise<string[]> {
+  const body = { format };
+  return call(() => http("POST", `${c(caseId)}/export`, { json: body }), () => demo.exportCase(caseId, body));
+}
+
+/* ── Desk (routers/desk.py) ─────────────────────────────────────────────────────────────────────────────────────── */
+
+/** POST /api/desk/upload: a folder (zip) of case files; returns the new case ids. */
+export function deskUpload(file: File): Promise<string[]> {
+  return call(
+    () => {
+      const form = new FormData();
+      form.append("file", file, file.name);
+      return http("POST", "/api/desk/upload", { form });
+    },
+    () => demo.deskUpload(file.name),
+  );
+}
+
+/** GET /api/desk/board: the triage board sorted by urgency. */
+export function getDeskBoard(): Promise<DeskBoard> {
+  return call(() => http("GET", "/api/desk/board"), () => demo.getDeskBoard());
+}
+
+/** POST /api/desk/{case_id}/open: open a case from the board (it still needs its own approvals). */
+export function openDeskCase(caseId: string): Promise<CaseSummary> {
+  return call(() => http("POST", `/api/desk/${enc(caseId)}/open`), () => demo.openDeskCase(caseId));
+}
+
+/* ── Library (routers/library.py) ───────────────────────────────────────────────────────────────────────────────── */
+
+/** GET /api/library/search?q=: precedent search over caselaw.reasoning. */
+export function searchLibrary(q: string): Promise<LibrarySearchHit[]> {
+  return call(() => http("GET", `/api/library/search?q=${enc(q)}`), () => demo.searchLibrary(q));
+}
+
+/** GET /api/library/citations/{doc_id}: citation graph with good-law badges. */
+export function getCitationGraph(docId: string): Promise<CitationGraphData> {
+  return call(() => http("GET", `/api/library/citations/${enc(docId)}`), () => demo.getCitationGraph(docId));
+}
+
+/** GET /api/library/bridge/{code}/{section}: the IPC↔BNS bridge with a text diff. */
+export function getBridge(code: string, section: string): Promise<BridgeData> {
+  return call(() => http("GET", `/api/library/bridge/${enc(code)}/${enc(section)}`), () => demo.getBridge(code, section));
+}
+
+/* ── Grouped client (same functions; older call sites use these names) ──────────────────────────────────────────── */
 
 export const api = {
-  listCases: (): Promise<CaseSummary[]> => todo("listCases"),
-  createCase: (title?: string): Promise<CaseSummary> => todo("createCase"),
-  getIngestion: (caseId: string): Promise<IngestionReport> => todo("getIngestion"),
-  getDossier: (caseId: string): Promise<CaseDossier> => todo("getDossier"),
-  editField: (caseId: string, field: string, value: unknown): Promise<CaseDossier> => todo("editField"),
-  getDates: (caseId: string): Promise<unknown[]> => todo("getDates"),
-  getRights: (caseId: string): Promise<RightsReport> => todo("getRights"),
-  startDraft: (caseId: string): Promise<void> => todo("startDraft"),
-  getBrief: (caseId: string): Promise<BailBrief> => todo("getBrief"),
-  getSpar: (caseId: string): Promise<SparringRecord> => todo("getSpar"),
-  getPrep: (caseId: string): Promise<Record<string, unknown>> => todo("getPrep"),
-  uploadFiles: (caseId: string, files: File[]): Promise<{ accepted: string[]; questions: string[] }> => todo("uploadFiles"),
-  uploadAudio: (caseId: string, file: Blob): Promise<{ accepted: string[]; questions: string[] }> => todo("uploadAudio"),
-  chat: (caseId: string, text: string): Promise<ChatMessage> => todo("chat"),
-  getGate: (caseId: string, gate: GateId): Promise<GateStatus> => todo("getGate"),
-  approveGate: (caseId: string, gate: GateId, acknowledged: string[]): Promise<GateStatus> => todo("approveGate"),
-  exportCase: (caseId: string, format: "DOCX" | "PDF"): Promise<string[]> => todo("exportCase"),
-  deskUpload: (file: File): Promise<string[]> => todo("deskUpload"),
-  deskBoard: (): Promise<{ cards: TriageCard[] }> => todo("deskBoard"),
-  librarySearch: (q: string): Promise<unknown[]> => todo("librarySearch"),
-  libraryCitations: (docId: string): Promise<unknown> => todo("libraryCitations"),
-  libraryBridge: (code: string, section: string): Promise<unknown> => todo("libraryBridge"),
-};
+  listCases,
+  createCase,
+  getCase,
+  getIngestion,
+  getDossier,
+  editField,
+  getDates,
+  getRights,
+  startDraft,
+  getBrief,
+  getBriefRevisions,
+  getSpar,
+  getPrep,
+  getBudget,
+  getPage,
+  pageImageUrl,
+  uploadFiles,
+  uploadAudio,
+  postChat,
+  chat: postChat,
+  getChatHistory,
+  getGate,
+  approveGate,
+  exportCase,
+  deskUpload,
+  getDeskBoard,
+  deskBoard: getDeskBoard,
+  openDeskCase,
+  searchLibrary,
+  librarySearch: searchLibrary,
+  getCitationGraph,
+  libraryCitations: getCitationGraph,
+  getBridge,
+  libraryBridge: getBridge,
+  eventsUrl,
+} as const;
+
+export default api;
