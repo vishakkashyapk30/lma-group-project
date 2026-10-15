@@ -44,8 +44,9 @@ def test_load_config_merges_models_stores_thresholds_tools(configs_dir):
     assert "export" in cfg.tools["vakeel"] and "export" not in cfg.tools["munshi"]
 
 
-def test_load_config_paths_section(configs_dir):
+def test_load_config_paths_section(configs_dir, monkeypatch):
     """Paths come from paths.yaml: stores under data/stores, client cases under data/cases."""
+    monkeypatch.delenv("VS_DATA_DIR", raising=False)  # conftest isolates every test's data dir; this test checks the defaults
     cfg = load_config(str(configs_dir))
     assert cfg.paths.stores_dir == "data/stores"
     assert cfg.paths.cases_dir == "data/cases"

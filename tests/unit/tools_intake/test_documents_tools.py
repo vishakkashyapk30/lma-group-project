@@ -69,7 +69,9 @@ SRC = SourceRef(doc="d2", page=4, lang="en", route="text_layer", quote="arrested
 def test_file_item_timeline_event_lands_in_case_timeline(world, install_stores):
     """A dated event is filed into case.timeline and the result names the store and the item id."""
     install_stores()
-    item = {"event_id": "e20", "date": "2024-08-20", "label": "Arrest"}
+    # RECONCILED: the plan's file_item(store, item, source) has no case argument, so the case comes from the item's
+    # 'case_id' key (or the runtime's current case); the test names it.
+    item = {"case_id": "case-0007", "event_id": "e20", "date": "2024-08-20", "label": "Arrest"}
     result = file_item(StoreName.CASE_TIMELINE, item, SRC)
     assert isinstance(result, FileItemResult)
     assert result.store == StoreName.CASE_TIMELINE
@@ -82,7 +84,7 @@ def test_file_item_timeline_event_lands_in_case_timeline(world, install_stores):
 def test_file_item_document_chunk_lands_in_case_docs(world, install_stores):
     """Document text is filed into case.docs as a structure-aware chunk with page and box."""
     install_stores()
-    item = {"chunk_id": "c77", "doc_id": "d2", "doc_type": "REMAND_ORDER", "page": 4, "box": [10.0, 20.0, 300.0, 40.0],
+    item = {"case_id": "case-0007", "chunk_id": "c77", "doc_id": "d2", "doc_type": "REMAND_ORDER", "page": 4, "box": [10.0, 20.0, 300.0, 40.0],
             "text": "The accused was remanded to judicial custody."}
     before = len(world.stores[StoreName.CASE_DOCS].chunks)
     result = file_item(StoreName.CASE_DOCS, item, SRC)
@@ -107,7 +109,7 @@ def test_file_item_pseudonymises_names_before_filing(world, install_stores, monk
         return text, None
 
     patch_everywhere(monkeypatch, "vakeel_sahayak.privacy.pseudonymise", "pseudonymise_text", fake_pseudonymise)
-    item = {"event_id": "e21", "date": "2024-08-20", "label": f"{planted_names[0]} arrested"}
+    item = {"case_id": "case-0007", "event_id": "e21", "date": "2024-08-20", "label": f"{planted_names[0]} arrested"}
     file_item(StoreName.CASE_TIMELINE, item, SRC)
     texts = [e.model_dump_json() for e in world.stores[StoreName.CASE_TIMELINE].events]
     assert leaked_names(texts, planted_names) == []

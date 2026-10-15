@@ -17,7 +17,9 @@ def test_two_arrest_dates_from_two_documents_conflict_and_keep_both_events():
     conflicts = detect_conflicts(timeline)
     assert len(conflicts) == 1
     field, ids = conflicts[0]
-    assert field.lower() == "arrest"  # ASSUMPTION: the field name is the lower-cased label
+    # RECONCILED: the conflict names the dossier field ('arrest_date', plan §4.3 step 5 / §7.1), not the bare label,
+    # so Peshkar can mark that field AMBIGUOUS without a second lookup.
+    assert field == "arrest_date"
     assert sorted(ids) == ["e3", "e9"]
 
 

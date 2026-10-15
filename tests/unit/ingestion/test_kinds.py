@@ -38,10 +38,11 @@ CASES = [
     # K4: perspective skew, page edges visible; ASSUMPTION: skew wins over K2/K3
     ("skew_no_text", PageSignals(has_text_layer=False, skew_or_perspective=True), K.K4_PHONE_PHOTO),
     ("skew_low_conf", PageSignals(has_text_layer=False, skew_or_perspective=True, mean_ocr_conf=0.45), K.K4_PHONE_PHOTO),
-    # K5: Hindi or mixed script. ASSUMPTION: PageSignals has no explicit script field, so script_consistency is read as the
-    # Devanagari share of the page's letters; >= 0.5 means Devanagari-dominant.
-    ("hindi_unicode_text_layer", PageSignals(has_text_layer=True, text_coverage=0.95, dict_word_share=0.95, script_consistency=0.9), K.K5_HINDI_MIXED),
-    ("english_text_layer_low_devanagari", PageSignals(has_text_layer=True, text_coverage=0.95, dict_word_share=0.95, script_consistency=0.02), K.K1_BORN_DIGITAL),
+    # K5: Hindi or mixed script.
+    # RECONCILED: the tests read `script_consistency` as the Devanagari share, but plan §4.2 lists script consistency as a
+    # quality signal (do words stay in one script), so 0.9 means a clean page. The Devanagari share is its own field.
+    ("hindi_unicode_text_layer", PageSignals(has_text_layer=True, text_coverage=0.95, dict_word_share=0.95, devanagari_share=0.9), K.K5_HINDI_MIXED),
+    ("english_text_layer_low_devanagari", PageSignals(has_text_layer=True, text_coverage=0.95, dict_word_share=0.95, devanagari_share=0.02), K.K1_BORN_DIGITAL),
     # K6: a text layer exists but decodes to Latin gibberish; wins over K3 (the gibberish also has a low word share)
     ("legacy_font", PageSignals(has_text_layer=True, text_coverage=0.9, dict_word_share=0.1, legacy_font_pattern=True), K.K6_LEGACY_HINDI_FONT),
     # K7: handwriting regions; wins over K3 (very low OCR confidence)

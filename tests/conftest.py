@@ -60,6 +60,17 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
 # --------------------------------------------------------------------------------------------------------------------
 # Paths and configs
 # --------------------------------------------------------------------------------------------------------------------
+@pytest.fixture(autouse=True)
+def _isolated_data_dir(tmp_path_factory, monkeypatch):
+    """Give every test its own data dir, so case event logs and alias maps never leak between tests or into data/."""
+    from vakeel_sahayak.tools.runtime import set_runtime
+
+    monkeypatch.setenv("VS_DATA_DIR", str(tmp_path_factory.mktemp("vsdata")))
+    set_runtime(None)
+    yield
+    set_runtime(None)
+
+
 @pytest.fixture(scope="session")
 def repo_root() -> Path:
     return REPO_ROOT
