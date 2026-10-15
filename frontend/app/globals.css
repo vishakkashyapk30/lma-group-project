@@ -4,4 +4,326 @@
 @tailwind components;
 @tailwind utilities;
 
-/* TODO: base styles: parchment background, ink text, visible focus ring (WCAG 2.1 AA, plan §13.7) */
+/* ── Base (plan §13.2, §13.7) ───────────────────────────────────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    background-color: var(--color-parchment);
+    color: var(--color-ink);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--color-parchment);
+    color: var(--color-ink);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    color: var(--color-maroon);
+    font-weight: 600;
+    line-height: var(--leading-snug);
+    text-wrap: balance;
+  }
+
+  h5, h6 {
+    font-family: var(--font-ui);
+    font-weight: 600;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  a {
+    color: var(--color-maroon);
+    text-underline-offset: 0.18em;
+    text-decoration-thickness: 1px;
+  }
+
+  code, kbd, samp, pre {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+  }
+
+  /* Hindi is always real text in Devanagari fonts (plan §13.7): any lang="hi" subtree picks the right family. */
+  :lang(hi) {
+    font-family: var(--font-devanagari-body);
+    line-height: var(--leading-devanagari);
+  }
+
+  h1:lang(hi), h2:lang(hi), h3:lang(hi), .font-devanagari:lang(hi) {
+    font-family: var(--font-devanagari-display);
+  }
+
+  ::selection {
+    background-color: rgb(var(--rgb-maroon) / 0.9);
+    color: var(--color-cream);
+  }
+
+  /* Visible focus everywhere (WCAG 2.4.7). Mouse focus stays quiet; keyboard focus gets a 3px maroon ring. */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  :focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  /* On oxblood and maroon blocks the ring turns gold-pale (7.8:1 on oxblood). */
+  .on-dark,
+  [data-surface="dark"] {
+    --focus-ring-color: var(--color-gold-pale);
+    color: var(--color-cream);
+  }
+
+  .on-dark a,
+  [data-surface="dark"] a {
+    color: var(--color-cream);
+  }
+
+  .on-dark h1, .on-dark h2, .on-dark h3, .on-dark h4,
+  [data-surface="dark"] h1, [data-surface="dark"] h2, [data-surface="dark"] h3, [data-surface="dark"] h4 {
+    color: var(--color-cream);
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  /* Thin gold scrollbars inside panes */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--rgb-gold-leaf) / 0.6) transparent;
+  }
+}
+
+/* ── Components ─────────────────────────────────────────────────────────────────────────────────────────────────── */
+@layer components {
+  /* Skip link: off-screen until focused (WCAG 2.4.1) */
+  .skip-link {
+    position: absolute;
+    left: var(--space-4);
+    top: var(--space-2);
+    z-index: var(--z-tooltip);
+    transform: translateY(-200%);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-maroon);
+    color: var(--color-cream);
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform var(--dur-fast) var(--ease-standard);
+  }
+
+  .skip-link:focus,
+  .skip-link:focus-visible {
+    transform: translateY(0);
+    outline-color: var(--color-ink);
+  }
+
+  /* Small caps label used for section eyebrows, stage names and table heads */
+  .eyebrow {
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: var(--tracking-caps);
+    text-transform: uppercase;
+    color: var(--color-ink-soft);
+  }
+
+  /* Constitution-style numerals (I-VII) and other display figures */
+  .numeral {
+    font-family: var(--font-display);
+    font-variant-numeric: lining-nums;
+    font-feature-settings: "lnum" 1;
+    letter-spacing: 0.02em;
+  }
+
+  /* Citations, IDs and section numbers (plan §13.2) */
+  .cite {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    letter-spacing: -0.01em;
+  }
+
+  /* Devanagari display text (logo, motto) */
+  .hindi-display {
+    font-family: var(--font-devanagari-display);
+    line-height: var(--leading-devanagari);
+  }
+
+  .hindi-body {
+    font-family: var(--font-devanagari-body);
+    line-height: var(--leading-devanagari);
+  }
+
+  /* Gold hairline ornament: decoration only */
+  .gold-rule {
+    height: 1px;
+    border: 0;
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--rgb-gold-leaf) / 0.9) 12%,
+      rgb(var(--rgb-gold-leaf) / 0.9) 88%,
+      transparent
+    );
+  }
+}
+
+/* ── Utilities ──────────────────────────────────────────────────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Jaali lattice texture (plan §13.2): our own eight-point lattice, gold hairlines at low opacity. Decoration only. */
+  .bg-jaali {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23B08D57' stroke-opacity='0.22' stroke-width='0.75'%3E%3Cpath d='M20 5 35 20 20 35 5 20Z'/%3E%3Cpath d='M9.5 9.5h21v21h-21z'/%3E%3Cpath d='M0 0l9.5 9.5M40 0l-9.5 9.5M0 40l9.5-9.5M40 40l-9.5-9.5M20 0v5M20 35v5M0 20h5M35 20h5'/%3E%3Ccircle cx='20' cy='20' r='3.2'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 40px 40px;
+  }
+
+  .bg-jaali-dark {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23D4B57E' stroke-opacity='0.16' stroke-width='0.75'%3E%3Cpath d='M20 5 35 20 20 35 5 20Z'/%3E%3Cpath d='M9.5 9.5h21v21h-21z'/%3E%3Cpath d='M0 0l9.5 9.5M40 0l-9.5 9.5M0 40l9.5-9.5M40 40l-9.5-9.5M20 0v5M20 35v5M0 20h5M35 20h5'/%3E%3Ccircle cx='20' cy='20' r='3.2'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 40px 40px;
+  }
+
+  .bg-jaali-lg {
+    background-size: 72px 72px;
+  }
+
+  /* Fade the lattice out towards one edge */
+  .jaali-fade-b {
+    -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent);
+    mask-image: linear-gradient(to bottom, #000 30%, transparent);
+  }
+
+  .jaali-fade-r {
+    -webkit-mask-image: linear-gradient(to right, #000 30%, transparent);
+    mask-image: linear-gradient(to right, #000 30%, transparent);
+  }
+
+  /* Ruled manuscript lines (Vakeel's living manuscript, scene 6). Decoration only. */
+  .bg-ruled {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(1.75rem - 1px),
+      rgb(var(--rgb-gold-leaf) / 0.28) calc(1.75rem - 1px),
+      rgb(var(--rgb-gold-leaf) / 0.28) 1.75rem
+    );
+  }
+
+  .surface-paper {
+    background-color: var(--color-cream);
+    border: 1px solid var(--color-line);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Hide visually, keep for screen readers */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .will-change-transform {
+    will-change: transform;
+  }
+}
+
+/* ── Lenis smooth scrolling (landing only; see lib/motion/register.ts) ─────────────────────────────────────────── */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/* ── Reduced motion base (plan §13.4, §13.7) ───────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Elements that only exist for the animated path; the static storyboard / icons take over. */
+@media (prefers-reduced-motion: reduce) {
+  [data-motion-only] {
+    display: none !important;
+  }
+}
+
+:root[data-motion="reduce"] [data-motion-only] {
+  display: none !important;
+}
+
+[data-static-only] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-static-only] {
+    display: revert;
+  }
+}
+
+:root[data-motion="reduce"] [data-static-only] {
+  display: revert;
+}
+
+@media print {
+  .skip-link,
+  [data-print-hide] {
+    display: none !important;
+  }
+}
