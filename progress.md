@@ -176,15 +176,50 @@ Each phase works like this:
 2. Only that phase's tests are run.
 3. A reconcile agent fixes the code by default. It changes a test only where the test contradicts the plan, and marks each such change `# RECONCILED`.
 
-| Phase | Scope | Status |
-|---|---|---|
-| 1. Foundations | config, schemas, event log and case record, contracts, tool registry with gated export, Rights Radar (7 rules), date_calc / map_section / transfer_check / statute tools, privacy (pseudonymisation, boundary, injection guard, leak check, sensitive matters), concordance pipeline | **Done.** Phase 1 unit tests: 1,060 passed, 4 skipped (needs langgraph), 0 failed. No tests were changed. |
-| 2. Stores and data pipelines | order splitter, section extraction, factor tagger, splits and leakage, citation graph and good-law check, rule-based gold labels G1–G7, the 8 remaining stores (SQLite FTS5 + optional LanceDB/BGE-M3), store builders, store tools | **Code written; reconcile unfinished.** The first test run gave 482 passed, 103 failed. The reconcile agent stopped partway when the usage limit hit, so the code is half-fixed. Phase 1 still passes (1,060). To do: resume the reconcile, and fix `assign_splits`, which is slow (17–34 s per test). |
-| 3. Munshi ingestion | page signals, routing ladder, bundles, gaps, Hindi, voice | To do |
-| 4. Agents and orchestration | model clients, Peshkar, Sutradhar, Vakeel, Abhiyojak, truth maintenance, Pairokar, LangGraph gates | To do |
-| 5. API and export | FastAPI routers and SSE; DOCX application and hearing card | To do |
-| 6. Frontend | design system, landing animations, workspace, desk, library | To do |
-| 7. Evaluation | test-set construction T1–T9, baselines, ablations, metrics, stats, Ada scripts | To do |
+| Phase | Scope | Tests that check it | Status |
+|---|---|---|---|
+| 1. Foundations | config, schemas, event log and case record, contracts, tool registry with gated export, Rights Radar (7 rules), date_calc / map_section / transfer_check / statute tools, privacy (pseudonymisation, boundary, injection guard, leak check, sensitive matters), concordance pipeline | `tests/unit/{schemas,record,contracts,config,tools,tools_law_case,rights,privacy,pipelines/concordance}` | **Done** |
+| 2. Stores and data pipelines | order splitter, section extraction, factor tagger, date splits and leakage, citation graph and good-law check, rule-based gold labels G1–G7, the 8 remaining stores (SQLite FTS5 + optional LanceDB/BGE-M3), store builders, store tools | `tests/unit/{stores,pipelines,tools_caselaw,tools_advocacy,tools_case}` | **Done** |
+| 3. Munshi ingestion | page quality signals, the routing ladder (text layer → layout → OCR → vision → ask counsel), input kinds K1–K10, bundle splitting and document classification, filing into the case shelf, gap checklist, conflict detection, Hindi (OCR + IndicTrans2), voice intake (Whisper/IndicConformer + read-back), intake tools | `tests/unit/{ingestion,tools_intake}` | **Done.** Phase 3 unit tests: 281 passed, 16 skipped (needs PyMuPDF), 0 failed. Three tests were changed, each marked `# RECONCILED` (K5 uses the new `devanagari_share` signal; the conflict field is named `arrest_date`; the `file_item` items carry a `case_id`). |
+| 4. Agents and orchestration | model clients (vLLM, local 4B, vision model, NLI, labeler), Peshkar (dossier, List of Dates, change detection), Sutradhar (evidence contracts, plans, sufficiency, budgets, chat routing), Vakeel (drafting, check and repair), Abhiyojak (sparring, context isolation), truth maintenance (incremental redrafting), Pairokar (urgency triage, queue, shared cache), LangGraph graph with gate interrupts, ablation switches | `tests/unit/{models,agents,orchestration,truth_maintenance,batch,tools_drafting}` + `tests/integration` | **In progress.** A workflow is running:
+1. a core agent (model clients, offline LLM, structured output, budgets, switches, agent base, drafting tools, langgraph install);
+2. four parallel builds (Peshkar; Sutradhar; Vakeel + Abhiyojak; truth maintenance + Pairokar/batch), none of which see the tests;
+3. wiring (the LangGraph graph with gate interrupts, a fallback state machine, baselines, an end-to-end offline run);
+4. five parallel reconcilers, then integration;
+5. up to 2 review rounds (plan fidelity, safety and privacy, robustness, test integrity) with skeptic verification, then fixes and a gate. |
+| 5. API and export | FastAPI routers (cases, upload, chat, SSE events, gates, export, desk, library), the court-ready DOCX application, List of Dates, annexure index, hearing-prep card, PDF export | `tests/unit/{api,export}` + `tests/integration/test_api_routes.py` + `tests/system` | To do |
+| 6. Frontend | design system (Manuscript tokens, type), landing page scenes 0–6 with GSAP, the six agent animations, the workspace (stage rail + 3 panes + tabs), cause list, desk, library, about, SSE client | `frontend/tests` (Vitest) + `frontend/e2e` (Playwright) | **In progress.** A multi-agent workflow is running alongside Phase 3:
+1. a foundation agent;
+2. six parallel tracks (landing art and scenes 0–3; scenes 4–6 and orchestrator; agent animations; workspace shell; workspace tabs; other pages);
+3. integration;
+4. a test reconcile pass (Vitest + Playwright);
+5. up to 2 rounds of review over 5 lenses (plan fidelity, accessibility, motion/performance, data contract, visual design), with skeptic verification, then fixes and a gate.
+
+The app runs in demo mode from case-0007 mock data until the backend (Phases 4–5) exists. |
+| 7. Evaluation and training | test-set construction T1–T9 (rendering + Augraphy, change sets, rights scenarios, speech), baselines B0–B4, ablations A1–A10, ingestion pipelines P1–P6, feature evals F1–F8, metrics and statistics, teacher dossiers + QLoRA fine-tuning, Ada shard scripts | `tests/unit/{eval,finetune,testsets}` | To do |
+
+**Test isolation (2026-10-15):**
+- `tests/conftest.py` has an autouse fixture that gives every test its own `VS_DATA_DIR`. Before this, tests wrote case event logs into `data/cases/`, and stale questions there broke later runs.
+- `test_load_config_paths_section` clears the override, because it checks the default paths.
+- After the change, Phases 1–3 together give **1,894 passed, 20 skipped, 0 failed**, and `data/cases/` stays empty.
+
+**How Phases 1 and 2 were checked:**
+- Phase 1 + 2 unit tests: **1,613 passed, 4 skipped, 0 failed**. The 4 skipped need langgraph (Phase 4).
+- No test file has been changed to make the code pass; there are no `# RECONCILED` markers.
+- `ruff check src` is clean.
+- Phase 2 history:
+  1. The first run gave 482 passed, 103 failed.
+  2. The reconcile agent fixed most of them before it hit the usage limit, leaving 14.
+  3. Those last 14 were all in the case-shelf tools (`get_timeline`, `get_fact`, `search_case_docs`). They now read from the case stores through `open_store` instead of re-folding the event log, and `get_timeline` rejects malformed or inverted date windows.
+- `assign_splits` no longer takes 17–34 s per test; all Phase 2 tests run in about 12 s.
+
+**Phase 2 decisions to review:**
+- Every shared-store search needs a `before` date, to block leakage. Analysis code passes `9999-12-31` for no limit.
+- Until the Llama labeler is connected, citation treatments come from cue words only, so an unagreed "overruled" still triggers the good-law flag.
+- Orders with the same FIR are grouped across courts. This can over-group same-named police stations in different districts.
+- Authority weights are court 0.35, bench 0.15, citations 0.35, recency 0.15. They are to be tuned on dev.
+- Store files are `<shelf>/<name>.sqlite`. An unbuilt shared store opens empty, so a search on it returns no results.
+- `pipelines/oil_ingest.py` (downloading Open India Law) is still a stub, until the data is pulled in week 1.
 
 **Phase 1 choices to confirm in week 0:**
 - A bare "10 years" maximum is treated as `CHECK`, the same as "may extend to ten years".
@@ -195,6 +230,20 @@ Each phase works like this:
 - The IPC2BNS-Verify file format is guessed.
 
 **Known outside Phase 1:** `tests/unit/tools_drafting/test_export_and_approval_tools.py` expects `unresolved == ["antecedents"]`, but the code gives `["UNSUPPORTED:antecedents"]`. This is to be settled in Phase 5.
+
+**Phase 3 open questions:**
+- Should `SourceRef` and `CaseChunk` gain optional `confidence`, `route` and `lang` fields? Today confidence is stored only in the event log.
+- Re-reading a document files new `-r1` chunks beside the old ones, because `case.docs` has no supersede.
+- The same person written in Devanagari and in Latin gets two aliases until a transliteration step is added.
+- Ingesting the same file twice creates duplicate documents and events.
+- Counsel's answers to Munshi's questions are stored but not yet parsed into facts. This is to be wired with the Phase 4 gate interrupts.
+- The offline translator is a word glossary, not IndicTrans2. The real models are written against the library APIs but not yet tested.
+
+**Defaults chosen on 2026-10-15 (change any of these if you disagree):**
+- An "overruled" treatment taken from cue words alone still raises the good-law flag, labelled "unconfirmed", until the Llama labeler is connected.
+- Optional `confidence`, `route` and `lang` fields are to be added to `SourceRef` and `CaseChunk` in Phase 4.
+- Transliteration-based alias merging (Devanagari vs Latin names) is deferred.
+- Your two reference screenshots no longer exist on disk, so the frontend follows plan §13.2's description of the Hugh James and LawStatu elements.
 
 ## 6. Memory notes saved (for future sessions)
 
