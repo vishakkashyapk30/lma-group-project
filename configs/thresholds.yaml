@@ -9,6 +9,8 @@ ingestion:
   vision_escalation_conf: null     # TODO: tune on dev
   doc_type_conf_min: null          # TODO: tune on dev
   boundary_sensitivity: null       # TODO: tune on dev
+  handwriting_conf_max: null       # TODO: tune on dev
+  legacy_font_marker_share: null   # TODO: tune on dev
 nli:
   fact_support_min: null           # TODO: tune on dev
   authority_support_min: null      # TODO: tune on dev

@@ -104,3 +104,6 @@ class CaseChunk(BaseModel):
     text: str
     text_en: str | None = None
     info_kinds: list[InfoKind] = Field(default_factory=list)
+    route: str | None = None  # ladder route that produced the text, e.g. 'ocr: surya-hi' (plan §4.2)
+    lang: str | None = None  # 'en', 'hi' or 'mixed'
+    confidence: float | None = None  # route confidence (mean OCR confidence, or 1.0 for a good text layer)

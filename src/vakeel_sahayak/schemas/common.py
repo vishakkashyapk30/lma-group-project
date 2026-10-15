@@ -23,6 +23,7 @@ class SourceRef(BaseModel):
     quote_en: str | None = None  # English translation of a Hindi quote (plan §4.5)
     tool: str | None = None  # set when status is COMPUTED
     chat: str | None = None  # e.g. 'turn 3' for USER_STATED
+    confidence: float | None = None  # route confidence (OCR / vision / classifier) of the text the value came from
 
 
 class TrackedField(BaseModel, Generic[T]):
