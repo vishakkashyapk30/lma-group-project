@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from vakeel_sahayak.record.case_state import CaseState
 from vakeel_sahayak.schemas.common import TrackedField
 from vakeel_sahayak.schemas.dossier import DossierFields
 from vakeel_sahayak.schemas.enums import AgentName, StoreName
+from vakeel_sahayak.schemas.ids import check_case_id
 from vakeel_sahayak.tools.base import ToolError, ToolSpec
-from vakeel_sahayak.tools.runtime import get_runtime
+from vakeel_sahayak.tools.store_call import call_store, invalid
 
 
 def get_fact(case_id: str, field: str) -> TrackedField[Any] | ToolError:
@@ -22,6 +22,10 @@ def get_fact(case_id: str, field: str) -> TrackedField[Any] | ToolError:
     Returns:
         The tracked field.
     """
+    try:
+        check_case_id(case_id)
+    except (ValueError, TypeError) as exc:
+        return invalid("get_fact", str(exc))
     fields = DossierFields.model_fields
     if field not in fields:
         return ToolError(
@@ -30,7 +34,7 @@ def get_fact(case_id: str, field: str) -> TrackedField[Any] | ToolError:
             message=f"{field!r} is not a dossier field: {sorted(fields)}",
             retryable=True,
         )
-    return getattr(CaseState(case_id, get_runtime().event_log(case_id)).dossier().fields, field)
+    return call_store("get_fact", StoreName.CASE_FACTS, lambda s: s.get(field), case_id=case_id)
 
 
 GET_FACT_SPEC = ToolSpec(

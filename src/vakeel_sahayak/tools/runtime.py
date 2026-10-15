@@ -26,6 +26,7 @@ class ToolRuntime:
         self._logs: dict[str, EventLog] = {}
         self._statutes = None
         self._concordance = None
+        self.current_case_id: str | None = None  # the case being worked on; tools that take no case id read it (file_item)
 
     def event_log(self, case_id: str) -> EventLog:
         """The case's event log (one SQLite file per case), opened once."""

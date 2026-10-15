@@ -5,7 +5,6 @@ from __future__ import annotations
 from vakeel_sahayak.schemas.enums import AgentName, DocumentType, StoreName
 from vakeel_sahayak.schemas.ids import check_case_id
 from vakeel_sahayak.schemas.store_rows import CaseChunk
-from vakeel_sahayak.stores.paths import case_dir
 from vakeel_sahayak.tools.base import ToolError, ToolSpec
 from vakeel_sahayak.tools.store_call import call_store, check_search_args, invalid
 
@@ -35,8 +34,6 @@ def search_case_docs(
         types = [DocumentType(t) for t in doc_types] if doc_types else None
     except ValueError:
         return invalid(tool, f"unknown document type in {doc_types!r}: use one of {[t.value for t in DocumentType]}")
-    if not (case_dir(case_id) / "docs.sqlite").is_file():
-        return ToolError(tool=tool, kind="not_found", message=f"no documents filed for case {case_id!r}", retryable=False)
     return call_store(tool, StoreName.CASE_DOCS, lambda s: s.search(query, types, k), case_id=case_id)
 
 

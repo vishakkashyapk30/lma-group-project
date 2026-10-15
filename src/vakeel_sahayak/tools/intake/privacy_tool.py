@@ -19,7 +19,7 @@ def pseudonymise(text: str, case_id: str) -> str:
     from vakeel_sahayak.privacy.pseudonymise import load_map, pseudonymise_text, save_map
 
     mapping = load_map(case_id)
-    out, mapping = pseudonymise_text(text, case_id, mapping)
+    out, _ = pseudonymise_text(text, case_id, mapping)  # learns new names into `mapping` in place
     save_map(case_id, mapping)  # the alias map stays on the laptop
     return out
 
