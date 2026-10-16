@@ -26,25 +26,23 @@ def assemble_application(case_id: str) -> str | ToolError:
         case_id: the case (its brief, dossier, timeline and documents come from its event log)
 
     Returns:
-        Path of the DOCX, or a ToolError for an invalid case id or a case with no drafted grounds.
+        Path of the DOCX, or a ToolError for an invalid or bulk case id. Assembling is not exporting: no gate is checked.
 
     Raises:
         NotImplementedError: the Phase 5 DOCX builder is still a stub.
     """
     from vakeel_sahayak.export.application import assemble_application_docx
     from vakeel_sahayak.record.case_state import CaseState
-    from vakeel_sahayak.schemas.ids import check_case_id
+    from vakeel_sahayak.tools.drafting.export_tool import single_case_id
     from vakeel_sahayak.tools.runtime import get_runtime
 
-    try:
-        check_case_id(case_id)
-    except ValueError as exc:
-        return ToolError(tool="assemble_application", kind="invalid_input", message=str(exc), retryable=False)
+    one = single_case_id("assemble_application", case_id)
+    if isinstance(one, ToolError):
+        return one
+    case_id = one
     runtime = get_runtime()
     state = CaseState(case_id, runtime.event_log(case_id))
     brief = state.brief()
-    if not brief.grounds:
-        return ToolError(tool="assemble_application", kind="not_ready", message="the case has no drafted grounds yet", retryable=False)
     report = state.ingestion_report()
     docs = list(report.documents) if report is not None else []
     out_dir = Path(runtime.config.paths.cases_dir) / case_id / "export"

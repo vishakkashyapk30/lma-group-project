@@ -78,7 +78,13 @@ class GateGuard:
             gate: see behaviour
             acknowledged: UNSUPPORTED fields counsel acknowledges
         """
-        record_gates.approve_gate(self._log_for(case_id), case_id, gate, acknowledged)
+        log = self._log_for(case_id)
+        ack = list(acknowledged or [])
+        if GateId(gate) == GateId.GATE_2_EXPORT:  # Gate 1 already settled the dossier: its acknowledgements still stand (plan §13.5)
+            earlier = [e for e in log.read(case_id, kind=EventKind.GATE_APPROVED) if e.inputs.get("gate") == GateId.GATE_1_DOSSIER.value]
+            if earlier and self.is_approved(case_id, GateId.GATE_1_DOSSIER):
+                ack += [str(f) for f in earlier[-1].inputs.get("acknowledged") or []]
+        record_gates.approve_gate(log, case_id, GateId(gate), ack)
 
     def reject(self, case_id: str, gate: GateId, reason: str = "") -> Event:
         """Record counsel's rejection (sends the case back; revokes an earlier approval of the gate)."""

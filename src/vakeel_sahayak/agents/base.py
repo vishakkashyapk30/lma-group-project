@@ -105,6 +105,22 @@ def _walk_strings(value: Any, path: str = "") -> Iterator[tuple[str, str]]:
             yield from _walk_strings(v, f"{path}[{i}]")
 
 
+def _spent(budgets: Any, specific: str, factor: str | None) -> bool:
+    """The tracker's narrow check (`store_calls_exhausted` / `tokens_exhausted`), else the general `exhausted(factor)` of a minimal budget."""
+    check = getattr(budgets, specific, None) or budgets.exhausted
+    return bool(check(factor))
+
+
+def _charge(budgets: Any, factor: str | None, *, actor: Any, **spend: int) -> None:
+    """Charge spend; the actor is passed only to trackers that take one (the real BudgetTracker logs it on a BUDGET_HIT)."""
+    import inspect
+
+    if "actor" in inspect.signature(budgets.charge).parameters:
+        budgets.charge(factor, actor=actor, **spend)
+    else:
+        budgets.charge(factor, **spend)
+
+
 @dataclass
 class AgentContext:
     """Everything an agent needs, injected (plan §3.3).
@@ -143,7 +159,7 @@ class AgentContext:
                 self.log = get_runtime().event_log(self.case_id)
         if self.budgets is None:
             self.budgets = BudgetTracker.from_config(self.config, log=self.log, case_id=self.case_id)
-        elif self.budgets.log is None:
+        elif getattr(self.budgets, "log", None) is None and hasattr(self.budgets, "bind"):  # duck-typed budgets (tests) need no binding
             self.budgets.bind(self.log, self.case_id)
         if self.switches is None:
             self.switches = Switches()
@@ -516,12 +532,12 @@ class BaseAgent(ABC):
                 raise
         store_call = bool(spec and spec.stores)
         budgets = getattr(self, "budgets", None)
-        if store_call and budgets is not None and budgets.store_calls_exhausted(factor):
+        if store_call and budgets is not None and _spent(budgets, 'store_calls_exhausted', factor):
             return refuse("budget_exhausted", f"the store-call budget of {factor or 'the case'} is spent")
         charge = {"factor": factor, "store_calls": 1, "tokens": 0} if store_call else None
         call_ev = self.emit(EventKind.TOOL_CALL, {"tool": name, "inputs": args_log, "outputs": {"budget_charge": charge} if charge else {}})
         if charge and budgets is not None:
-            budgets.charge(factor, store_calls=1, actor=self.NAME)
+            _charge(budgets, factor, actor=self.NAME, store_calls=1)
         self._sync_runtime()
         cache, cache_key = self._cache_lookup(name, spec, clean, factor)
         if cache_key is not None and (hit := cache.get(cache_key)) is not None:
@@ -660,7 +676,7 @@ class BaseAgent(ABC):
         self.flag_instructions({"case": jsonable(case), "extra": jsonable(extra)} if extra else jsonable(case))
         self.guard_outbound({"system": self.system_prompt(), "instructions": instructions, "case": case, "extra": extra}, public=corpus)
         budgets = getattr(self, "budgets", None)
-        if budgets is not None and budgets.tokens_exhausted(fkey):
+        if budgets is not None and _spent(budgets, 'tokens_exhausted', fkey):
             raise BudgetExhausted(f"token budget of {fkey or 'the case'} is spent", "factor" if fkey else "case", fkey, "tokens")
         prompt = self.build_prompt(task, instructions, case=case, corpus=corpus, schema=schema, extra=extra)
         attempts, value = 1, None
@@ -687,7 +703,7 @@ class BaseAgent(ABC):
         charge = {"factor": factor, "tokens": int(p_tok) + int(c_tok), "store_calls": 0}
         budgets = getattr(self, "budgets", None)
         if budgets is not None:
-            budgets.charge(factor, tokens=charge["tokens"], actor=self.NAME)
+            _charge(budgets, factor, actor=self.NAME, tokens=charge["tokens"])
         out_text = value.model_dump_json() if isinstance(value, BaseModel) else str(jsonable(value))
         self.emit(
             EventKind.AGENT_MESSAGE,
@@ -710,7 +726,7 @@ class BaseAgent(ABC):
         fkey = fkey or _FACTOR.get()
         self.guard_outbound({"prompt": prompt})
         budgets = getattr(self, "budgets", None)
-        if budgets is not None and budgets.tokens_exhausted(fkey):
+        if budgets is not None and _spent(budgets, 'tokens_exhausted', fkey):
             raise BudgetExhausted(f"token budget of {fkey or 'the case'} is spent", "factor" if fkey else "case", fkey, "tokens")
         done = self.llm.complete(prompt, max_tokens=max_tokens, temperature=temperature)
         self._log_llm(task, fkey, prompt, done.prompt_tokens, done.completion_tokens, 1, ok=True, value=done.text)

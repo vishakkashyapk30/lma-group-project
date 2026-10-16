@@ -23,6 +23,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Dataset download and ingest: Open India Law Parquet streaming (scripts/download_datasets.sh, make datasets)
+data = ["pyarrow>=15", "requests>=2.31"]
 # Optional dense backend for the hybrid stores and a faster cosine search; SQLite (FTS5 + vectors) works without it (plan §5.5)
 lance = ["lancedb>=0.8", "numpy>=1.26"]
 # Ingestion: layout parsing, OCR, image clean-up, Hindi translation (plan §4.2, §4.5)

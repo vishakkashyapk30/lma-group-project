@@ -3,34 +3,36 @@
 from __future__ import annotations
 
 from vakeel_sahayak.schemas.enums import AgentName, GateId
-from vakeel_sahayak.tools.base import ToolSpec
+from vakeel_sahayak.tools.base import ToolError, ToolSpec
 from vakeel_sahayak.tools.types import ApprovalRequest
 
 
-def request_approval(case_id: str, gate: GateId) -> ApprovalRequest:
+def request_approval(case_id: str, gate: GateId) -> ApprovalRequest | ToolError:
     """Open an approval gate (graph interrupt) with its checklist. (plan §3.1)
 
     Args:
-        case_id: see behaviour
-        gate: see behaviour
+        case_id: exactly one case
+        gate: GATE_1_DOSSIER or GATE_2_EXPORT
 
     Returns:
-        ApprovalRequest.
+        ApprovalRequest listing the open checklist items (field names for Gate 1; ground and objection ids for Gate 2),
+        or a ToolError for a bad case id or gate. It never approves.
     """
-    from vakeel_sahayak.record.gates import gate_status, open_gate
-    from vakeel_sahayak.tools.runtime import get_runtime
+    from vakeel_sahayak.orchestration.gates import GateGuard
+    from vakeel_sahayak.tools.drafting.export_tool import single_case_id
 
-    # Gate 1 (dossier) is requested by Peshkar, Gate 2 (export) by Vakeel (plan §3.3)
-    requested_by = AgentName.PESHKAR.value if gate == GateId.GATE_1_DOSSIER else AgentName.VAKEEL.value
-    log = get_runtime().event_log(case_id)
-    status = gate_status(log, case_id, gate)
-    open_gate(log, case_id, gate, requested_by, status)  # records the request only; approval is counsel's alone
-    unresolved = (
-        [f"UNSUPPORTED:{f}" for f in status.unresolved_unsupported]
-        + [f"NEEDS_REVIEW:{i}" for i in status.unresolved_needs_review]
-        + [f"UNANSWERED:{i}" for i in status.unresolved_unanswered]
-    )
-    return ApprovalRequest(gate=gate, checklist_open=bool(unresolved), unresolved=unresolved)
+    one = single_case_id("request_approval", case_id)
+    if isinstance(one, ToolError):
+        return one
+    try:
+        which = GateId(gate)
+    except ValueError:
+        return ToolError(tool="request_approval", kind="invalid_input", message=f"gate must be one of {[g.value for g in GateId]}", retryable=False)
+    guard = GateGuard()
+    status = guard.status(one, which)
+    guard.open(one, which)  # records the request only (Peshkar opens Gate 1, Vakeel Gate 2); approval is counsel's alone
+    unresolved = [*status.unresolved_unsupported, *status.unresolved_needs_review, *status.unresolved_unanswered]
+    return ApprovalRequest(gate=which, checklist_open=bool(unresolved), unresolved=unresolved)
 
 
 REQUEST_APPROVAL_SPEC = ToolSpec(

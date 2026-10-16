@@ -144,7 +144,11 @@ def _graph_node(doc_id: str) -> dict[str, Any] | None:
     except Exception:  # noqa: BLE001 - an unavailable graph simply knows nothing
         return None
     try:
-        if not store.known(doc_id):
+        known = getattr(store, "known", None)
+        if known is not None:
+            if not known(doc_id):
+                return None
+        elif not (store.cites(doc_id) or store.cited_by(doc_id)):  # the plan's store API: a judgment with any edge is a node
             return None
         graph = getattr(store, "_graph", None)
         node = graph.nodes.get(doc_id) if graph is not None else None

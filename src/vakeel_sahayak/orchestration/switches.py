@@ -1,7 +1,7 @@
-"""Ablation and variant switches (plan §15.4 A1-A10, §15.3 B0-B4, §15.5 P5-P6, §19 fixed-router fallback). Defaults are the full system.
+"""Ablation and variant switches (plan §15.4 A1-A10, §15.5 P5-P6, §19 fixed-router fallback). Defaults are the full system.
 
 One typed object carries every variant, so an ablation is a flag the agents read, never a code fork. Build the switches
-of a named variant with `Switches.for_variant('A9')` (or `'B4'`, `'A10'` with `knockout_store=...`, `'A5'` with
+of a named variant with `Switches.for_variant('A9')` (or `'A10'` with `knockout_store=...`, `'A5'` with
 `extractor=...`); `Switches().variant()` names the variant a switch set implements.
 
 | Id | Switch | Who reads it |
@@ -16,7 +16,6 @@ of a named variant with `Switches.for_variant('A9')` (or `'B4'`, `'A10'` with `k
 | A8 | `no_sparring` | Abhiyojak is skipped (check-and-repair stays on) |
 | A9 | `no_sparring` + `no_check_repair` | completes the 2x2 with Full, A2, A8 |
 | A10 | `knockout_store` | that store is refused in `call_tool`; retrieval and slot fill only, no drafting |
-| B0-B4 | `baseline` | the eval baselines (B3 also sets `b3_chunking`); 'full' is the full system |
 | P5, P6 | `munshi_no_gap_check`, `munshi_no_bundle_split` | Munshi |
 """
 
@@ -29,8 +28,6 @@ from pydantic import BaseModel, ConfigDict
 # A3: the legal-rule tools the LLM must do without ("maps sections, counts days and judges rights itself").
 RULE_TOOLS: tuple[str, ...] = ("map_section", "transfer_check", "date_calc", "rights_check")
 EXTRACTOR_ROLES: dict[str, str] = {"finetuned_4b": "extractor_4b", "base_4b": "munshi_4b", "prompted_32b": "teacher"}
-Baseline = Literal["full", "B0", "B1", "B2", "B3", "B4"]
-ChunkingVariant = Literal["fixed_512", "fixed_512_overlap", "recursive", "semantic", "page"]
 
 ABLATIONS: dict[str, dict[str, Any]] = {
     "A1": {"no_dossier": True},
@@ -43,13 +40,6 @@ ABLATIONS: dict[str, dict[str, Any]] = {
     "A8": {"no_sparring": True},
     "A9": {"no_sparring": True, "no_check_repair": True},
     "A10": {},  # pass knockout_store='<store>'
-}
-BASELINES: dict[str, dict[str, Any]] = {
-    "B0": {"baseline": "B0"},
-    "B1": {"baseline": "B1"},
-    "B2": {"baseline": "B2"},
-    "B3": {"baseline": "B3"},
-    "B4": {"baseline": "B4"},
 }
 INGESTION: dict[str, dict[str, Any]] = {"P5": {"munshi_no_gap_check": True}, "P6": {"munshi_no_bundle_split": True}}
 VARIANT_DESCRIPTIONS: dict[str, str] = {
@@ -64,11 +54,6 @@ VARIANT_DESCRIPTIONS: dict[str, str] = {
     "A8": "no sparring (check-and-repair on)",
     "A9": "neither sparring nor check-and-repair",
     "A10": "store knock-out: one store removed; retrieval and slot-fill only",
-    "B0": "single pass: raw facts and the checklist to a brief in one call",
-    "B1": "single RAG store: one vector index, top-10 with the facts as the query, one drafting call",
-    "B2": "whole-document embeddings: top-3 orders passed in full",
-    "B3": "naive chunking: B1 with fixed/overlap/recursive/semantic/page chunks",
-    "B4": "every store, no orchestrator: reciprocal-rank fusion; drafting, checks and sparring as Full",
     "P5": "Munshi fixed cascade: no gap check, no re-reading, no questions",
     "P6": "Munshi without bundle splitting and document labelling",
 }
@@ -90,20 +75,18 @@ class Switches(BaseModel):
     munshi_no_bundle_split: bool = False  # P6
     knockout_store: str | None = None  # A10
     extractor: Literal["finetuned_4b", "base_4b", "prompted_32b"] = "finetuned_4b"  # A5
-    baseline: Baseline = "full"  # B0-B4 (plan §15.3); 'full' is the system
-    b3_chunking: ChunkingVariant | None = None  # B3's chunking variant (the best on dev goes into generation)
 
     # ------------------------------------------------------------------ what the agents ask
 
     @property
     def check_and_repair(self) -> bool:
-        """Vakeel checks and repairs claims (off in A2, A9 and the one-call baselines B0-B3)."""
-        return not self.no_check_repair and self.baseline in ("full", "B4")
+        """Vakeel checks and repairs claims (off in A2 and A9)."""
+        return not self.no_check_repair
 
     @property
     def sparring(self) -> bool:
-        """Abhiyojak spars (off in A8, A9 and B0-B3)."""
-        return not self.no_sparring and self.baseline in ("full", "B4")
+        """Abhiyojak spars (off in A8 and A9)."""
+        return not self.no_sparring
 
     @property
     def uses_dossier(self) -> bool:
@@ -124,11 +107,6 @@ class Switches(BaseModel):
     def uses_planner(self) -> bool:
         """Sutradhar plans, assesses and re-plans (not in A6)."""
         return not self.fixed_router
-
-    @property
-    def uses_orchestrator(self) -> bool:
-        """Sutradhar orchestrates retrieval at all (only the full system and the ablations; B0-B4 do not)."""
-        return self.baseline == "full"
 
     @property
     def retrieval_filters(self) -> bool:
@@ -159,8 +137,8 @@ class Switches(BaseModel):
         """The switches of a named variant.
 
         Args:
-            variant: 'full', 'A1'..'A10', 'B0'..'B4', 'P5' or 'P6'
-            extra: further fields (A10 needs `knockout_store`, A5 an `extractor`, B3 may set `b3_chunking`)
+            variant: 'full', 'A1'..'A10', 'P5' or 'P6'
+            extra: further fields (A10 needs `knockout_store`, A5 an `extractor`)
 
         Returns:
             Switches.
@@ -169,9 +147,9 @@ class Switches(BaseModel):
             ValueError: unknown variant, or A10 without a store.
         """
         name = variant.strip().upper() if variant.strip().lower() != "full" else "full"
-        table = {"full": {}, **ABLATIONS, **BASELINES, **INGESTION}
+        table = {"full": {}, **ABLATIONS, **INGESTION}
         if name not in table:
-            raise ValueError(f"unknown variant {variant!r}: use 'full', A1-A10, B0-B4, P5 or P6")
+            raise ValueError(f"unknown variant {variant!r}: use 'full', A1-A10, P5 or P6")
         if name == "A10" and not extra.get("knockout_store"):
             raise ValueError("A10 needs knockout_store='<store name>'")
         if name == "A5" and extra.get("extractor", "finetuned_4b") == "finetuned_4b":
@@ -179,9 +157,7 @@ class Switches(BaseModel):
         return cls(**{**table[name], **extra})
 
     def variant(self) -> str:
-        """The name of the variant these switches implement ('full', 'A1'..'A10', 'B0'..'B4', 'P5', 'P6', or 'custom')."""
-        if self.baseline != "full":
-            return self.baseline
+        """The name of the variant these switches implement ('full', 'A1'..'A10', 'P5', 'P6', or 'custom')."""
         fields = self.model_dump(exclude_defaults=True)
         if not fields:
             return "full"

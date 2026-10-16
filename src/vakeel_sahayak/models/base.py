@@ -239,9 +239,9 @@ class LLMClient(ABC):
         Returns:
             A validated model instance (pydantic schema) or a JSON value (dict schema).
         """
-        from vakeel_sahayak.orchestration.structured_output import constrained_generate
+        from vakeel_sahayak.orchestration.structured_output import structured_call
 
-        return constrained_generate(self, prompt, schema, max_tokens=max_tokens, temperature=temperature, retries=retries)
+        return structured_call(self, prompt, schema, max_tokens=max_tokens, temperature=temperature, retries=retries).value
 
 
 class VisionClient(ABC):
@@ -387,4 +387,3 @@ class EmbeddingClient(ABC):
         """
         raise NotImplementedError
 
-NLIClient = NliClient  # the plan's spelling (plan §12)

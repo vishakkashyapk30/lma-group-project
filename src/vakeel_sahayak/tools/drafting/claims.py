@@ -174,25 +174,36 @@ def _transfer_for(paragraph: Any, case_refs: list[tuple[str, str | None]]) -> Tr
     return max(flags, key=_TRANSFER_RANK.__getitem__) if flags else None
 
 
-def check_claim(
-    claim: str,
-    refs: list[str] | None = None,
-    case_id: str | None = None,
-    retrieved: list[str] | None = None,
-) -> ClaimCheckResult | ToolError:
+def check_claim(claim: str, refs: list[str] | None = None) -> ClaimCheckResult | ToolError:
     """Fact support (NLI vs dossier quote), authority support (NLI vs cited paragraph), transfer flag, good-law flag, and no citation that was not retrieved. (plan §8.1)
 
     Args:
         claim: the claim text, with inline [F:field] / [A:doc#para] markers after the sentences they support
         refs: [F:field] and [A:doc#para] references for sentences without inline markers
-        case_id: the case whose dossier and event log are read (default: the runtime's current case)
-        retrieved: extra 'doc#para' (or doc) ids that count as retrieved (for runs outside an event-logged case)
+
+    The case (dossier and event log) is the tool runtime's current case; use `check_claim_for_case` to name one.
 
     Returns:
         ClaimCheckResult (`supported` only when every sentence is supported, no authority is OVERRULED and every
         authority was retrieved), or a ToolError for a malformed claim or reference.
     """
-    tool = "check_claim"
+    return check_claim_for_case(claim, refs)
+
+
+def check_claim_for_case(
+    claim: str,
+    refs: list[str] | None = None,
+    case_id: str | None = None,
+    retrieved: list[str] | None = None,
+) -> ClaimCheckResult | ToolError:
+    """`check_claim` for a named case, with extra ids that count as retrieved (runs outside an event-logged case).
+
+    Args:
+        claim: see `check_claim`
+        refs: see `check_claim`
+        case_id: the case whose dossier and event log are read (default: the runtime's current case)
+        retrieved: extra 'doc#para' (or doc) ids that count as retrieved
+    """
     if not isinstance(claim, str) or not claim.strip():
         return _invalid("claim must not be empty")
     try:
@@ -250,7 +261,7 @@ def check_claim(
         if use_store_fallback:
             ok = row is not None
         if not ok or row is None:
-            unretrieved.append(ref)
+            unretrieved.append(f"A:{ref}")  # reported in the reference notation the claim used
 
     fact_scores: list[float] = []
     auth_scores: list[float] = []
@@ -295,7 +306,6 @@ def check_claim(
             good_law = status
     if good_law == GoodLawStatus.OVERRULED or unretrieved:
         supported = False
-    del tool
     return ClaimCheckResult(
         supported=bool(supported),
         fact_support=round(min(fact_scores), 4) if fact_scores else None,

@@ -191,21 +191,21 @@ def constrained_generate(
     prompt: str,
     schema: type[BaseModel] | dict,
     max_tokens: int = 2048,
-    *,
-    temperature: float = 0.0,
-    retries: int = 2,
 ) -> Any:
     """Generate a plan or tool call with JSON-schema-constrained decoding (vLLM structured outputs) so every call parses; tools still validate argument values (plan §3.3).
+
+    One repair retry is made after an invalid reply, so at most two generations (`structured_call` takes `retries` for more).
 
     Args:
         client: see behaviour
         prompt: see behaviour
         schema: JSON schema to enforce: a pydantic model class (returns an instance) or a JSON-schema dict (returns the JSON value)
         max_tokens: see behaviour
-        temperature: sampling temperature
-        retries: repair attempts after the first try
 
     Returns:
         A validated model instance.
+
+    Raises:
+        StructuredOutputError: (a ValueError) the reply was still invalid after the retry.
     """
-    return structured_call(client, prompt, schema, max_tokens=max_tokens, temperature=temperature, retries=retries).value
+    return structured_call(client, prompt, schema, max_tokens=max_tokens, retries=1).value
