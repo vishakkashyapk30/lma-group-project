@@ -16,6 +16,7 @@ from typing import Any
 
 from vakeel_sahayak.agents.base import AgentContext, BaseAgent
 from vakeel_sahayak.agents.munshi.decisions import LlmAdvisor
+from vakeel_sahayak.agents.munshi.toolkit import ToolFiler, route_page_with_tools
 from vakeel_sahayak.ingestion.checklist import QUESTION_PRIORITY, missing_items
 from vakeel_sahayak.ingestion.classify import tag_paragraph
 from vakeel_sahayak.ingestion.conflicts import DOSSIER_FIELD, detect_conflicts, mark_ambiguous
@@ -25,7 +26,15 @@ from vakeel_sahayak.ingestion.gaps import ADOPT_AS, resolve_gap
 from vakeel_sahayak.ingestion.hindi import lang_of, normalise_for_extraction, translate_keeping_original
 from vakeel_sahayak.ingestion.kinds import file_kind
 from vakeel_sahayak.ingestion.pageindex import IndexedPage, PageIndex, index_path
-from vakeel_sahayak.ingestion.pipeline import DocRead, FileRead, PageRead, read_file, read_page, split_and_label
+from vakeel_sahayak.ingestion.pipeline import (
+    DocRead,
+    FileRead,
+    PageRead,
+    flag_instruction_lines,
+    read_file,
+    read_page,
+    split_and_label,
+)
 from vakeel_sahayak.ingestion.questions import (
     QuestionBook,
     put_to_counsel,
@@ -35,9 +44,10 @@ from vakeel_sahayak.ingestion.questions import (
     unreadable_question,
 )
 from vakeel_sahayak.ingestion.report import build_report
-from vakeel_sahayak.ingestion.thresholds import load_thresholds
+from vakeel_sahayak.ingestion.thresholds import load_thresholds, threshold
 from vakeel_sahayak.ingestion.voice import delete_audio, readback, readback_question, transcribe_dictation
 from vakeel_sahayak.models.base import AsrClient, LLMClient, ModelUnavailable
+from vakeel_sahayak.models.sarvam.policy import DataClass, sarvam_scope
 from vakeel_sahayak.orchestration.state import CaseGraphState
 from vakeel_sahayak.orchestration.switches import Switches
 from vakeel_sahayak.pipelines.order_facts import charge_sheet_status, co_accused_outcome
@@ -53,10 +63,12 @@ from vakeel_sahayak.schemas.enums import (
     FieldStatus,
     InfoKind,
     ParseRoute,
+    StoreName,
 )
 from vakeel_sahayak.schemas.events import Event
 from vakeel_sahayak.schemas.ids import check_case_id
 from vakeel_sahayak.schemas.ingestion_report import DocumentEntry, FiledCounts, Gap, IngestionReport, PageRoute
+from vakeel_sahayak.tools.base import ToolError
 
 _TEXT_ROUTES = {ParseRoute.TEXT_LAYER, ParseRoute.LAYOUT}
 _DIRECT_FIELDS = ("arrest_date", "offence_date", "first_remand")  # single-string dossier fields a dated event can fill
@@ -124,6 +136,11 @@ class MunshiAgent(BaseAgent):
             max_route: ladder cap (baselines P1-P3)
         """
         self.ctx = ctx
+        self.tooled = ctx is not None  # with a context, the steps go through the registered tools (plan §4.3)
+        self.tools = ctx.tools if ctx else {}
+        self.budgets = ctx.budgets if ctx else None
+        self.config = ctx.config if ctx else None
+        self.nli = ctx.nli if ctx else None
         self.case_id = case_id or (ctx.case_id if ctx else None)
         self.log = log or (ctx.log if ctx else None)
         self.switches = switches or (ctx.switches if ctx else Switches())
@@ -140,6 +157,10 @@ class MunshiAgent(BaseAgent):
 
     # ---------------------------------------------------------------- plumbing
 
+    def _sarvam_scope(self, data: DataClass, purpose: str):  # noqa: ANN202
+        """Declare to the Sarvam policy what the enclosed calls carry (no effect while Sarvam is off; plan §16)."""
+        return sarvam_scope(data, case_id=str(self.case_id), event_log=self.log, purpose=purpose)
+
     def _bind(self, case_id: str) -> None:
         """Fix the case id and open its log, alias map, stores and page index on first use."""
         if self.case_id and self.case_id != case_id and self._filer is not None:
@@ -148,9 +169,69 @@ class MunshiAgent(BaseAgent):
         if self.log is None:
             self.log = EventLog.for_case(case_id, self.cases_dir)
         if self._filer is None:
-            self._filer = Filer(case_id, self.log, case_path=self.case_path, cases_dir=self.cases_dir)
+            if self.tooled:
+                self._sync_runtime()  # the tools read the case's log and current case from the runtime
+                self._filer = ToolFiler(case_id, self.log, cases_dir=self.cases_dir, sink=self._file_item, pseudonymise=self._pseudonymise)
+            else:
+                self._filer = Filer(case_id, self.log, case_path=self.case_path, cases_dir=self.cases_dir)
         if self._index is None:
             self._index = PageIndex.load(index_path(case_id, self.cases_dir))
+
+    def _file_item(self, store: StoreName, item: dict[str, Any], source: SourceRef) -> Any:
+        """File one pseudonymised item through the `file_item` tool (plan §4.3 step 3)."""
+        return self.call_tool("file_item", store=store, item=item, source=source)
+
+    def _pseudonymise(self, text: str) -> str:
+        """The `pseudonymise` tool over text the alias map has already cleaned (unlogged: its input is still client text)."""
+        got = self._raw_tool("pseudonymise", text=text, case_id=self.case_id)
+        return got if isinstance(got, str) else text
+
+    def _raw_tool(self, name: str, **kwargs: Any) -> Any:
+        """Call a page-reading tool with the agent's permission but without logging its result.
+
+        Page reads return client text before it is pseudonymised and the log holds pseudonymised text only (plan §16),
+        so these calls bypass `call_tool`'s TOOL_RESULT; the route of each page is logged by `_log_page` instead.
+
+        Returns:
+            The tool's result, or a ToolError.
+
+        Raises:
+            ToolPermissionError: Munshi may not call this tool.
+        """
+        from vakeel_sahayak.tools.registry import check_permission, get_tool
+
+        try:
+            check_permission(self.NAME, name)
+        except Exception as exc:  # noqa: BLE001 - logged like call_tool does, then raised
+            self.error("permission_denied", str(exc), tool=name)
+            raise
+        try:
+            return (self.tools.get(name) or get_tool(name))(**kwargs)
+        except Exception as exc:  # noqa: BLE001 - a crashing tool is an error the ladder moves past (plan §15.8)
+            return ToolError(tool=name, kind="tool_failed", message=type(exc).__name__, retryable=True)
+
+    def _read_page(self, path: str, page: int, min_route: ParseRoute | None = None) -> PageRead | ToolError:
+        """Route one page: through the tools when Munshi has a context, else straight through the ladder."""
+        if not self.tooled:
+            return read_page(path, page, self.thresholds, self.max_route, min_route=min_route)
+        out = route_page_with_tools(self._raw_tool, path, page, self.thresholds, self.max_route, min_route)
+        if isinstance(out, ToolError):
+            return out
+        return PageRead(Path(path).name, path, page, out, flag_instruction_lines(out.text))
+
+    def _read_file_with_tools(self, path: str) -> FileRead:
+        """Survey a file page by page through the tools; the first page `inspect_page` refuses ends the file."""
+        name, pages = Path(path).name, []
+        while True:
+            read = self._read_page(path, len(pages) + 1)
+            if isinstance(read, ToolError):
+                if pages:
+                    break
+                kind = "unavailable" if read.kind == "model_unavailable" else "unsupported" if read.kind == "unsupported" else "broken"
+                return FileRead(path, name, None, error=read.message, error_kind=kind)
+            self._log_page(read)
+            pages.append(read)
+        return FileRead(path, name, None, pages)
 
     @property
     def filer(self) -> Filer:
@@ -274,10 +355,17 @@ class MunshiAgent(BaseAgent):
         """
         self._bind(state.case_id)
         routes: list[PageRoute] = []
-        for number, path in enumerate(self.files, start=1):
+        paths = self.files
+        if self.tooled and not paths and state.ingestion and state.ingestion.file and not state.ingestion.documents:
+            paths = [state.ingestion.file]  # a context without queued files: the file the state names
+        for number, path in enumerate(paths, start=1):
             self._alias = f"file-{number}{Path(path).suffix.lower()}"  # before names are learned the log names files by number
             try:
-                read = read_file(path, self.thresholds, self.max_route, on_page=self._log_page)
+                with self._sarvam_scope(DataClass.CLIENT_RAW, "munshi.read_file"):  # raw pages: Sarvam only with counsel's consent
+                    if self.tooled:
+                        read = self._read_file_with_tools(path)
+                    else:
+                        read = read_file(path, self.thresholds, self.max_route, on_page=self._log_page)
             except ModelUnavailable as exc:
                 read = FileRead(path, Path(path).name, file_kind(path), error=str(exc), error_kind="unavailable")
             if read.error:
@@ -333,7 +421,10 @@ class MunshiAgent(BaseAgent):
         run, classifier = self._run, (LlmAdvisor(self.llm) if self.llm is not None else None)
         counter = self._next_doc_number()
         for read in run.reads:
-            for doc in split_and_label(read, self.thresholds, split=not self.switches.munshi_no_bundle_split, fallback=classifier):
+            docs = self._docs_with_tools(read, classifier) if self.tooled else None
+            if docs is None:
+                docs = split_and_label(read, self.thresholds, split=not self.switches.munshi_no_bundle_split, fallback=classifier)
+            for doc in docs:
                 doc.doc_id = f"d{counter}"
                 counter += 1
                 run.docs.append(doc)
@@ -343,6 +434,36 @@ class MunshiAgent(BaseAgent):
             return []
         self._refresh_entries()
         return run.entries
+
+    def _docs_with_tools(self, read: FileRead, classifier: LlmAdvisor | None) -> list[DocRead] | None:
+        """The documents of a surveyed file from `split_bundle` (or `classify_document` for the whole file under P6).
+
+        Returns:
+            Documents, or None when the tool gave nothing usable (the caller splits and labels locally).
+        """
+        n = len(read.pages)
+        if not n:
+            return []
+        if self.switches.munshi_no_bundle_split:
+            got = self.call_tool("classify_document", file_path=read.path, pages=list(range(1, n + 1)))
+            doc_type, confidence = (DocumentType.OTHER, 0.3) if isinstance(got, ToolError) else (DocumentType(got[0]), float(got[1]))
+            return [DocRead("", read, doc_type, confidence, 1, n, read.pages)]
+        entries = self.call_tool("split_bundle", file_path=read.path)
+        ranges = [] if isinstance(entries, ToolError) else [tuple(e.pages) for e in entries]
+        if not ranges or ranges[0][0] != 1 or ranges[-1][1] != n or any(b[0] != a[1] + 1 for a, b in zip(ranges, ranges[1:], strict=False)):
+            return None  # the tool's ranges do not cover the pages read
+        docs = []
+        for entry in entries:  # type: ignore[union-attr]
+            first, last = entry.pages
+            doc_type, confidence = entry.type, entry.type_confidence if entry.type_confidence is not None else 0.5
+            pages = read.pages[first - 1 : last]
+            opening = next((p.raw for p in pages if p.raw.strip()), "")
+            if classifier is not None and confidence < threshold(self.thresholds, "doc_type_conf_min"):
+                guess = classifier(opening[:2000])  # the language model only when the tool was unsure (as label_document does)
+                if guess is not None and guess[1] > confidence:
+                    doc_type, confidence = DocumentType(guess[0]), float(guess[1])
+            docs.append(DocRead("", read, doc_type, confidence, first, last, pages))
+        return docs
 
     def _refresh_entries(self) -> None:
         """Rebuild the report's document entries from the documents as they stand (types, languages, page routes)."""
@@ -416,7 +537,8 @@ class MunshiAgent(BaseAgent):
         lang = lang_of(read.raw)
         view = view_src
         if lang in ("hi", "mixed"):
-            tr = translate_keeping_original(view_src)
+            with self._sarvam_scope(DataClass.CLIENT_TEXT, "munshi.translate"):  # pseudonymised text: boundary-checked before Sarvam
+                tr = translate_keeping_original(view_src)
             view = tr.english
             tag = f"translate: {tr.engine}" + (" (identity: not translated)" if tr.is_identity else "")
             if tag not in read.extra_log:
@@ -568,6 +690,7 @@ class MunshiAgent(BaseAgent):
                     reread=self._reread,
                     adopt=self._adopt,
                     ask=self._ask_cb,
+                    search=self._search_pages if self.tooled else None,
                     thresholds=self.thresholds,
                     cases_dir=self.cases_dir,
                 )
@@ -598,6 +721,11 @@ class MunshiAgent(BaseAgent):
         if unreadable:
             book.add(unreadable_question(unreadable), "unreadable", 0)
 
+    def _search_pages(self, query: str) -> list[dict[str, Any]]:
+        """The `search_pages` tool over the case's pages (hits are empty when the tool fails)."""
+        got = self.call_tool("search_pages", case_id=self.case_id, query=query, k=5)
+        return [] if isinstance(got, ToolError) else list(got)
+
     def _ask_cb(self, item: str, question: str) -> bool:
         """Add a gap question to the round's book; True when it fits in the room left."""
         book = self._run.book
@@ -620,8 +748,10 @@ class MunshiAgent(BaseAgent):
             return None
         doc, old = found
         try:
-            new = read_page(old.path, old.page, self.thresholds, self.max_route, min_route=ParseRoute.VISION)
+            new = self._read_page(old.path, old.page, ParseRoute.VISION)
         except ModelUnavailable:
+            return None
+        if isinstance(new, ToolError):
             return None
         self._log_page(new)
         if new.unreadable or not new.raw.strip():
@@ -705,7 +835,10 @@ class MunshiAgent(BaseAgent):
                 self._queue_file_questions()
             questions = run.book.asked()
             report = build_report(state.case_id, names, run.entries, self.filer.counts, run.gaps, questions)
-            if questions:
+            if questions and self.tooled:  # the tool logs the questions, applies the shared limit and waits for counsel
+                got = self.call_tool("ask_user", questions=questions, case_id=state.case_id)
+                self.answers = [] if isinstance(got, ToolError) else [str(a) for a in got]
+            elif questions:
                 record_questions(self.log, state.case_id, questions, self.NAME)  # type: ignore[arg-type]
                 self.answers = put_to_counsel(questions, state.case_id)
         self.emit(
@@ -737,13 +870,18 @@ class MunshiAgent(BaseAgent):
         self._bind(case_id or str(self.case_id))
         cid = str(self.case_id)
         try:
-            raw = transcribe_dictation(audio_path, lang_hint, self.asr)
+            with self._sarvam_scope(DataClass.CLIENT_RAW, "munshi.dictation"):  # audio: Sarvam only with counsel's consent
+                raw = transcribe_dictation(audio_path, lang_hint, self.asr)
             delete_audio(audio_path, keep_audio)  # the transcript exists: the audio goes unless counsel keeps it
             items = readback(raw)
             self.filer.learn([raw])
             text = self.filer.clean(raw)
             lang = lang_of(raw)
-            view = translate_keeping_original(text).english if lang in ("hi", "mixed") else text
+            if lang in ("hi", "mixed"):
+                with self._sarvam_scope(DataClass.CLIENT_TEXT, "munshi.translate"):
+                    view = translate_keeping_original(text).english
+            else:
+                view = text
             before = self.filer.counts.model_copy(deep=True)
             self._voice_no = self._run_voice_number()
             self.emit(EventKind.AGENT_MESSAGE, {"tool": "dictate", "outputs": {"chars": len(text), "readback_items": len(items), "audio_kept": keep_audio}})

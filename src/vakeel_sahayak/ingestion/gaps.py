@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
+from typing import Any
 
 from vakeel_sahayak.ingestion.checklist import ITEM_NAMES, ITEM_QUESTIONS
 from vakeel_sahayak.ingestion.pageindex import IndexedPage, PageIndex, index_path
@@ -86,6 +87,7 @@ def resolve_gap(
     reread: Callable[[IndexedPage], str | None] | None = None,
     adopt: Callable[[IndexedPage, str], bool] | None = None,
     ask: Callable[[str, str], bool] | None = None,
+    search: Callable[[str], list[dict[str, Any]]] | None = None,
     thresholds: dict[str, float] | None = None,
     cases_dir: str | None = None,
 ) -> Gap:
@@ -99,6 +101,7 @@ def resolve_gap(
             None when no stronger route exists
         adopt: files a page found by the search as the item's document (re-labels it); True when it did
         ask: puts the item's question to counsel; takes (item, question) and returns True when it fits this round
+        search: the `search_pages` tool, given the item's name; its hits (file, page, snippet) are checked for the item's cue
         thresholds: dev-tuned values
         cases_dir: where the saved index lives
 
@@ -121,9 +124,10 @@ def resolve_gap(
                 return Gap(item=name, action="; ".join(steps))
         steps.append(f"re-read {_where(likely)} with a stronger route; not found")
 
+    found = [h for h in (search(name) if search is not None else []) if cue.search(str(h.get("snippet") or h.get("text") or ""))]
     remaining = remaining_pages(idx)
     if remaining:
-        hits = [p for p in remaining if cue.search(p.text)]
+        hits = [p for p in remaining if cue.search(p.text) or any(h.get("page") == p.page and h.get("file") in (None, p.file) for h in found)]
         if hits and adopt is not None and item in ADOPT_AS and adopt(hits[0], item):
             steps.append(f"searched {_where(remaining)}; found on {_where(hits[:1])}")
             return Gap(item=name, action="; ".join(steps))

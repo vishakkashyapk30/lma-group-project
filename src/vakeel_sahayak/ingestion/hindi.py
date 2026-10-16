@@ -42,6 +42,34 @@ def detect_script(text: str) -> str:
     return "latin" if dev < 0.02 else "mixed"
 
 
+def detect_script_with_lid(text: str) -> str:
+    """`detect_script`, with Sarvam's `/text-lid` as the tie-break for 'mixed' text when Sarvam is active and allowed.
+
+    Clear text (Devanagari or Latin) never leaves the machine: only a 'mixed' verdict asks `/text-lid` (the first 1000
+    characters, through the privacy policy). Its single script is accepted when the local letter shares agree with it,
+    otherwise, and whenever Sarvam is off, blocked or failing, the local label stands.
+    """
+    local = detect_script(text)
+    if local != "mixed":
+        return local
+    from vakeel_sahayak.models.factory import get_langid
+    from vakeel_sahayak.models.sarvam.fallback import FALLBACK_ERRORS
+
+    lid = get_langid()
+    if lid is None:
+        return local
+    try:
+        label = lid.script(text[:1000])  # type: ignore[attr-defined]
+    except FALLBACK_ERRORS:
+        return local
+    dev, _ = script_shares(text)
+    if label == "devanagari" and dev >= 0.5:
+        return "devanagari"
+    if label == "latin" and dev < 0.5:
+        return "latin"
+    return local
+
+
 def script_confidence(text: str) -> float:
     """How clearly the text is in the script `detect_script` named (the dominant script's share; 1.0 for no letters)."""
     dev, lat = script_shares(text)

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from vakeel_sahayak.ingestion.hindi import detect_script
+from vakeel_sahayak.ingestion.hindi import detect_script_with_lid
 from vakeel_sahayak.ingestion.kinds import classify_input_kind
 from vakeel_sahayak.ingestion.signals import (
     PageSignals,
@@ -140,7 +140,7 @@ def _finish(out: RouteOutcome, log: list[str], signals: PageSignals, th: dict[st
     hw_max = threshold(th, "handwriting_conf_max")
     if not final.has_text_layer and final.mean_ocr_conf is not None and final.mean_ocr_conf < hw_max:
         final = final.model_copy(update={"handwriting_detected": True})
-    script = detect_script(out.text) if out.text.strip() else None
+    script = detect_script_with_lid(out.text) if out.text.strip() else None  # Sarvam /text-lid breaks ties on mixed text when allowed
     return out.model_copy(
         update={
             "log": log,
@@ -150,6 +150,9 @@ def _finish(out: RouteOutcome, log: list[str], signals: PageSignals, th: dict[st
             "status": out.status if out.text.strip() or out.route == ParseRoute.ASK_COUNSEL else PageStatus.UNREADABLE,
         }
     )
+
+
+finish_outcome = _finish  # public name for callers that run the rungs themselves (Munshi, through the intake tools)
 
 
 def _run(route: ParseRoute, file_path: str, page: int, signals: PageSignals) -> RouteOutcome:
