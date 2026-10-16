@@ -65,7 +65,9 @@ def order_is_bns_era(order: dict[str, Any], cutoff: str | None = None) -> bool:
 
 
 def _splits_cleanly(order: dict[str, Any]) -> bool:
-    """True when the order carries pre-split parts or its text passes the clean-split test; True if no text is given."""
+    """True when the order carries a recorded `clean_split` verdict, pre-split parts, or text that passes the clean-split test; True if no text is given."""
+    if isinstance(order.get("clean_split"), bool):  # the verdict of `analyse_split`, recorded at ingest (oil_ingest) to avoid re-splitting
+        return bool(order["clean_split"])
     if order.get("parts"):
         return all(str(v).strip() for v in dict(order["parts"]).values()) and len(order["parts"]) == 5
     text = order.get("text") or order.get("full_text")
