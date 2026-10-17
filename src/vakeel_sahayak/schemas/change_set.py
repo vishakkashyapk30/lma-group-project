@@ -21,3 +21,4 @@ class ChangeSet(BaseModel):
     fields: list[FieldChange] = Field(default_factory=list)
     new_event_ids: list[str] = Field(default_factory=list)
     rights_changed: list[str] = Field(default_factory=list)
+    authorities_changed: list[str] = Field(default_factory=list)  # 'doc_id#para' whose transfer or good-law flag changed (plan §10)
