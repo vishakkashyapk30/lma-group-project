@@ -60,12 +60,33 @@ class EvalLabeler:
         cfg = ((load_config().models.get("llm") or {}).get("eval_labeler") or {})
         return str(cfg.get("model") or DEFAULT_LABELER)
 
+    def _use_sarvam(self) -> bool:
+        """The documented non-Qwen, non-Llama option: Sarvam-105B as labeler (`VS_LABELER=sarvam` or yaml `llm.eval_labeler.runtime: sarvam`). Not the default."""
+        if os.environ.get("VS_LABELER", "").strip().lower() == "sarvam":
+            return True
+        from vakeel_sahayak.config import load_config
+
+        return str(((load_config().models.get("llm") or {}).get("eval_labeler") or {}).get("runtime")) == "sarvam"
+
+    def _sarvam_client(self) -> LLMClient:
+        """Sarvam labelling of PUBLIC court text only (the client refuses anything else; it is never wired into the system's roles)."""
+        from vakeel_sahayak.models.sarvam.adapters import SarvamLLMClient
+        from vakeel_sahayak.models.sarvam.policy import DataClass
+
+        client = SarvamLLMClient(self.model_id, data=DataClass.PUBLIC, where="api", role="eval_labeler")
+        if model_family(client.model_id) == "qwen":
+            raise ValueError("the evaluation labeler must not be a Qwen model (plan §15.1: no Qwen gold)")
+        return client
+
     def client(self) -> LLMClient:
         """The underlying LLM client (built on first use)."""
         if self._llm is not None:
             return self._llm
         if os.environ.get("VS_MODELS", "auto").lower() == "offline":
             raise LabelerUnavailable("VS_MODELS=offline: the Llama evaluation labeler is not run; gold stays rule-only")
+        if self._use_sarvam():
+            self._llm = self._sarvam_client()
+            return self._llm
         from vakeel_sahayak.models.local_llm import LocalLLMClient
 
         name = self._model_name()

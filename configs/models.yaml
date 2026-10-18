@@ -18,3 +18,42 @@ bm25: {engine: tantivy via LanceDB}
 nli: {system: microsoft/deberta-v3-large-mnli (TODO exact checkpoint), evaluation_only: MiniCheck}
 privacy: {pii: presidio, legal_ner: InLegalNER}
 test_construction_only: {translation_en_hi: facebook/nllb-200-distilled-600M, tts: ai4bharat/indic-parler-tts}
+
+# Sarvam AI (external API; docs https://docs.sarvam.ai). OFF by default. See vakeel_sahayak/models/sarvam/policy.py.
+# Mode: env VS_SARVAM=off|public|pseudonymised|consented wins; else `mode` applies when `enabled: true`; else off.
+#   public         public or constructed data only (test-set construction, gold labels of public orders, teacher data, T8 speech)
+#   pseudonymised  + client text that passes privacy.boundary.assert_pseudonymised
+#   consented      + raw client pages and audio, only for cases whose counsel recorded a Sarvam consent event
+# The key comes ONLY from the process environment (the variable is named in .env.example), never from this file or any committed file.
+# Data retention: Sarvam's docs say request/response retention is a workspace setting (a default plus an optional per-product
+# override under "Data retention" in the dashboard) and that speech products delete data after processing by default.
+# RECOMMENDED: set the workspace default and every per-product override to the shortest/zero-retention option before turning
+# on `pseudonymised` or `consented`. The API has no per-request retention flag, so this cannot be enforced from code; confirm
+# the setting in the dashboard (the docs pages we could fetch do not describe the exact steps).
+sarvam:
+  enabled: false
+  mode: public
+  base_url: https://api.sarvam.ai
+  auth_header: api-subscription-key
+  timeout_s: 120
+  retries: {max: 5, base_delay_s: 1.0, max_delay_s: 60.0}   # retry only 429 (rate limit), 500, 503 and transport errors (docs: errors-troubleshooting)
+  endpoints:
+    chat: /v1/chat/completions
+    translate: /translate
+    transliterate: /transliterate
+    language_id: /text-lid
+    speech_to_text: /speech-to-text
+    text_to_speech: /text-to-speech
+    vision_digitise: /doc-ai/v1/job/digitise
+    vision_status: /doc-ai/v1/job/{job_id}/status
+    vision_download: /doc-ai/v1/job/{job_id}/download-url
+  chat: {model: sarvam-105b, reasoning_effort: null, strict_json: false, max_tokens_cap: 4096}   # null disables thinking; the plan's token cap applies (Starter 4096)
+  translate: {model: sarvam-translate:v1, mode: formal, max_chars: {"mayura:v1": 1000, "sarvam-translate:v1": 2000}, numerals_format: international}
+  speech_to_text: {model: "saaras:v4", mode: codemix, max_seconds: 30}   # code-mix aware; sync REST takes at most 30 s, longer WAV is split
+  text_to_speech: {model: "bulbul:v4-flash", speaker: simran_en_customer, sample_rate: 24000}
+  vision: {output_format: md, poll_interval_s: 2.0, timeout_s: 300, use_for_ocr: false}   # use_for_ocr: also serve the OCR rung (confidence = pages succeeded / total)
+  use: {ocr: true, vision: true, translation: true, asr: true, llm: true, tts: true, language_id: true}   # per-capability switches (all still gated by the mode)
+# Independent non-Qwen labeler/teacher OPTION (documented, never the default): set llm.eval_labeler.runtime / llm.teacher.runtime
+# to sarvam (model sarvam-105b) or env VS_LABELER=sarvam / VS_TEACHER=sarvam. Public orders only; model_family('sarvam-105b') = 'sarvam'.
+# Agent roles: set llm.agents_14b.runtime: sarvam to use Sarvam-105B for the Ada-side agents (pseudonymised text only; falls back
+# to the configured fallback runtime when Sarvam is off, blocked or unavailable).

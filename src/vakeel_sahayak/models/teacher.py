@@ -24,6 +24,7 @@ from vakeel_sahayak.schemas.dossier import CaseDossier
 DEFAULT_TEACHER = "Qwen/Qwen3-32B-AWQ"
 DEFAULT_MISTRAL = "mistral-small-latest"
 MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
+DEFAULT_SARVAM = "sarvam-105b"  # optional non-Qwen teacher (VS_TEACHER=sarvam); public orders only
 
 
 def assert_families_differ(teacher_model: str, labeler_model: str) -> None:
@@ -86,8 +87,8 @@ class MistralApiClient(LLMClient):
         return approx_tokens(text)
 
 
-class TeacherClient(LLMClient):
-    """Teacher dossier generator."""
+class TeacherClient:
+    """Teacher dossier generator. Deliberately not an `LLMClient`: no agent can be handed it (training data only, plan §12)."""
 
     name = "teacher"
 
@@ -95,7 +96,7 @@ class TeacherClient(LLMClient):
         """Choose the backend.
 
         Args:
-            backend: 'vllm', 'mistral' or 'offline' (default: `VS_TEACHER`, else 'mistral' when a key is set and
+            backend: 'vllm', 'mistral', 'sarvam' (optional non-Qwen) or 'offline' (default: `VS_TEACHER`, else 'mistral' when a key is set and
                 'vllm' otherwise; 'offline' when `VS_MODELS=offline`)
             model: checkpoint or API model name
             client: an LLMClient to use directly (tests, a shared engine)
@@ -105,12 +106,12 @@ class TeacherClient(LLMClient):
                 backend = "offline"
             else:
                 backend = os.environ.get("VS_TEACHER") or ("mistral" if MistralApiClient.available() else "vllm")
-        if backend not in ("vllm", "mistral", "offline"):
+        if backend not in ("vllm", "mistral", "sarvam", "offline"):
             raise ValueError(f"unknown teacher backend {backend!r}")
         self.backend = backend
         self._client = client
-        self.model_id = model or (DEFAULT_MISTRAL if backend == "mistral" else DEFAULT_TEACHER if backend == "vllm" else "offline-template")
-        self.where = "api" if backend == "mistral" else "ada" if backend == "vllm" else "laptop"
+        self.model_id = model or (DEFAULT_MISTRAL if backend == "mistral" else DEFAULT_SARVAM if backend == "sarvam" else DEFAULT_TEACHER if backend == "vllm" else "offline-template")
+        self.where = "api" if backend in ("mistral", "sarvam") else "ada" if backend == "vllm" else "laptop"
         self.is_offline = backend == "offline"
 
     @property
@@ -119,6 +120,11 @@ class TeacherClient(LLMClient):
         if self._client is None:
             if self.backend == "mistral":
                 self._client = MistralApiClient(self.model_id)
+            elif self.backend == "sarvam":
+                from vakeel_sahayak.models.sarvam.adapters import SarvamLLMClient
+                from vakeel_sahayak.models.sarvam.policy import DataClass
+
+                self._client = SarvamLLMClient(self.model_id, data=DataClass.PUBLIC, where="api", role="teacher")
             elif self.backend == "vllm":
                 from vakeel_sahayak.models.vllm_client import VllmClient
 
@@ -132,28 +138,25 @@ class TeacherClient(LLMClient):
     def generate(
         self, prompt: str, max_tokens: int = 1024, temperature: float = 0.0, json_schema: dict | None = None
     ) -> str:
-        """Delegate to the backend (its token usage is mirrored here)."""
-        done = self.client.complete(prompt, max_tokens=max_tokens, temperature=temperature, json_schema=json_schema)
-        self.record_usage(done.prompt_tokens, done.completion_tokens)
-        return done.text
+        """Delegate to the backend (usage accumulates on `self.client.usage`)."""
+        return self.client.generate(prompt, max_tokens=max_tokens, temperature=temperature, json_schema=json_schema)
 
     def count_tokens(self, text: str) -> int:
         """The backend's count."""
         return self.client.count_tokens(text)
 
-    def dossier_from_facts(self, facts_text: str, doc_id: str | None = None) -> CaseDossier:
+    def dossier_from_facts(self, facts_text: str) -> CaseDossier:
         """Output a CaseDossier quoting a source sentence per field (plan §12 step 1).
 
         Args:
             facts_text: the facts section of a public *train* order
-            doc_id: the order's id (used to name the dossier's case id)
 
         Returns:
             CaseDossier (every field VERIFIED needs its quote; unknown fields stay UNSUPPORTED).
         """
         from vakeel_sahayak.orchestration.structured_output import constrained_generate
 
-        case_id = "train-" + hashlib.sha256((doc_id or facts_text).encode("utf-8")).hexdigest()[:12]
+        case_id = "train-" + hashlib.sha256(facts_text.encode("utf-8")).hexdigest()[:12]
         schema = CaseDossier.model_json_schema()
         prompt = render_prompt(
             "teacher.dossier_from_facts",
@@ -164,4 +167,4 @@ class TeacherClient(LLMClient):
             system="You extract structured case facts from court orders. You never guess.",
             schema=schema,
         )
-        return constrained_generate(self, prompt, CaseDossier, max_tokens=3000)
+        return constrained_generate(self.client, prompt, CaseDossier, max_tokens=3000)

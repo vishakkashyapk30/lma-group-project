@@ -5,17 +5,24 @@ top-level `mode`).
 
 - `offline`: every LLM role is the deterministic `OfflineLLM`, NLI is the lexical `OfflineNliClient`;
 - `real`: the configured backends, strictly (a missing dependency raises `ModelUnavailable`, never a silent stand-in);
-- `auto`: the configured backend when its dependencies are installed (an endpoint is configured, for vLLM), otherwise
-  the offline client. For `agents_14b`, `VS_ALLOW_LOCAL_FALLBACK=1` allows the plan's laptop fallback (Qwen3-8B, 4-bit)
-  before going offline.
+- `auto`: the configured backend; when its dependencies are missing the client is still returned (construction is lazy)
+  and raises `ModelUnavailable` on first use. For `agents_14b`, `VS_ALLOW_LOCAL_FALLBACK=1` allows the plan's laptop
+  fallback (Qwen3-8B, 4-bit) when vLLM cannot run.
+- The evaluation labeler is not a system role: use `models.labeler.EvalLabeler`; the training teacher is `models.teacher.TeacherClient`.
 
 **Roles** are the keys of `llm:` in configs/models.yaml: `agents_14b` (Sutradhar, Vakeel, Abhiyojak, Pairokar; vLLM on
-Ada), `munshi_4b` (adapter off) and `extractor_4b` (adapter on) on the laptop, `fallback_8b`, `teacher`, `eval_labeler`.
+Ada), `munshi_4b` (adapter off) and `extractor_4b` (adapter on) on the laptop, `fallback_8b`; `eval_labeler` is configured there but refused by `get_llm` (`teacher` resolves to a plain vLLM client for the A5 prompted-32B ablation).
 `role_where(role)` says where a role's model runs; agents apply the privacy boundary to every 'ada' role, whatever
 client stands in for it.
 
-**Overrides** (tests, baselines): `set_client(kind, client)` for 'ocr', 'vision', 'asr', 'translator', 'nli', 'labeler',
-'teacher', 'llm' (every role) or 'llm:<role>'; `reset_clients()` drops overrides and cached clients.
+**Overrides** (tests, baselines): `set_client(kind, client)` for 'ocr', 'vision', 'asr', 'translator', 'nli', 'tts', 'langid', 'llm' (every role) or 'llm:<role>'; `reset_clients()` drops overrides and cached clients.
+
+**Sarvam** (external API, off by default; `models.sarvam`): when `VS_SARVAM` is not `off`, SARVAM_API_KEY is set and the capability is enabled in
+configs/models.yaml, `get_vision`, `get_ocr` (only with `sarvam.vision.use_for_ocr`), `get_asr`, `get_translator` and an LLM role whose
+`runtime` is `sarvam` return a wrapper that tries Sarvam through the privacy policy and falls back to the local client when Sarvam is
+blocked or fails. With Sarvam off the getters return exactly the local clients. `VS_MODELS=offline` forces offline everywhere.
+`get_tts()` (Bulbul, test-set construction and optional read-back) and `get_langid()` (/text-lid) have no local twin: tts raises
+ModelUnavailable when Sarvam is off, langid returns None.
 """
 
 from __future__ import annotations
@@ -35,6 +42,7 @@ from vakeel_sahayak.models.base import (
     VisionClient,
 )
 
+EVAL_ONLY_ROLES = ("eval_labeler",)
 MODES = ("offline", "real", "auto")
 LLM_ROLES = ("agents_14b", "munshi_4b", "extractor_4b", "fallback_8b", "teacher", "eval_labeler")
 _ROLE_DEFAULTS: dict[str, dict[str, object]] = {
@@ -92,11 +100,6 @@ def _build_real(role: str, cfg: dict[str, object]) -> LLMClient:
     """The configured client for a role (may raise ModelUnavailable when used)."""
     runtime = str(cfg.get("runtime") or "local")
     model = str(cfg.get("model") or "")
-    if role == "teacher":
-        from vakeel_sahayak.models.teacher import TeacherClient
-
-        teacher = TeacherClient()
-        return TeacherClient(backend="vllm", model=model) if teacher.backend == "vllm" and model else teacher
     if runtime == "vllm":
         from vakeel_sahayak.models.vllm_client import VllmClient
 
@@ -113,11 +116,6 @@ def _build_real(role: str, cfg: dict[str, object]) -> LLMClient:
 
 def _real_available(role: str, cfg: dict[str, object]) -> bool:
     runtime = str(cfg.get("runtime") or "local")
-    if role == "teacher":
-        from vakeel_sahayak.models.teacher import MistralApiClient
-        from vakeel_sahayak.models.vllm_client import VllmClient
-
-        return VllmClient.available() or MistralApiClient.available()
     if runtime == "vllm":
         from vakeel_sahayak.models.vllm_client import VllmClient
 
@@ -125,6 +123,23 @@ def _real_available(role: str, cfg: dict[str, object]) -> bool:
     from vakeel_sahayak.models.local_llm import LocalLLMClient
 
     return LocalLLMClient.available(str(cfg["adapter"]) if cfg.get("adapter") else None)
+
+
+def _sarvam_active(capability: str) -> bool:
+    """True when a Sarvam client should be tried: not forced offline, mode not off, key set, capability switched on in the yaml."""
+    from vakeel_sahayak.models.sarvam.config import key_is_set, sarvam_config
+    from vakeel_sahayak.models.sarvam.policy import SarvamMode, sarvam_mode
+
+    if os.environ.get("VS_MODELS", "").strip().lower() == "offline" or models_mode() == "offline":
+        return False
+    return sarvam_mode() is not SarvamMode.OFF and key_is_set() and bool(sarvam_config()["use"].get(capability, True))
+
+
+def _sarvam_state() -> str:
+    from vakeel_sahayak.models.sarvam.config import key_is_set
+    from vakeel_sahayak.models.sarvam.policy import sarvam_mode
+
+    return f"{sarvam_mode().value}:{key_is_set()}"
 
 
 def _offline(role: str, cfg: dict[str, object]) -> LLMClient:
@@ -146,32 +161,60 @@ def get_llm(role: str) -> LLMClient:
         ValueError: unknown role or VS_MODELS value.
         ModelUnavailable: VS_MODELS=real and the backend's dependencies are missing.
     """
+    if role in EVAL_ONLY_ROLES:
+        raise ValueError(f"{role!r} is not a system role (plan §12: evaluation only); use models.labeler.EvalLabeler")
     override = _OVERRIDES.get(f"llm:{role}") or _OVERRIDES.get("llm")
     if override is not None:
         return override  # type: ignore[return-value]
     cfg = role_config(role)
     mode = models_mode()
     with _LOCK:
-        key = (role, mode)
+        key = (role, f"{mode}|{_sarvam_state()}")
         if key in _LLM_CACHE:
             return _LLM_CACHE[key]
-        if mode == "offline":
-            client = _offline(role, cfg)
-        elif _real_available(role, cfg):
-            client = _build_real(role, cfg)
-        elif mode == "real":
-            raise ModelUnavailable(f"VS_MODELS=real but the backend for {role!r} ({cfg.get('runtime')}) cannot run here", "models")
-        elif role == "agents_14b" and os.environ.get("VS_ALLOW_LOCAL_FALLBACK") == "1" and _real_available("fallback_8b", role_config("fallback_8b")):
-            client = _build_real("fallback_8b", role_config("fallback_8b"))
-            client.where = str(cfg.get("where") or "ada")  # same privacy rules as the role it stands in for
+        if cfg.get("runtime") == "sarvam":
+            client = _resolve_sarvam_role(role, cfg, mode)
         else:
-            client = _offline(role, cfg)
+            client = _resolve(role, cfg, mode)
         _LLM_CACHE[key] = client
         return client
 
 
+def _resolve(role: str, cfg: dict[str, object], mode: str) -> LLMClient:
+    """The local/vLLM/offline client of a role."""
+    if mode == "offline":
+        return _offline(role, cfg)
+    if _real_available(role, cfg):
+        return _build_real(role, cfg)
+    if mode == "real":
+        raise ModelUnavailable(f"VS_MODELS=real but the backend for {role!r} ({cfg.get('runtime')}) cannot run here", "models")
+    if role == "agents_14b" and os.environ.get("VS_ALLOW_LOCAL_FALLBACK") == "1" and _real_available("fallback_8b", role_config("fallback_8b")):
+        client = _build_real("fallback_8b", role_config("fallback_8b"))
+        client.where = str(cfg.get("where") or "ada")  # same privacy rules as the role it stands in for
+        return client
+    return _build_real(role, cfg)  # lazy: raises ModelUnavailable on first use, never a silent stand-in
+
+
+def _resolve_sarvam_role(role: str, cfg: dict[str, object], mode: str) -> LLMClient:
+    """A role configured `runtime: sarvam`: Sarvam-105B through the privacy policy, else the role's `fallback:` (default: the built-in runtime)."""
+    where = str(cfg.get("where") or _ROLE_DEFAULTS.get(role, {}).get("where") or "ada")
+    fallback = {**_ROLE_DEFAULTS.get(role, {}), **dict(cfg.get("fallback") or {}), "where": where}  # type: ignore[call-overload]
+    if not _sarvam_active("llm"):
+        return _resolve(role, fallback, mode)
+    from vakeel_sahayak.models.sarvam.adapters import SarvamLLMClient
+    from vakeel_sahayak.models.sarvam.fallback import FallbackLLM
+    from vakeel_sahayak.models.sarvam.policy import DataClass
+
+    public = role == "teacher"  # the teacher only reads public orders; agent roles carry pseudonymised client text
+    primary = SarvamLLMClient(
+        str(cfg.get("model") or "") or None, data=DataClass.PUBLIC if public else DataClass.CLIENT_TEXT,
+        where="api" if public else where, role=role,
+    )  # fmt: skip
+    return FallbackLLM(primary, lambda: _resolve(role, fallback, mode), "api" if public else where)
+
+
 def set_client(kind: str, client: object | None) -> None:
-    """Use a given client for 'ocr', 'vision', 'asr', 'translator', 'nli', 'labeler', 'teacher', 'llm' or 'llm:<role>' (tests, baselines); None removes the override."""
+    """Use a given client for 'ocr', 'vision', 'asr', 'translator', 'nli', 'llm' or 'llm:<role>' (tests, baselines); None removes the override."""
     if client is None:
         _OVERRIDES.pop(kind, None)
     else:
@@ -222,47 +265,109 @@ def _pick(kind: str, offline: type) -> object:
 
 
 def get_vision() -> VisionClient:
-    """Configured vision client: Qwen3-VL when installed, else the offline fallback (stand-in images only).
+    """Configured vision client: Sarvam Vision first when active (policy-gated, local on a block), else Qwen3-VL when installed, else the offline fallback (stand-in images only).
 
     Returns:
         VisionClient.
     """
     from vakeel_sahayak.models.offline import OfflineVisionClient
 
+    if "vision" in _OVERRIDES:
+        return _OVERRIDES["vision"]  # type: ignore[return-value]
+    if _sarvam_active("vision"):
+        from vakeel_sahayak.models.sarvam.adapters import SarvamVisionClient
+        from vakeel_sahayak.models.sarvam.fallback import FallbackVision
+
+        return FallbackVision(SarvamVisionClient(), lambda: _pick("vision", OfflineVisionClient))  # type: ignore[return-value]
     return _pick("vision", OfflineVisionClient)  # type: ignore[return-value]
 
 
 def get_ocr() -> OcrClient:
     """Configured OCR client: Surya or Tesseract when installed, else the offline fallback (stand-in images only).
 
+    With `sarvam.vision.use_for_ocr` and Sarvam active, Sarvam Vision answers first (policy-gated, local on a block).
+
     Returns:
         OcrClient.
     """
     from vakeel_sahayak.models.offline import OfflineOcrClient
 
+    if "ocr" in _OVERRIDES:
+        return _OVERRIDES["ocr"]  # type: ignore[return-value]
+    if _sarvam_active("ocr"):
+        from vakeel_sahayak.models.sarvam.config import sarvam_config
+
+        if sarvam_config()["vision"].get("use_for_ocr"):
+            from vakeel_sahayak.models.sarvam.adapters import SarvamVisionClient
+            from vakeel_sahayak.models.sarvam.fallback import FallbackOcr
+
+            return FallbackOcr(SarvamVisionClient(), lambda: _pick("ocr", OfflineOcrClient))  # type: ignore[return-value]
     return _pick("ocr", OfflineOcrClient)  # type: ignore[return-value]
 
 
 def get_asr() -> AsrClient:
-    """Configured ASR client: Whisper or IndicConformer when installed, else the transcript-sidecar fallback.
+    """Configured ASR client: Saaras first when Sarvam is active (consent-gated, local on a block), else Whisper or IndicConformer, else the transcript-sidecar fallback.
 
     Returns:
         AsrClient.
     """
     from vakeel_sahayak.models.offline import OfflineAsrClient
 
+    if "asr" in _OVERRIDES:
+        return _OVERRIDES["asr"]  # type: ignore[return-value]
+    if _sarvam_active("asr"):
+        from vakeel_sahayak.models.sarvam.adapters import SarvamAsr
+        from vakeel_sahayak.models.sarvam.fallback import FallbackAsr
+
+        return FallbackAsr(SarvamAsr(), lambda: _pick("asr", OfflineAsrClient))  # type: ignore[return-value]
     return _pick("asr", OfflineAsrClient)  # type: ignore[return-value]
 
 
 def get_translator() -> TranslationClient:
-    """Configured translator: IndicTrans2 when installed, else the offline word-level glossary (marked, not IndicTrans2).
+    """Configured translator: Sarvam-Translate first when active (policy-gated, local on a block), else IndicTrans2 when installed, else the offline word-level glossary (marked, not IndicTrans2).
 
     Returns:
         TranslationClient. Clients carry `name` and `is_identity`.
     """
     from vakeel_sahayak.models.offline import GlossaryTranslator
 
+    if "translator" in _OVERRIDES:
+        return _OVERRIDES["translator"]  # type: ignore[return-value]
+    if _sarvam_active("translation"):
+        from vakeel_sahayak.models.sarvam.adapters import SarvamTranslator
+        from vakeel_sahayak.models.sarvam.fallback import FallbackTranslator
+
+        return FallbackTranslator(SarvamTranslator(), lambda: _pick("translator", GlossaryTranslator))  # type: ignore[return-value]
     return _pick("translator", GlossaryTranslator)  # type: ignore[return-value]
+
+
+def get_tts() -> object:
+    """Sarvam Bulbul text-to-speech (`SarvamTts.synthesize`), for T8 synthetic dictation and the optional read-back audio.
+
+    There is no local twin (indic-parler-tts is a test-construction model run offline), so this raises when Sarvam cannot be used.
+    Calls are still gated per call: use `with public_scope():` for constructed text.
+
+    Raises:
+        ModelUnavailable: Sarvam is off, forced offline, switched off for tts, or has no key.
+    """
+    if "tts" in _OVERRIDES:
+        return _OVERRIDES["tts"]
+    if not _sarvam_active("tts"):
+        raise ModelUnavailable("Sarvam text-to-speech is not active (VS_SARVAM=off, VS_MODELS=offline, no SARVAM_API_KEY or disabled in models.yaml)")
+    from vakeel_sahayak.models.sarvam.adapters import SarvamTts
+
+    return SarvamTts()
+
+
+def get_langid() -> object | None:
+    """Sarvam `/text-lid` (`SarvamLangId`) for Munshi's script detection, or None when Sarvam is not active (the local heuristic then applies)."""
+    if "langid" in _OVERRIDES:
+        return _OVERRIDES["langid"]
+    if not _sarvam_active("language_id"):
+        return None
+    from vakeel_sahayak.models.sarvam.adapters import SarvamLangId
+
+    return SarvamLangId()
 
 
 @cache
@@ -287,35 +392,6 @@ def get_nli() -> NliClient:
     if "nli" in _OVERRIDES:
         return _OVERRIDES["nli"]  # type: ignore[return-value]
     return _nli_cached(models_mode())
-
-
-def get_labeler():  # noqa: ANN201
-    """The evaluation labeler (Llama-3.1-8B; evaluation only, never the system). It raises LabelerUnavailable when it cannot run.
-
-    Returns:
-        models.labeler.EvalLabeler (or the override).
-    """
-    if "labeler" in _OVERRIDES:
-        return _OVERRIDES["labeler"]
-    from vakeel_sahayak.models.labeler import EvalLabeler
-
-    return EvalLabeler()
-
-
-def get_teacher(backend: str | None = None):  # noqa: ANN201
-    """The teacher for training data (public orders only): Qwen3-32B on Ada or the Mistral API; offline when VS_MODELS=offline.
-
-    Args:
-        backend: 'vllm', 'mistral' or 'offline' (default: chosen by `TeacherClient`)
-
-    Returns:
-        models.teacher.TeacherClient (or the override).
-    """
-    if "teacher" in _OVERRIDES:
-        return _OVERRIDES["teacher"]
-    from vakeel_sahayak.models.teacher import TeacherClient
-
-    return TeacherClient(backend=backend)
 
 
 def get_embedder() -> EmbeddingClient:
