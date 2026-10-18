@@ -40,7 +40,7 @@ export const DialogContent = forwardRef<ElementRef<typeof DialogPrimitive.Conten
         ref={ref}
         className={cn(
           "fixed left-1/2 top-1/2 z-modal flex max-h-[min(90dvh,48rem)] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-gold/50 bg-cream text-ink shadow-lg",
-          "data-[state=open]:animate-scale-in data-[state=closed]:animate-fade-out",
+          "data-[state=open]:animate-dialog-in data-[state=closed]:animate-fade-out",
           size === "sm" && "max-w-sm",
           size === "md" && "max-w-lg",
           size === "lg" && "max-w-2xl",

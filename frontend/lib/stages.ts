@@ -97,9 +97,8 @@ export interface StageContext {
 /**
  * Unlock rules (plan §13.5):
  * - I Intake and II Dossier are always open.
- * - III Rights opens as soon as the Rights Radar has run (its flags are part of the Gate 1 review, flow 1) or after Gate 1.
- * - IV Brief, V Spar and VI Hearing prep unlock after Gate 1.
- * - VII File unlocks only after Gate 2: export is impossible before it.
+ * - III Rights to VII File unlock after Gate 1 ("later stages unlock after Gate 1"). The Rights flags are still shown in the
+ *   Gate 1 checklist context; File is where Gate 2 is approved, and export stays disabled until Gate 2 (a 403 otherwise).
  */
 export function isStageUnlocked(stage: Stage, ctx: StageContext): boolean {
   switch (stage) {
@@ -107,25 +106,17 @@ export function isStageUnlocked(stage: Stage, ctx: StageContext): boolean {
     case "DOSSIER":
       return true;
     case "RIGHTS":
-      return ctx.gate1Approved || Boolean(ctx.hasRights);
     case "BRIEF":
     case "SPAR":
     case "HEARING_PREP":
-      return ctx.gate1Approved;
     case "FILE":
-      return ctx.gate1Approved && ctx.gate2Approved;
+      return ctx.gate1Approved;
   }
 }
 
 /** Why a stage is locked, for tooltips and aria-descriptions; null when it is open. */
 export function lockReason(stage: Stage, ctx: StageContext): string | null {
   if (isStageUnlocked(stage, ctx)) return null;
-  if (stage === "FILE") {
-    return ctx.gate1Approved
-      ? "Unlocks after Gate 2: counsel approves the final draft."
-      : "Unlocks after Gate 1 and Gate 2.";
-  }
-  if (stage === "RIGHTS") return "Opens when the Rights Radar has run, or after Gate 1.";
   return "Unlocks after Gate 1: counsel approves the dossier.";
 }
 

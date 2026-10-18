@@ -1,11 +1,12 @@
 // Typed client for the FastAPI backend (plan §13.1), one function per route in src/vakeel_sahayak/api/routers/.
 //
-// Mode: when NEXT_PUBLIC_API_BASE (or the older NEXT_PUBLIC_API_BASE_URL) is unset, or a request fails with a network
+// Mode: the client talks to NEXT_PUBLIC_API_BASE (or NEXT_PUBLIC_API_BASE_URL; default http://localhost:8000); when that is empty, or a request fails with a network
 // error (or a 5xx from a backend whose routes are still stubs), the client switches to demo mode for the rest of the
 // session and answers from the in-browser demo backend in lib/mock/server.ts. Demo mode is sticky so that the event
 // stream, the gates and the data stay consistent. Set NEXT_PUBLIC_DEMO_FALLBACK=strict to fall back on network errors
 // only (5xx then surface as ApiError).
 import { ApiError } from "./errors";
+export { ApiError };
 import * as demo from "./mock/server";
 import type {
   ApproveRequest, BailBrief, BridgeData, BudgetState, CaseDossier, CaseSummary, ChatMessage, CitationGraphData,
@@ -15,11 +16,16 @@ import type {
 
 /* ── Mode ───────────────────────────────────────────────────────────────────────────────────────────────────────── */
 
-/** Backend origin without a trailing slash, or null when unset (demo mode). */
+const DEFAULT_API_BASE = "http://localhost:8000";
+
+/**
+ * Backend origin without a trailing slash. Defaults to http://localhost:8000 (the FastAPI dev server); set the variable to
+ * an empty string (or "demo") to force the in-browser demo backend without probing the network (null).
+ */
 export const API_BASE: string | null = (() => {
-  const raw = process.env.NEXT_PUBLIC_API_BASE ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+  const raw = process.env.NEXT_PUBLIC_API_BASE ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE;
   const trimmed = raw.trim().replace(/\/+$/, "");
-  return trimmed ? trimmed : null;
+  return trimmed && trimmed !== "demo" ? trimmed : null;
 })();
 
 const STRICT = process.env.NEXT_PUBLIC_DEMO_FALLBACK === "strict";
@@ -27,7 +33,7 @@ const STRICT = process.env.NEXT_PUBLIC_DEMO_FALLBACK === "strict";
 export type ApiMode = "live" | "demo";
 
 let mode: ApiMode = API_BASE ? "live" : "demo";
-let demoReason: string | null = API_BASE ? null : "NEXT_PUBLIC_API_BASE is not set";
+let demoReason: string | null = API_BASE ? null : "NEXT_PUBLIC_API_BASE is empty";
 const modeListeners = new Set<(m: ApiMode) => void>();
 
 /** "live" while the real backend answers; "demo" once the client has fallen back to the demo backend. */
@@ -167,9 +173,18 @@ export function getDates(caseId: string): Promise<TimelineEvent[]> {
   return call(() => http("GET", `${c(caseId)}/dates`), () => demo.getDates(caseId));
 }
 
-/** GET /api/cases/{case_id}/rights: the RightsReport. */
+/** GET /api/cases/{case_id}/rights: the RightsReport. Optional list fields the backend leaves out become empty lists. */
 export function getRights(caseId: string): Promise<RightsReport> {
-  return call(() => http("GET", `${c(caseId)}/rights`), () => demo.getRights(caseId));
+  return call(
+    async () => {
+      const report = await http<RightsReport>("GET", `${c(caseId)}/rights`);
+      return {
+        ...report,
+        checks: (report.checks ?? []).map((k) => ({ ...k, uses: k.uses ?? [], sources: k.sources ?? [], dates: k.dates ?? {} })),
+      };
+    },
+    () => demo.getRights(caseId),
+  );
 }
 
 /** POST /api/cases/{case_id}/draft: Sutradhar plans, Vakeel drafts, Abhiyojak spars (needs Gate 1). */

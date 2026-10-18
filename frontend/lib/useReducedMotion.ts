@@ -28,7 +28,8 @@ export function prefersReducedMotion(): boolean {
   if (typeof window === "undefined") return false;
   const o = readOverride();
   if (o) return o === "reduce";
-  return typeof window.matchMedia === "function" && window.matchMedia(QUERY).matches;
+  // Without matchMedia the preference cannot be read, so take the safe default: static mode.
+  return typeof window.matchMedia !== "function" || window.matchMedia(QUERY).matches;
 }
 
 function subscribe(onChange: () => void): () => void {

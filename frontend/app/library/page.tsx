@@ -1,5 +1,8 @@
-// Route stub: `/library` Precedent explorer (plan §13.5).
+// `/library` Precedent search, citation graph and the IPC/BNS bridge (plan §13.5).
+import type { Metadata } from "next";
 import { LibraryPage } from "@/components/library/LibraryPage";
+
+export const metadata: Metadata = { title: "Library" };
 
 export default function Page() {
   return <LibraryPage />;

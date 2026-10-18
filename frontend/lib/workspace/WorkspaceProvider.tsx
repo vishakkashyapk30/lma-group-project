@@ -20,6 +20,7 @@ import type {
 import { DOSSIER_FIELD_NAMES } from "../types";
 import { useEventStream, type StreamStatus } from "../useEventStream";
 import { deriveActivity, hasRecentEvents, type ActivityState } from "./activity";
+import { changeSetOf, deriveChanges, type ChangeState } from "./changes";
 import {
   acknowledgedForApproval, computeChecklist, type GateChecklist, type ResolutionState,
 } from "./checklist";
@@ -117,9 +118,12 @@ export interface WorkspaceValue {
   resolveItem: (key: string, note?: string | null) => void;
   unresolveItem: (key: string) => void;
   editField: <K extends DossierFieldName>(field: K, value: DossierFields[K]["value"]) => Promise<void>;
-  /** Fields whose value or status changed since they were first loaded (flow 4 highlights). */
+  /** Dossier fields in the change set waiting for re-approval (plan §7.4); empty when nothing is pending. */
   changedFields: DossierFieldName[];
+  /** Hide the field highlights (the change banner stays until counsel re-approves). */
   clearChangedFields: () => void;
+  /** The pending change set, stale and redrafted claims, derived from the event log. */
+  changes: ChangeState;
   editDate: (eventId: string, patch: Omit<DateEdit, "at">) => void;
   resetDate: (eventId: string) => void;
   editGround: (groundId: string, argument: string, note?: string | null) => void;
@@ -136,6 +140,11 @@ export interface WorkspaceValue {
   uploading: boolean;
   /** Questions Munshi asked after the last upload. */
   uploadQuestions: string[];
+  /** What Munshi heard in the last dictation, waiting for counsel to confirm (nothing is filed until then). */
+  readback: string[] | null;
+  /** Counsel confirms the read-back: sends it through the chat so Munshi files the facts as stated by counsel. */
+  confirmReadback: () => Promise<ChatMessage | null>;
+  dismissReadback: () => void;
   /** Export is impossible before Gate 2 (plan §16): this rejects with a 403 ApiError without calling the API. */
   exportCase: (format?: ExportFormat) => Promise<string[]>;
   exports: string[];
@@ -175,6 +184,8 @@ function resourcesForEvent(e: AgentEvent): Resource[] {
   const out = new Set<Resource>();
   const view = typeof e.inputs?.view === "string" ? e.inputs.view : null;
   const store = typeof e.inputs?.store === "string" ? e.inputs.store : null;
+  // A change set means the dossier, the Rights Radar and Gate 1 moved under counsel's feet.
+  if (changeSetOf(e)) ["gates", "dossier", "rights", "dates", "ingestion", "summary"].forEach((r) => out.add(r as Resource));
   switch (e.kind) {
     case "STORE_WRITE":
       out.add("summary");
@@ -200,6 +211,7 @@ function resourcesForEvent(e: AgentEvent): Resource[] {
     case "CLAIM_STALED":
       out.add("brief");
       out.add("revisions");
+      out.add("gates");
       break;
     case "USER_ACTION":
       if (e.inputs?.action === "edit_field" || e.inputs?.action === "state_field") out.add("dossier");
@@ -239,7 +251,8 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
   const [selectedSource, setSelectedSource] = useState<SelectedSource | null>(null);
   const [sourceNonce, setSourceNonce] = useState(0);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
-  const [changedFields, setChangedFields] = useState<DossierFieldName[]>([]);
+  const [highlightsHidden, setHighlightsHidden] = useState<string | null>(null);
+  const [readback, setReadback] = useState<string[] | null>(null);
   const [drafting, setDrafting] = useState(false);
   const [chatPending, setChatPending] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -248,7 +261,6 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
   const [now, setNow] = useState(() => Date.now());
 
   const placedStage = useRef(Boolean(initialStage));
-  const baseline = useRef<Partial<Record<DossierFieldName, string>> | null>(null);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -263,8 +275,8 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
     const saved = loadLocalState(caseId);
     setLocal(saved ?? { ...EMPTY_LOCAL_STATE, resolutions: api.isDemoMode() ? getDemoResolutions(caseId) : EMPTY_LOCAL_STATE.resolutions });
     setLocalReady(true);
-    baseline.current = null;
-    setChangedFields([]);
+    setHighlightsHidden(null);
+    setReadback(null);
     placedStage.current = Boolean(initialStage);
     // initialStage only matters on the first placement for this case
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -275,22 +287,6 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
   }, [caseId, local, localReady]);
 
   /* Loading */
-  const trackDossier = useCallback((d: CaseDossier | null) => {
-    if (!d) return;
-    const snapshot: Partial<Record<DossierFieldName, string>> = {};
-    for (const name of DOSSIER_FIELD_NAMES) {
-      const f = d.fields[name];
-      snapshot[name] = JSON.stringify([f?.value ?? null, f?.status ?? null]);
-    }
-    if (!baseline.current) {
-      baseline.current = snapshot;
-      return;
-    }
-    const changed = DOSSIER_FIELD_NAMES.filter((n) => baseline.current?.[n] !== snapshot[n]);
-    if (changed.length) setChangedFields((prev) => Array.from(new Set([...prev, ...changed])));
-    baseline.current = snapshot;
-  }, []);
-
   const loaders = useMemo(
     () => ({
       summary: () => optional(api.getCase(caseId)),
@@ -321,7 +317,6 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
             if (!mounted.current) return;
             if (r === "gates") setGateStatus(value as Record<GateId, GateStatus | null>);
             else {
-              if (r === "dossier") trackDossier(value as CaseDossier | null);
               setRaw((prev) => ({ ...prev, [r]: value }));
             }
             setErrors((prev) => {
@@ -338,7 +333,7 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
         }),
       );
     },
-    [loaders, trackDossier],
+    [loaders],
   );
 
   useEffect(() => {
@@ -386,6 +381,12 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
   }, [stream.events]);
 
   const activity = useMemo(() => deriveActivity(stream.events, now), [stream.events, now]);
+  const changes = useMemo(() => deriveChanges(stream.events), [stream.events]);
+  const changeKey = changes.pending ? JSON.stringify(changes.pending.fields) : null;
+  const changedFields = useMemo(
+    () => (changes.pending && highlightsHidden !== changeKey ? (changes.changedFields.filter((f) => (DOSSIER_FIELD_NAMES as readonly string[]).includes(f)) as DossierFieldName[]) : []),
+    [changes, changeKey, highlightsHidden],
+  );
 
   /* Derived data */
   const data: CaseData = useMemo(
@@ -404,14 +405,17 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
   const checklists = useMemo(() => {
     const input = { dossier: data.dossier, brief: data.brief, spar: data.spar };
     return {
-      GATE_1_DOSSIER: computeChecklist("GATE_1_DOSSIER", input, local.resolutions, approvals),
-      GATE_2_EXPORT: computeChecklist("GATE_2_EXPORT", input, local.resolutions, approvals),
+      GATE_1_DOSSIER: computeChecklist("GATE_1_DOSSIER", input, local.resolutions, approvals, gateStatus.GATE_1_DOSSIER),
+      GATE_2_EXPORT: computeChecklist("GATE_2_EXPORT", input, local.resolutions, approvals, gateStatus.GATE_2_EXPORT),
     };
-  }, [data.dossier, data.brief, data.spar, local.resolutions, approvals]);
+  }, [data.dossier, data.brief, data.spar, local.resolutions, approvals, gateStatus]);
 
   const stageContext: StageContext = useMemo(
     () => ({
-      gate1Approved: approvals.gate1,
+      // A change set re-opens Gate 1 for re-approval, but the later stages stay open: counsel needs them to see what moved.
+      // While the gates are still loading nothing is locked yet (the server enforces the real rules); a stage that turns out to be
+      // locked is left again as soon as the gates arrive.
+      gate1Approved: approvals.gate1 || changes.pending !== null || loading.gates,
       gate2Approved: approvals.gate2,
       hasIngestion: Boolean(data.ingestion),
       hasDossier: Boolean(data.dossier),
@@ -419,7 +423,7 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
       hasBrief: Boolean(data.brief),
       hasSpar: Boolean(data.spar),
     }),
-    [approvals, data.ingestion, data.dossier, data.rights, data.brief, data.spar],
+    [approvals, changes.pending, loading.gates, data.ingestion, data.dossier, data.rights, data.brief, data.spar],
   );
 
   const progressStage: Stage = data.summary?.stage ?? "INTAKE";
@@ -447,6 +451,7 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
   const setStage = useCallback(
     (stage: Stage) => {
       if (!isStageUnlocked(stage, stageContext)) return false;
+      placedStage.current = true; // counsel chose: the automatic first placement must not override it
       setActiveStage(stage);
       setActiveTab(tabForStage(stage));
       return true;
@@ -457,6 +462,7 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
   const setTab = useCallback(
     (tab: WorkspaceTab) => {
       if (!isTabUnlocked(tab, stageContext)) return false;
+      placedStage.current = true;
       setActiveTab(tab);
       setActiveStage((s) => (tabForStage(s) === tab ? s : stageForTab(tab)));
       return true;
@@ -530,7 +536,6 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
       }
       try {
         const updated = await api.editField(caseId, field, value);
-        trackDossier(updated);
         setRaw((prev) => ({ ...prev, dossier: updated }));
         void refresh(["gates", "summary"]);
       } catch (e) {
@@ -539,7 +544,7 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
         throw e;
       }
     },
-    [caseId, raw.dossier, refresh, trackDossier],
+    [caseId, raw.dossier, refresh],
   );
 
   const editDate = useCallback((eventId: string, patch: Omit<DateEdit, "at">) => {
@@ -587,7 +592,6 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
       try {
         const status = await api.approveGate(caseId, gate, acknowledgedForApproval(checklist));
         setGateStatus((prev) => ({ ...prev, [gate]: status }));
-        if (gate === "GATE_1_DOSSIER") setChangedFields([]);
         void refresh(["summary", "gates", "dossier"]);
         return status;
       } catch (e) {
@@ -609,12 +613,14 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
       await api.startDraft(caseId);
       setActiveStage("BRIEF");
       setActiveTab("brief");
+      // Whatever the drafting run has already written (the rest arrives as events).
+      void refresh(["summary", "brief", "revisions", "spar", "prep", "gates", "budget"]);
     } catch (e) {
       setActionError(errorMessage(e));
     } finally {
       setDrafting(false);
     }
-  }, [approvals.gate1, caseId]);
+  }, [approvals.gate1, caseId, refresh]);
 
   const sendChat = useCallback(
     async (text: string) => {
@@ -626,10 +632,14 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
       try {
         const reply = await api.postChat(caseId, trimmed);
         const history = await optional(api.getChatHistory(caseId));
+        // Use the stored history once it carries this exchange; otherwise keep what is on screen and add the reply.
+        const stored = history && history.some((m) => m.message_id === reply.message_id) ? history : null;
         setRaw((prev) => ({
           ...prev,
-          chat: history ?? [...prev.chat.filter((m) => m.message_id !== temp.message_id), { ...temp, message_id: `${temp.message_id}-sent` }, reply],
+          chat: stored ?? [...prev.chat.filter((m) => m.message_id !== temp.message_id), { ...temp, message_id: `${temp.message_id}-sent` }, reply],
         }));
+        // A chat turn can file facts (a confirmed read-back), so re-read what the answer may have changed.
+        void refresh(["summary", "ingestion", "dossier", "dates", "rights", "gates"]);
         return reply;
       } catch (e) {
         setActionError(errorMessage(e));
@@ -638,8 +648,16 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
         setChatPending(false);
       }
     },
-    [caseId],
+    [caseId, refresh],
   );
+
+  const confirmReadback = useCallback(async () => {
+    const lines = readback ?? [];
+    if (lines.length === 0) return null;
+    const heard = lines.filter((l) => /\d/.test(l)).map((l) => l.replace(/^I heard:\s*/i, "").replace(/\.$/, ""));
+    setReadback(null);
+    return sendChat(`I confirm: ${heard.join("; ")}.`);
+  }, [readback, sendChat]);
 
   const upload = useCallback(
     async (files: File[]) => {
@@ -648,7 +666,7 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
       try {
         const res = await api.uploadFiles(caseId, files);
         setUploadQuestions(res.questions);
-        void refresh(["summary"]);
+        void refresh(["summary", "ingestion", "dossier", "dates", "rights", "gates"]);
         return res;
       } catch (e) {
         setActionError(errorMessage(e));
@@ -665,7 +683,7 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
       setUploading(true);
       try {
         const res = await api.uploadAudio(caseId, blob, fileName);
-        setUploadQuestions(res.questions);
+        setReadback(res.questions.length > 0 ? res.questions : null);
         return res;
       } catch (e) {
         setActionError(errorMessage(e));
@@ -739,7 +757,8 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
     unresolveItem,
     editField,
     changedFields,
-    clearChangedFields: () => setChangedFields([]),
+    clearChangedFields: () => setHighlightsHidden(changeKey),
+    changes,
     editDate,
     resetDate,
     editGround,
@@ -753,6 +772,9 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
     uploadAudio,
     uploading,
     uploadQuestions,
+    readback,
+    confirmReadback,
+    dismissReadback: () => setReadback(null),
     exportCase,
     exports: exportsList,
     canExport,
@@ -855,6 +877,7 @@ export function useEdits() {
     editField: w.editField,
     changedFields: w.changedFields,
     clearChangedFields: w.clearChangedFields,
+    changes: w.changes,
     editDate: w.editDate,
     resetDate: w.resetDate,
     editGround: w.editGround,

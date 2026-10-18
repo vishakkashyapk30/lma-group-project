@@ -111,6 +111,11 @@ const config: Config = {
           from: { opacity: "0", transform: "scale(calc(1 - 0.04 * var(--motion-amplitude)))" },
           to: { opacity: "1", transform: "scale(1)" },
         },
+        // Centred dialogs are positioned with translate(-50%, -50%): the animation has to carry it or it would replace it.
+        "dialog-in": {
+          from: { opacity: "0", transform: "translate(-50%, -50%) scale(calc(1 - 0.04 * var(--motion-amplitude)))" },
+          to: { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
+        },
         "slide-in-right": { from: { transform: "translateX(100%)" }, to: { transform: "translateX(0)" } },
         "slide-out-right": { from: { transform: "translateX(0)" }, to: { transform: "translateX(100%)" } },
         "slide-in-up": { from: { transform: "translateY(100%)" }, to: { transform: "translateY(0)" } },
@@ -123,6 +128,7 @@ const config: Config = {
         "fade-out": "fade-out var(--dur-fast) var(--ease-exit) both",
         "rise-in": "rise-in var(--dur-slow) var(--ease-enter) both",
         "scale-in": "scale-in var(--dur-base) var(--ease-enter) both",
+        "dialog-in": "dialog-in var(--dur-base) var(--ease-enter) both",
         "slide-in-right": "slide-in-right var(--dur-slow) var(--ease-enter) both",
         "slide-out-right": "slide-out-right var(--dur-base) var(--ease-exit) both",
         "slide-in-up": "slide-in-up var(--dur-slow) var(--ease-enter) both",

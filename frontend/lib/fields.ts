@@ -20,9 +20,9 @@ export function fieldLabel(name: string): string {
   return (DOSSIER_FIELD_LABELS as Record<string, string>)[name] ?? name.replace(/_/g, " ");
 }
 
-/** Iterate the dossier's fields in display order. */
+/** Iterate the dossier's fields in display order. A field the dossier does not carry yet (a fresh case) is skipped. */
 export function dossierEntries(dossier: CaseDossier): Array<[DossierFieldName, TrackedField<unknown>]> {
-  return DOSSIER_FIELD_ORDER.map((name) => [name, dossier.fields[name] as TrackedField<unknown>]);
+  return DOSSIER_FIELD_ORDER.filter((name) => dossier.fields?.[name] != null).map((name) => [name, dossier.fields[name] as TrackedField<unknown>]);
 }
 
 /** Names of fields with a given status. */

@@ -6,7 +6,7 @@ import { fieldLabel } from "../fields";
 import { FACTOR_SHORT_LABELS } from "../labels";
 import type { GateUiStatus } from "../status";
 import type { WorkspaceTab } from "../stages";
-import type { BailBrief, CaseDossier, GateId, SparringRecord } from "../types";
+import type { BailBrief, CaseDossier, GateId, GateStatus, SparringRecord } from "../types";
 import { DOSSIER_FIELD_NAMES } from "../types";
 
 export type ChecklistKind = "UNSUPPORTED" | "NEEDS_REVIEW" | "UNANSWERED";
@@ -150,8 +150,18 @@ export function computeChecklist(
   input: ChecklistInput,
   resolutions: ResolutionState = EMPTY_RESOLUTIONS,
   approvals: GateApprovals = { gate1: false, gate2: false },
+  server: GateStatus | null = null,
 ): GateChecklist {
-  const items = rawChecklistItems(gate, input).map((i) => decorate(i, resolutions));
+  // The backend's GateStatus (record/gates.py) is the authority on what is still unresolved: it counts UNSUPPORTED fields,
+  // NEEDS_REVIEW grounds and UNANSWERED objections. The client list adds the labels, targets and counsel's local resolutions,
+  // and drops anything the server no longer lists (for example a field counsel just edited).
+  const listed = (item: Omit<ChecklistItem, "resolved" | "resolution" | "note">): boolean => {
+    if (!server) return true;
+    const list =
+      item.kind === "UNSUPPORTED" ? server.unresolved_unsupported : item.kind === "NEEDS_REVIEW" ? server.unresolved_needs_review : server.unresolved_unanswered;
+    return list.includes(item.ref);
+  };
+  const items = rawChecklistItems(gate, input).filter(listed).map((i) => decorate(i, resolutions));
   const blocking = items.filter((i) => !i.resolved);
   const approved = gate === "GATE_1_DOSSIER" ? approvals.gate1 : approvals.gate2;
   const reachable = gate === "GATE_1_DOSSIER" ? true : approvals.gate1;

@@ -1,0 +1,16 @@
+/* Self-hosted Manuscript fonts (@fontsource), so the build never needs the network (plan §13.2).
+   Family names are bound to the --font-* variables that styles/tokens.css reads. */
+@import "@fontsource-variable/fraunces/opsz.css";
+@import "@fontsource-variable/dm-sans/index.css";
+@import "@fontsource-variable/noto-sans-devanagari/index.css";
+@import "@fontsource/tiro-devanagari-hindi/400.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+:root {
+  --font-fraunces: "Fraunces Variable", "Fraunces";
+  --font-dm-sans: "DM Sans Variable", "DM Sans";
+  --font-noto-deva: "Noto Sans Devanagari Variable", "Noto Sans Devanagari";
+  --font-tiro: "Tiro Devanagari Hindi";
+  --font-plex-mono: "IBM Plex Mono";
+}

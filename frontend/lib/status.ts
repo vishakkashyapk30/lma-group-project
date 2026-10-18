@@ -19,9 +19,10 @@ export interface StatusMeta {
   tone: StatusTone;
   /** CSS variable of the colour, e.g. "--color-neem". */
   colorVar: string;
-  icon: StatusIconName;
-  /** Plain-text glyph for places that cannot render an icon (exports, aria-hidden text, the trace). */
-  glyph: string;
+  /** The text icon shown beside the label (plan §13.2: ✔ ƒ ✖ ? ✎ and their neighbours). Never the only cue: the label always shows. */
+  icon: string;
+  /** Semantic icon name (for callers that draw their own icon). */
+  iconName: StatusIconName;
   /** Visible label. */
   label: string;
   /** One sentence for tooltips and screen readers. */
@@ -46,25 +47,25 @@ const COLOR_VAR: Record<StatusTone, string> = {
 };
 
 const GLYPH: Record<StatusIconName, string> = {
-  check: "✔︎",
+  check: "✔",
   function: "ƒ",
-  cross: "✖︎",
+  cross: "✖",
   question: "?",
-  pencil: "✎︎",
+  pencil: "✎",
   clock: "◷",
   lock: "⊘",
   dash: "–",
   alert: "!",
-  wrench: "↻",
+  wrench: "✓",
   half: "◐",
   plus: "+",
   refresh: "↻",
   letter: "",
-  flag: "⚑︎",
+  flag: "⚑",
 };
 
 function meta(tone: StatusTone, icon: StatusIconName, label: string, description: string, glyph?: string): StatusMeta {
-  return { tone, colorVar: COLOR_VAR[tone], icon, glyph: glyph ?? GLYPH[icon], label, description };
+  return { tone, colorVar: COLOR_VAR[tone], icon: glyph ?? GLYPH[icon], iconName: icon, label, description };
 }
 
 /** Dossier field statuses (plan §7.1, table §13.2). */
@@ -93,23 +94,24 @@ export const VERDICT_META: Record<SparringVerdict, StatusMeta> = {
 
 /**
  * Rights Radar statuses (plan §7.3). Outputs are possible entitlements to check, never advice.
- * ELIGIBLE: neem (a possible entitlement); NOT_YET: indigo (a computed date ahead); WINDOW_CLOSED: haldi (check whether
- * an application was made); NOT_APPLICABLE: neutral; BAR_APPLIES: sindoor; Antil A-D: indigo (a computed category).
+ * ELIGIBLE: neem (a possible entitlement); NOT_YET: haldi (a date ahead, keep watching); WINDOW_CLOSED: sindoor (the window
+ * has passed; check whether an application was made); NOT_APPLICABLE: clay (neutral); BAR_APPLIES: sindoor; Antil A-D: clay
+ * (neutral categories).
  */
 export const RIGHTS_STATUS_META: Record<RightsStatus, StatusMeta> = {
   ELIGIBLE: meta("neem", "check", "Possibly eligible", "A possible entitlement to check now."),
-  NOT_YET: meta("indigo", "clock", "Not yet", "The threshold has not been reached; see the date."),
-  WINDOW_CLOSED: meta("haldi", "lock", "Window closed", "The window has passed; check whether an application was made."),
+  NOT_YET: meta("haldi", "clock", "Not yet", "The threshold has not been reached; see the date."),
+  WINDOW_CLOSED: meta("sindoor", "lock", "Window closed", "The window has passed; check whether an application was made."),
   CHECK: meta("haldi", "question", "Check", "Unsettled law or missing facts; counsel should check."),
-  NOT_APPLICABLE: meta("ink", "dash", "Not applicable", "This rule does not apply to the case."),
+  NOT_APPLICABLE: meta("clay", "dash", "Not applicable", "This rule does not apply to the case."),
   FLAG: meta("sindoor", "cross", "Flag", "A possible procedural lapse on the record."),
   OK: meta("neem", "check", "OK", "The record shows this requirement was met."),
   UNKNOWN: meta("haldi", "question", "Unknown", "The file does not say."),
   BAR_APPLIES: meta("sindoor", "alert", "Statutory bar applies", "Twin conditions under a special act apply."),
-  A: meta("indigo", "letter", "Category A", "Antil category A: punishable up to 7 years.", "A"),
-  B: meta("indigo", "letter", "Category B", "Antil category B: death, life, or more than 7 years.", "B"),
-  C: meta("indigo", "letter", "Category C", "Antil category C: special acts with strict bail conditions.", "C"),
-  D: meta("indigo", "letter", "Category D", "Antil category D: economic offences not under special acts.", "D"),
+  A: meta("clay", "letter", "Category A", "Antil category A: punishable up to 7 years.", "A"),
+  B: meta("clay", "letter", "Category B", "Antil category B: death, life, or more than 7 years.", "B"),
+  C: meta("clay", "letter", "Category C", "Antil category C: special acts with strict bail conditions.", "C"),
+  D: meta("clay", "letter", "Category D", "Antil category D: economic offences not under special acts.", "D"),
 };
 
 /** Retrieval slot assessments (plan §6.2). */
@@ -191,19 +193,24 @@ const LOOKUP_ORDER: StatusKind[] = [
   "field", "claim", "verdict", "rights", "slot", "state", "transfer", "goodLaw", "openIssue", "gate", "page", "treatment",
 ];
 
-/** Flat map of every status name to its presentation (first family wins for shared names). */
-export const STATUS_META: Readonly<Record<string, StatusMeta>> = (() => {
+function flatten(kinds: readonly StatusKind[]): Record<string, StatusMeta> {
   const out: Record<string, StatusMeta> = {};
-  for (const kind of LOOKUP_ORDER) {
+  for (const kind of kinds) {
     for (const [name, m] of Object.entries(STATUS_BY_KIND[kind] as Record<string, StatusMeta>)) {
       if (!(name in out)) out[name] = m;
     }
   }
   return out;
-})();
+}
+
+/** Flat map of the plan's status vocabulary (fields, claims, verdicts, rights, claim state, good law); first family wins for shared names. */
+export const STATUS_META: Readonly<Record<string, StatusMeta>> = flatten(["field", "claim", "verdict", "rights", "state", "goodLaw"]);
+
+/** Every family, for getStatusMeta without a kind (slots, transfers, gates, pages, issues, treatments included). */
+const EVERY_STATUS: Readonly<Record<string, StatusMeta>> = flatten(LOOKUP_ORDER);
 
 /** Every status name the UI knows. */
-export const ALL_STATUS_NAMES: readonly string[] = Object.keys(STATUS_META);
+export const ALL_STATUS_NAMES: readonly string[] = Object.keys(EVERY_STATUS);
 
 /** Presentation for a status; unknown names get a neutral badge with the raw name as label (never colour only). */
 export function getStatusMeta(status: string, kind?: StatusKind): StatusMeta {
@@ -212,7 +219,7 @@ export function getStatusMeta(status: string, kind?: StatusKind): StatusMeta {
     const fam = STATUS_BY_KIND[kind] as Record<string, StatusMeta>;
     if (fam[key]) return fam[key];
   }
-  return STATUS_META[key] ?? STATUS_META[key.toUpperCase()] ?? meta("ink", "dash", humanizeStatus(key), key);
+  return EVERY_STATUS[key] ?? EVERY_STATUS[key.toUpperCase()] ?? meta("ink", "dash", humanizeStatus(key), key);
 }
 
 function humanizeStatus(s: string): string {
