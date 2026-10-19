@@ -56,8 +56,7 @@ def env(tmp_path, monkeypatch, dossier):
     """A case-0007 record with the fixture dossier (antecedents UNSUPPORTED) and Gate 1 open."""
 
     def build():
-        h.point_default_log_at(tmp_path, monkeypatch)
-        log = EventLog()
+        log = h.point_default_log_at(tmp_path, monkeypatch)
         h.seed_dossier(log, CASE, dossier)
         return type("Env", (), {"log": log, "guard": GateGuard(), "dossier": dossier})
 
@@ -78,8 +77,7 @@ def test_gate1_status_lists_unsupported_antecedents(env):
 
 def test_gate1_status_empty_when_dossier_is_fully_resolved(tmp_path, monkeypatch, dossier):
     """Once counsel answered antecedents (USER_STATED) nothing is UNSUPPORTED."""
-    h.point_default_log_at(tmp_path, monkeypatch)
-    log = EventLog()
+    log = h.point_default_log_at(tmp_path, monkeypatch)
     h.seed_dossier(log, CASE, h.resolved_dossier(dossier))
     assert GateGuard().status(CASE, G1).unresolved_unsupported == []
 
@@ -110,8 +108,7 @@ def test_gate1_approve_succeeds_when_antecedents_acknowledged(env):
 
 def test_gate1_approve_succeeds_without_ack_when_nothing_unresolved(tmp_path, monkeypatch, dossier):
     """A fully resolved dossier needs no acknowledgement."""
-    h.point_default_log_at(tmp_path, monkeypatch)
-    log = EventLog()
+    log = h.point_default_log_at(tmp_path, monkeypatch)
     h.seed_dossier(log, CASE, h.resolved_dossier(dossier))
     GateGuard().approve(CASE, G1)
     assert len(log.read(CASE, kind=EventKind.GATE_APPROVED)) == 1
@@ -121,8 +118,7 @@ def test_gate1_hash_tracks_dossier_content(tmp_path, monkeypatch, dossier):
     """The recorded dossier hash is stable for an unchanged dossier and changes when a field is edited (plan §7.4)."""
     from tests.unit.record._helpers import field_write
 
-    h.point_default_log_at(tmp_path, monkeypatch)
-    log, guard = EventLog(), GateGuard()
+    log, guard = h.point_default_log_at(tmp_path, monkeypatch), GateGuard()
     h.seed_dossier(log, CASE, h.resolved_dossier(dossier))
     guard.approve(CASE, G1)
     guard.approve(CASE, G1)  # re-approval of an unchanged dossier

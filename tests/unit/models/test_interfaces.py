@@ -119,6 +119,14 @@ def test_every_models_module_defines_a_known_client_or_is_a_known_helper():
         "vakeel_sahayak.models.factory",
         "vakeel_sahayak.models.labeler",
         "vakeel_sahayak.models.teacher",
+        # RECONCILED: helpers the plan's clients need but does not name: the deterministic offline stand-ins
+        # (VS_MODELS=offline, plan §15.4), the JSON-schema grammar helper (constrained decoding, §12) and the shared prompt layout.
+        "vakeel_sahayak.models.offline",
+        "vakeel_sahayak.models.offline_llm",
+        "vakeel_sahayak.models.json_schema",
+        "vakeel_sahayak.models.prompting",
+        # RECONCILED: the Sarvam API package (external, off by default); its adapters implement the interfaces above.
+        "vakeel_sahayak.models.sarvam",
     }
     assert set(_model_modules()) == known
 
@@ -233,7 +241,8 @@ def test_factory_does_not_expose_labeler_or_teacher_getter():
     from vakeel_sahayak.models import factory
 
     public = {n for n in vars(factory) if n.startswith("get_")}
-    assert public == {"get_llm", "get_vision", "get_ocr", "get_asr", "get_translator", "get_nli", "get_embedder"}
+    # RECONCILED: get_tts (Sarvam Bulbul, test-set construction) and get_langid (Sarvam /text-lid) are not labeler/teacher getters.
+    assert public == {"get_llm", "get_vision", "get_ocr", "get_asr", "get_translator", "get_nli", "get_embedder", "get_tts", "get_langid"}
 
 
 # ---------------------------------------------------------------------------------------------------------------------

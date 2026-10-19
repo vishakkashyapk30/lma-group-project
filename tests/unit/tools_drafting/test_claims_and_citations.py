@@ -29,7 +29,8 @@ from vakeel_sahayak.tools.types import ClaimCheckResult
 
 PARITY_CLAIM = "Co-accused with an identical role has been enlarged on bail; parity requires the same relief"  # = DLHC-2022-1187#14
 OVERRULED_CLAIM = "The role attributed to the petitioner distinguishes him from the co-accused"  # = DLHC-2023-0911#12 (overruled)
-DISTINGUISHED_CLAIM = "Delay in trial; Article 21"  # = BOMHC-2024-0355#8
+# RECONCILED: FakeNli tokenises on whitespace, so the paragraph's "21." and a claim ending "21" never match; a drafted sentence ends with its full stop.
+DISTINGUISHED_CLAIM = "Delay in trial; Article 21."  # = BOMHC-2024-0355#8
 
 
 @pytest.fixture()

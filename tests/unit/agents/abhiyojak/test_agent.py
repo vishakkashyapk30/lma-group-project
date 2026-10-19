@@ -167,7 +167,9 @@ def verdict_llm(table: dict[str, tuple[str, str]]) -> ScriptedLLM:
 
 
 TABLE = {
-    "money into his own account": ("ANSWERED", "The reply shows the account was the co-accused's."),
+    # RECONCILED: the key was "money into his own account", which is not a substring of the objection it is meant to match
+    # ("The money went into his own account"), so the scripted judge never found it and answered with a list.
+    "money went into his own account": ("ANSWERED", "The reply shows the account was the co-accused's."),
     "role is disputed": ("PARTLY", "The reply covers the role but not the money trail."),
     "complainant is yet to be examined": ("UNANSWERED", "The reply does not address pending examination."),
 }

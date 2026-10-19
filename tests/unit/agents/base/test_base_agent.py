@@ -98,6 +98,13 @@ def test_denied_call_charges_nothing():
 def test_event_inputs_hold_pseudonymised_text_only(planted_names):
     """Plan §16: a raw planted name passed as a tool input never reaches the event log."""
     # ASSUMPTION: the agent pseudonymises inputs before logging, or refuses the call (ValueError/PermissionError).
+    # RECONCILED: names are only recognisable through the case's alias map (the NER detector is a plug-in, none is registered here),
+    # so the test saves the map the intake step would have written; the agent then refuses the Ada-bound call before logging it.
+    from vakeel_sahayak.privacy.pseudonymise import PseudonymMap, save_map
+
+    mapping = PseudonymMap()
+    mapping.alias_for("Ramesh Kumar Yadav", "accused")
+    save_map("case-0007", mapping)
     agent, ctx, _ = build_agent(AbhiyojakAgent)
     try:
         agent.call_tool("search_case_docs", case_id="case-0007", query="bail of Ramesh Kumar Yadav")
