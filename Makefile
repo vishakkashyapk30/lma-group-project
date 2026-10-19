@@ -1,10 +1,16 @@
 # Skeleton targets; every recipe is a stub until implemented.
 PY ?= .venv/bin/python
 
-.PHONY: setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect
+.PHONY: datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect
 
 setup:            ## create .venv and install (scripts/setup_dev.sh)
 	@echo "TODO: scripts/setup_dev.sh"; exit 1
+
+datasets:         ## download the public datasets into data/raw (resumable; scripts/download_datasets.sh; see data/README.md)
+	@scripts/download_datasets.sh
+
+interim:          ## convert data/raw into data/interim: orders.jsonl, statutes.jsonl, concordance_edges.jsonl, splits, feasibility report
+	@scripts/build_interim.sh
 
 stores:           ## build the seven shared stores from data/interim/orders.jsonl (plan §5)
 	@scripts/build_stores.sh
@@ -61,3 +67,20 @@ test-models:      ## tests needing real model weights or a GPU (@pytest.mark.mod
 
 test-collect:     ## collection must stay clean
 	$(PY) -m pytest --collect-only -q
+
+# Docker (see DOCKER.md)
+docker-build:     ## build the default images (backend + frontend)
+	docker compose build
+
+docker-up:        ## start the default stack in the background: http://localhost:3000
+	docker compose up -d --build --wait
+
+docker-down:      ## stop the stack (named volumes are kept; add -v to delete them)
+	docker compose down
+
+docker-test:      ## pytest + Vitest inside containers (Playwright: docker compose --profile test run --rm e2e)
+	docker compose --profile test run --rm tests
+	docker compose --profile test run --rm frontend-tests
+
+docker-logs:      ## follow the stack's logs
+	docker compose logs -f --tail=100

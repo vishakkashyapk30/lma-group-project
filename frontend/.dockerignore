@@ -1,0 +1,16 @@
+node_modules
+.next
+out
+coverage
+playwright-report
+test-results
+.lighthouseci
+*.tsbuildinfo
+.env
+.env.*
+.git
+**/*.pdf
+**/*.png
+!public/**
+Dockerfile*
+.dockerignore

@@ -1,0 +1,179 @@
+# Vakeel-Sahayak.ai: `docker compose up` starts the default stack (backend + frontend, offline models, no external calls).
+# Usage guide: DOCKER.md. Variables and defaults: .env.example (copy to an untracked .env to override; .env is gitignored).
+#
+# Default (no profile, started by `docker compose up`):
+#   backend   FastAPI/uvicorn on :8000, VS_MODELS=offline, healthcheck GET /healthz
+#   frontend  Next.js production server on :3000; the browser calls /backend/* on its own origin, which Next proxies to the backend
+# Optional profiles (never started by default):
+#   real  vllm (Qwen3-14B-AWQ, NVIDIA GPU) + backend-real (heavy extras, VS_MODELS=real) + frontend-real. NEEDS the NVIDIA Container
+#         Toolkit and downloads multi-GB weights into the hf_cache volume. For a local GPU machine only: on the Ada cluster the team
+#         uses interactive sessions (plan section 17). Start only these with:
+#         docker compose --profile real up vllm backend-real frontend-real
+#   test  tests (pytest unit/integration/system), frontend-tests (Vitest), e2e (Playwright against the running frontend)
+#   data  data (one-shot: scripts/build_stores.sh against the vs_data volume; fails fast if the inputs are missing)
+#
+# Privacy (plan section 16): nothing external is called by default. Published ports bind to 127.0.0.1 (BIND_ADDR). Sarvam is an
+# external service and stays OFF unless VS_SARVAM is set; its key (SARVAM_API_KEY) comes from the environment/.env only.
+
+name: vakeel-sahayak
+
+x-backend-env: &backend-env
+  VS_CORS_ORIGINS: ${VS_CORS_ORIGINS:-http://localhost:3000}
+  VS_SARVAM: ${VS_SARVAM:-off}
+  SARVAM_API_KEY: ${SARVAM_API_KEY:-}   # empty when unset; never written into an image, label or log
+  HF_TOKEN: ${HF_TOKEN:-}
+
+x-hardening: &hardening
+  restart: unless-stopped
+  read_only: true
+  tmpfs: ["/tmp"]
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: ["ALL"]
+
+services:
+  backend:
+    <<: *hardening
+    image: vakeel-sahayak/backend:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+      target: final
+      args: {EXTRAS: ""}   # core dependencies only (no torch / vLLM)
+    environment:
+      <<: *backend-env
+      VS_MODELS: ${VS_MODELS:-offline}
+    ports: ["${BIND_ADDR:-127.0.0.1}:${BACKEND_PORT:-8000}:8000"]
+    volumes: ["vs_data:/app/data"]
+    deploy: {resources: {limits: {cpus: "2", memory: 2g}}}
+
+  frontend:
+    <<: *hardening
+    image: vakeel-sahayak/frontend:${IMAGE_TAG:-latest}
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend.Dockerfile
+      target: runner
+      args:
+        # Same-origin proxy by default; set an absolute URL (e.g. http://localhost:8000) for direct browser-to-backend calls,
+        # or "demo" for the built-in demo backend only. Inlined at build time, so changing it needs `docker compose build frontend`.
+        NEXT_PUBLIC_API_BASE: ${NEXT_PUBLIC_API_BASE:-/backend}
+        BACKEND_INTERNAL_URL: http://backend:8000
+    tmpfs: ["/tmp", "/app/.next/cache:uid=10001,gid=10001"]
+    ports: ["${BIND_ADDR:-127.0.0.1}:${FRONTEND_PORT:-3000}:3000"]
+    depends_on: {backend: {condition: service_healthy}}
+    deploy: {resources: {limits: {cpus: "1", memory: 512m}}}
+
+  # ---------------------------------------------------------------- profile: real (NVIDIA GPU) ----
+  vllm:
+    profiles: ["real"]
+    image: vllm/vllm-openai:${VLLM_IMAGE_TAG:-v0.10.2}
+    restart: unless-stopped
+    ipc: host
+    command: >
+      --model ${VS_VLLM_MODEL:-Qwen/Qwen3-14B-AWQ} --port 8001 --max-model-len ${VLLM_MAX_MODEL_LEN:-16384}
+      --gpu-memory-utilization ${VLLM_GPU_UTIL:-0.85}
+    environment: {HF_TOKEN: "${HF_TOKEN:-}"}
+    volumes: ["hf_cache:/root/.cache/huggingface"]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 80          # first start downloads the weights
+      start_period: 60s
+    deploy:
+      resources:
+        reservations: {devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]}
+
+  backend-real:
+    <<: *hardening
+    profiles: ["real"]
+    image: vakeel-sahayak/backend-real:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+      target: final
+      args: {EXTRAS: "ocr,speech,models,vision,translation"}
+    environment:
+      <<: *backend-env
+      VS_MODELS: real
+      VS_VLLM_BASE_URL: http://vllm:8001/v1
+      VS_VLLM_MODEL: ${VS_VLLM_MODEL:-Qwen/Qwen3-14B-AWQ}
+      VS_LOCAL_LLM_DEVICE: cuda:0
+      VS_CORS_ORIGINS: ${VS_CORS_ORIGINS_REAL:-http://localhost:3001}
+    ports: ["${BIND_ADDR:-127.0.0.1}:${BACKEND_REAL_PORT:-8001}:8000"]
+    volumes: ["vs_data:/app/data", "hf_cache:/app/data/.hf"]
+    depends_on: {vllm: {condition: service_healthy}}
+    deploy:
+      resources:
+        limits: {memory: 16g}
+        reservations: {devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]}
+
+  frontend-real:
+    <<: *hardening
+    profiles: ["real"]
+    image: vakeel-sahayak/frontend-real:${IMAGE_TAG:-latest}
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend.Dockerfile
+      target: runner
+      args: {NEXT_PUBLIC_API_BASE: /backend, BACKEND_INTERNAL_URL: "http://backend-real:8000"}
+    tmpfs: ["/tmp", "/app/.next/cache:uid=10001,gid=10001"]
+    ports: ["${BIND_ADDR:-127.0.0.1}:${FRONTEND_REAL_PORT:-3001}:3000"]
+    depends_on: {backend-real: {condition: service_healthy}}
+
+  # ---------------------------------------------------------------- profile: test ----
+  tests:
+    profiles: ["test"]
+    image: vakeel-sahayak/backend-test:${IMAGE_TAG:-latest}
+    build: {context: ., dockerfile: docker/backend.Dockerfile, target: test}
+    read_only: true
+    tmpfs: ["/tmp"]
+    # Phases 1-3 are done (progress.md section 5); later phases still fail until implemented. Override, e.g.:
+    #   docker compose --profile test run --rm tests pytest tests/unit/schemas tests/unit/stores
+    command: ["pytest", "-p", "no:cacheprovider", "tests/unit", "tests/integration", "tests/system"]
+
+  frontend-tests:
+    profiles: ["test"]
+    image: vakeel-sahayak/frontend-test:${IMAGE_TAG:-latest}
+    build: {context: ./frontend, dockerfile: ../docker/frontend.Dockerfile, target: test, additional_contexts: {repo: .}}
+    tmpfs: ["/tmp"]
+
+  e2e:
+    # Official Playwright image; shares the frontend container's network namespace so playwright.config.ts's
+    # reuseExistingServer finds the running production server on localhost:3000. The specs mock the backend with page.route.
+    profiles: ["test"]
+    image: vakeel-sahayak/e2e:${IMAGE_TAG:-latest}
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend.Dockerfile
+      target: e2e
+      additional_contexts: {repo: .}
+      args: {PLAYWRIGHT_VERSION: "${PLAYWRIGHT_VERSION:-1.64.0}"}
+    network_mode: "service:frontend"
+    ipc: host
+    depends_on: {frontend: {condition: service_healthy}}
+
+  # ---------------------------------------------------------------- profile: data ----
+  data:
+    profiles: ["data"]
+    image: vakeel-sahayak/backend:${IMAGE_TAG:-latest}
+    build: {context: ., dockerfile: docker/backend.Dockerfile, target: final, args: {EXTRAS: ""}}
+    read_only: true
+    tmpfs: ["/tmp"]
+    environment: {PY: python, VS_MODELS: "${VS_MODELS:-offline}"}
+    volumes: ["vs_data:/app/data"]
+    # The datasets (Open India Law, IPC2BNS-Verify) are downloaded on the host by `make datasets` and `make interim` (data/README.md): put
+    # data/interim/orders.jsonl (and statutes.jsonl, concordance_edges.jsonl, splits.json) in the vs_data volume (see DOCKER.md). Extra arguments pass to build_all, e.g. --only reasoning citations.
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        if [ ! -s /app/data/interim/orders.jsonl ]; then
+          echo "ERROR: /app/data/interim/orders.jsonl is missing or empty in the vs_data volume." >&2
+          echo "The Open India Law orders and IPC2BNS-Verify are not downloaded by this job. See DOCKER.md, 'Data profile'." >&2
+          exit 2
+        fi
+        exec bash scripts/build_stores.sh
+
+volumes:
+  vs_data:
+  hf_cache:

@@ -1,0 +1,32 @@
+# Backend build context (repo root). The frontend has its own context (frontend/) and its own .dockerignore.
+.git
+.github
+.claude
+.vscode
+.venv
+.env
+.env.*
+!.env.example
+.hypothesis
+.pytest_cache
+.ruff_cache
+.mypy_cache
+**/__pycache__
+**/*.pyc
+**/*.egg-info
+frontend
+docs
+data
+models
+ada.md
+progress.md
+*.md
+!README.md
+*.whl
+*.pdf
+*.png
+*.jpg
+*.safetensors
+*.gguf
+*.bin
+# tests/ stays in the context: the `test` target copies it.
