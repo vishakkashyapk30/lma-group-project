@@ -181,14 +181,33 @@ Each phase works like this:
 | 1. Foundations | config, schemas, event log and case record, contracts, tool registry with gated export, Rights Radar (7 rules), date_calc / map_section / transfer_check / statute tools, privacy (pseudonymisation, boundary, injection guard, leak check, sensitive matters), concordance pipeline | `tests/unit/{schemas,record,contracts,config,tools,tools_law_case,rights,privacy,pipelines/concordance}` | **Done** |
 | 2. Stores and data pipelines | order splitter, section extraction, factor tagger, date splits and leakage, citation graph and good-law check, rule-based gold labels G1–G7, the 8 remaining stores (SQLite FTS5 + optional LanceDB/BGE-M3), store builders, store tools | `tests/unit/{stores,pipelines,tools_caselaw,tools_advocacy,tools_case}` | **Done** |
 | 3. Munshi ingestion | page quality signals, the routing ladder (text layer → layout → OCR → vision → ask counsel), input kinds K1–K10, bundle splitting and document classification, filing into the case shelf, gap checklist, conflict detection, Hindi (OCR + IndicTrans2), voice intake (Whisper/IndicConformer + read-back), intake tools | `tests/unit/{ingestion,tools_intake}` | **Done.** Phase 3 unit tests: 281 passed, 16 skipped (needs PyMuPDF), 0 failed. Three tests were changed, each marked `# RECONCILED` (K5 uses the new `devanagari_share` signal; the conflict field is named `arrest_date`; the `file_item` items carry a `case_id`). |
-| 4. Agents and orchestration | model clients (vLLM, local 4B, vision model, NLI, labeler), Peshkar (dossier, List of Dates, change detection), Sutradhar (evidence contracts, plans, sufficiency, budgets, chat routing), Vakeel (drafting, check and repair), Abhiyojak (sparring, context isolation), truth maintenance (incremental redrafting), Pairokar (urgency triage, queue, shared cache), LangGraph graph with gate interrupts, ablation switches | `tests/unit/{models,agents,orchestration,truth_maintenance,batch,tools_drafting}` + `tests/integration` | **In progress.** A workflow is running:
+| 4. Agents and orchestration | model clients (vLLM, local 4B, vision model, NLI, labeler), Peshkar (dossier, List of Dates, change detection), Sutradhar (evidence contracts, plans, sufficiency, budgets, chat routing), Vakeel (drafting, check and repair), Abhiyojak (sparring, context isolation), truth maintenance (incremental redrafting), Pairokar (urgency triage, queue, shared cache), LangGraph graph with gate interrupts, ablation switches | `tests/unit/{models,agents,orchestration,truth_maintenance,batch,tools_drafting}` + `tests/integration` | **Mostly done; the LangGraph flow is left for teammates.** All six agents are built and pass their unit tests: Munshi, Peshkar (10), Sutradhar (133), Vakeel (42), Abhiyojak (28), Pairokar + batch desk (83), plus truth maintenance (60) and the core (287). Phases 1–4 regression: 2,590 passed, 16 skipped (PyMuPDF), 0 failed. Each agent was run offline on case-0007 in a scratch script.
+
+**Left for teammates:** `orchestration/graph.py` and `orchestration/fallback_state_machine.py` (about 34 unit tests plus the integration and system tests wait on them). |
+
+**Done and green:**
+- Core (model clients incl. an offline LLM and NLI, structured output, budgets, ablation switches, gates, agent base class, drafting tools, LangGraph + SQLite checkpointer): 287 tests pass.
+- Peshkar: its 10 tests pass, and an offline run on case-0007 gives the full dossier (custody 167 days), the List of Dates, the Rights report, and a change set when a conflicting remand order arrives.
+
+**To do:** Sutradhar, Vakeel, Abhiyojak, truth maintenance, Pairokar and batch, then the LangGraph graph and fallback state machine (`orchestration/graph.py`, `fallback_state_machine.py`; about 34 tests wait on them).
+
+**Known:** 3 of Munshi's own agent tests (`tests/unit/agents/munshi/test_agent.py`) fail on `search_pages` / `ask_user` call counts, because Munshi calls the ingestion modules directly. Regression: 2,113 passed, 3 failed. |
 1. a core agent (model clients, offline LLM, structured output, budgets, switches, agent base, drafting tools, langgraph install);
 2. four parallel builds (Peshkar; Sutradhar; Vakeel + Abhiyojak; truth maintenance + Pairokar/batch), none of which see the tests;
 3. wiring (the LangGraph graph with gate interrupts, a fallback state machine, baselines, an end-to-end offline run);
 4. five parallel reconcilers, then integration;
 5. up to 2 review rounds (plan fidelity, safety and privacy, robustness, test integrity) with skeptic verification, then fixes and a gate. |
 | 5. API and export | FastAPI routers (cases, upload, chat, SSE events, gates, export, desk, library), the court-ready DOCX application, List of Dates, annexure index, hearing-prep card, PDF export | `tests/unit/{api,export}` + `tests/integration/test_api_routes.py` + `tests/system` | To do |
-| 6. Frontend | design system (Manuscript tokens, type), landing page scenes 0–6 with GSAP, the six agent animations, the workspace (stage rail + 3 panes + tabs), cause list, desk, library, about, SSE client | `frontend/tests` (Vitest) + `frontend/e2e` (Playwright) | **In progress.** A multi-agent workflow is running alongside Phase 3:
+| 6. Frontend | design system (Manuscript tokens, type), landing page scenes 0–6 with GSAP, the six agent animations, the workspace (stage rail + 3 panes + tabs), cause list, desk, library, about, SSE client | `frontend/tests` (Vitest) + `frontend/e2e` (Playwright) | **Done.** All pages are built: landing (scenes 0–6, Lenis, static storyboard for reduced motion), six agent animations, the workspace (stage rail, case file with PDF highlights, chat, trace graph, gate modal, six tabs), cause list, batch desk, library (citation graph and IPC↔BNS bridge) and about. It runs in demo mode on case-0007 data when no API is reachable.
+
+**Checks:** Vitest 233/233; Playwright 69/69 on a production server (the first run had 114 Vitest and 15 Playwright failures); `tsc`, `lint` and `build` are clean. It found and fixed real bugs: dialogs off-screen, crashes on unusual API data, first-click races, a scroll jump on the landing page, and several accessibility issues.
+
+**Risks and open items:**
+- Under `next dev` with 8 workers, one landing scroll spec flakes in most full runs (cold chunk compiles). Production runs never did.
+- Playwright 1.64 wanted chromium-1248 but only 1243 was installed; the agent symlinked it. Run `npx playwright install`, or pin `@playwright/test` to the 1.59 line.
+- The e2e rights and prep fixtures don't match the typed models; the UI tolerates both. The backend should pin those shapes.
+- Nobody has looked at it in a browser yet. Visual polish is unreviewed.
+- Library search takes only a query; the filters run in the browser, so the backend must enforce the before-date. `CaseSummary` has no `last_activity`, and search hits lack `sc_root` and `good_law`. |
 1. a foundation agent;
 2. six parallel tracks (landing art and scenes 0–3; scenes 4–6 and orchestrator; agent animations; workspace shell; workspace tabs; other pages);
 3. integration;
@@ -244,6 +263,72 @@ The app runs in demo mode from case-0007 mock data until the backend (Phases 4�
 - Optional `confidence`, `route` and `lang` fields are to be added to `SourceRef` and `CaseChunk` in Phase 4.
 - Transliteration-based alias merging (Devanagari vs Latin names) is deferred.
 - Your two reference screenshots no longer exist on disk, so the frontend follows plan §13.2's description of the Hugh James and LawStatu elements.
+
+## 5b. Cross-cutting work added on 2026-10-19
+
+**Sarvam API integration (done; checked against mocked HTTP only)**
+- Package `models/sarvam/`: HTTP client with retries, typed wrappers, a privacy policy gate, and adapters for vision/OCR, translation, speech-to-text (Saaras), LLM (Sarvam-105B), text-to-speech (Bulbul) and language ID.
+- **Off by default.** `VS_SARVAM=off|public|pseudonymised|consented` and the env var `SARVAM_API_KEY` (read only from the environment, never from files).
+  - `public`: public or constructed data only.
+  - `pseudonymised`: also client text, after the privacy boundary check.
+  - `consented`: also raw pages and audio, only for cases with a counsel-recorded consent event.
+- Falls back to the local model whenever Sarvam is off, blocked, or fails.
+- Tests: 60 new in `tests/unit/models/test_sarvam.py`; all pass. Three small `# RECONCILED` edits in `test_interfaces.py`.
+- **No live call has been made, because no key was set in this environment.** The `json_schema` response format is an assumption (the client retries in `json_object` mode on a 400/422).
+- Open: retention is a workspace setting in the Sarvam dashboard and cannot be enforced from code, so someone must set it to the shortest option. `agents_14b` is still Qwen; switch with `runtime: sarvam` if wanted. No test-set code calls Sarvam TTS yet (needed for T8).
+
+**Docker (done)**
+- `docker compose up` starts a healthy backend and frontend: http://localhost:3000 (UI), :8000 (API), bound to 127.0.0.1. Data lives in the `vs_data` volume.
+- Backend image 381 MB, frontend image 245 MB. Cold build about 16 minutes; warm start about 12 seconds.
+- Optional profiles: `real` (vLLM + heavy extras, needs the NVIDIA toolkit), `test` (pytest, Vitest, Playwright e2e), `data` (dataset job). Guide: `DOCKER.md`.
+- The API routes are still stubs, so the container serves `/healthz` and answers `/api/*` with 503; the frontend then uses its demo mode.
+- Not verified: the Playwright e2e container (the image pull was cancelled) and the GPU profile.
+
+**Datasets (week-0, done in part)**
+- Open India Law v2026.08.1: the Hugging Face repo is gated, so the ungated mirror named in its README was used. About 1.4 GB of bail-related shards were kept out of 53.6 GB scanned. 1,483,143 High Court bail orders after removing sexual-offence, POCSO and juvenile matters (about 235K were filtered out); 662 Supreme Court judgments discuss bail.
+- Statutes: 1,411 rows (IPC, BNSS, BNS, UAPA s.43D, PMLA s.45). **Gaps:** no CrPC 1973, no NDPS s.37, and no CrPC/BNSS First Schedule (so "bailable" and "cognisable" are unset). Get these from India Code.
+- IPC2BNS-Verify (commit 8d3e770): 544 typed edges and the 1,140-query benchmark. The repo has no LICENSE file despite an MIT badge; ask the authors before redistributing.
+- Kathbath: first 1,000 of 3,130 Hindi test utterances.
+- **HLDC: blocked.** It needs manual access approval on Hugging Face (the `bail` config of `Exploration-Lab/IL-TUR`, a non-commercial licence). A teammate must request access, then put the `bail` folder in `data/raw/hldc/`. Fallback: NLLB-200 translation. The e-SCR Hindi set was not attempted (optional).
+- Interim files in `data/interim/`: `orders.jsonl` (115,988-order sample), `statutes.jsonl`, `concordance_edges.jsonl`, `splits.json`, `feasibility_report.json/.md`. `data/raw/MANIFEST.json` records provenance.
+
+**Feasibility result (plan §19):**
+- Only 5.9% of orders split cleanly (88,121), but that is plenty.
+- 56,285 orders are BNS-era (6,211 of them clean); the test split has 94 BNS-era orders against the target of 60 or more. **The pilot fallback for H1c is not needed.**
+- Several courts end around 2024 (Madhya Pradesh 0 BNS-era orders, Kerala 3).
+- **Risks the plan did not expect:**
+  - FIR numbers appear in only 12.9% of orders, so the same-FIR leakage rule is weak as written.
+  - Citation resolution is about 17% (SCC/AIR citations 0%, because the corpus has no SCC/AIR field).
+  - Open India Law text has glued-word artefacts.
+  - One Supreme Court judgment was drawn into the test set; restrict the test pool to High Court orders if the plan means that.
+- A sample store build (2,000 orders) ran in 86 seconds and the stores' row counts are in line. The full build was not run because **disk space is tight: about 4 GB free** (data/ is 2.5 GB). Run the full build on a machine with more space.
+
+## 5c. Status on 2026-10-20 and work left for teammates
+
+**State of the tests (last measured per folder, 2026-10-20 before the final agents):** Phases 1–3, models, privacy, rights, stores, tools and all six agents pass. These do not yet, because the code is not written:
+
+| Area | Tests | What is needed |
+|---|---|---|
+| Orchestration graph and fallback | `tests/unit/orchestration/test_graph.py`, `test_fallback_state_machine.py` | **LangGraph flow** (Munshi → Peshkar → Gate 1 interrupt → Sutradhar ⇄ Vakeel ⇄ Abhiyojak → Gate 2 interrupt → export, SQLite checkpointer, change-set path, a plain-Python fallback) |
+| API | `tests/unit/api`, `tests/integration/test_api_routes.py` | Real FastAPI routes (cases, upload, chat, SSE events, gates, export, desk, library). Today `api/asgi.py` serves only `/healthz` and returns 503 on `/api/*`, so the UI runs in demo mode |
+| Export | `tests/unit/export` | Court-ready DOCX application, List of Dates, annexure index, hearing-prep card, PDF |
+| System tests | `tests/system` (257 failing before) | These need the graph, API and export |
+| Evaluation | `tests/unit/eval` | Baselines B0–B4, ablations A1–A10, ingestion pipelines P1–P6, feature evals F1–F8, metrics, stats, runners |
+| Fine-tuning | `tests/unit/finetune` | Teacher dossiers, span filter, noise augmentation, QLoRA training |
+| Test-set construction | `tests/unit/testsets` | T1–T9 builders (rendering + Augraphy, change sets, rights scenarios, speech) |
+
+**Other tasks nobody has done:**
+- The literature review (`docs/literature-review-and-usage.md`): the first workflow verified 33 papers and then hit the usage limit. Rerun it with fewer searchers.
+- Plan changes that follow from the literature review.
+- A browser check of the frontend by a person: all frontend checks so far were automated.
+- HLDC access (a teammate must request it on Hugging Face), the CrPC and NDPS s.37 statutes from India Code, a Sarvam API key plus the dashboard retention setting, and a live Sarvam smoke test.
+- Install PyMuPDF and the real OCR/vision/speech libraries, and test the real (non-offline) model paths on a GPU.
+- Run the full store build and the real fine-tuning on a machine with more disk and a GPU.
+- Re-check the Rights Radar rule texts against the bare acts (week-0 item from the plan).
+
+**What can be run today:**
+- `docker compose up` → http://localhost:3000 (frontend in demo mode; see `DOCKER.md`).
+- Each finished agent offline from Python (see the agents' folders and `tests/`); there is no end-to-end driver until the graph exists.
 
 ## 6. Memory notes saved (for future sessions)
 
