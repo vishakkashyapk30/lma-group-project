@@ -12,7 +12,16 @@ export function tsUnion(name: string): string[] {
   const src = read(path.join(FRONTEND_ROOT, "lib/types.ts"));
   const m = src.match(new RegExp(`export type ${name}\\s*=([^;]+);`));
   if (!m) throw new Error(`type ${name} not found in lib/types.ts`);
-  return [...m[1].matchAll(/"([^"]+)"/g)].map((x) => x[1]);
+  // RECONCILED: lib/types.ts declares each union as `(typeof X_NAMES)[number]` over an `as const` array (so it is iterable);
+  // the helper now resolves that form as well as a literal union. The member check itself is unchanged.
+  const ref = m[1].match(/typeof\s+([A-Za-z0-9_]+)/);
+  let body = m[1];
+  if (ref) {
+    const a = src.match(new RegExp(`export const ${ref[1]}\\s*(?::[^=]+)?=\\s*\\[([^\\]]*)\\]`));
+    if (!a) throw new Error(`const ${ref[1]} not found in lib/types.ts`);
+    body = a[1];
+  }
+  return [...body.matchAll(/"([^"]+)"/g)].map((x) => x[1]);
 }
 
 /** Values of `class <name>(str, Enum)` members in src/vakeel_sahayak/schemas/enums.py. */

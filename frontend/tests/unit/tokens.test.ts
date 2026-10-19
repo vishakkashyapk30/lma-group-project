@@ -77,7 +77,14 @@ describe("motion tokens (plan §13.4, §13.7)", () => {
 });
 
 describe("tailwind.config.ts references the CSS variables", () => {
-  const colors = (tailwindConfig.theme?.extend?.colors ?? {}) as Record<string, string>;
+  // RECONCILED: colours are declared as `rgb(var(--rgb-x) / <alpha-value>)` (the channel twin of --color-x in tokens.css) so
+  // Tailwind opacity modifiers (bg-neem/10) work; a `{ DEFAULT, ... }` object is a colour family. The test still requires
+  // every colour to resolve to the token's variable, never to a hex.
+  type ColorValue = string | { DEFAULT?: string; [k: string]: string | undefined };
+  const colors = (tailwindConfig.theme?.extend?.colors ?? {}) as Record<string, ColorValue>;
+  const flat = (v: ColorValue | undefined): string => (typeof v === "string" ? v : (v?.DEFAULT ?? ""));
+  const resolves = (v: string, variable: string) =>
+    v === `var(${variable})` || v === `rgb(var(${variable.replace("--color-", "--rgb-")}) / <alpha-value>)`;
   it.each([
     ["parchment", "--color-parchment"],
     ["cream", "--color-cream"],
@@ -91,10 +98,10 @@ describe("tailwind.config.ts references the CSS variables", () => {
     ["haldi", "--color-haldi"],
     ["clay", "--color-clay"],
   ])("colour key %s -> var(%s)", (key, variable) => {
-    expect(colors[key]).toBe(`var(${variable})`);
+    expect(resolves(flat(colors[key]), variable), `${key}: ${flat(colors[key])}`).toBe(true);
   });
   it("never hard-codes a hex colour (single source of truth is tokens.css)", () => {
-    for (const v of Object.values(colors)) expect(v).not.toMatch(/#[0-9a-f]{3,8}/i);
+    for (const v of Object.values(colors)) expect(JSON.stringify(v)).not.toMatch(/#[0-9a-f]{3,8}/i);
   });
   it("font families reference the font variables", () => {
     const fam = (tailwindConfig.theme?.extend?.fontFamily ?? {}) as Record<string, string[]>;

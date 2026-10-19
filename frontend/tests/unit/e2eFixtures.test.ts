@@ -38,8 +38,9 @@ describe("e2e fixtures", () => {
   it("gates use GateId values and are consistent with each other", () => {
     for (const g of [fx.gate1Blocked(), fx.gate1Open(), fx.gate2Blocked(), fx.gate2Open()]) expect(pyEnum("GateId")).toContain(g.gate);
     expect(fx.gate1Blocked().unresolved_unsupported).toEqual(["antecedents"]);
-    expect(fx.gate2Blocked().open).toBe(false);
-    expect(fx.gate2Open()).toMatchObject({ open: true, unresolved_needs_review: [], unresolved_unanswered: [] });
+    // RECONCILED: GateStatus.open is true while the gate has NOT been approved (record/gates.py: open=not gate_is_approved).
+    expect(fx.gate2Blocked().open).toBe(true);
+    expect(fx.gate2Open()).toMatchObject({ open: false, unresolved_needs_review: [], unresolved_unanswered: [] });
   });
 
   it("brief: claim checks and states are enum values; grounds G1 SUPPORTED, G2 REPAIRED, G3 NEEDS_REVIEW", () => {
@@ -102,7 +103,8 @@ describe("e2e fixtures", () => {
   // ---- flow 4 (the case moves on) and flow 5 (a dictated case)
   it("flow 4: the dossier differs from before to after only in charge_sheet; the brief differs in G2 only", () => {
     const before = fx.dossierBeforeChange(), after = fx.dossierAfterChange();
-    const changed = Object.keys(after.fields).filter((k) => JSON.stringify(after.fields[k]) !== JSON.stringify(before.fields[k]));
+    const af = after.fields as unknown as Record<string, unknown>, bf = before.fields as unknown as Record<string, unknown>;
+    const changed = Object.keys(af).filter((k) => JSON.stringify(af[k]) !== JSON.stringify(bf[k]));
     expect(changed).toEqual(["charge_sheet"]);
     expect((before.fields.charge_sheet.value as { filed: boolean }).filed).toBe(false);
     expect((after.fields.charge_sheet.value as { filed: boolean; date: string }).date).toBe("2024-11-02");

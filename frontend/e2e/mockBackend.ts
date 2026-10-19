@@ -84,7 +84,7 @@ export class MockBackend {
     this.gate1Approved = o.gate1Approved;
     this.gate2 = o.gate2Approved ? fx.gate2Open() : fx.gate2Blocked();
     this.draftStarted = o.draft === "done";
-    this.dossier = o.fresh ? { ...fx.dossier(), case_id: o.caseId, fields: {}, open_questions: [] } : fx.dossier();
+    this.dossier = o.fresh ? { ...fx.dossier(), case_id: o.caseId, fields: {} as CaseDossier["fields"], open_questions: [] } : fx.dossier();
     this.ingestion = o.fresh ? { ...fx.ingestionEmpty(), case_id: o.caseId } : { ...fx.ingestionBundle(), case_id: o.caseId };
     if (o.scenario === "change") {
       this.dossier = fx.dossierBeforeChange();
@@ -113,7 +113,8 @@ export class MockBackend {
     const unsupported = Object.entries(this.dossier.fields)
       .filter(([, f]) => (f as TrackedFieldAny).status === "UNSUPPORTED")
       .map(([k]) => k);
-    return { gate: "GATE_1_DOSSIER", open: false, unresolved_unsupported: unsupported, unresolved_needs_review: [], unresolved_unanswered: [] };
+    // RECONCILED: GateStatus.open is true while the gate has NOT been approved (record/gates.py: `open=not gate_is_approved`).
+    return { gate: "GATE_1_DOSSIER", open: true, unresolved_unsupported: unsupported, unresolved_needs_review: [], unresolved_unanswered: [] };
   }
 
   private json(route: Route, body: unknown, status = 200) {
@@ -165,7 +166,7 @@ export class MockBackend {
       const field = decodeURIComponent(m[2]);
       const body = req.postDataJSON() as { value: unknown };
       this.patchCalls.push({ field, value: body.value });
-      const prev = (this.dossier.fields[field] ?? { value: null, source: null, status: "UNSUPPORTED" }) as TrackedFieldAny;
+      const prev = ((this.dossier.fields as unknown as Record<string, TrackedFieldAny>)[field] ?? { value: null, source: null, status: "UNSUPPORTED" }) as TrackedFieldAny;
       this.dossier = {
         ...this.dossier,
         fields: { ...this.dossier.fields, [field]: { value: body.value, source: prev.source, status: "USER_EDITED" } },
@@ -204,7 +205,7 @@ export class MockBackend {
       this.dossier = {
         ...fx.dossier(), case_id: this.caseId,
         // a second red field so Gate 1 needs an acknowledgement as well as an edit
-        fields: { ...fields, trial_stage: { value: null, source: null, status: "UNSUPPORTED" } as TrackedFieldAny },
+        fields: { ...fields, trial_stage: { value: null, source: null, status: "UNSUPPORTED" } as TrackedFieldAny } as unknown as CaseDossier["fields"],
       };
       return this.json(route, { case_id: this.caseId, accepted: ["bundle_14pp.pdf"], questions: this.ingestion.questions });
     }
@@ -256,7 +257,7 @@ export class MockBackend {
 
     // ---- export (403 unless Gate 2 approved, plan §16)
     if ((m = p.match(/^\/api\/cases\/([^/]+)\/export$/)) && method === "POST") {
-      if (!this.gate2.open) {
+      if (this.gate2.open) {
         this.exportResults.push({ status: 403 });
         return this.json(route, { detail: "Gate 2 not approved for this case" }, 403);
       }

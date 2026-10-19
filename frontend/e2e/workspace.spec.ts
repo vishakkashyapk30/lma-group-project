@@ -121,6 +121,8 @@ test("axe-core: zero serious or critical violations on the workspace", async ({ 
 });
 
 test("keyboard: Tab reaches the stage rail and a stage item shows a visible focus ring", async ({ page }) => {
+  // RECONCILED: the workspace renders in the browser only (no inert pre-hydration markup), so wait for it before pressing Tab.
+  await expect(page.getByTestId(TID.stageRail)).toBeVisible();
   let focusedStage: string | null = null;
   for (let i = 0; i < 60 && !focusedStage; i++) {
     await page.keyboard.press("Tab");

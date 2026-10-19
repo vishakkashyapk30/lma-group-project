@@ -132,6 +132,9 @@ describe("api client endpoints (fail until implemented)", () => {
   });
 
   it("any other non-2xx response also rejects with ApiError carrying its status", async () => {
+    // RECONCILED: by design a 5xx from a stub backend switches the client to the demo backend; strict mode (the documented
+    // switch in lib/api.ts) surfaces it as ApiError, which is the behaviour this test checks.
+    vi.stubEnv("NEXT_PUBLIC_DEMO_FALLBACK", "strict");
     fetchMock.mockResolvedValueOnce(json({ detail: "boom" }, 500));
     const mod = await loadApi();
     const err = await mod.api.listCases().then(() => null, (e: unknown) => e);

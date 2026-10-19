@@ -24,9 +24,9 @@
  *  - stage-rail (navigation landmark) containing stage-I .. stage-VII (interactive; text = numeral + label; aria-current="step"
  *    on the current stage; aria-disabled="true" while locked) and gate-diamond-1 / gate-diamond-2 (interactive; open the
  *    gate modal; data-approved="true"|"false").
- *  - Gate state: GateStatus has no "approved" flag (see report). ASSUMPTION: GateStatus.open === true means the gate has been
- *    passed (approved) and stages III-VII unlock after GATE_1_DOSSIER is open; GateStatus.open === false lists in
- *    unresolved_* what still blocks it.
+ *  - Gate state: RECONCILED with record/gates.py: GateStatus.open === true means the gate has NOT been approved yet (it is
+ *    still open for counsel), false means approved; stages III-VII unlock once GATE_1_DOSSIER is approved (open === false);
+ *    the unresolved_* lists say what still blocks approval.
  *  - right-tab-dossier|dates|rights|brief|spar|prep: role="tab" with aria-selected. Rail <-> tab sync: stage II <-> dossier,
  *    III <-> rights, IV <-> brief, V <-> spar, VI <-> prep (selecting either selects the other; stage becomes aria-current).
  *  - dossier-field (one per dossier field; data-field = field key) containing status-badge; dossier-field-edit (button inside the

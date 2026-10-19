@@ -1,6 +1,6 @@
 {
   "gate": "GATE_1_DOSSIER",
-  "open": false,
+  "open": true,
   "unresolved_unsupported": [
     "antecedents"
   ],

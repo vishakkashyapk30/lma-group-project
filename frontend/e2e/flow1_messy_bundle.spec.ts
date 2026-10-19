@@ -60,7 +60,8 @@ test("flow 1: messy 14-page bundle -> route badges, stamps, one question, edit r
   await antecedents.getByTestId(TID.dossierFieldEdit).click();
   await antecedents.getByTestId(TID.dossierFieldInput).fill("No prior cases");
   await antecedents.getByTestId(TID.dossierFieldSave).click();
-  expect(mock.patchCalls).toEqual([{ field: "antecedents", value: "No prior cases" }]);
+  // RECONCILED: DossierFields.antecedents is TrackedField[list[str]] (schemas/dossier.py), so the PATCH carries the one typed line as a list.
+  expect(mock.patchCalls).toEqual([{ field: "antecedents", value: ["No prior cases"] }]);
   await expect(antecedents.getByTestId(TID.statusBadge)).toHaveAttribute("data-status", "USER_EDITED");
   await expect(antecedents.getByTestId(TID.statusBadge)).toContainText("Edited by counsel");
   await expect(antecedents.getByTestId(TID.statusBadge)).toContainText("✎");

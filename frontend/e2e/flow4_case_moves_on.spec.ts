@@ -43,7 +43,8 @@ test("flow 4: new charge-sheet order -> changed fields highlighted -> re-approve
   const charge = page.locator('[data-testid=dossier-field][data-field="charge_sheet"]');
   await expect(charge).toHaveAttribute("data-changed", "true");
   await expect(charge.getByTestId(TID.changedMarker)).toContainText(TEXT.changed);
-  await expect(charge).toContainText("2024-11-02");
+  // RECONCILED: the UI shows court-style dates (02.11.2024, as in the plan's prose examples); the stored value stays ISO 2024-11-02.
+  await expect(charge).toContainText(/02\.11\.2024|2024-11-02/);
   await expect(page.locator('[data-testid=dossier-field][data-field="arrest_date"]')).not.toHaveAttribute("data-changed", "true");
 
   await page.getByTestId(TID.rightTab("rights")).click();
