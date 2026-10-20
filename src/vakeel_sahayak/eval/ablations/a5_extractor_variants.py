@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from vakeel_sahayak.orchestration.switches import Switches
 
+EXTRACTORS = ("finetuned_4b", "base_4b", "prompted_32b")
+
 
 def make_switches() -> Switches:
     """Return the Switches for A5.
@@ -11,7 +13,7 @@ def make_switches() -> Switches:
     Returns:
         Switches.
     """
-    raise NotImplementedError
+    return Switches.for_variant("A5", extractor="base_4b")
 
 
 def run(cases_path: str, out_dir: str, shard: int = 0, n_shards: int = 1) -> None:
@@ -23,4 +25,7 @@ def run(cases_path: str, out_dir: str, shard: int = 0, n_shards: int = 1) -> Non
         shard: see behaviour
         n_shards: see behaviour
     """
-    raise NotImplementedError
+    from vakeel_sahayak.eval.ablations.common import run_ablation
+
+    for extractor in EXTRACTORS:  # the fine-tuned 4B is the Full system's setting, so it is built directly
+        run_ablation(f"A5-{extractor}", Switches(extractor=extractor), cases_path, f"{out_dir}/{extractor}", shard, n_shards)

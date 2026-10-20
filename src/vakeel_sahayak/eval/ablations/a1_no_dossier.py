@@ -11,7 +11,7 @@ def make_switches() -> Switches:
     Returns:
         Switches.
     """
-    raise NotImplementedError
+    return Switches.for_variant("A1")
 
 
 def run(cases_path: str, out_dir: str, shard: int = 0, n_shards: int = 1) -> None:
@@ -23,4 +23,6 @@ def run(cases_path: str, out_dir: str, shard: int = 0, n_shards: int = 1) -> Non
         shard: see behaviour
         n_shards: see behaviour
     """
-    raise NotImplementedError
+    from vakeel_sahayak.eval.ablations.common import run_ablation
+
+    run_ablation("A1", make_switches(), cases_path, out_dir, shard, n_shards)
