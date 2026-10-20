@@ -1,0 +1,90 @@
+"""The thin evaluation driver: scripted counsel, GateGuard stays in force, manifests, shards, and the jobs that wait for unbuilt code."""
+
+from __future__ import annotations
+
+import json
+
+import pytest
+
+from tests.integration._helpers import full_pipeline_llm
+from vakeel_sahayak.eval.runners import driver, jobs
+from vakeel_sahayak.eval.runners.driver import ScriptedCounsel, build_context, run_agents
+from vakeel_sahayak.schemas.enums import EventKind
+
+FACTS = "The accused was arrested on 20.08.2024 under Section 318(4) BNS. Charge sheet filed 02.11.2024."
+
+
+def case(world, **kw):
+    return {"case_id": "case-0007", "facts": FACTS, "before": world.case_date, **kw}
+
+
+def ctx_for(toolbox, **kw):
+    return build_context(case(toolbox.world), tools=toolbox.tools, llm=full_pipeline_llm(), **kw)
+
+
+def test_without_a_scenario_gate_1_is_approved_and_export_stays_blocked(toolbox):
+    res = run_agents(case(toolbox.world), ctx_for(toolbox))
+    assert res["gate1_approved"] and not res["gate2_approved"]
+    assert res["export"]["blocked"] is True and toolbox.exports == []
+
+
+def test_counsel_that_does_not_approve_gate_1_stops_the_run(toolbox):
+    res = run_agents(case(toolbox.world, scenario={"approve_gate1": False}), ctx_for(toolbox))
+    assert not res["gate1_approved"] and res["packs"] == 0 and res["brief"]["grounds"] == []
+
+
+def test_approving_gate_2_only_when_the_scenario_says_so(toolbox):
+    ctx = ctx_for(toolbox)
+    res = run_agents(case(toolbox.world, scenario={"approve_gate2": True}), ctx)
+    assert res["gate2_approved"] and res["export"].get("blocked") is not True
+    approvals = [e for e in ctx.log.read("case-0007") if e.kind == EventKind.GATE_APPROVED]
+    assert {e.actor for e in approvals} == {"counsel"}
+
+
+def test_the_driver_never_writes_an_approval_itself():
+    import inspect
+
+    src = inspect.getsource(driver)
+    assert "EventKind.GATE_APPROVED" not in src and "approve_gate(" not in src
+
+
+def test_a_shard_saves_cases_manifest_and_event_logs(tmp_path, toolbox):
+    cases = tmp_path / "cases.jsonl"
+    cases.write_text("\n".join(json.dumps({"case_id": f"c-{i}", "facts": FACTS, "before": "2025-02-03"}) for i in range(3)) + "\n")
+    from vakeel_sahayak.orchestration.switches import Switches
+
+    out = tmp_path / "out"
+    runner = lambda c, ctx: __import__("vakeel_sahayak.schemas.bail_brief", fromlist=["BailBrief"]).BailBrief(case_id=c["case_id"])  # noqa: E731
+    assert driver.run_cases(str(cases), str(out), "full", runner, Switches(), seed=5) == 3
+    assert driver.load_progress(str(out)) == {"c-0", "c-1", "c-2"}
+    manifest = json.loads((out / "MANIFEST.json").read_text())
+    assert manifest["seed"] == 5 and manifest["variant"] == "full" and manifest["cases_hash"] and "models" in manifest and manifest["config_hash"]
+    saved = json.loads((out / "c-1.json").read_text())
+    assert saved["meta"]["seed"] == 6 and "tokens" in saved["meta"] and saved["brief"]["case_id"] == "c-1"
+    assert driver.run_cases(str(cases), str(out), "full", runner, Switches()) == 0  # resumed: nothing left
+
+
+def test_a_crashing_case_is_saved_as_an_error_record(tmp_path):
+    cases = tmp_path / "cases.jsonl"
+    cases.write_text(json.dumps({"case_id": "c-0", "facts": FACTS, "before": "2025-02-03"}) + "\n")
+
+    def boom(c, ctx):
+        raise RuntimeError("model fell over")
+
+    from vakeel_sahayak.orchestration.switches import Switches
+
+    driver.run_cases(str(cases), str(tmp_path / "o"), "b0", boom, Switches())
+    saved = json.loads((tmp_path / "o" / "c-0.json").read_text())
+    assert "RuntimeError" in saved["error"] and saved["brief"]["grounds"] == []
+
+
+def test_the_output_layout_follows_contract_c6(tmp_path):
+    out = driver.outputs_dir("rq1_full", "full", 1, root=str(tmp_path))
+    assert out == tmp_path / "runs" / "rq1_full" / "outputs" / "full"
+    assert driver.outputs_dir("rq1_full", "full", 2, root=str(tmp_path)).name == "full__run2"
+
+
+@pytest.mark.parametrize("job", ["rq2_vision", "rq2_full", "f2_change_sets", "f1_f5_f6", "f3_baselines", "f4_nocache"])
+def test_jobs_waiting_for_unbuilt_code_name_their_dependency(job):
+    with pytest.raises(NotImplementedError, match="needs"):
+        jobs.run_job(job, {}, 0, 1, "unused", 0.0)

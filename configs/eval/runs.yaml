@@ -3,6 +3,7 @@ shard_hours: 5
 jobs:
   teacher_dossiers: {where: ada, model: teacher, node_hours: 60}
   rq1_full:         {where: ada, systems: [full, b0, b1, b4], runs: 3, cases: 200, testset: T1, node_hours: 82}
+  rq1_b0l_b0s_b6:   {where: ada, systems: [b0l, b0s, b6], runs: 1, cases: 200, testset: T1, node_hours: 2.5}   # job 5 of the job map; B6 needs no model
   rq1_b2_b3:        {where: ada, systems: [b2, b3], runs: 1, cases: 200, testset: T1}
   ablations:        {where: ada, ids: [A1, A2, A3, A4, A6, A7, A8, A9], cases: 100, node_hours: 50}
   a5_extractors:    {where: ada, variants: [finetuned_4b, base_4b, prompted_32b], inputs: 400, node_hours: 6}

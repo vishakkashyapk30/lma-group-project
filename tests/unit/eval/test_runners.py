@@ -28,7 +28,7 @@ RUNNERS_DIR = REPO / "src" / "vakeel_sahayak" / "eval" / "runners"
 
 # runner module -> jobs of configs/eval/runs.yaml it launches (plan §15, §17)
 RUNNER_JOBS = {
-    "run_rq1": ["rq1_full", "rq1_b2_b3"],
+    "run_rq1": ["rq1_full", "rq1_b2_b3", "rq1_b0l_b0s_b6"],  # RECONCILED: job 5 (B0L, B0S, B6) is a job of the evaluation plan 7.2
     "run_ablations": ["ablations", "a5_extractors", "a10_knockouts"],
     "run_rq2": ["rq2_vision", "rq2_full"],
     "run_features": ["f2_change_sets", "f1_f5_f6", "f3_baselines", "f4_nocache"],
