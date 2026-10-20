@@ -57,7 +57,11 @@ def strip_thinking(text: str) -> str:
 def model_family(model_id: str | None) -> str:
     """Model family of a checkpoint id ('Qwen/Qwen3-32B-AWQ' -> 'qwen'); used for the teacher/labeler family rule (plan §17)."""
     low = (model_id or "").lower()
+    leaf = low.rsplit("/", 1)[-1]
+    if "openai" in low or re.match(r"(chat)?gpt|o\d(-|$)", leaf):
+        return "openai"
     for family, cues in (
+        ("sarvam", ("sarvam",)),
         ("qwen", ("qwen",)),
         ("llama", ("llama",)),
         ("mistral", ("mistral", "mixtral", "ministral", "magistral", "codestral")),
@@ -118,6 +122,11 @@ class LLMClient(ABC):
     model_id: str | None = None
     is_offline: bool = False
     where: str = "laptop"
+
+    @property
+    def family(self) -> str:
+        """Model family ('qwen', 'llama', 'sarvam', 'openai', 'offline', ...) for the labeler/teacher independence rule."""
+        return model_family(self.model_id or self.name)
 
     @abstractmethod
     def generate(

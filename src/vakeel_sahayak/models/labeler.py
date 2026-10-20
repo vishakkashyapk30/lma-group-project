@@ -55,15 +55,44 @@ class EvalLabeler:
     def _model_name(self) -> str:
         if self.model_id:
             return self.model_id
+        if self._use_openai():
+            from vakeel_sahayak.models.openai.config import openai_config
+
+            return str(openai_config()["chat"]["model"])
+        if self._use_sarvam():
+            return "sarvam-105b"
         from vakeel_sahayak.config import load_config
 
         cfg = ((load_config().models.get("llm") or {}).get("eval_labeler") or {})
         return str(cfg.get("model") or DEFAULT_LABELER)
 
+    def model_name(self) -> str:
+        """The labeler's model name (nothing is loaded)."""
+        return self._model_name()
+
+    def backend(self) -> str:
+        """'openai', 'sarvam' or 'local' (nothing is loaded)."""
+        return "openai" if self._use_openai() else "sarvam" if self._use_sarvam() else "local"
+
+    @property
+    def family(self) -> str:
+        """Model family of the labeler (for the rule that labeler, teacher and judged system differ in family)."""
+        return "openai" if self._use_openai() else "sarvam" if self._use_sarvam() else model_family(self._model_name())
+
+    def _use_openai(self) -> bool:
+        """The other non-Qwen, non-Llama option: an OpenAI model as labeler (`VS_LABELER=openai` or yaml `llm.eval_labeler.runtime: openai`). Public text only; spend-capped."""
+        raw = os.environ.get("VS_LABELER", "").strip().lower()
+        if raw:
+            return raw == "openai"
+        from vakeel_sahayak.config import load_config
+
+        return str(((load_config().models.get("llm") or {}).get("eval_labeler") or {}).get("runtime")) == "openai"
+
     def _use_sarvam(self) -> bool:
         """The documented non-Qwen, non-Llama option: Sarvam-105B as labeler (`VS_LABELER=sarvam` or yaml `llm.eval_labeler.runtime: sarvam`). Not the default."""
-        if os.environ.get("VS_LABELER", "").strip().lower() == "sarvam":
-            return True
+        raw = os.environ.get("VS_LABELER", "").strip().lower()
+        if raw:
+            return raw == "sarvam"
         from vakeel_sahayak.config import load_config
 
         return str(((load_config().models.get("llm") or {}).get("eval_labeler") or {}).get("runtime")) == "sarvam"
@@ -78,12 +107,22 @@ class EvalLabeler:
             raise ValueError("the evaluation labeler must not be a Qwen model (plan §15.1: no Qwen gold)")
         return client
 
+    def _openai_client(self) -> LLMClient:
+        """OpenAI labelling of PUBLIC court text only, behind the spend cap and the privacy gate (blocked or over the cap: `LabelerUnavailable`)."""
+        from vakeel_sahayak.models.openai.adapters import OpenAILLMClient
+        from vakeel_sahayak.models.sarvam.policy import DataClass
+
+        return OpenAILLMClient(self.model_id, data=DataClass.PUBLIC, where="api", role="eval_labeler")
+
     def client(self) -> LLMClient:
         """The underlying LLM client (built on first use)."""
         if self._llm is not None:
             return self._llm
         if os.environ.get("VS_MODELS", "auto").lower() == "offline":
             raise LabelerUnavailable("VS_MODELS=offline: the Llama evaluation labeler is not run; gold stays rule-only")
+        if self._use_openai():
+            self._llm = self._openai_client()
+            return self._llm
         if self._use_sarvam():
             self._llm = self._sarvam_client()
             return self._llm

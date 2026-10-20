@@ -14,6 +14,7 @@
 #
 # Privacy (plan section 16): nothing external is called by default. Published ports bind to 127.0.0.1 (BIND_ADDR). Sarvam is an
 # external service and stays OFF unless VS_SARVAM is set; its key (SARVAM_API_KEY) comes from the environment/.env only.
+# The same holds for OpenAI (VS_EXTERNAL, OPENAI_API_KEY, hard spending cap VS_OPENAI_CAP_USD, at most 5.00).
 
 name: vakeel-sahayak
 
@@ -21,6 +22,11 @@ x-backend-env: &backend-env
   VS_CORS_ORIGINS: ${VS_CORS_ORIGINS:-http://localhost:3000}
   VS_SARVAM: ${VS_SARVAM:-off}
   SARVAM_API_KEY: ${SARVAM_API_KEY:-}   # empty when unset; never written into an image, label or log
+  VS_EXTERNAL: ${VS_EXTERNAL:-off}
+  VS_LLM_BACKEND: ${VS_LLM_BACKEND:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}   # empty when unset; runtime environment only, never baked into an image, label or log
+  VS_OPENAI_CAP_USD: ${VS_OPENAI_CAP_USD:-4.50}
+  VS_OPENAI_RUN_CAP_USD: ${VS_OPENAI_RUN_CAP_USD:-}
   HF_TOKEN: ${HF_TOKEN:-}
 
 x-hardening: &hardening

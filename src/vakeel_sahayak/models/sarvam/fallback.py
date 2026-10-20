@@ -91,10 +91,12 @@ class FallbackTranslator(_Fallback, TranslationClient):
 
 
 class FallbackLLM(LLMClient):
-    """Sarvam chat for an agent role, else the role's configured local/vLLM client."""
+    """Sarvam (or OpenAI) chat for an agent role, else the role's configured local/vLLM client."""
 
-    def __init__(self, primary: LLMClient, local: Callable[[], LLMClient], where: str) -> None:
-        """`where` is the role's location, so the agents' boundary rule applies whichever client answers."""
+    def __init__(self, primary: LLMClient, local: Callable[[], LLMClient], where: str, errors: tuple[type[BaseException], ...] = FALLBACK_ERRORS) -> None:
+        """`where` is the role's location, so the agents' boundary rule applies whichever client answers; `errors` are the failures
+        that trigger the fallback (Sarvam's by default; OpenAI's include `BudgetExceeded`, so over the cap the local client answers)."""
+        self._errors = errors
         self.primary = primary
         self._local_factory = local
         self._local: LLMClient | None = None
@@ -115,6 +117,11 @@ class FallbackLLM(LLMClient):
         return self.last_engine.name
 
     @property
+    def family(self) -> str:  # type: ignore[override]
+        """Model family of the engine that answered last."""
+        return str(self.last_engine.family)
+
+    @property
     def is_offline(self) -> bool:  # type: ignore[override]
         """True when the local fallback is the deterministic offline client and it answered last."""
         return bool(self.last_engine.is_offline)
@@ -123,8 +130,8 @@ class FallbackLLM(LLMClient):
         try:
             out = getattr(self.primary, method)(*args, **kw)
             self.last_engine = self.primary
-        except FALLBACK_ERRORS as exc:
-            log.info("sarvam llm not used (%s); using the local engine", type(exc).__name__)
+        except self._errors as exc:
+            log.info("%s llm not used (%s); using the local engine", getattr(self.primary, "name", "external"), type(exc).__name__)
             self.last_engine = self.local
             out = getattr(self.local, method)(*args, **kw)
         last = getattr(self.last_engine._accounting()[1], "last", None)

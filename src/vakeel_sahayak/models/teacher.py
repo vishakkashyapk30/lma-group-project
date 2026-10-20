@@ -24,6 +24,7 @@ from vakeel_sahayak.schemas.dossier import CaseDossier
 DEFAULT_TEACHER = "Qwen/Qwen3-32B-AWQ"
 DEFAULT_MISTRAL = "mistral-small-latest"
 MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
+DEFAULT_OPENAI = "gpt-6-luna"  # overridden by configs/models.yaml openai.chat.model
 DEFAULT_SARVAM = "sarvam-105b"  # optional non-Qwen teacher (VS_TEACHER=sarvam); public orders only
 
 
@@ -31,6 +32,20 @@ def assert_families_differ(teacher_model: str, labeler_model: str) -> None:
     """Raise ValueError when the teacher and the evaluation labeler are of the same model family (plan §17)."""
     if model_family(teacher_model) == model_family(labeler_model):
         raise ValueError(f"teacher {teacher_model!r} and labeler {labeler_model!r} are both {model_family(teacher_model)} models")
+
+
+def _yaml_runtime() -> str | None:
+    """`llm.teacher.runtime` when it names an external API option ('openai' or 'sarvam'); the yaml default (vllm) is not an override."""
+    from vakeel_sahayak.config import load_config
+
+    runtime = str((((load_config().models.get("llm") or {}).get("teacher")) or {}).get("runtime") or "")
+    return runtime if runtime in ("openai", "sarvam") else None
+
+
+def _openai_default() -> str:
+    from vakeel_sahayak.models.openai.config import openai_config
+
+    return str(openai_config()["chat"]["model"])
 
 
 class MistralApiClient(LLMClient):
@@ -96,7 +111,7 @@ class TeacherClient:
         """Choose the backend.
 
         Args:
-            backend: 'vllm', 'mistral', 'sarvam' (optional non-Qwen) or 'offline' (default: `VS_TEACHER`, else 'mistral' when a key is set and
+            backend: 'vllm', 'mistral', 'sarvam' / 'openai' (optional non-Qwen, public orders only, `openai` spend-capped) or 'offline' (default: `VS_TEACHER`, else 'mistral' when a key is set and
                 'vllm' otherwise; 'offline' when `VS_MODELS=offline`)
             model: checkpoint or API model name
             client: an LLMClient to use directly (tests, a shared engine)
@@ -105,14 +120,22 @@ class TeacherClient:
             if os.environ.get("VS_MODELS", "auto").lower() == "offline":
                 backend = "offline"
             else:
-                backend = os.environ.get("VS_TEACHER") or ("mistral" if MistralApiClient.available() else "vllm")
-        if backend not in ("vllm", "mistral", "sarvam", "offline"):
+                backend = os.environ.get("VS_TEACHER") or _yaml_runtime() or ("mistral" if MistralApiClient.available() else "vllm")
+        if backend not in ("vllm", "mistral", "sarvam", "openai", "offline"):
             raise ValueError(f"unknown teacher backend {backend!r}")
         self.backend = backend
         self._client = client
-        self.model_id = model or (DEFAULT_MISTRAL if backend == "mistral" else DEFAULT_SARVAM if backend == "sarvam" else DEFAULT_TEACHER if backend == "vllm" else "offline-template")
-        self.where = "api" if backend in ("mistral", "sarvam") else "ada" if backend == "vllm" else "laptop"
+        self.model_id = model or (
+            DEFAULT_MISTRAL if backend == "mistral" else DEFAULT_SARVAM if backend == "sarvam" else _openai_default() if backend == "openai"
+            else DEFAULT_TEACHER if backend == "vllm" else "offline-template"
+        )  # fmt: skip
+        self.where = "api" if backend in ("mistral", "sarvam", "openai") else "ada" if backend == "vllm" else "laptop"
         self.is_offline = backend == "offline"
+
+    @property
+    def family(self) -> str:
+        """Model family of the teacher ('qwen' for vLLM Qwen3, 'mistral', 'sarvam', 'openai', 'offline')."""
+        return "offline" if self.backend == "offline" else self.backend if self.backend in ("sarvam", "openai") else model_family(self.model_id)
 
     @property
     def client(self) -> LLMClient:
@@ -125,6 +148,11 @@ class TeacherClient:
                 from vakeel_sahayak.models.sarvam.policy import DataClass
 
                 self._client = SarvamLLMClient(self.model_id, data=DataClass.PUBLIC, where="api", role="teacher")
+            elif self.backend == "openai":
+                from vakeel_sahayak.models.openai.adapters import OpenAILLMClient
+                from vakeel_sahayak.models.sarvam.policy import DataClass
+
+                self._client = OpenAILLMClient(self.model_id, data=DataClass.PUBLIC, where="api", role="teacher")
             elif self.backend == "vllm":
                 from vakeel_sahayak.models.vllm_client import VllmClient
 

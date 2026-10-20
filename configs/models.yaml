@@ -57,3 +57,66 @@ sarvam:
 # to sarvam (model sarvam-105b) or env VS_LABELER=sarvam / VS_TEACHER=sarvam. Public orders only; model_family('sarvam-105b') = 'sarvam'.
 # Agent roles: set llm.agents_14b.runtime: sarvam to use Sarvam-105B for the Ada-side agents (pseudonymised text only; falls back
 # to the configured fallback runtime when Sarvam is off, blocked or unavailable).
+
+# OpenAI (external API; hosted LLM allowed since 2026-10-24, team budget 5.00 USD in total). OFF by default. Privacy gate: the same as
+# Sarvam's (vakeel_sahayak/models/sarvam/policy.py, `authorize(provider="openai")`). Mode: env VS_EXTERNAL=off|public|pseudonymised|consented
+# (VS_SARVAM is Sarvam's own alias); else `mode` applies when `enabled: true`; else off. A call with no declared data scope is blocked.
+# The key comes ONLY from the process environment (the variable named in .env.example), never from this file or any committed file.
+# Roles: `runtime: openai` on an llm role (or env VS_LLM_BACKEND=openai for the agent roles) uses it, falling back to the local client when
+# blocked, over the cap or failing. Labeler/teacher: env VS_LABELER=openai / VS_TEACHER=openai (public orders only); family 'openai'.
+# HARD SPENDING CAP (models/openai/ledger.py): cap_usd defaults to 4.50; env VS_OPENAI_CAP_USD overrides it; code clamps any value to 5.00.
+# Every call is reserved against the SQLite ledger at its worst case BEFORE the request, so the total can never exceed the cap.
+# Optional per-run soft cap: run_cap_usd / env VS_OPENAI_RUN_CAP_USD. `make openai-spend` prints totals.
+# Verified 2026-10-24 against OFFICIAL docs (re-check before relying on prices):
+#   pricing         https://developers.openai.com/api/docs/pricing   (platform.openai.com/docs/pricing redirects here), standard tier, USD per 1M tokens
+#   models          https://developers.openai.com/api/docs/models/gpt-6-luna  (Chat Completions + Responses + Batch; structured outputs; reasoning.effort none|low|medium|high|xhigh|max, default medium; 128k max output)
+#                   https://developers.openai.com/api/docs/models/gpt-5-nano  (cheapest list price but marked DEPRECATED, so not the default)
+#                   the 4.1-generation nano model is SHUT DOWN and the 4o-generation mini costs more, so neither is in the table
+#   chat endpoint   https://developers.openai.com/api/reference/chat-completions/overview  (POST /v1/chat/completions; max_completion_tokens, reasoning_effort, response_format json_schema{name,schema,strict}|json_object,
+#                   usage.prompt_tokens_details.cached_tokens; Responses API is recommended for new projects, Chat Completions still supported)
+#   structured out  https://developers.openai.com/api/docs/guides/structured-outputs  (strict: true needs additionalProperties:false and all properties required)
+#   reasoning       https://developers.openai.com/api/docs/guides/reasoning  (reasoning tokens are billed as output tokens; hence max_completion_tokens bounds them too)
+#   rate limits     https://developers.openai.com/api/docs/guides/rate-limits  (Build tier = 5 USD total credit purchased: Luna 5,000 RPM / 2,000,000 TPM; auth example: Authorization: Bearer)
+# Default model: gpt-6-luna, the cheapest non-deprecated model on the pricing page (0.10 / 0.01 cached / 0.50). Not verified from the docs: whether
+# Luna accepts `temperature` and reasoning_effort "none"; the client drops a rejected parameter and repeats the call (a rejected request is not billed).
+openai:
+  enabled: false
+  mode: public
+  base_url: https://api.openai.com
+  auth: bearer   # Authorization: Bearer <key from the environment>
+  timeout_s: 120
+  retries: {max: 4, base_delay_s: 1.0, max_delay_s: 30.0}   # retry only 429 (not insufficient_quota), 5xx and transport errors
+  endpoints: {chat: /v1/chat/completions}
+  chat: {model: gpt-6-luna, reasoning_effort: none, strict_json: auto, max_tokens_cap: 4096, reasoning_headroom_tokens: 0, send_temperature: true}
+  prices:   # USD per 1M tokens (== micro-USD per token); a model absent from this table is refused (its cost could not be capped)
+    gpt-6-luna:   {input: 0.10, cached_input: 0.01,  output: 0.50}
+    gpt-5.6-luna: {input: 0.20, cached_input: 0.02,  output: 1.20}
+    gpt-5.4-nano: {input: 0.20, cached_input: 0.02,  output: 1.25}
+    gpt-5-nano:   {input: 0.05, cached_input: 0.005, output: 0.40}   # deprecated
+    gpt-5-mini:   {input: 0.25, cached_input: 0.025, output: 2.00}
+  cap_usd: 4.50          # effective default; never above 5.00 (clamped in code)
+  run_cap_usd: null      # optional soft cap per run
+  ledger: {path: null, cache_path: null}   # null = <data dir>/openai/ledger.sqlite and cache.sqlite (data/ is untracked)
+  use: {llm: true}
+
+# Weight tiers for scripts/download_models.sh (`make models`, `make models-dry-run`). Hosted backends (Sarvam, OpenAI) need no weights.
+# Sizes are the bytes of the files the script fetches (include globs), read from the Hugging Face model pages' file lists on 2026-10-24.
+# T0 = offline stand-ins (nothing to download); T1 = small helpers that fit an 8 GB laptop GPU; T2 = local LLMs for a laptop/GPU box;
+# T3 = larger models for Ada. T2 and T3 are optional now that hosted LLMs are the default.
+weights:
+  T0: {note: "offline stand-ins (hashed-ngram embedder, rule-based stubs); no download", models: []}
+  T1:
+    models:
+      - {id: BAAI/bge-m3, role: embeddings, license: MIT, include: ["*.json", "pytorch_model.bin", "sentencepiece.bpe.model", "tokenizer*", "1_Pooling/*", "modules.json"], approx_bytes: 2271145830}
+      - {id: MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli, role: nli, license: MIT, include: ["*.json", "model.safetensors", "spm.model", "tokenizer*"], approx_bytes: 870182606}
+      - {id: lytang/MiniCheck-RoBERTa-Large, role: faithfulness (evaluation), license: MIT, include: ["*.json", "pytorch_model.bin", "merges.txt", "vocab.json", "tokenizer*"], approx_bytes: 1421577710}
+      - {id: openai/whisper-small, role: asr, license: Apache-2.0, include: ["*.json", "model.safetensors", "merges.txt", "vocab.json", "tokenizer*"], approx_bytes: 966995080}
+  T2:
+    models:
+      - {id: Qwen/Qwen3-4B, role: munshi/extractor LLM (4-bit at load), license: Apache-2.0, include: ["*"], approx_bytes: 8050000000}
+      - {id: Qwen/Qwen3-VL-4B-Instruct, role: vision, license: Apache-2.0, include: ["*"], approx_bytes: 9000000000}
+      - {id: ai4bharat/indictrans2-indic-en-dist-200M, role: hi-en translation, license: MIT, gated: auto, include: ["*"], approx_bytes: 913353672}
+  T3:
+    models:
+      - {id: Qwen/Qwen3-14B-AWQ, role: agents (vLLM on Ada), license: Apache-2.0, include: ["*"], approx_bytes: 10000000000}
+      - {id: Qwen/Qwen3-32B-AWQ, role: teacher (vLLM on Ada), license: Apache-2.0, include: ["*"], approx_bytes: 20000000000}

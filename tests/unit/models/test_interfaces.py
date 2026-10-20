@@ -125,8 +125,11 @@ def test_every_models_module_defines_a_known_client_or_is_a_known_helper():
         "vakeel_sahayak.models.offline_llm",
         "vakeel_sahayak.models.json_schema",
         "vakeel_sahayak.models.prompting",
+        "vakeel_sahayak.models.prefix",  # RECONCILED: sweep 3 (S14d) prefix-friendly layout helper and shared-prefix meter; not a client
         # RECONCILED: the Sarvam API package (external, off by default); its adapters implement the interfaces above.
         "vakeel_sahayak.models.sarvam",
+        # RECONCILED: the OpenAI API package (external, off by default, hard spending cap); its adapter implements LLMClient.
+        "vakeel_sahayak.models.openai",
     }
     assert set(_model_modules()) == known
 
