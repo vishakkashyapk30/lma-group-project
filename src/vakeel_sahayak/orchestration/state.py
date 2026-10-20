@@ -59,6 +59,8 @@ class CaseGraphState(BaseModel):
     change_sets: list[ChangeSet] = Field(default_factory=list)  # approved change sets, oldest first
     reopened_factors: list[Factor] = Field(default_factory=list)  # factors re-run after the latest change set (plan §10)
     budget: BudgetState = Field(default_factory=BudgetState)
+    retrieval_signals: dict[str, Any] = Field(default_factory=dict)  # per-factor stopping signals of the S3 variants (empty by default)
+    variant_signals: dict[str, Any] = Field(default_factory=dict)  # Sweep-2 variants (S8 'repair', S9/S10 'critic', S15 'output'); empty by default
     budget_tracker: dict[str, Any] | None = None  # BudgetTracker.to_dict(), for resuming spend
     gates: dict[str, str] = Field(default_factory=dict)  # GateId value -> 'open' | 'approved' | 'rejected'
     pending_gate: GateId | None = None

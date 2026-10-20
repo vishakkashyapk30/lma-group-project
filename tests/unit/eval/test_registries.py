@@ -33,8 +33,8 @@ PIPELINES = module_names("vakeel_sahayak.eval.ingestion")
 
 # ------------------------------------------------------------------ registries are complete
 def test_baselines_b0_to_b4_and_full_system():
-    """Plan §15.3: B0-B4 plus the Full system module."""
-    assert sorted(BASELINES) == ["b0", "b1", "b2", "b3", "b4"]
+    """Plan §15.3: B0-B4 plus the Full system module (and B6, the no-model expert-rule baseline of docs/evaluation-plan.md 3.1)."""
+    assert sorted(BASELINES) == ["b0", "b1", "b2", "b3", "b4", "b6"]  # RECONCILED: B6 (expert-rule, no model) is a baseline of evaluation-plan 3.1
     importlib.import_module("vakeel_sahayak.eval.baselines.full_system")
 
 
@@ -81,7 +81,15 @@ def test_every_switch_belongs_to_some_ablation_or_variant():
     for module in ABLATIONS.values():
         documented |= set(re.findall(r"(\w+)(?:=|\s+in\s+\{)", (importlib.import_module(module).__doc__ or "").split("Switch:")[-1]))
     documented |= {"munshi_no_gap_check", "munshi_no_bundle_split"}  # P5 / P6 live in the Switches class comments
-    assert set(Switches.model_fields) <= documented | {"extractor", "knockout_store"}
+    # RECONCILED: the S-variants of evaluation plan 3.3 are documented in switches.py and docs/literature-to-code-map.md, not by ablation modules
+    # RECONCILED: EV-01 adds fields per evaluation-plan §3.4 (named variants in ARCHITECTURE / INGESTION / BASELINE_SWITCHES)
+    ev01 = {
+        "retrieval_policy", "weak_signal", "graph_expansion", "store_prior", "munshi_gap_policy", "repair_mode", "critic_mode",
+        "abhiyojak_isolation", "draft_mode", "topology", "plan_cache", "urgency_policy", "output_format", "no_typed_handoff",
+        "no_spotlighting", "no_guard", "munshi_image_only", "chunking",
+        "prefix_layout",  # RECONCILED: sweep 3 added S14d (prefix-friendly prompt layout)
+    }
+    assert set(Switches.model_fields) <= documented | {"extractor", "knockout_store", "stopping"} | ev01
 
 
 # ------------------------------------------------------------------ run registry and hypotheses config
