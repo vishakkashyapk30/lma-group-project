@@ -70,7 +70,7 @@ def test_gold_g1_to_g7_is_attached_to_every_case(tmp_path):
 
 def test_orders_whose_facts_share_an_8_word_sequence_with_another_part_are_left_out(tmp_path):
     """Leakage check (plan §15.1): a candidate whose facts text repeats nine words of its reasoning is not a T1 case."""
-    leaky = {5, 6, 7, 100, 101}
+    leaky = {5, 100, 101, 105, 106}  # RECONCILED: only one BNS-era order leaks; leaking three of the 62 would leave 59 and the plan needs >= 60 (ValueError)
     parts_path, gold = write_t1_inputs(tmp_path, leaky=leaky)
     out = tmp_path / "t1"
     build_t1(str(parts_path), str(gold), str(out))
