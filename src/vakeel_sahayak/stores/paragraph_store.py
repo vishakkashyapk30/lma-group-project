@@ -123,6 +123,20 @@ class ParagraphStore(SharedStore):
         k: int,
     ) -> list[ParagraphRecord]:
         """Filtered hybrid search with the leakage guard (before is mandatory)."""
+        return [r for r, _ in self._search_scored(query, factor, section_family, before, outcome, court, part, k)]
+
+    def _search_scored(
+        self,
+        query: str,
+        factor: Factor | str | None,
+        section_family: list[str] | None,
+        before: str,
+        outcome: str | None,
+        court: str | None,
+        part: OrderPart | None,
+        k: int,
+    ) -> list[tuple[ParagraphRecord, float]]:
+        """`_search` with each paragraph's final hybrid score in [0, 1] (S4 reads the shape of these scores)."""
         guard = apply_before_filter({}, before)
         facets: dict[str, list[str]] = {}
         if factor:
@@ -137,8 +151,24 @@ class ParagraphStore(SharedStore):
             k=k,
             authority_weight=self._weight_of_prior,
         )
-        records = [ParagraphRecord.model_validate(h.payload) for h in hits]
-        assert_all_before([r.date for r in records], guard["before"])
+        records = [(ParagraphRecord.model_validate(h.payload), h.score) for h in hits]
+        assert_all_before([r.date for r, _ in records], guard["before"])
+        return records
+
+    def _search_docs(self, query: str, doc_ids: list[str], before: str, part: OrderPart | None, k: int) -> list[tuple[ParagraphRecord, float]]:
+        """Hybrid text search restricted to the paragraphs of the given judgments (no factor or section filter), with the leakage guard.
+
+        Used by the S5 graph expansion to rank the paragraphs of judgments the citation graph reached. Returns (record, score in [0, 1]).
+        """
+        guard = apply_before_filter({}, before)
+        if not doc_ids:
+            return []
+        hits = self._need_index().search(
+            query, filters={"part": part.value if part else None}, before=guard["before"], k=k,
+            authority_weight=self._weight_of_prior, key_prefixes=[f"{d}#" for d in dict.fromkeys(doc_ids)], candidates=max(100, k),
+        )  # fmt: skip
+        records = [(ParagraphRecord.model_validate(h.payload), h.score) for h in hits]
+        assert_all_before([r.date for r, _ in records], guard["before"])
         return records
 
     def _fetch(self, doc_id: str, para: int) -> ParagraphRecord:

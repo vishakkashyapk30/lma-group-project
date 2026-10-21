@@ -65,6 +65,41 @@ class ReasoningStore(ParagraphStore):
             return []
         return self._search(query, factor, section_family, before or "", outcome, court, OrderPart.REASONING, k)
 
+    def search_scored(
+        self,
+        query: str,
+        factor: Factor | None = None,
+        section_family: list[str] | None = None,
+        before: str | None = None,
+        outcome: str | None = None,
+        court: str | None = None,
+        k: int = 10,
+    ) -> list[tuple[ParagraphRecord, float]]:
+        """`search` (reasoning part) returning each paragraph with its final hybrid score in [0, 1], best first (S4 score-skew signal).
+
+        Raises:
+            LeakageError: when `before` is missing.
+            ValueError: for a malformed date or section reference.
+        """
+        return self._search_scored(query, factor, section_family, before or "", outcome, court, OrderPart.REASONING, k)
+
+    def search_docs(self, query: str, doc_ids: list[str], before: str | None = None, k: int = 200) -> list[tuple[ParagraphRecord, float]]:
+        """Rank the reasoning paragraphs of the given judgments against the query (S5 graph expansion; no factor or section filter).
+
+        Args:
+            query: free text
+            doc_ids: judgments whose paragraphs are ranked
+            before: ISO date of the case's order; mandatory (leakage rule, plan §2)
+            k: paragraphs to return
+
+        Returns:
+            (paragraph, hybrid score in [0, 1]) pairs, best first.
+
+        Raises:
+            LeakageError: when `before` is missing.
+        """
+        return self._search_docs(query, list(doc_ids), before or "", OrderPart.REASONING, k)
+
     def get_paragraph(self, doc_id: str, para: int) -> ParagraphRecord:
         """Fetch by id.
 

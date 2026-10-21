@@ -47,7 +47,8 @@ SIGNATURES: dict[str, list[str]] = {
     "get_statute": ["code", "section"],
     "search_statutes": ["query", "code", "k"],
     "transfer_check": ["old_ref", "new_ref"],
-    "search_reasoning": ["query", "factor", "section_family", "before", "outcome", "court", "k"],
+    # RECONCILED: sweep 1 S5 appended the optional `expand_graph` (S5) and `with_scores` (S4) arguments (both default False, so every earlier call is unchanged)
+    "search_reasoning": ["query", "factor", "section_family", "before", "outcome", "court", "k", "expand_graph", "with_scores"],
     "get_paragraph": ["doc_id", "para"],
     "citations": ["doc_ids", "want"],
     "good_law_check": ["doc_id", "as_of"],

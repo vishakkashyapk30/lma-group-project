@@ -215,6 +215,7 @@ class HybridIndex:
         k: int = 10,
         candidates: int = 100,
         authority_weight: float = 0.0,
+        key_prefixes: list[str] | None = None,
     ) -> list[Hit]:
         """Hybrid search with metadata pre-filters.
 
@@ -226,11 +227,17 @@ class HybridIndex:
             k: number of hits
             candidates: depth of each ranking before fusion
             authority_weight: share of the final score taken from the stored authority prior, in [0, 1)
+            key_prefixes: only rows whose key starts with one of these (S5 graph expansion: `'DLHC-2022-1187#'` selects one
+                judgment's paragraphs); None or empty leaves the rows unrestricted
 
         Returns:
             Hits, best first, ties broken by key.
         """
         where, params = self._where(filters or {}, facets or {}, before)
+        if key_prefixes:
+            marks = " OR ".join("substr(i.key, 1, ?) = ?" for _ in key_prefixes)
+            where = f"({marks})" + (f" AND {where}" if where else "")
+            params = [v for p in key_prefixes for v in (len(p), p)] + list(params)
         candidates = max(candidates, k)  # a deep request (k=1000) must not be capped by the fusion depth
         bm25 = self._bm25(query, where, params, candidates)
         dense = self._dense(query, where, params, candidates)

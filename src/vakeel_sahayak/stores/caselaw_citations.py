@@ -6,6 +6,7 @@ import sqlite3
 from pathlib import Path
 
 from vakeel_sahayak.pipelines.citation_graph.authority import configured_weights
+from vakeel_sahayak.pipelines.citation_graph.expansion import Expansion, expand_documents
 from vakeel_sahayak.pipelines.citation_graph.graph import CitationGraph
 from vakeel_sahayak.schemas.enums import Shelf, StoreName
 from vakeel_sahayak.schemas.store_rows import CitationEdge
@@ -104,6 +105,25 @@ class CitationStore(SharedStore):
             Edges.
         """
         return self._need().cites(doc_id)
+
+    def expand(self, seeds: dict[str, float], before: str, top_n: int = 5) -> Expansion:
+        """S5: the judgments a personalised PageRank from the seeds reaches (seeds excluded), best first.
+
+        Args:
+            seeds: judgment -> weight (the plain search's judgments)
+            before: ISO date of the case's order; judgments not dated strictly before it are never visited (leakage rule, plan §2)
+            top_n: judgments to return
+
+        Returns:
+            `Expansion`: the added judgments and the walk score of every visited judgment (see `pipelines/citation_graph/expansion.py`).
+        """
+        from vakeel_sahayak.stores.leakage_guard import apply_before_filter
+
+        return expand_documents(self._need(), dict(seeds), apply_before_filter({}, before)["before"], top_n)
+
+    def graph(self) -> CitationGraph:
+        """The loaded graph (for the S5 walk scores and metrics)."""
+        return self._need()
 
     def authority_score(self, doc_id: str, as_of: str | None = None) -> float:
         """Authority score: court level, bench size, citations, recency.
