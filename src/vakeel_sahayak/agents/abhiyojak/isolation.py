@@ -12,6 +12,15 @@ The isolation is structural, in three layers:
 2. `build_context` takes no other input, and rejects any extra keyword or mapping key that is not on the allow-list;
 3. `assert_allowed` is the runtime guard: it walks a payload (a context, a prompt's case data, a mapping handed in) and
    raises `ContextIsolationError` on any key that names Vakeel's or Sutradhar's private material.
+
+One deliberate exception exists, for evaluation only: variant S10 / A8c (`Switches.abhiyojak_isolation=False`) removes the isolation
+to measure what it buys. `build_open_context` is that arm. It refuses to run unless the switch is off, so the default guard stays in
+force everywhere else, and the agent labels every event of the arm (`isolation_off`). It adds one key, `vakeel_view`, to the allow-listed
+context: Vakeel's decision notes, the brief's open issues, Sutradhar's per-factor reasons and the replies so far. No other key, no
+raw working state. Paper: Wynn, Satija and Hadfield, "Talk Isn't Always Cheap: Understanding Failure Modes in Multi-Agent Debate",
+arXiv 2025 (ICML 2025 MAS workshop), https://arxiv.org/abs/2509.05396 (agents flip from right to wrong after reading a peer's
+reasoning); we took the idea of widening what the critic reads, not the debate protocol; their flip is measured on answers, ours on
+objections (see `abhiyojak.agent.AbhiyojakAgent.critic_signals`).
 """
 
 from __future__ import annotations
@@ -109,6 +118,67 @@ def _sections_view(dossier: Any) -> list[dict[str, Any]]:
         for sv in (tracked.value or [])
         if sv.code and sv.section
     ]
+
+
+NOTE_TOOLS: frozenset[str] = frozenset({
+    "draft", "check", "repair", "flag", "qualify", "warn", "label", "reply", "reretrieve", "authority_excluded", "authority_flags",
+    "unchecked", "self_critique",
+})  # fmt: skip  # Vakeel's decision events that read as notes (S10 only)
+MAX_NOTES = 40
+NOTE_CHARS = 300
+
+
+def _note(claim: Any, tool: Any, text: Any) -> dict[str, Any]:
+    return {"claim": None if claim is None else str(claim), "tool": None if tool is None else str(tool), "text": str(text or "")[:NOTE_CHARS]}
+
+
+def vakeel_view(state: CaseGraphState, log: Any = None, case_id: str | None = None) -> dict[str, Any]:
+    """What Abhiyojak sees of Vakeel's side when the isolation is off (S10 only): decision notes, open issues, factor reasons, replies.
+
+    Notes come from the state's `vakeel_notes` / `vakeel_plan` attributes when a caller attached them, and from Vakeel's own decision events
+    in the case log (`NOTE_TOOLS`, text only). Nothing is read from Vakeel's objects: only what Vakeel already wrote down.
+    """
+    from vakeel_sahayak.schemas.enums import EventKind
+
+    notes: list[dict[str, Any]] = []
+    for attr in ("vakeel_notes", "vakeel_plan"):
+        value = getattr(state, attr, None)
+        if value:
+            for item in value if isinstance(value, (list, tuple)) else [value]:
+                notes.append(_note(None, attr, item))
+    if log is not None and case_id:
+        try:
+            events = log.read(case_id)
+        except Exception:  # noqa: BLE001 - a log that cannot be read gives the arm no notes, never a crash
+            events = []
+        for e in events:
+            out = e.outputs or {}
+            kind = str(out.get("type") or e.tool or "")
+            if getattr(e.actor, "value", e.actor) == "VAKEEL" and e.kind == EventKind.AGENT_MESSAGE and kind in NOTE_TOOLS and out.get("text"):
+                notes.append(_note(out.get("claim") or out.get("ground"), kind, out["text"]))
+    brief = state.brief
+    return {
+        "notes": notes[-MAX_NOTES:],
+        "open_issues": [f"{i.type.value}: {i.item}"[:NOTE_CHARS] for i in (brief.open_issues if brief is not None else [])],
+        "plan": [{"factor": p.factor.value, "stance": p.stance.value, "reason": str(p.reason or "")[:NOTE_CHARS]} for p in state.evidence_packs],
+        "replies": [
+            {"objection": o.id, "against": o.against, "text": o.reply.text[:NOTE_CHARS]}
+            for o in (state.sparring.objections if state.sparring is not None else []) if o.reply is not None
+        ],
+    }  # fmt: skip
+
+
+def build_open_context(state: CaseGraphState, switches: Any, *, log: Any = None, case_id: str | None = None) -> dict[str, Any]:
+    """The isolated context plus `vakeel_view`: the no-isolation arm S10 / A8c, reachable only with `abhiyojak_isolation=False`.
+
+    Raises:
+        ContextIsolationError: the switch is on its default (isolation on), so this arm may not be used.
+    """
+    if getattr(switches, "abhiyojak_isolation", True):
+        raise ContextIsolationError("build_open_context is the no-isolation arm (S10 / A8c): it needs Switches.abhiyojak_isolation=False")
+    context = build_context(state)
+    context["vakeel_view"] = vakeel_view(state, log, case_id or getattr(state, "case_id", None))
+    return context
 
 
 def build_context(state: CaseGraphState | Mapping[str, Any], **extra: Any) -> dict[str, Any]:

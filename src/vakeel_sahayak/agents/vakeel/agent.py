@@ -15,6 +15,26 @@ Vakeel is the advocate. From Sutradhar's evidence packs, the approved dossier an
 5. **assembles** the `BailBrief` (statutory position, grounds with their `depends_on`, open issues, the fixed label)
    and the hearing-prep card data (`build_hearing_card`).
 
+Variant S8 / A2b (`Switches.repair_mode='self_critique'`, default 'grounded'): steps 3 and 4 use the drafting model's own re-reading instead of
+the NLI and tool checks, see `_self_review`. Papers: Gou et al., "CRITIC: Large Language Models Can Self-Correct with Tool-Interactive
+Critiquing", ICLR 2024, https://mlanthology.org/iclr/2024/gou2024iclr-critic/ (the critique step is where outside tools help);
+Huang et al., "Large Language Models Cannot Self-Correct Reasoning Yet", ICLR 2024, https://iclr.cc/virtual/2024/poster/18956 (without
+outside feedback self-correction does not help and can hurt); Zhang et al., "Small Language Models Need Strong Verifiers to Self-Correct
+Reasoning", Findings of ACL 2024, https://aclanthology.org/2024.findings-acl.924 (small models need a strong verifier). This is the
+no-verifier control arm of those papers' contrast, not a reproduction of any of them: their tasks are QA, maths and code, ours is
+claim repair against a source.
+
+Variant S15 / A13 (`Switches.output_format='reasoning_first'`, default 'answer_only'): the drafting, reply and reword schemas get a free-text
+`reasoning` field BEFORE the answer fields (`prompts.DraftedGroundReasoned`, `ReasonedReply`). Papers: Tam et al., "Let Me Speak Freely? A Study On
+The Impact Of Format Restrictions On Large Language Model Performance", EMNLP 2024 Industry, https://aclanthology.org/2024.emnlp-industry.91
+(strict format restrictions hurt reasoning, more so the stricter they are); Banerjee et al., "CRANE: Reasoning with Constrained LLM Generation",
+ICML 2025, https://proceedings.mlr.press/v267/banerjee25a.html (answer-only grammars cut reasoning; let the model reason freely, then constrain the
+answer). What we took: reasoning-before-answer inside one constrained schema, so decoding stays valid. What we changed: both papers test
+reasoning benchmarks; ours is claim drafting with ID markers, so the reasoning is stored in a log event (`reasoning_first`) and the agent's
+`reasoning_of`, and is never parsed for markers, cited, checked or shown: only the `argument` / `text` field is read as the claim. The token limit
+of a call grows by `REASONING_ROOM`. CRANE's switching between free and constrained decoding is not implemented (the field order does the job
+on a schema-constrained backend). Not implemented: `free_then_parse` (S15b).
+
 `redraft(claims, ...)` rewrites only the stale grounds and leaves the others word for word (plan §10). Switches: A1 (no
 dossier: the facts text), A2 and A9 (no check-and-repair), A3 (no rule tools: the model judges the transfer and the rights
 itself), A8 and A9 (no sparring: no replies). Vakeel is callable on its own:
@@ -56,14 +76,21 @@ from vakeel_sahayak.agents.vakeel.facts import (
 )
 from vakeel_sahayak.agents.vakeel.hearing import build_card
 from vakeel_sahayak.agents.vakeel.prompts import (
+    REASONING_NOTE,
     SYSTEM_PROMPT,
+    TASK_DEBATE,
     TASK_DRAFT,
     TASK_REPLY,
     TASK_REWORD,
     TASK_RIGHTS,
+    TASK_SELF_CRITIQUE,
+    TASK_SELF_REVISE,
     TASK_TRANSFER,
     DraftedGround,
+    DraftedGroundReasoned,
+    ReasonedReply,
     RightsSummary,
+    SelfReview,
     TransferJudgement,
     instructions,
 )
@@ -98,6 +125,12 @@ MAX_REPAIR_ROUNDS = 2  # plan §8.1 step 4 (configs/budgets.yaml repair_rounds)
 # A case name or a reporter citation written into the text: the model writes IDs only, citations are rendered from the corpus.
 CASE_NAME = re.compile(r"\b[A-Z][\w.'&-]*(?:\s+(?:[A-Z][\w.'&-]*|of|and|the|&))*\s+vs?\.?\s+[A-Z][\w.'&-]*")
 REPORTER = re.compile(r"\(\d{4}\)\s*\d+\s*(?:SCC|SCR|AIR|Cri)|\bAIR\s+\d{4}|\bSCC\s+OnLine|\b\d{4}\s+SCC\b|\bCri\.?\s?L\.?J\b")
+DRAFT_SAMPLES = 3  # S11c: independent drafts of one ground that are voted on
+DRAFT_TEMPERATURE = 0.7  # S11b / S11c: independent drafts need a non-zero temperature on a hosted model
+CONVERGED = 0.8  # S11b: similarity of the two final drafts from which the debate counts as converged
+_SIM_WORD = re.compile(r"[a-z]{4,}")
+REASONING_ROOM = 1.8  # S15: factor on the token limit of a drafting call, to leave room for the reasoning field
+REASONING_LOG_CHARS = 1500  # S15: characters of reasoning kept in the log event
 MAX_AUTHORITIES = 4  # paragraphs offered to the drafter per factor
 PARAGRAPH_LIMIT = 2000  # characters of a paragraph shown to the model
 UNCHECKED = ClaimCheck.NEEDS_REVIEW  # A2/A9 run no check, so no claim may claim to be SUPPORTED
@@ -105,6 +138,10 @@ NO_REPLY = "No supported reply could be drafted from the retrieved material: cou
 NO_GROUND = "No supported argument could be drafted from the evidence for this factor: counsel to draft it."
 _TRANSFER_RANK = {TransferFlag.SAME_TEXT: 0, TransferFlag.CHANGED: 1, TransferFlag.NEW: 2}
 _ID = re.compile(r"^G(\d+)$")
+SELF_CRITIQUE_NOTICE = (
+    "Claims in this brief were checked by the model's own re-reading only (variant S8 / A2b): no source check, no authority "
+    "retrieval and no entailment test was run on them. Counsel to verify each claim against the papers."
+)
 
 
 class VakeelAgent(BaseAgent):
@@ -156,6 +193,9 @@ class VakeelAgent(BaseAgent):
         self.retriever = retriever
         self._max_rounds = max_rounds
         self._peers: dict[AgentName, BaseAgent] = {}
+        self._draft_stats: dict[str, Any] = {}  # S11b / S11c counters (empty in a default run)
+        self._reasoning: list[dict[str, Any]] = []  # S15: the free reasoning of each drafting call (stored, never cited)
+        self._repair_stats: dict[str, int] = {}  # S8 counters over the agent's life, i.e. the case (empty in a default run)
         self._reset()
 
     @property
@@ -388,6 +428,154 @@ class VakeelAgent(BaseAgent):
         listed = [(str(a.doc_id), int(a.para)) for a in getattr(out, "authorities", None) or []]
         return text, listed
 
+    @property
+    def _reasoning_first(self) -> bool:
+        """S15 (A13): the drafting schemas carry a free reasoning field before the answer fields."""
+        return self.switches.output_format == "reasoning_first"
+
+    def _schema_and_limit(self, plain: Any, reasoned: Any, limit: int) -> tuple[Any, int]:
+        """The reply schema of a drafting call and its token limit: the default's, or S15's reasoning-first schema with room for the reasoning."""
+        return (reasoned, int(limit * REASONING_ROOM)) if self._reasoning_first else (plain, limit)
+
+    def _ins(self, task: str, **kwargs: str) -> str:
+        """The task's instructions; S15 adds the note on the reasoning field."""
+        return instructions(task, **kwargs) + (REASONING_NOTE if self._reasoning_first else "")
+
+    def _keep_reasoning(self, key: str, task: str, out: Any) -> None:
+        """S15: store what the model reasoned (a log event and the agent's list). It is never read as an answer, never cited, never checked."""
+        if not self._reasoning_first or out is None:
+            return
+        text = str(getattr(out, "reasoning", "") or "").strip()
+        self._reasoning.append({"claim": key, "task": task, "chars": len(text), "words": len(text.split()), "text": text})
+        self._decision(
+            "reasoning_first", f"{key}: {len(text.split())} word(s) of reasoning before the answer (stored, never cited).", claim=key, task=task,
+            chars=len(text), reasoning=text[:REASONING_LOG_CHARS], variant="S15", output_format="reasoning_first",
+        )  # fmt: skip
+
+    def reasoning_of(self, key: str) -> list[str]:
+        """S15: the reasoning texts stored for a claim key ('G1', 'reply:O1'), in call order (empty in a default run)."""
+        return [e["text"] for e in self._reasoning if e["claim"] == key]
+
+    def output_signals(self) -> dict[str, Any]:
+        """S15 signals for the evaluation (empty in a default run): calls, calls with an empty reasoning, characters and words of reasoning."""
+        if not self._reasoning_first:
+            return {}
+        r = self._reasoning
+        return {
+            "variant": "S15", "output_format": "reasoning_first", "calls": len(r), "empty_reasoning": sum(1 for x in r if not x["chars"]),
+            "reasoning_chars": sum(x["chars"] for x in r), "reasoning_words": sum(x["words"] for x in r),
+        }  # fmt: skip
+
+    def _emit_output_signals(self) -> dict[str, Any]:
+        signals = self.output_signals()
+        if signals:
+            self._decision("output_signals", f"Reasoning-first output (S15): {signals['calls']} call(s), {signals['reasoning_words']} word(s) of reasoning.", **signals)
+        return signals
+
+    # ------------------------------------------------------------------ S11b / S11c: more than one draft of a ground
+
+    @staticmethod
+    def _signature(text: str) -> set[str]:
+        """What a draft says, for comparing drafts: its markers and its words of four letters or more."""
+        return set(MARKER.sub(lambda m: " ref_" + re.sub(r"\W", "", m.group(0)) + " ", text or "").lower().split()) | set(_SIM_WORD.findall(MARKER.sub("", text or "").lower()))
+
+    @classmethod
+    def _similarity(cls, a: str, b: str) -> float:
+        """Jaccard similarity of two drafts' signatures (1.0 for two empty drafts)."""
+        sa, sb = cls._signature(a), cls._signature(b)
+        return len(sa & sb) / len(sa | sb) if (sa | sb) else 1.0
+
+    def _medoid(self, texts: list[str], among: list[int] | None = None) -> tuple[int, float]:
+        """The index (within `among`, default all) of the draft most like all the others, and its mean similarity to them (ties: the earliest)."""
+        pool = list(range(len(texts))) if among is None else among
+        best, best_score = pool[0], -1.0
+        for i in pool:
+            others = [self._similarity(texts[i], texts[j]) for j in range(len(texts)) if j != i]
+            score = sum(others) / len(others) if others else 1.0
+            if score > best_score + 1e-12:
+                best, best_score = i, score
+        return best, best_score
+
+    def _draft_many(self, key: str, pack: EvidencePack, case: dict[str, Any], corpus: dict[str, Any], schema: Any, limit: int) -> Any:
+        """S11c (`draft_mode='vote'`): three independent drafts, the one most like the others is kept. S11b (`'debate'`): two instances draft, each
+        revises after reading the other's draft (two rounds), the final draft closer to all four texts is kept.
+
+        Papers: Choi, Zhu and Li, "Debate or Vote", NeurIPS 2025, https://neurips.cc/virtual/2025/poster/116557 (voting explains most of debate's gain);
+        Du et al., "Improving Factuality and Reasoning in Language Models through Multiagent Debate", ICML 2024, https://proceedings.mlr.press/v235/du24e.html
+        (the debate protocol); Smit et al., "Should we be going MAD?", ICML 2024, https://proceedings.mlr.press/v235/smit24a.html. We took the protocols
+        (three samples and a vote; two debaters, two rounds); we changed the aggregation: a free-text ground has no answer to count, so the vote is the
+        medoid (the draft with the highest mean word-and-marker overlap with the others) and the two-debater result is the medoid of the final two against
+        all four texts. Replies and rewording stay single-draft; the kept draft goes through the usual check and repair. Equal tokens are not enforced:
+        the arms spend 3x and about 4x a single draft, and the spend is reported (`draft_signals`).
+        """
+        factor = pack.factor
+        mode = self.switches.draft_mode
+        label = "S11c" if mode == "vote" else "S11b"
+        instr = self._ins(TASK_DRAFT, factor=factor.value, stance=pack.stance.value)
+        start = sum(self._draft_tokens().values())
+
+        def draw(tag: str, **extra: Any) -> Any:
+            return self._safe_ask(TASK_DRAFT, instr, factor=factor, case={**case, **extra}, corpus=corpus, schema=schema, max_tokens=limit, temperature=DRAFT_TEMPERATURE)
+
+        text = lambda o: str(getattr(o, "argument", "") or "")  # noqa: E731
+        if mode == "vote":
+            outs = [draw(f"s{i}", sample=i) for i in range(DRAFT_SAMPLES)]
+            have = [o for o in outs if o is not None]
+            if not have:
+                self._decision("draft_vote", f"{key}: no draft could be obtained for the vote.", claim=key, variant=label, draft_mode=mode, drafts=0)
+                return None
+            texts = [text(o) for o in have]
+            pick, agree = self._medoid(texts)
+            chosen = have[pick]
+            detail = {"drafts": len(have), "agreement": round(agree, 4), "chosen": pick}
+        else:
+            first = [draw(name, instance=name) for name in ("A", "B")]
+            if any(o is None for o in first):
+                have = [o for o in first if o is not None]
+                chosen = have[0] if have else None
+                self._decision("draft_debate", f"{key}: a debater could not draft; the other's draft stands.", claim=key, variant=label, draft_mode=mode, rounds=1)
+                return chosen
+            final = []
+            for me, (own, other) in enumerate(((first[0], first[1]), (first[1], first[0]))):
+                rev = self._safe_ask(
+                    TASK_DEBATE, self._ins(TASK_DEBATE), factor=factor,
+                    case={**case, "instance": "AB"[me], "own": text(own), "other": self.untrusted(text(other), SourceRef(doc=f"other draft {key}"))},
+                    corpus=corpus, schema=schema, max_tokens=limit,
+                )  # fmt: skip
+                final.append(rev if rev is not None else own)
+            texts = [text(o) for o in first] + [text(o) for o in final]
+            pick, agree = self._medoid(texts, among=[2, 3])
+            chosen = final[pick - 2]
+            detail = {"rounds": 2, "agreement": round(agree, 4), "converged": self._similarity(texts[2], texts[3]) >= CONVERGED, "chosen": "AB"[pick - 2], "drafts": 4}
+        spent = sum(self._draft_tokens().values()) - start
+        st = self._draft_stats
+        st["grounds"] = st.get("grounds", 0) + 1
+        st["tokens_extra"] = st.get("tokens_extra", 0) + spent
+        st["agreement_sum"] = st.get("agreement_sum", 0.0) + agree
+        st["converged"] = st.get("converged", 0) + (1 if detail.get("converged") else 0)
+        self._decision(
+            "draft_vote" if mode == "vote" else "draft_debate", f"{key}: {mode} over {detail['drafts']} draft(s), agreement {agree:.2f}.",
+            claim=key, variant=label, draft_mode=mode, tokens=spent, **detail,
+        )  # fmt: skip
+        return chosen
+
+    def _draft_tokens(self) -> dict[str, int]:
+        """Tokens spent so far on this case's budget by drafting-type calls of this agent (read from the shared budget's case total)."""
+        snap = getattr(self.budgets, "snapshot", None)
+        return {"case": int(getattr(snap(), "tokens_spent", 0))} if snap is not None else {"case": 0}
+
+    def draft_signals(self) -> dict[str, Any]:
+        """S11b / S11c signals (empty in a default run): grounds drafted by vote or debate, tokens they used, mean agreement, converged debates."""
+        if self.switches.draft_mode == "single":
+            return {}
+        st = self._draft_stats
+        n = st.get("grounds", 0)
+        return {
+            "variant": "S11c" if self.switches.draft_mode == "vote" else "S11b", "draft_mode": self.switches.draft_mode, "grounds": n,
+            "tokens": st.get("tokens_extra", 0), "mean_agreement": round(st.get("agreement_sum", 0.0) / n, 4) if n else None,
+            "converged": st.get("converged", 0) if self.switches.draft_mode == "debate" else None,
+        }  # fmt: skip
+
     def _draft_work(self, key: str, pack: EvidencePack) -> Work:
         """Ask the model for one factor's ground and prepare it (no check yet)."""
         ev = self._evidence_for(pack)
@@ -398,10 +586,16 @@ class VakeelAgent(BaseAgent):
             "id": key, "factor": factor.value, "label": factor.value.replace("_", " "), "stance": pack.stance.value, "reason": pack.reason,
             "facts": [f.payload() for f in ev.facts.values()], "rights": ev.rights, "open_issues": ev.open_issues,
         }  # fmt: skip
-        out = self._safe_ask(
-            TASK_DRAFT, instructions(TASK_DRAFT, factor=factor.value, stance=pack.stance.value), factor=factor, case=case,
-            corpus={"authorities": [self._auth_payload(a) for a in ev.auths]}, schema=DraftedGround, max_tokens=900,
-        )  # fmt: skip
+        schema, limit = self._schema_and_limit(DraftedGround, DraftedGroundReasoned, 900)
+        corpus = {"authorities": [self._auth_payload(a) for a in ev.auths]}
+        if self.switches.draft_mode == "single":
+            out = self._safe_ask(
+                TASK_DRAFT, self._ins(TASK_DRAFT, factor=factor.value, stance=pack.stance.value), factor=factor, case=case,
+                corpus=corpus, schema=schema, max_tokens=limit,
+            )  # fmt: skip
+        else:
+            out = self._draft_many(key, pack, case, corpus, schema, limit)
+        self._keep_reasoning(key, TASK_DRAFT, out)
         text, listed = self._read_claim(out, "argument")
         work = Work(key=key, ev=ev, sentences=self._prepare(split_claim(text, listed)))
         work.empty = not work.sentences
@@ -529,15 +723,9 @@ class VakeelAgent(BaseAgent):
             sc.detail.append(f"support {score:.2f}")
         sc.result = ClaimCheckResult(supported=not sc.problems, fact_support=score if s.facts else None, authority_support=score if s.auths else None)
 
-    def _check_sentence(self, s: Sentence) -> SentenceCheck:
-        """One sentence against its sources: fact and authority support, flags, retrieval, no invented case name, no prediction."""
-        if s.is_note:
-            return SentenceCheck(s.text)
-        cache_key = s.text + "|" + ",".join(s.check_refs())
-        if cache_key in self._check_cache:
-            return self._check_cache[cache_key]
-        sc = SentenceCheck(s.text)
-        self._check_cache[cache_key] = sc
+    @staticmethod
+    def _guard_problems(s: Sentence, sc: SentenceCheck) -> None:
+        """The rule-only guards of a sentence (malformed marker, a written case name or citation, outcome prediction): no source is read."""
         if s.bad_refs:
             sc.problems.append("bad_ref")
             sc.detail.append("malformed " + ", ".join(s.bad_refs))
@@ -547,6 +735,17 @@ class VakeelAgent(BaseAgent):
         if hits := prediction_language(s.plain):
             sc.problems.append("prediction")
             sc.detail.append("predicts: " + "; ".join(hits[:2]))
+
+    def _check_sentence(self, s: Sentence) -> SentenceCheck:
+        """One sentence against its sources: fact and authority support, flags, retrieval, no invented case name, no prediction."""
+        if s.is_note:
+            return SentenceCheck(s.text)
+        cache_key = s.text + "|" + ",".join(s.check_refs())
+        if cache_key in self._check_cache:
+            return self._check_cache[cache_key]
+        sc = SentenceCheck(s.text)
+        self._check_cache[cache_key] = sc
+        self._guard_problems(s, sc)
         if not s.cited:
             sc.problems.append("uncited")
             return self._settle(sc)
@@ -600,8 +799,13 @@ class VakeelAgent(BaseAgent):
         sc.problems = list(dict.fromkeys(sc.problems))
         return sc
 
+    @property
+    def _self_critique(self) -> bool:
+        """S8 (A2b): claims are re-read by the drafting model itself instead of checked against their sources."""
+        return self.switches.repair_mode == "self_critique"
+
     def _run_check(self, work: Work) -> None:
-        work.checks = [self._check_sentence(s) for s in work.sentences]
+        work.checks = self._self_review(work) if self._self_critique else [self._check_sentence(s) for s in work.sentences]
         if work.initial_ok is None:
             work.initial_ok = not work.empty and not work.failing()
         bad = work.failing()
@@ -748,7 +952,7 @@ class VakeelAgent(BaseAgent):
                 break
             w.rounds = rnd
             problems = {p for i in failing for p in w.checks[i].problems}
-            if problems & AUTHORITY_PROBLEMS and not w.retrieved and factor is not None:
+            if problems & AUTHORITY_PROBLEMS and not w.retrieved and factor is not None and not self._self_critique:
                 w.retrieved = True
                 bad = sorted({d for i in failing for d, _ in w.sentences[i].auths})
                 pack = self._reretrieve(w.key, factor, w.checks[failing[0]].describe(), bad)
@@ -768,32 +972,131 @@ class VakeelAgent(BaseAgent):
                     new.append(s)
             w.sentences = new
             self._run_check(w)
+            label = {"variant": "S8", "repair_mode": "self_critique", "outside_evidence": False} if self._self_critique else {}
             self._decision(
                 "repair", f"{w.key}: round {rnd}: {'reworded' if changed else 'nothing to change'}; {len(w.failing())} sentence(s) still fail.",
-                claim=w.key, round=rnd, changed=changed, still_failing=len(w.failing()), problems=sorted(problems),
+                claim=w.key, round=rnd, changed=changed, still_failing=len(w.failing()), problems=sorted(problems), **label,
             )  # fmt: skip
         w.repaired = not w.failing() and w.initial_ok is False
+        if self._self_critique and w.repaired:
+            self._repair_stats["claims_repaired"] = self._repair_stats.get("claims_repaired", 0) + 1
 
     def _reword(self, w: Work, s: Sentence, check: SentenceCheck) -> tuple[str, list[tuple[str, int]]]:
         """Ask for the failed sentence again, reworded to what its sources say (only facts and paragraphs of the evidence)."""
-        facts = dict(w.ev.facts)
-        for f in s.facts:
-            if f in self._facts:
-                facts.setdefault(f, self._facts[f])
-        auths = {(str(a["doc_id"]), int(a["para"])): a for a in w.ev.auths}
-        for key in s.auths:
-            item = self._auth_items.get(key)
-            if item is not None and key in self._ret_pairs and not self._is_overruled(key[0], item) and self._authority(*key).citation is not None:
-                auths.setdefault(key, {"doc_id": key[0], "para": key[1], "text": str(item.get("text") or "")[:PARAGRAPH_LIMIT]})
+        facts, auths = self._offered_sources(w, [s])
         case = {
             "id": w.key, "factor": w.ev.factor or "general", "stance": w.ev.stance, "sentence": s.plain, "refs": s.refs() or [f"[{r[0]}:{r[2:]}]" for r in s.check_refs()],
             "problems": check.problems, "detail": check.detail, "facts": [f.payload() for f in facts.values()], "round": w.rounds,
         }  # fmt: skip
+        task = TASK_SELF_REVISE if self._self_critique else TASK_REWORD
+        if self._self_critique:
+            self._repair_stats["revise_calls"] = self._repair_stats.get("revise_calls", 0) + 1
+            case["reasons"] = list(check.detail)
+        schema, limit = self._schema_and_limit(DraftedGround, DraftedGroundReasoned, 500)
         out = self._safe_ask(
-            TASK_REWORD, instructions(TASK_REWORD), factor=w.ev.factor, case=case,
-            corpus={"authorities": [self._auth_payload(a) for a in auths.values()]}, schema=DraftedGround, max_tokens=500,
+            task, self._ins(task), factor=w.ev.factor, case=case,
+            corpus={"authorities": [self._auth_payload(a) for a in auths.values()]}, schema=schema, max_tokens=limit,
         )  # fmt: skip
+        self._keep_reasoning(w.key, task, out)
         return self._read_claim(out, "argument")
+
+    def _offered_sources(self, w: Work, sentences: list[Sentence]) -> tuple[dict[str, Fact], dict[tuple[str, int], dict[str, Any]]]:
+        """The facts and paragraphs a model may use on a claim: the evidence offered for drafting, plus what these sentences cite (and may be cited)."""
+        facts = dict(w.ev.facts)
+        auths = {(str(a["doc_id"]), int(a["para"])): a for a in w.ev.auths}
+        for s in sentences:
+            for f in s.facts:
+                if f in self._facts:
+                    facts.setdefault(f, self._facts[f])
+            for key in s.auths:
+                item = self._auth_items.get(key)
+                if item is not None and key in self._ret_pairs and not self._is_overruled(key[0], item) and self._authority(*key).citation is not None:
+                    auths.setdefault(key, {"doc_id": key[0], "para": key[1], "text": str(item.get("text") or "")[:PARAGRAPH_LIMIT]})
+        return facts, auths
+
+    # ------------------------------------------------------------------ S8: self-critique instead of a grounded check
+
+    def _self_review(self, w: Work) -> list[SentenceCheck]:
+        """S8 (A2b): the drafting model re-reads its own claim and says which sentences it would change. No NLI, no tool, no retrieval.
+
+        Taken from the papers named in the module docstring (CRITIC, Gou et al., ICLR 2024; Huang et al., ICLR 2024; Zhang et al., Findings of
+        ACL 2024): the critique step is done by the same model that wrote the draft, with no tool and no verifier. Changed: the tasks are claim
+        repair, not QA or code; the model is given exactly the facts and paragraphs it had when drafting (the fair intrinsic setting: no new
+        information), one call reads a whole claim (the papers critique whole answers) and rewrites go through the existing reword step with
+        the model's own reasons in place of the checker's problem codes. Left unchanged on purpose: the per-counsel label, the CHANGED /
+        DISTINGUISHED / OVERRULED notes and the open-issue list (they disclose, they do not repair), so S8 differs from the grounded
+        default only in who finds the faults. The rule-only guards (`_guard_problems`: malformed marker, written case name, outcome prediction, no marker at all) stay on, because
+        they read no source. A model that cannot answer leaves every sentence 'could not be checked' (NEEDS_REVIEW), never silently accepted.
+        """
+        stats = self._repair_stats
+        checks: list[SentenceCheck] = []
+        body = [(i, s) for i, s in enumerate(w.sentences) if not s.is_note]
+        facts, auths = self._offered_sources(w, [s for _, s in body])
+        case = {
+            "id": w.key, "factor": w.ev.factor or "general", "stance": w.ev.stance, "claim": [{"sentence": n + 1, "text": s.text} for n, (_, s) in enumerate(body)],
+            "facts": [f.payload() for f in facts.values()],
+        }  # fmt: skip
+        out = None
+        if body:
+            stats["critic_calls"] = stats.get("critic_calls", 0) + 1
+            out = self._safe_ask(
+                TASK_SELF_CRITIQUE, instructions(TASK_SELF_CRITIQUE), factor=w.ev.factor, case=case,
+                corpus={"authorities": [self._auth_payload(a) for a in auths.values()]}, schema=SelfReview, max_tokens=400,
+            )  # fmt: skip
+        verdict: dict[int, tuple[bool, str]] = {}
+        for r in getattr(out, "reviews", None) or []:
+            if isinstance(r.sentence, int) and 1 <= r.sentence <= len(body):
+                verdict[r.sentence - 1] = (bool(r.ok), str(r.reason or "").strip())
+        slot = {i: n for n, (i, _) in enumerate(body)}
+        flagged = 0
+        for pos, s in enumerate(w.sentences):
+            sc = SentenceCheck(s.text)
+            if not s.is_note:
+                self._guard_problems(s, sc)
+                if not s.cited:
+                    sc.problems.append("uncited")
+                n = slot[pos]
+                if out is None:
+                    sc.problems.append("check_error")
+                    sc.detail.append("the model's own re-reading could not be obtained")
+                else:
+                    ok, reason = verdict.get(n, (True, ""))
+                    if not ok:
+                        sc.problems.append("self_critique")
+                        sc.detail.append(reason or "the model would change this sentence")
+                sc.problems = list(dict.fromkeys(sc.problems))
+                flagged += 0 if sc.ok else 1
+            checks.append(sc)
+        stats["sentences_reviewed"] = stats.get("sentences_reviewed", 0) + len(body)
+        stats["sentences_flagged"] = stats.get("sentences_flagged", 0) + flagged
+        if w.initial_ok is None:  # the first reading of this claim
+            stats["claims_reviewed"] = stats.get("claims_reviewed", 0) + 1
+            stats["claims_flagged_at_first_read"] = stats.get("claims_flagged_at_first_read", 0) + (1 if flagged else 0)
+        self._decision(
+            "self_critique", f"{w.key}: the model re-read its own claim: {flagged} of {len(body)} sentence(s) flagged (no outside check).",
+            claim=w.key, sentences=len(body), flagged=flagged, variant="S8", repair_mode="self_critique", outside_evidence=False,
+        )  # fmt: skip
+        return checks
+
+    def _emit_repair_signals(self) -> dict[str, Any]:
+        """One `repair_signals` event with the cumulative S8 counts (none in a default run); the last one in the log is the final count."""
+        signals = self.repair_signals()
+        if signals:
+            self._decision("repair_signals", "Self-critique repair (S8): " + ", ".join(f"{k}={v}" for k, v in signals.items() if isinstance(v, int)) + ".", **signals)
+        return signals
+
+    def repair_signals(self) -> dict[str, Any]:
+        """S8 signals for the evaluation (empty in a default run): critic calls, sentences reviewed and flagged, revise calls, claims repaired."""
+        if not self._self_critique:
+            return {}
+        stats = self._repair_stats
+        return {
+            "variant": "S8", "repair_mode": "self_critique", "outside_evidence": False,
+            "critic_calls": stats.get("critic_calls", 0), "sentences_reviewed": stats.get("sentences_reviewed", 0),
+            "sentences_flagged": stats.get("sentences_flagged", 0), "revise_calls": stats.get("revise_calls", 0),
+            "claims_reviewed": stats.get("claims_reviewed", 0), "claims_flagged_at_first_read": stats.get("claims_flagged_at_first_read", 0),
+            "claims_repaired": stats.get("claims_repaired", 0),
+        }  # fmt: skip
 
     def _reretrieve(self, key: str, factor: Factor, reason: str, bad_docs: list[str]) -> EvidencePack | None:
         """Ask Sutradhar for new evidence for the slot behind a failed authority (never the failing documents again)."""
@@ -892,6 +1195,8 @@ class VakeelAgent(BaseAgent):
         replies: list[Reply] = []
         for o in objections:
             replies.append(self._reply_one(o, grounds.get(o.against)))
+        self._emit_repair_signals()
+        self._emit_output_signals()
         return replies
 
     def _reply_evidence(self, o: Objection, ground: Ground | None) -> Evidence:
@@ -921,10 +1226,12 @@ class VakeelAgent(BaseAgent):
             "facts": [f.payload() for f in ev.facts.values()],
         }  # fmt: skip
         with self.factor_scope(factor):
+            schema, limit = self._schema_and_limit(Reply, ReasonedReply, 600)
             out = self._safe_ask(
-                TASK_REPLY, instructions(TASK_REPLY), factor=factor, case=case,
-                corpus={"authorities": [self._auth_payload(a) for a in ev.auths]}, schema=Reply, max_tokens=600,
+                TASK_REPLY, self._ins(TASK_REPLY), factor=factor, case=case,
+                corpus={"authorities": [self._auth_payload(a) for a in ev.auths]}, schema=schema, max_tokens=limit,
             )  # fmt: skip
+        self._keep_reasoning(key, TASK_REPLY, out)
         text, listed = self._read_claim(out, "text")
         w = Work(key=key, ev=ev, sentences=self._prepare(split_claim(text, listed)))
         w.empty = not w.sentences
@@ -1031,6 +1338,8 @@ class VakeelAgent(BaseAgent):
                 add(OpenIssueType.MISSING_EVIDENCE, str(text))
             if pack is not None and not g.authorities and not any(str(t) for t in pack.open_issues):
                 add(OpenIssueType.MISSING_EVIDENCE, f"No authority could be cited for {label} ({g.id}).")
+        if self._self_critique and grounds:
+            add(OpenIssueType.NEEDS_REVIEW, SELF_CRITIQUE_NOTICE)
         for q in (self._dossier.open_questions if self._dossier is not None else []):
             add(OpenIssueType.NEEDS_REVIEW, str(q))
         ante = self._dossier.fields.antecedents if self._dossier is not None else None
@@ -1193,6 +1502,9 @@ class VakeelAgent(BaseAgent):
         if sparring is not None:
             update["sparring"] = sparring
             self.write_view("sparring", sparring)
+        extra = {k: v for k, v in (("repair", self._emit_repair_signals()), ("output", self._emit_output_signals()), ("draft", self.draft_signals())) if v}  # S8 / S15 / S11b,c only
+        if extra:
+            update["variant_signals"] = {**state.variant_signals, **extra}
         shown = state.model_copy(update=update)
         card = self.build_hearing_card(shown)
         update["hearing_card"] = card

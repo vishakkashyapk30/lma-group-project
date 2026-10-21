@@ -18,6 +18,17 @@ What it does, in order (every decision is an event with actor ABHIYOJAK):
 Switches: A8 and A9 (no sparring) return an empty record with a log line. `list_objections_one_call(state)` is the
 B-style baseline of eval F1: one ungrounded model call listing the prosecution's likely objections.
 
+Variant S10 / A8c (`Switches.abhiyojak_isolation=False`, default True): the isolation is removed on purpose, as an ablation arm. The context is
+`isolation.build_open_context` (the allow-list plus `vakeel_view`: Vakeel's decision notes, open issues, Sutradhar's reasons, replies), the
+system text and instructions say so, the guard lets private keys pass and logs `isolation_off`, and every signal is labelled S10. With the
+switch on its default nothing of this is reachable. Paper: Wynn, Satija and Hadfield, "Talk Isn't Always Cheap: Understanding Failure Modes
+in Multi-Agent Debate", arXiv 2025 (ICML 2025 MAS workshop), https://arxiv.org/abs/2509.05396 (agents abandon correct answers to agree with
+peers' flawed reasoning). Related, not reproduced: Khan et al., "Debating with More Persuasive LLMs Leads to More Truthful Answers", ICML 2024,
+https://proceedings.mlr.press/v235/khan24a.html; Chen et al., "AgentCourt", Findings of ACL 2025, https://aclanthology.org/2025.findings-acl.304.
+What we took: the question whether a critic that reads the other side's reasoning is worse. What we changed: no debate loop and no answer to
+flip; the critic raises objections to a brief, so the flip is proxied by the share of replies it judges ANSWERED (`critic_signals`), and G4
+objection recall is the score. Isolated-versus-open is measured on the same case, so a null result is a result.
+
 Abhiyojak is callable on its own, with fakes:
 
     agent = AbhiyojakAgent(case_id="case-0007", log=log, before="2024-03-01", tools=fakes)
@@ -32,9 +43,18 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from vakeel_sahayak.agents.abhiyojak import offline  # noqa: F401  (importing `offline` registers the offline handlers)
-from vakeel_sahayak.agents.abhiyojak.isolation import ContextIsolationError, assert_allowed, build_context
+from vakeel_sahayak.agents.abhiyojak.isolation import (
+    ContextIsolationError,
+    assert_allowed,
+    build_context,
+    build_open_context,
+    forbidden_keys_in,
+    vakeel_view,
+)
 from vakeel_sahayak.agents.abhiyojak.prompts import (
+    NO_ISOLATION_NOTE,
     SYSTEM_PROMPT,
+    SYSTEM_PROMPT_OPEN,
     TASK_JUDGE,
     TASK_LIST,
     TASK_RAISE,
@@ -130,6 +150,8 @@ class AbhiyojakAgent(BaseAgent):
         self.replier = replier
         self._max_rounds = MAX_ROUNDS if max_rounds is None else max(1, min(int(max_rounds), MAX_ROUNDS))
         self._vakeel: BaseAgent | None = None
+        self._tokens: dict[str, int] = {}  # tokens this agent's own model calls used, by task (S9 and S10 compare spend)
+        self._stats: dict[str, Any] = {}  # S10 / S9 counters over the agent's life (empty in a default run)
         self._reset()
 
     @property
@@ -138,6 +160,8 @@ class AbhiyojakAgent(BaseAgent):
         return self._max_rounds
 
     def _reset(self) -> None:
+        self._view: dict[str, Any] = {}  # S10 only: what Vakeel's side showed this run
+        self._off_logged = False
         self._discarded: list[str] = []
         self._statute_cache: dict[tuple[str, str], dict[str, Any] | None] = {}
         self._count = 0
@@ -178,8 +202,59 @@ class AbhiyojakAgent(BaseAgent):
 
         return state.before or getattr(self.ctx, "before", None) or as_of or state.as_of or date.today().isoformat()
 
+    @property
+    def isolated(self) -> bool:
+        """True in every run except the S10 / A8c arm (`abhiyojak_isolation=False`)."""
+        return bool(self.switches.abhiyojak_isolation)
+
+    def system_prompt(self) -> str:
+        """The system text; the S10 arm swaps the one sentence that says it does not know the defence's notes."""
+        return super().system_prompt() if self.isolated else SYSTEM_PROMPT_OPEN
+
+    def _instructions(self, task: str, **kwargs: object) -> str:
+        """The task's instructions; the S10 arm adds the note that `vakeel_view` may be read."""
+        return instructions(task, **kwargs) + ("" if self.isolated else NO_ISOLATION_NOTE)
+
+    def _context(self, state: CaseGraphState) -> dict[str, Any]:
+        """The only way this agent reads the state: the allow-list (default), or in the S10 arm the allow-list plus `vakeel_view`."""
+        if self.isolated:
+            return build_context(state)
+        context = build_open_context(state, self.switches, log=self.log, case_id=self.case_id)
+        self._view = context["vakeel_view"]
+        return context
+
+    def _view_for(self, against: str | None) -> dict[str, Any] | None:
+        """S10 only: the part of Vakeel's side about one ground (or all of it for the general call), its texts wrapped as untrusted data."""
+        if self.isolated:
+            return None
+        view = self._view
+        mine = lambda n: against in (None, "general") or n.get("claim") in (None, against) or str(n.get("claim") or "").startswith("reply:")  # noqa: E731
+        notes = [n for n in view.get("notes", []) if mine(n)]
+        out = {
+            "notes": [{**n, "text": self.untrusted(n["text"], SourceRef(doc=f"vakeel note {i}"))} for i, n in enumerate(notes, start=1)],
+            "open_issues": [self.untrusted(t, SourceRef(doc="open issue")) for t in view.get("open_issues", [])],
+            "plan": view.get("plan", []),
+            "replies": [{**r, "text": self.untrusted(r["text"], SourceRef(doc=f"reply {r.get('objection')}"))} for r in view.get("replies", [])],
+        }
+        self._stats["notes_shown"] = self._stats.get("notes_shown", 0) + len(notes)
+        return out
+
+    def _log_llm(self, task: str, factor: str | None, prompt: str, p_tok: int, c_tok: int, attempts: int, *, ok: bool, value: Any = None) -> None:
+        """BaseAgent's charge and log, and the tokens this agent used by task (reported by `critic_signals`)."""
+        self._tokens[task] = self._tokens.get(task, 0) + int(p_tok) + int(c_tok)
+        super()._log_llm(task, factor, prompt, p_tok, c_tok, attempts, ok=ok, value=value)
+
     def guard(self, payload: Any) -> None:
-        """The runtime guard: refuse a payload that carries Vakeel's or Sutradhar's private keys (logged, then raised)."""
+        """The runtime guard: refuse a payload that carries Vakeel's or Sutradhar's private keys (logged, then raised).
+
+        The S10 / A8c arm (`abhiyojak_isolation=False`) is the only run in which it lets such keys through, and says so in the log.
+        """
+        if not self.isolated:
+            bad = forbidden_keys_in(payload)
+            if bad and not self._off_logged:
+                self._off_logged = True
+                self._decision("isolation_off", "S10 / A8c: the isolation guard is off in this run; private keys pass.", variant="S10", abhiyojak_isolation=False, keys=bad[:10])
+            return
         try:
             assert_allowed(payload)
         except ContextIsolationError as exc:
@@ -307,10 +382,12 @@ class AbhiyojakAgent(BaseAgent):
         """One model call for a ground (factor given) or for the general objections (factor None): validated, grounded objections, ids not yet assigned."""
         scope = Factor(factor) if factor else None
         case = {"ground": ground, "factor": factor or "general", "factors": [] if factor else list(GENERAL_FACTORS), "against": against, "limit": limit, "facts": list(facts.values())}
+        if (open_view := self._view_for(against)) is not None:
+            case["vakeel_view"] = open_view  # S10 only
         self.guard(case)
         with self.factor_scope(scope):
             out = self._safe_ask(
-                TASK_RAISE, instructions(TASK_RAISE, limit=limit, factor=factor or "general"), factor=scope, case=case,
+                TASK_RAISE, self._instructions(TASK_RAISE, limit=limit, factor=factor or "general"), factor=scope, case=case,
                 corpus=self._corpus(mat), schema=RaisedObjections, max_tokens=900 if factor is None else 700,
             )  # fmt: skip
         # An answer for several grounds at once is read for this call's part only (an objection that names no ground is this one's).
@@ -358,7 +435,12 @@ class AbhiyojakAgent(BaseAgent):
         Returns:
             Objections (ids O1, O2, ...). The ungrounded ones discarded on the way are in `self.discarded`.
         """
-        ctx = build_context(state)  # the only way this agent reads the state (plan §9 isolation)
+        ctx = self._context(state)  # the only way this agent reads the state (plan §9 isolation)
+        if not self.isolated:
+            self._decision(
+                "isolation_off", "S10 / A8c: context isolation is OFF in this run: Abhiyojak reads Vakeel's notes, open issues, reasons and replies.",
+                variant="S10", abhiyojak_isolation=False, notes=len(self._view.get("notes", [])), open_issues=len(self._view.get("open_issues", [])),
+            )  # fmt: skip
         facts: dict[str, Any] = ctx["dossier"]
         sections: list[dict[str, Any]] = ctx["sections"]
         before = self._before(state, ctx["as_of"])
@@ -384,6 +466,9 @@ class AbhiyojakAgent(BaseAgent):
             objections.append(o)
             self._decision("objection", f"{o.id} against {o.against} ({o.factor}) raised.", objection=o.id, against=o.against, factor=o.factor, grounds=[g.model_dump(mode="json", exclude_none=True) for g in o.grounds])
         self._decision("round_1_done", f"Round 1: {len(objections)} objection(s) kept, {len(self._discarded)} discarded as ungrounded.", kept=len(objections), discarded=len(self._discarded))
+        self._stats["objections"] = self._stats.get("objections", 0) + len(objections)
+        self._stats["discarded"] = self._stats.get("discarded", 0) + len(self._discarded)
+        self._emit_critic_signals()
         return objections
 
     # ------------------------------------------------------------------ replies and round 2
@@ -415,11 +500,17 @@ class AbhiyojakAgent(BaseAgent):
             Objections with verdicts.
         """
         self._decision("round_2", f"Round 2: judging {len(objections)} repl(ies).", objections=[o.id for o in objections])
+        if not self.isolated:  # S10: Vakeel's notes now include the replies, so the view is read again
+            self._view = vakeel_view(state, self.log, self.case_id)
         judged: list[Objection] = []
         for o in objections:
             judged.append(self._judge_one(o))
         counts = {v.value: sum(1 for o in judged if o.verdict == v) for v in SparringVerdict}
         self._decision("round_2_done", "Round 2 done: " + ", ".join(f"{n} {k}" for k, n in counts.items()) + ".", **counts)
+        for k, n in counts.items():
+            self._stats["verdict_" + k.lower()] = self._stats.get("verdict_" + k.lower(), 0) + n
+        self._stats["judged"] = self._stats.get("judged", 0) + len(judged)
+        self._emit_critic_signals()
         return judged
 
     def _judge_one(self, o: Objection) -> Objection:
@@ -432,10 +523,12 @@ class AbhiyojakAgent(BaseAgent):
             "objection_facts": facts,
             "reply": {"text": self.untrusted(reply.text, SourceRef(doc=f"reply {o.id}")), "check": reply.check.value, "authorities": [f"{a.doc_id}#{a.para}" for a in reply.authorities]},
         }  # fmt: skip
+        if (open_view := self._view_for(o.against)) is not None:
+            case["vakeel_view"] = open_view  # S10 only
         self.guard(case)
         factor = Factor(o.factor) if o.factor in {f.value for f in Factor} else None
         with self.factor_scope(factor):
-            out = self._safe_ask(TASK_JUDGE, instructions(TASK_JUDGE), factor=factor, case=case, schema=JudgedReply, max_tokens=200)
+            out = self._safe_ask(TASK_JUDGE, self._instructions(TASK_JUDGE), factor=factor, case=case, schema=JudgedReply, max_tokens=200)
         if out is None:
             return self._verdict(o, SparringVerdict.UNANSWERED, "The reply could not be judged; counsel to read it.")
         try:
@@ -452,6 +545,36 @@ class AbhiyojakAgent(BaseAgent):
         if verdict == SparringVerdict.UNANSWERED:
             self._decision("needs_review", f"{o.id} ({o.factor}) is unanswered: NEEDS_REVIEW for counsel.", objection=o.id, against=o.against)
         return o.model_copy(update=update)
+
+    # ------------------------------------------------------------------ signals of the critic variants (S9, S10)
+
+    def critic_signals(self) -> dict[str, Any]:
+        """Signals for the evaluation (empty in a default run): objections raised and discarded, verdict counts, tokens, and for S10 what was shown.
+
+        `conceded_share` is the share of judged replies that ended ANSWERED: the proxy for the flip of "Talk Isn't Always Cheap" in our
+        setting, where an objection is not withdrawn but can be conceded in round 2. It is only a proxy; G4 recall is the score.
+        """
+        if self.isolated and self.switches.critic_mode == "abhiyojak":
+            return {}
+        st = self._stats
+        judged = st.get("judged", 0)
+        out: dict[str, Any] = {
+            "variant": self.switches.variant(), "critic_mode": self.switches.critic_mode, "abhiyojak_isolation": self.isolated,
+            "objections": st.get("objections", 0), "discarded": st.get("discarded", 0), "judged": judged,
+            "verdict_answered": st.get("verdict_answered", 0), "verdict_partly": st.get("verdict_partly", 0), "verdict_unanswered": st.get("verdict_unanswered", 0),
+            "conceded_share": round(st.get("verdict_answered", 0) / judged, 4) if judged else None,
+            "tokens": sum(self._tokens.values()), "tokens_by_task": dict(sorted(self._tokens.items())),
+        }  # fmt: skip
+        if not self.isolated:
+            out["notes_shown"] = st.get("notes_shown", 0)
+        return out
+
+    def _emit_critic_signals(self) -> dict[str, Any]:
+        """One `critic_signals` event with the cumulative counts (none in a default run); the last one in the log is final."""
+        signals = self.critic_signals()
+        if signals:
+            self._decision("critic_signals", f"Critic variant {signals['variant']}: {signals['objections']} objection(s), {signals['tokens']} token(s).", **signals)
+        return signals
 
     # ------------------------------------------------------------------ the whole exchange
 
@@ -497,6 +620,8 @@ class AbhiyojakAgent(BaseAgent):
         self._reset()
         record = self.spar(state)
         update: dict[str, Any] = {"sparring": record}
+        if signals := self.critic_signals():  # S9 / S10 only
+            update["variant_signals"] = {**state.variant_signals, "critic": signals}
         if record.objections:
             self.write_view("sparring", record)
             brief = self._flag_unanswered(state, record)

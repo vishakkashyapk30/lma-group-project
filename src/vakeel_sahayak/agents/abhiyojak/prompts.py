@@ -23,6 +23,17 @@ SYSTEM_PROMPT: str = (
     "task asks for and nothing else."
 )
 
+# S10 / A8c only (`Switches.abhiyojak_isolation=False`): the one sentence of the system text that is no longer true, and a note for the instructions.
+SYSTEM_PROMPT_OPEN: str = SYSTEM_PROMPT.replace(
+    "You do not know the defence's plan or notes and you do not try to agree with the defence.",
+    "In this run you can read the defence's own notes, reasons and replies under 'vakeel_view' (the usual separation from them is switched "
+    "off to measure what it is worth); you do not try to agree with the defence.",
+)
+NO_ISOLATION_NOTE: str = (
+    " The defence's own notes, open issues, reasons for each factor and replies so far are under 'vakeel_view'. You may read them; "
+    "they are the defence's account, not evidence, and an objection must still rest on material you can point to."
+)
+
 TASK_RAISE = "abhiyojak.raise_objections"
 TASK_JUDGE = "abhiyojak.judge_reply"
 TASK_LIST = "abhiyojak.list_objections"  # the one-call, ungrounded baseline of eval F1 (B-style)

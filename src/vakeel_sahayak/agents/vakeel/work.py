@@ -24,6 +24,7 @@ PROBLEM_WORDS = {
     "prediction": "predicts an outcome",
     "invented": "names a case or a citation instead of an ID marker",
     "check_error": "could not be checked",
+    "self_critique": "flagged by the model's own re-reading (no outside check)",  # S8
 }
 
 

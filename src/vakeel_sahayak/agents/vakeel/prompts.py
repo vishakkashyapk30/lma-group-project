@@ -11,6 +11,9 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from vakeel_sahayak.schemas.bail_brief import Authority
+from vakeel_sahayak.schemas.enums import ClaimCheck
+
 SYSTEM_PROMPT: str = (
     "You are Vakeel, the advocate of an Indian legal-aid office, drafting a bail brief for counsel to review. You argue "
     "only from the facts and authorities given under INPUT. Every sentence you write ends with the markers of what "
@@ -27,6 +30,9 @@ TASK_REPLY = "vakeel.reply_objection"
 TASK_REWORD = "vakeel.reword_claim"
 TASK_TRANSFER = "vakeel.judge_transfer"  # A3 only: with the rule tools off the model judges the transfer itself
 TASK_RIGHTS = "vakeel.rights_summary"  # A3 only: the model summarises the accused's rights itself
+TASK_DEBATE = "vakeel.debate_revise"  # S11b only: round 2 of the two-instance debate: revise your draft after reading the other's
+TASK_SELF_CRITIQUE = "vakeel.self_critique"  # S8 only: the model re-reads its own draft, with no verifier
+TASK_SELF_REVISE = "vakeel.self_revise"  # S8 only: the model rewrites a sentence its own re-reading flagged
 
 USER_PROMPT_TEMPLATES: dict[str, str] = {
     TASK_DRAFT: (
@@ -54,6 +60,24 @@ USER_PROMPT_TEMPLATES: dict[str, str] = {
         "markers. Reply as the Ground JSON (the same id, factor and stance): 'argument' is the reworded sentence(s), "
         "markers included, and 'authorities' lists {{doc_id, para}} for every [A:...] marker."
     ),
+    TASK_DEBATE: (
+        "Another advocate drafted the same ground (see 'other'; your own first draft is 'own'). Read it, keep what the facts and paragraphs listed support, "
+        "drop what they do not, and write your final draft of the ground under the same rules as before: every sentence ends with [F:field] and/or "
+        "[A:doc_id#para] markers copied exactly from INPUT. Reply as the Ground JSON: 'argument' (the sentences, markers included) and 'authorities' "
+        "(a list of {{doc_id, para}} for every [A:...] marker; no citation text)."
+    ),
+    TASK_SELF_CRITIQUE: (
+        "Re-read your own draft under 'claim' (numbered sentences). For each sentence say whether it states only what the "
+        "facts and paragraphs listed under INPUT say and ends with the right [F:field] / [A:doc_id#para] markers. You have "
+        "no other check: judge from your own reading. Reply as JSON: {{\"reviews\": [{{\"sentence\": <number>, \"ok\": "
+        "true | false, \"reason\": <one sentence when not ok>}}]}}, one entry per sentence."
+    ),
+    TASK_SELF_REVISE: (
+        "Your own re-reading of this sentence of a bail brief found a problem (see 'reasons'). Rewrite it so that it states "
+        "only what its source says, using only the facts and paragraphs listed. Keep one sentence per reference and end "
+        "each with its markers. Reply as the Ground JSON (the same id, factor and stance): 'argument' is the rewritten "
+        "sentence(s), markers included, and 'authorities' lists {{doc_id, para}} for every [A:...] marker."
+    ),
     TASK_TRANSFER: (
         "The case is charged under the provisions in 'case_sections'. A precedent paragraph concerns the sections in "
         "'paragraph_sections'. Say whether the precedent's provision has the SAME_TEXT as the case's, has CHANGED "
@@ -64,6 +88,14 @@ USER_PROMPT_TEMPLATES: dict[str, str] = {
         'only. Reply as JSON: {{"rights": <one sentence>}}.'
     ),
 }
+
+
+# S15 / A13 only (`Switches.output_format='reasoning_first'`): appended to a drafting, reply or reword instruction.
+REASONING_NOTE: str = (
+    " Reply with a free-text 'reasoning' field FIRST, before the other fields: think through which facts and paragraphs bear on the point and why. "
+    "The reasoning is working notes for the system log, not for counsel: it is never shown, never cited and never checked, so every sentence "
+    "that counts must be in the answer field itself, with its markers."
+)
 
 
 def instructions(task: str, **kwargs: str) -> str:
@@ -88,6 +120,20 @@ class DraftedGround(BaseModel):
     authorities: list[AuthorityRef] = Field(default_factory=list)
 
 
+class SentenceReview(BaseModel):
+    """The model's own verdict on one sentence of its draft (S8: no verifier, no evidence beyond the drafting input)."""
+
+    sentence: int = 0
+    ok: bool = True
+    reason: str = ""
+
+
+class SelfReview(BaseModel):
+    """The model's re-reading of one claim (S8)."""
+
+    reviews: list[SentenceReview] = Field(default_factory=list)
+
+
 class TransferJudgement(BaseModel):
     """The model's own transfer judgement (A3)."""
 
@@ -99,3 +145,20 @@ class RightsSummary(BaseModel):
     """The model's own rights summary (A3)."""
 
     rights: str = Field(default="")
+
+
+class DraftedGroundReasoned(BaseModel):
+    """S15: `DraftedGround` with a free reasoning field BEFORE the answer fields (field order is the generation order under constrained decoding)."""
+
+    reasoning: str = ""
+    argument: str = ""
+    authorities: list[AuthorityRef] = Field(default_factory=list)
+
+
+class ReasonedReply(BaseModel):
+    """S15: the reply schema (`schemas.sparring.Reply`) with a free reasoning field first."""
+
+    reasoning: str = ""
+    text: str = ""
+    authorities: list[Authority] = Field(default_factory=list)
+    check: ClaimCheck = ClaimCheck.NEEDS_REVIEW

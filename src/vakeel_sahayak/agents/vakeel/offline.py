@@ -18,7 +18,16 @@ from typing import Any
 
 from vakeel_sahayak.agents.peshkar.fields import unwrap
 from vakeel_sahayak.agents.sutradhar.slot_rules import FACTOR_TERMS
-from vakeel_sahayak.agents.vakeel.prompts import TASK_DRAFT, TASK_REPLY, TASK_REWORD, TASK_RIGHTS, TASK_TRANSFER
+from vakeel_sahayak.agents.vakeel.prompts import (
+    TASK_DEBATE,
+    TASK_DRAFT,
+    TASK_REPLY,
+    TASK_REWORD,
+    TASK_RIGHTS,
+    TASK_SELF_CRITIQUE,
+    TASK_SELF_REVISE,
+    TASK_TRANSFER,
+)
 from vakeel_sahayak.models.offline_llm import OfflineRequest, register_offline_handler
 from vakeel_sahayak.pipelines.text_utils import split_sentences
 
@@ -94,6 +103,18 @@ def _ground(case: dict[str, Any], text: str) -> dict[str, Any]:
     return {"id": str(case.get("id") or "G1"), "factor": case.get("factor"), "stance": case.get("stance") or "favourable", "argument": text, "authorities": seen}
 
 
+def _with_reasoning(req: OfflineRequest, answer: dict[str, Any], key: str) -> dict[str, Any]:
+    """S15: when the requested schema has a `reasoning` field, add a deterministic template note built from what the answer cites (never read back as evidence)."""
+    props = (req.schema or {}).get("properties") or {}
+    if "reasoning" not in props:
+        return answer
+    text = str(answer.get(key) or "")
+    fields = sorted(set(re.findall(r"\[F:([^\]]+)\]", text)))
+    auths = sorted(set(re.findall(r"\[A:([^\]]+)\]", text)))
+    note = f"Template reasoning (offline, no language model): the point rests on {len(fields)} dossier fact(s) ({', '.join(fields) or 'none'}) and {len(auths)} paragraph(s) ({', '.join(auths) or 'none'})."
+    return {"reasoning": note, **answer}
+
+
 def draft_offline(req: OfflineRequest) -> dict[str, Any]:
     """Offline handler of `vakeel.draft_ground`: the argument as marked sentences, from the facts and paragraphs given."""
     case, corpus = req.case, req.corpus
@@ -115,7 +136,13 @@ def draft_offline(req: OfflineRequest) -> dict[str, Any]:
         if s := authority_sentence(auth, factor, lead):
             sentences.append(s)
     text = " ".join(_PREDICT.sub("", s) for s in sentences)
-    return _ground(case, text)
+    return _with_reasoning(req, _ground(case, text), "argument")
+
+
+def debate_offline(req: OfflineRequest) -> dict[str, Any]:
+    """Offline handler of `vakeel.debate_revise` (S11b): keeps its own draft. A rule has nothing to learn from a peer's text and never follows it."""
+    case = req.case
+    return _with_reasoning(req, _ground(case, unwrap(str(case.get("own") or ""))), "argument")
 
 
 def _overlap(a: str, b: str) -> int:
@@ -134,7 +161,7 @@ def reply_offline(req: OfflineRequest) -> dict[str, Any]:
         if s := authority_sentence(auth, factor):
             sentences.append(s)
     text = " ".join(sentences)
-    return {"text": text, "authorities": _ground(case, text)["authorities"]}
+    return _with_reasoning(req, {"text": text, "authorities": _ground(case, text)["authorities"]}, "text")
 
 
 def reword_offline(req: OfflineRequest) -> dict[str, Any]:
@@ -175,7 +202,35 @@ def reword_offline(req: OfflineRequest) -> dict[str, Any]:
         used_auth.add(key)
         if s := authority_sentence(auths[key], factor):
             out.append(s)
-    return _ground(case, " ".join(out) if out else sentence)
+    return _with_reasoning(req, _ground(case, " ".join(out) if out else sentence), "argument")
+
+
+_ANY_MARKER = re.compile(r"\[\s*(?:F|A)\s*:")
+
+
+def self_critique_offline(req: OfflineRequest) -> dict[str, Any]:
+    """Offline handler of `vakeel.self_critique` (S8): a stand-in for a model that re-reads its own draft with no verifier.
+
+    A rule cannot reproduce a model's judgement. What it reproduces is the defining limit of intrinsic self-correction (Huang et al.,
+    ICLR 2024): the reader sees only its own text, so it accepts what it wrote. It flags only what is visible on the page without
+    any source: a sentence that ends with no [F:...] / [A:...] marker and a sentence that repeats an earlier one. It never compares a
+    sentence with the fact or paragraph it cites (that comparison is the verifier this arm leaves out).
+    """
+    seen: set[str] = set()
+    reviews: list[dict[str, Any]] = []
+    for row in req.case.get("claim") or []:
+        if not isinstance(row, dict):
+            continue
+        text = str(row.get("text") or "")
+        key = " ".join(re.sub(r"\[[^\]]*\]", "", text).lower().split())
+        if not _ANY_MARKER.search(text):
+            reviews.append({"sentence": row.get("sentence"), "ok": False, "reason": "the sentence cites no fact or paragraph"})
+        elif key in seen:
+            reviews.append({"sentence": row.get("sentence"), "ok": False, "reason": "the sentence repeats an earlier one"})
+        else:
+            reviews.append({"sentence": row.get("sentence"), "ok": True, "reason": ""})
+        seen.add(key)
+    return {"reviews": reviews}
 
 
 def transfer_offline(req: OfflineRequest) -> dict[str, Any]:
@@ -209,6 +264,9 @@ def register() -> None:
     register_offline_handler(TASK_DRAFT, draft_offline)
     register_offline_handler(TASK_REPLY, reply_offline)
     register_offline_handler(TASK_REWORD, reword_offline)
+    register_offline_handler(TASK_DEBATE, debate_offline)
+    register_offline_handler(TASK_SELF_CRITIQUE, self_critique_offline)
+    register_offline_handler(TASK_SELF_REVISE, reword_offline)  # the rewrite itself is the same rule: it reads only the sources it was handed
     register_offline_handler(TASK_TRANSFER, transfer_offline)
     register_offline_handler(TASK_RIGHTS, rights_offline)
 
