@@ -8,7 +8,7 @@ widened. `FactorWork` holds the slots of one factor, the SC roots found and the 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from vakeel_sahayak.agents.sutradhar.contracts_runtime import is_optional, required_count
 from vakeel_sahayak.agents.sutradhar.factor_pick import CaseSignals
@@ -17,6 +17,9 @@ from vakeel_sahayak.agents.sutradhar.relaxation import RELAXATION_ORDER
 from vakeel_sahayak.contracts.models import EvidenceContract
 from vakeel_sahayak.schemas.enums import Factor, FactorStance, SlotStatus
 from vakeel_sahayak.schemas.retrieval_plan import PlanStep, RetrievalPlan, SlotResult
+
+if TYPE_CHECKING:
+    from vakeel_sahayak.agents.sutradhar.sufficiency import StoppingTrace
 
 SHORT_FACTOR: dict[Factor, str] = {
     Factor.GRAVITY_AND_PUNISHMENT: "gravity",
@@ -79,6 +82,13 @@ class SlotWork:
     exhausted: bool = False
     errors: list[str] = field(default_factory=list)
     calls: int = 0
+    # S1 (self_critique): the critic's cached verdicts per paragraph, discarded paragraphs, the pending corrective action and actions taken
+    verdicts: dict[str, dict[str, Any]] = field(default_factory=dict)
+    discarded: set[str] = field(default_factory=set)
+    critic_action: str | None = None
+    critic_used: list[str] = field(default_factory=list)
+    skew_last: dict[str, Any] | None = None  # S4: skew statistics of the slot's latest scored search ({n, gini, top_gap, weak})
+    skipped: bool = False  # S2: a corpus slot of a factor whose adaptive depth is 'none' (not retrieved, not an open issue)
 
     @property
     def required(self) -> bool:
@@ -97,6 +107,18 @@ class SlotWork:
         return self.sources[self.src_idx] if self.src_idx < len(self.sources) else None
 
 
+def _new_critique() -> Any:
+    from vakeel_sahayak.agents.sutradhar.critique import CritiqueTrace
+
+    return CritiqueTrace()
+
+
+def _new_trace() -> StoppingTrace:
+    from vakeel_sahayak.agents.sutradhar.sufficiency import StoppingTrace
+
+    return StoppingTrace()
+
+
 @dataclass
 class FactorWork:
     """Working state of one factor's retrieval."""
@@ -110,13 +132,20 @@ class FactorWork:
     round: int = 1
     unavailable: set[str] = field(default_factory=set)  # stores that failed or are knocked out
     budget_hit: bool = False
-    stopped: str | None = None  # filled | budget | exhausted | max_rounds
+    stopped: str | None = None  # filled | budget | exhausted | max_rounds | depth_cap | rater_sufficient
     roots: set[str] = field(default_factory=set)  # Supreme Court roots found in the citation graph
     overruled: dict[str, str] = field(default_factory=dict)  # authority doc -> the judgment that overruled it
     avoid: set[str] = field(default_factory=set)  # authorities a failed claim must not be built on again
     plans: list[RetrievalPlan] = field(default_factory=list)
     only: set[str] | None = None  # re-run only these slots (a failed claim's re-retrieval)
     fresh: list[dict[str, Any]] = field(default_factory=list)  # reasoning paragraphs found since the last share
+    stopping: StoppingTrace = field(default_factory=lambda: _new_trace())  # S3: what the stopping rule did
+    critique: Any = field(default_factory=lambda: _new_critique())  # S1: what the retrieval critic did (CritiqueTrace)
+    depth: Any = None  # S2: the `depth.Depth` chosen for the factor (None when retrieval_policy is not 'adaptive')
+    graph: dict[str, Any] = field(default_factory=lambda: {"calls": 0, "hits": 0, "sc_hits": 0, "docs": set()})  # S5: expansion counters
+    skew: dict[str, Any] = field(default_factory=lambda: {"scored_calls": 0, "weak_flags": 0, "downgrades": 0, "calls": []})  # S4 trace
+    round_cap: int | None = None  # S2: plan rounds this factor may use (None: the agent's limit)
+    prior_trace: dict[str, dict[str, Any]] = field(default_factory=dict)  # S6: per slot {contract, prior, deferred} store orders (empty unless store_prior='order')
 
     @property
     def sig(self) -> CaseSignals:

@@ -33,7 +33,10 @@ from datetime import date
 from typing import Any
 
 from vakeel_sahayak.agents.base import AgentContext, BaseAgent, jsonable, prediction_language
+from vakeel_sahayak.agents.sutradhar import critique as critic
+from vakeel_sahayak.agents.sutradhar import depth as depth_rules
 from vakeel_sahayak.agents.sutradhar import offline  # noqa: F401  (importing `offline` registers the offline handlers)
+from vakeel_sahayak.agents.sutradhar import skew as skew_rules
 from vakeel_sahayak.agents.sutradhar.chat_router import (
     CHAT_ROUTES,
     NALSA_HELPLINE,
@@ -73,6 +76,7 @@ from vakeel_sahayak.agents.sutradhar.prompts import (
 )
 from vakeel_sahayak.agents.sutradhar.relaxation import RELAXATION_ORDER, describe, relax
 from vakeel_sahayak.agents.sutradhar.slot_rules import assess_slot
+from vakeel_sahayak.agents.sutradhar.sufficiency import rate, signals_of
 from vakeel_sahayak.agents.sutradhar.work import FactorWork, SlotWork, open_issue, plan_assessment
 from vakeel_sahayak.contracts.loader import ALLOWED_STORES
 from vakeel_sahayak.models.base import ModelUnavailable
@@ -201,8 +205,22 @@ class SutradharAgent(BaseAgent):
         self._last_state: CaseGraphState | None = None
         self.latest_state: CaseGraphState | None = None  # state after the latest `reopen_after_change`
         self._peers: dict[AgentName, BaseAgent] = {}
+        self._prior: Any = None  # S6 / B5: the learned store prior (loaded on first use, or set with `set_store_prior`)
+        self.retrieval_signals: dict[str, dict[str, Any]] = {}  # per factor, filled when a stopping variant (S3) is on
 
     # ------------------------------------------------------------------ small plumbing
+
+    def store_prior_model(self) -> Any:
+        """The learned store prior (S6, B5): the one set with `set_store_prior`, else the artefact at the default path, else the neutral prior."""
+        if self._prior is None:
+            from vakeel_sahayak.agents.sutradhar.store_prior import StorePrior
+
+            self._prior = StorePrior.load()
+        return self._prior
+
+    def set_store_prior(self, prior: Any) -> None:
+        """Use this `StorePrior` instead of loading the default artefact."""
+        self._prior = prior
 
     def _decision(self, tool: str, text: str = "", **outputs: Any) -> None:
         """One event for a decision (actor SUTRADHAR; tool `pick_factors`, `plan`, `assess`, `replan`, `budget_hit`, ...)."""
@@ -285,10 +303,15 @@ class SutradharAgent(BaseAgent):
         self._last_state = state
         self._pctx = None
         self._plans_log = []
+        self.retrieval_signals = {}
         if self.mode == "B4":
             from vakeel_sahayak.agents.sutradhar.baselines import run_b4
 
             packs = run_b4(self, state)
+        elif self.switches.store_prior == "only":
+            from vakeel_sahayak.agents.sutradhar.store_prior import run_prior_only
+
+            packs = run_prior_only(self, state, self.store_prior_model())
         elif self.switches.fixed_router:
             from vakeel_sahayak.agents.sutradhar.fixed_router import run_fixed_router
 
@@ -306,6 +329,8 @@ class SutradharAgent(BaseAgent):
     def _with_packs(self, state: CaseGraphState, packs: list[EvidencePack], plans: list[RetrievalPlan]) -> CaseGraphState:
         self.write_view("evidence_packs", packs)
         update: dict[str, Any] = {"evidence_packs": packs, "plans": plans}
+        if self.retrieval_signals:
+            update["retrieval_signals"] = dict(self.retrieval_signals)
         snap = getattr(self.budgets, "snapshot", None)
         if snap is not None:
             update["budget"] = snap()
@@ -373,6 +398,32 @@ class SutradharAgent(BaseAgent):
         return plan
 
     def _ask_plan(self, work: FactorWork, left: BudgetLeft) -> RetrievalPlan:
+        """The model's plan for a factor; with `Switches.plan_cache` (S14) a stored template of the same signature is reused instead (`batch.cache.PlanCache`)."""
+        plans = self._plan_cache()
+        if plans is None:
+            return self._ask_plan_model(work, left)
+        key = plans.signature(work, self.switches)
+        fresh = {(st.slot, st.tool): st for sw in work.slots.values() for st in self._rule_steps(work, sw)}
+        if (hit := plans.lookup(key, fresh)) is not None:
+            self._decision("plan_cache", f"Reused a stored plan for {work.factor.value}.", factor=work.factor.value, hit=True, tokens_saved=hit["tokens_saved"])
+            return RetrievalPlan(factor=work.factor, round=1, budget_left=left, steps=[PlanStep(**s) for s in hit["steps"]])
+        before = self.budgets.spent(Factor(work.factor).value)[0] if self.budgets is not None else 0
+        plan = self._ask_plan_model(work, left)
+        spent = (self.budgets.spent(Factor(work.factor).value)[0] - before) if self.budgets is not None else 0
+        plans.store(key, [s.model_dump() for s in plan.steps], max(0, spent))
+        self._decision("plan_cache", f"Stored the plan for {work.factor.value}.", factor=work.factor.value, hit=False, tokens=max(0, spent))
+        return plan
+
+    def _plan_cache(self) -> Any:
+        """The plan cache riding on the shared retrieval cache, or None (S14 off, or no shared cache)."""
+        cache = getattr(self.ctx, "cache", None)
+        if not self.switches.plan_cache or cache is None:
+            return None
+        from vakeel_sahayak.batch.cache import plans_of
+
+        return plans_of(cache)
+
+    def _ask_plan_model(self, work: FactorWork, left: BudgetLeft) -> RetrievalPlan:
         slots = [
             {
                 "slot": name, "need": sw.need, "sources": [str(getattr(s, "value", s)) for s in sw.sources],
@@ -426,7 +477,19 @@ class SutradharAgent(BaseAgent):
         if not self.switches.retrieval_filters:
             for key in ("factor", "section_family", "outcome", "doc_types", "signature"):
                 args.pop(key, None)
+        if self._expands(work, step):
+            args["expand_graph"] = True  # S5: seed a personalised PageRank over the citation graph from the plain results
+        if self.switches.weak_signal == "skew" and step.tool == "search_reasoning" and not any(k.startswith("$") for k in step.args):
+            args["with_scores"] = True  # S4: the results carry their hybrid score, so the skew of the list can be measured
         return PlanStep(slot=step.slot, tool=step.tool, args=args)
+
+    def _expands(self, work: FactorWork, step: PlanStep) -> bool:
+        """S5: an authority-slot search of court reasoning, when the citation store may be used and the step is not the SC-root fetch."""
+        return (
+            self.switches.graph_expansion and step.tool == "search_reasoning" and step.slot in AUTHORITY_SLOTS
+            and not any(k.startswith("$") for k in step.args)
+            and StoreName.CASELAW_CITATIONS in ALLOWED_STORES[work.factor] and self.switches.store_allowed(StoreName.CASELAW_CITATIONS)
+        )  # fmt: skip
 
     def _rule_steps(self, work: FactorWork, sw: SlotWork) -> list[PlanStep]:
         if not sw.sources:
@@ -479,7 +542,7 @@ class SutradharAgent(BaseAgent):
                     sw.src_idx = i
                     break
 
-    def _new_work(self, factor: Factor, pctx: PlanContext) -> FactorWork:
+    def _new_work(self, factor: Factor, pctx: PlanContext, *, adaptive: bool = True) -> FactorWork:
         stance, reason = self._stances.get(factor) or next(((s, r) for f, s, r in pick_stances(pctx.sig) if f == factor), (FactorStance.FAVOURABLE, None))
         contract = contract_for(factor)
         set_limits = getattr(self.budgets, "set_factor_limits", None)
@@ -496,7 +559,42 @@ class SutradharAgent(BaseAgent):
                 sw.pending, sw.exhausted = False, True
                 sw.result = SlotResult(slot=name, status=SlotStatus.MISSING, note="no allowed store is available in this run")
             work.slots[name] = sw
+        if self.switches.store_prior == "order":
+            self._apply_prior(work)
+        if adaptive and self.switches.retrieval_policy == "adaptive":
+            self._apply_depth(work)
         return work
+
+    def _apply_prior(self, work: FactorWork) -> None:
+        """S6: inside each slot, try the contract's allowed stores in the learned prior's order (tools stay first; no store is removed, weak ones are deferred)."""
+        from vakeel_sahayak.agents.sutradhar.store_prior import context_for
+
+        prior = self.store_prior_model()
+        ctx = context_for(work.factor, work.sig)
+        for name, sw in work.slots.items():
+            stores = [s for s in sw.sources if isinstance(s, StoreName)]
+            if len(stores) < 2:
+                continue
+            ranking = prior.rank(ctx, stores)
+            by_name = {s.value: s for s in stores}
+            ordered = iter(by_name[n] for n in ranking.order)
+            sw.sources = [next(ordered) if isinstance(s, StoreName) else s for s in sw.sources]
+            work.prior_trace[name] = {"contract": [s.value for s in stores], "prior": list(ranking.order), "deferred": list(ranking.deferred)}
+
+    def _apply_depth(self, work: FactorWork) -> None:
+        """S2: classify the factor (none / single / multi), cap its rounds and store calls, and skip the corpus slots of a 'none' factor."""
+        depth = depth_rules.classify(work.factor, work.contract, work.stance, work.sig)
+        work.depth, work.round_cap = depth, depth.max_rounds
+        if depth.store_calls is not None:
+            set_limits = getattr(self.budgets, "set_factor_limits", None)
+            if set_limits is not None:
+                set_limits(work.factor.value, store_calls=min(depth.store_calls, work.contract.budget.store_calls))
+        if depth.skip_corpus:
+            for name in depth_rules.corpus_slot_names(work.contract):
+                sw = work.slots[name]
+                sw.skipped, sw.need, sw.pending, sw.exhausted, sw.sources = True, "optional", False, True, []
+                sw.result = SlotResult(slot=name, status=SlotStatus.MISSING, note=f"not retrieved: adaptive depth 'none' ({depth.reasons[0]})")
+        self._decision("depth", f"{work.factor.value}: retrieval depth {depth.level} ({'; '.join(depth.reasons)}).", factor=work.factor.value, **depth.as_signal())
 
     def _ensure_work(self, factor: Factor) -> FactorWork:
         factor = Factor(factor)
@@ -705,6 +803,20 @@ class SutradharAgent(BaseAgent):
             sw.items.extend(out.items)
         if step.tool == "search_reasoning":
             work.fresh.extend(i for i in out.items if i.get("para") is not None)
+            if sw is not None and self.switches.weak_signal == "skew" and out.args.get("with_scores"):
+                stats = skew_rules.skew_of(skew_rules.scores_of(out.items))
+                sw.skew_last = stats
+                trace = work.skew
+                trace["scored_calls"] += 1
+                trace["weak_flags"] += int(stats["weak"])
+                trace["calls"].append({"slot": slot, "round": work.round, **stats})
+            if out.args.get("expand_graph"):
+                hits = [i for i in out.items if i.get("expanded")]
+                g = work.graph
+                g["calls"] += 1
+                g["hits"] += len(hits)
+                g["sc_hits"] += sum(1 for i in hits if "supreme" in str(i.get("court") or "").lower())
+                g["docs"].update(str(i["doc_id"]) for i in hits)
 
     def _merged(self, work: FactorWork, sw: SlotWork) -> list[dict[str, Any]]:
         """The slot's own items plus, for reasoning slots, paragraphs another factor retrieved that carry this factor's tag."""
@@ -763,7 +875,13 @@ class SutradharAgent(BaseAgent):
             if r.slot not in ("good_law", "sc_root"):
                 kept = [i for i in items if str(i.get("doc_id")) not in work.overruled and str(i.get("doc_id")) not in work.avoid]
                 dropped, items = len(items) - len(kept), kept
-            res = assess_slot(r.slot, items, need, pctx.before, work.factor, pctx.family, relaxed=self._relaxed(work, sw) if sw else ())
+            res = None
+            if self.switches.retrieval_policy == "self_critique" and sw is not None and critic.is_corpus_slot(sw, items):
+                res = critic.critique_assess(self, work, sw, items)  # S1: the critic replaces the rule checks (hard guards stay rules)
+            if res is None:
+                res = assess_slot(r.slot, items, need, pctx.before, work.factor, pctx.family, relaxed=self._relaxed(work, sw) if sw else ())
+            if self.switches.weak_signal == "skew" and sw is not None:
+                res = self._apply_skew(work, sw, res)
             extra = []
             if dropped:
                 extra.append(f"{dropped} overruled or rejected authority left out")
@@ -783,6 +901,21 @@ class SutradharAgent(BaseAgent):
             factor=work.factor.value, round=work.round, assessment=plan_assessment(work),
         )  # fmt: skip
         return assessed
+
+    def _apply_skew(self, work: FactorWork, sw: SlotWork, res: SlotResult) -> SlotResult:
+        """S4: a slot the rules call FILLED becomes WEAK when its latest scored search had a flat score list and a filter relaxation is left.
+
+        WEAK makes the re-plan relax a filter first (see `_ladder`). Never downgrades once the last relaxation is used, so it cannot loop.
+        """
+        stats = sw.skew_last
+        if res.status != SlotStatus.FILLED or not stats or not stats["weak"] or sw.level >= len(RELAXATION_ORDER) - 1:
+            return res
+        work.skew["downgrades"] += 1
+        note = f"score skew flat (gini {stats['gini']}, top gap {stats['top_gap']}, {stats['n']} scores): treated as weak"
+        self._decision(
+            "skew_weak", f"{work.factor.value}/{sw.name}: {note}.", factor=work.factor.value, slot=sw.name, round=work.round, **stats,
+        )  # fmt: skip
+        return res.model_copy(update={"status": SlotStatus.WEAK, "note": "; ".join(n for n in [res.note, note] if n)})
 
     # -- moves of the re-plan ladder ------------------------------------------------------------------
 
@@ -879,12 +1012,20 @@ class SutradharAgent(BaseAgent):
         return ["reword", "relax:1", "other_store"]
 
     def _next_move(self, work: FactorWork, sw: SlotWork) -> str | None:
-        for move in self._ladder(sw):
+        ladder = self._ladder(sw)
+        action = sw.critic_action if self.switches.retrieval_policy == "self_critique" else None
+        if action:
+            ladder = critic.reorder(ladder, action)  # S1: the critic's corrective action picks the next move
+        for move in ladder:
             if move in sw.done and not move.startswith("reword"):
                 continue
             said = self._apply_move(work, sw, move)
             if said:
                 sw.pending = True
+                if action:
+                    sw.critic_used.append(action)
+                    work.critique.re_retrievals += 1
+                    self._decision("critic_action", f"{work.factor.value}/{sw.name}: critic chose {action}; {said}.", factor=work.factor.value, slot=sw.name, action=action, move=move)
                 return said
         return None
 
@@ -911,16 +1052,21 @@ class SutradharAgent(BaseAgent):
             if sw is not None:
                 sw.result = r
         known = [sw.result for sw in work.slots.values() if sw.result is not None]
-        short = [n for n in unfilled_slots(work.contract, known) if work.slots[n].result is not None and (work.only is None or n in work.only)]
+        short = [n for n in unfilled_slots(work.contract, known) if work.slots[n].result is not None and not work.slots[n].skipped and (work.only is None or n in work.only)]
         plan.assessment = plan_assessment(work)
         moves: list[str] = []
+        if not short and work.stopping.rule_pass_calls is None:
+            work.stopping.rule_pass_calls = self._store_calls_spent(work)
+        if self.switches.stopping != "rules":
+            short = self._apply_rater(work, short)
         if not short:
-            work.stopped, plan.next = "filled", None
+            work.stopped, plan.next = ("rater_sufficient" if work.stopping.rater_stop else "filled"), None
         elif self._budget_spent(work):
             work.stopped, plan.next = "budget", "stop: the factor's budget is spent"
             self._budget_hit(work)
-        elif plan.round >= self.max_rounds:
-            work.stopped, plan.next = "max_rounds", "stop: the plan rounds are used"
+        elif plan.round >= (self.max_rounds if work.round_cap is None else min(self.max_rounds, work.round_cap)):
+            capped = work.round_cap is not None and work.round_cap < self.max_rounds
+            work.stopped, plan.next = ("depth_cap", f"stop: adaptive depth '{work.depth.level}' allows {work.round_cap} round(s)") if capped else ("max_rounds", "stop: the plan rounds are used")
         else:
             with self.factor_scope(plan.factor):
                 for name in short:
@@ -946,6 +1092,36 @@ class SutradharAgent(BaseAgent):
             return None
         work.round = plan.round + 1
         return self._build_plan(work, plan.round + 1)
+
+    def _store_calls_spent(self, work: FactorWork) -> int:
+        spent = getattr(self.budgets, "spent", None)
+        return int(spent(work.factor.value)[1]) if spent else 0
+
+    def _apply_rater(self, work: FactorWork, short: list[str]) -> list[str]:
+        """S3: the slots still to work on after the sufficiency rater has had its say (see `sufficiency.py`).
+
+        'rules_llm': asked only when the rules say every required slot is FILLED; an 'insufficient' verdict reopens the slots it
+        names. 'llm': asked every round, its verdict alone decides; 'sufficient' stops the factor even if the rules still see a slot
+        short (recorded), 'insufficient' continues. Never asked once the factor's budget is spent, and a failed call falls back to the rules.
+        """
+        trace, mode = work.stopping, self.switches.stopping
+        if self._budget_spent(work) or (mode == "rules_llm" and short):
+            return short
+        verdict = rate(self, work)
+        if verdict is None:
+            trace.rater_failures += 1
+            self._decision("rater_unavailable", f"{work.factor.value}: no sufficiency verdict; the rules decide.", factor=work.factor.value)
+            return short
+        trace.judgments.append({"round": work.round, "sufficient": verdict.sufficient, "missing": list(verdict.missing), "reason": verdict.reason, "rules_short": list(short)})
+        self._decision(
+            "sufficiency", f"Round {work.round} for {work.factor.value}: evidence {'sufficient' if verdict.sufficient else 'not sufficient'}.",
+            factor=work.factor.value, round=work.round, sufficient=verdict.sufficient, missing=verdict.missing, rules_short=short, mode=mode,
+        )  # fmt: skip
+        if verdict.sufficient:
+            trace.rater_stop, trace.rules_short_at_stop = True, bool(short)
+            return []
+        named = [n for n in verdict.missing if n in work.slots and (work.only is None or n in work.only)]
+        return short or named or [sw.name for sw in work.unfilled_required()] or [n for n, sw in work.slots.items() if sw.required]
 
     def _budget_hit(self, work: FactorWork) -> None:
         left = self._left(work.factor)
@@ -1000,11 +1176,44 @@ class SutradharAgent(BaseAgent):
         issues = [t for sw in work.slots.values() if (t := open_issue(work, sw))]
         pack = EvidencePack(factor=work.factor, stance=work.stance, reason=work.reason, slots=slots, open_issues=issues)
         spent = getattr(self.budgets, "spent", None)
+        sig = self._variant_signals(work, spent)
+        if sig is not None:
+            self.retrieval_signals[work.factor.value] = sig
+            self._decision("retrieval_signals", f"{work.factor.value}: retrieval variant signals.", **sig)
         self._decision(
             "factor_done", f"{work.factor.value}: " + ", ".join(f"{k} {v}" for k, v in plan_assessment(work).items()), factor=work.factor.value,
             stopped=work.stopped, rounds=work.round, open_issues=issues, spent=list(spent(work.factor.value)) if spent else None,
         )  # fmt: skip
         return pack
+
+    def _variant_signals(self, work: FactorWork, spent: Any) -> dict[str, Any] | None:
+        """The per-factor signals of the active retrieval variants (S3 stopping, S1 critique); None when every one is off."""
+        sw = self.switches
+        if sw.stopping == "rules" and sw.retrieval_policy == "contract" and not sw.graph_expansion and sw.weak_signal == "rules" and sw.store_prior == "off":
+            return None
+        tokens, calls = spent(work.factor.value) if spent else (0, 0)
+        sig: dict[str, Any] = signals_of(work, sw.stopping, int(calls), int(tokens)) if sw.stopping != "rules" else {"factor": work.factor.value}
+        if sw.retrieval_policy == "self_critique":
+            sig["retrieval_policy"] = sw.retrieval_policy
+            sig["critique"] = critic.signals(work)
+        if sw.weak_signal == "skew":
+            t = work.skew
+            sig["skew"] = {"scored_calls": t["scored_calls"], "weak_flags": t["weak_flags"], "downgrades": t["downgrades"], "calls": list(t["calls"])}
+        if sw.graph_expansion:
+            g = work.graph
+            kept = [i for r in work.slots.values() if r.result for i in r.result.items if i.get("expanded")]
+            sig["graph"] = {
+                "expand_calls": g["calls"], "expansion_hits": g["hits"], "expansion_sc_hits": g["sc_hits"], "expanded_docs": sorted(g["docs"]),
+                "expansion_hits_in_pack": len(kept),
+            }  # fmt: skip
+        if sw.retrieval_policy == "adaptive" and work.depth is not None:
+            sig["retrieval_policy"] = sw.retrieval_policy
+            sig["depth"] = depth_rules.signals(work, int(calls), int(tokens))
+        if sw.store_prior == "order":
+            from vakeel_sahayak.agents.sutradhar.store_prior import order_signals
+
+            sig["store_prior"] = order_signals(work, self.store_prior_model(), int(calls))
+        return sig
 
     def _attach_transfer(self, work: FactorWork) -> None:
         """Flag each top authority whose section was recodified (IPC/CrPC to BNS/BNSS) as SAME_TEXT, CHANGED or NEW (plan §5.4)."""
@@ -1209,7 +1418,7 @@ class SutradharAgent(BaseAgent):
     def _reretrieve(self, state: CaseGraphState, factor: Factor, slots: list[str], avoid: set[str]) -> EvidencePack | None:
         """A new plan for the slots behind a failed claim: reworded, never built on the failing documents again."""
         pctx = self._context_for(state)
-        work = self._new_work(factor, pctx)
+        work = self._new_work(factor, pctx, adaptive=False)  # a failed claim gets the full loop
         work.only, work.avoid = set(slots), set(avoid)
         pack = next((p for p in state.evidence_packs if p.factor == factor), None)
         for r in pack.slots if pack else []:

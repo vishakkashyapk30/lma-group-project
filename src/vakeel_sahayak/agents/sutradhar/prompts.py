@@ -9,7 +9,7 @@ in `offline.py`, so the agent runs with no model.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -24,6 +24,8 @@ SYSTEM_PROMPT: str = (
 TASK_PLAN = "sutradhar.plan_factor"
 TASK_REWORD = "sutradhar.reword_query"
 TASK_FREE_PLAN = "sutradhar.free_plan"
+TASK_RATE = "sutradhar.rate_sufficiency"  # S3: the sufficiency rater
+TASK_CRITIQUE = "sutradhar.critique_slot"  # S1: the retrieval critic (Self-RAG / CRAG style)
 
 USER_PROMPT_TEMPLATES: dict[str, str] = {
     TASK_PLAN: (
@@ -44,7 +46,48 @@ USER_PROMPT_TEMPLATES: dict[str, str] = {
         "named in 'tools'. Each step names a factor, a tool and its arguments; corpus searches take 'before'. "
         'Reply as JSON: {{"steps": [{{"factor": <factor>, "tool": <tool>, "args": {{...}}}}]}}.'
     ),
+    TASK_RATE: (
+        "Decide whether the evidence under INPUT is sufficient to argue the bail factor '{factor}'. For every slot in "
+        "'slots' the evidence gathered so far is shown with the number needed. Say sufficient only if each required slot "
+        "has enough relevant evidence for what it is meant to show; otherwise name the slots that fall short. Judge the "
+        "evidence given, never what you know about the case law. "
+        'Reply as JSON: {{"sufficient": <true or false>, "missing": [<slot names>], "reason": <one short sentence>}}.'
+    ),
+    TASK_CRITIQUE: (
+        "Judge the court paragraphs under INPUT retrieved for the slot '{slot}' of the bail factor '{factor}'. For every "
+        "paragraph say whether it is relevant to the factor (relevant: true or false) and whether it supports what the slot "
+        "needs (support: full, partial or none). Then choose the corrective action for the slot: keep (enough "
+        "relevant and fully supporting paragraphs), requery (search again with different words), relax (give up the next "
+        "filter), switch_store (look in another store) or discard (drop the irrelevant paragraphs and search again). Judge "
+        "only the text shown, never what you know about the case law. "
+        'Reply as JSON: {{"verdicts": [{{"id": <paragraph id>, "relevant": <true or false>, "support": <"full"|"partial"|"none">}}], '
+        '"action": <"keep"|"requery"|"relax"|"switch_store"|"discard">, "reason": <one short sentence>}}.'
+    ),
 }
+
+
+class PassageVerdict(BaseModel):
+    """S1 reflection verdict on one retrieved paragraph (Self-RAG's relevance and support tokens)."""
+
+    id: str
+    relevant: bool
+    support: Literal["full", "partial", "none"] = "none"
+
+
+class SlotCritique(BaseModel):
+    """S1 critic output for one slot: paragraph verdicts and the corrective action (CRAG's retrieval actions, adapted)."""
+
+    verdicts: list[PassageVerdict] = Field(default_factory=list)
+    action: Literal["keep", "requery", "relax", "switch_store", "discard"] = "keep"
+    reason: str = ""
+
+
+class SufficiencyJudgment(BaseModel):
+    """The S3 rater's verdict on one factor's evidence (Sufficient Context: sufficient or not, plus what is missing)."""
+
+    sufficient: bool
+    missing: list[str] = Field(default_factory=list)
+    reason: str = ""
 
 
 class Reworded(BaseModel):

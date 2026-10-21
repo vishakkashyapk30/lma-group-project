@@ -10,8 +10,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from vakeel_sahayak.agents.sutradhar.critique import critique_data
 from vakeel_sahayak.agents.sutradhar.planning import PlanContext, make_steps
-from vakeel_sahayak.agents.sutradhar.prompts import TASK_FREE_PLAN, TASK_PLAN, TASK_REWORD
+from vakeel_sahayak.agents.sutradhar.prompts import TASK_CRITIQUE, TASK_FREE_PLAN, TASK_PLAN, TASK_RATE, TASK_REWORD
+from vakeel_sahayak.agents.sutradhar.sufficiency import rate_data
 from vakeel_sahayak.models.offline_llm import OfflineRequest, register_offline_handler
 from vakeel_sahayak.schemas.enums import Factor
 
@@ -104,11 +106,23 @@ def plan_factor_offline(req: OfflineRequest) -> dict[str, Any]:
     return {"factor": factor.value, "round": int(case.get("round") or 1), "budget_left": left, "steps": [s.model_dump(mode="json") for s in steps], "assessment": {}, "next": None}
 
 
+def rate_offline(req: OfflineRequest) -> dict[str, Any]:
+    """Offline handler of `sutradhar.rate_sufficiency` (S3): a deterministic text-overlap rule, not a language model."""
+    return rate_data(req.case, req.corpus)
+
+
+def critique_offline(req: OfflineRequest) -> dict[str, Any]:
+    """Offline handler of `sutradhar.critique_slot` (S1): deterministic paragraph verdicts and corrective action, not a language model."""
+    return critique_data(req.case, req.corpus)
+
+
 def register() -> None:
     """Register the handlers with the offline client (the agent module does this at import)."""
     register_offline_handler(TASK_PLAN, plan_factor_offline)
     register_offline_handler(TASK_REWORD, reword_offline)
     register_offline_handler(TASK_FREE_PLAN, free_plan_offline)
+    register_offline_handler(TASK_RATE, rate_offline)
+    register_offline_handler(TASK_CRITIQUE, critique_offline)
 
 
 register()
