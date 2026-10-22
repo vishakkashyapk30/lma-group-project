@@ -33,7 +33,6 @@ from typing import Any
 from vakeel_sahayak.pipelines.citation_graph.authority import configured_weights
 from vakeel_sahayak.pipelines.citation_graph.extract import extract_citations, parse_citation
 from vakeel_sahayak.pipelines.citation_graph.graph import CitationGraph, NodeMeta, court_level_of
-from vakeel_sahayak.pipelines.citation_graph.resolve import CitationIndex
 from vakeel_sahayak.pipelines.citation_graph.treatment import (
     TreatmentLabeler,
     agree_treatment,
@@ -43,6 +42,7 @@ from vakeel_sahayak.pipelines.citation_graph.treatment import (
 from vakeel_sahayak.pipelines.order_facts import fact_signature
 from vakeel_sahayak.pipelines.order_splitter import PART_ORDER, analyse_split, infer_outcome
 from vakeel_sahayak.pipelines.section_extract import charged_sections, expand_family, extract_sections
+from vakeel_sahayak.pipelines.store_builders.fast_index import FastCitationIndex as CitationIndex
 from vakeel_sahayak.pipelines.text_utils import normalise_date, read_jsonl, split_sentences
 from vakeel_sahayak.schemas.enums import OrderPart, Treatment
 from vakeel_sahayak.schemas.store_rows import CitationEdge, FactSignature, ParagraphRecord
@@ -218,7 +218,9 @@ def _build_graph(
         ]
     )
     tally: dict[str, list[int]] = {}
-    for p in processed:
+    for n, p in enumerate(processed, 1):
+        if n % 5000 == 0:
+            print(f"[corpus] citations resolved for {n}/{len(processed)} orders", flush=True)
         treatments: dict[str, list[tuple[Treatment, str]]] = {}
         for rec in p.paragraphs:
             if rec.part != OrderPart.REASONING:
@@ -306,7 +308,11 @@ def process_corpus(
             cache[k] = expand_family(sections, store=concordance)
         return cache[k]
 
-    processed = [_process_order(o, family_of, max_tokens) for o in kept]
+    processed = []
+    for n, o in enumerate(kept, 1):
+        processed.append(_process_order(o, family_of, max_tokens))
+        if n % 5000 == 0:
+            print(f"[corpus] processed {n}/{len(kept)} orders", flush=True)
     report: dict[str, Any] = {
         "orders_read": len(orders), "skipped": skipped, "excluded": len(orders) - len(kept),
         "orders_used": len(processed), "clean_splits": sum(1 for p in processed if p.clean_split),

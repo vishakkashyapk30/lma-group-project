@@ -118,6 +118,7 @@ class StatuteStore(SharedStore):
                 continue
         if not rows:
             rows = seed_rows()
+        rows = _merge_gap_rows(rows, Path(source_dir).parent / "gaps" / "statutes")
         file_name = Path(load_config().stores["law"]["statutes"]["path"]).name
         target = Path(out_dir) / file_name
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -192,6 +193,22 @@ class StatuteStore(SharedStore):
         ]
         self._tokens = [_TOKEN.findall(f"{r.code} {r.section} {r.text}".lower()) for r in self._rows]
         self._df = Counter(term for toks in self._tokens for term in set(toks))
+
+
+def _merge_gap_rows(rows: list[StatuteRow], gaps_dir: Path) -> list[StatuteRow]:
+    """Add rows from `<gaps_dir>/*.jsonl` (official-source statutes the Open India Law release lacks); a gap row replaces the same (code, section)."""
+    from vakeel_sahayak.pipelines.text_utils import read_jsonl
+
+    merged = {(r.code, r.section): r for r in rows}
+    for path in sorted(gaps_dir.glob("*.jsonl")):
+        for raw in read_jsonl(path):
+            try:
+                row = StatuteRow.model_validate({k: v for k, v in raw.items() if k in StatuteRow.model_fields})
+            except ValueError:
+                continue
+            row = row.model_copy(update={"code": normalise_code(row.code), "section": normalise_section(row.section)})
+            merged[(row.code, row.section)] = row
+    return list(merged.values())
 
 
 def _tri(value: bool | None) -> int | None:

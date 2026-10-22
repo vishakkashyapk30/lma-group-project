@@ -17,7 +17,7 @@ def metadata_file(parts_path: str) -> Path | None:
     """The Open India Law metadata JSONL (`oil_metadata.jsonl`): next to the parts file, else in the interim folder."""
     from vakeel_sahayak.config import load_config
 
-    for folder in (Path(parts_path).parent, Path(load_config().paths.interim)):
+    for folder in (Path(parts_path).parent, Path(load_config().paths.interim_dir)):
         if (folder / METADATA_FILE).is_file():
             return folder / METADATA_FILE
     return None
