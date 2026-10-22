@@ -97,3 +97,25 @@ workspace data retention to the shortest option before using anything above `pub
   last. `--build-arg EXTRAS=...` (comma separated pyproject extras) adds heavy dependencies; build tools never reach the final image.
 * Frontend: `npm ci` layer cached on the lockfile, `output: "standalone"`, only `.next/standalone`, `.next/static` and `public` are copied.
 * Each build context has its own `.dockerignore` (`/.dockerignore` for the backend, `frontend/.dockerignore`).
+
+## Model weights (optional)
+
+Hosted backends (Sarvam, OpenAI) are the default way to run LLMs and need no weights. Local weights are optional and are
+fetched by `scripts/download_models.sh`, driven by the `weights:` tier table in `configs/models.yaml`:
+
+| Tier | Contents | Size |
+| --- | --- | --- |
+| T0 | offline stand-ins (hashed-ngram embedder, stubs) | none |
+| T1 | small helpers for an 8 GB laptop GPU: BGE-M3, a DeBERTa NLI model, MiniCheck, Whisper small | about 5.6 GB |
+| T2 | local LLM and vision (Qwen3-4B, Qwen3-VL-4B), IndicTrans2 | about 18 GB |
+| T3 | Ada-only (Qwen3-14B-AWQ, Qwen3-32B-AWQ) | about 30 GB |
+
+```
+make models-dry-run                 # sizes, licences, free disk for the tier in $VS_MODELS (default T1); downloads nothing
+VS_MODELS=T1 make models            # download; resumable, SHA-256 checked, refuses when disk is short
+scripts/download_models.sh T2 --dry-run
+```
+
+Weights go to `models/hf` (gitignored; override with `VS_MODELS_DIR`) and `models/MANIFEST.json` records revision, size and
+licence. `VS_MODELS=offline` maps to T0 and `real` to T1. In Docker, the `real` profile keeps weights in the `hf_cache` volume instead.
+T2 and T3 sizes are approximate (the script prints exact sizes in `--dry-run` for T1; verify before pulling a larger tier).

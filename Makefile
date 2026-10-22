@@ -1,7 +1,7 @@
 # Skeleton targets; every recipe is a stub until implemented.
 PY ?= .venv/bin/python
 
-.PHONY: datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect
+.PHONY: models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend
 
 setup:            ## create .venv and install (scripts/setup_dev.sh)
 	@echo "TODO: scripts/setup_dev.sh"; exit 1
@@ -35,6 +35,9 @@ eval-safety:      ## T7
 
 eval-all: eval-rq1 eval-rq2 eval-ablations eval-features eval-safety
 
+openai-spend:     ## OpenAI spend ledger: total spent, remaining, per model and per purpose
+	$(PY) -m vakeel_sahayak.models.openai.ledger
+
 api:              ## FastAPI backend
 	@echo "TODO: scripts/run_api.sh"; exit 1
 
@@ -62,6 +65,12 @@ test-frontend:    ## vitest unit tests for the frontend (needs `cd frontend && n
 test-e2e:         ## Playwright specs with the backend mocked by route interception (needs browsers)
 	cd frontend && npm run e2e
 
+models:           ## download the model tier in $$VS_MODELS (default T1; see scripts/download_models.sh)
+	@scripts/download_models.sh $(MODELS_ARGS)
+
+models-dry-run:   ## list model sizes, licences and free disk for the tier; downloads nothing
+	@scripts/download_models.sh --dry-run
+
 test-models:      ## tests needing real model weights or a GPU (@pytest.mark.models / gpu); run on the laptop or Ada
 	$(PY) -m pytest -m "models or gpu" tests
 
@@ -84,3 +93,10 @@ docker-test:      ## pytest + Vitest inside containers (Playwright: docker compo
 
 docker-logs:      ## follow the stack's logs
 	docker compose logs -f --tail=100
+
+# Evaluation driver smoke runs (offline stand-ins; no GPU, no network, no API key)
+smoke:            ## run the case-0007 fixture end to end offline: prints the BailBrief grounds and statuses and the SparringRecord verdicts, exits 0
+	VS_MODELS=offline VS_LLM_BACKEND=offline $(PY) -m vakeel_sahayak.eval.runners.driver smoke
+
+eval-smoke:       ## run 3 T1 dev cases offline through the Full system (needs data/testsets/t1/dev.jsonl from the T1 builder)
+	VS_MODELS=offline VS_LLM_BACKEND=offline $(PY) -m vakeel_sahayak.eval.runners.driver eval-smoke

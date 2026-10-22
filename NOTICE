@@ -1,0 +1,61 @@
+Vakeel Sahayak (bail-assistance research prototype): third-party notices
+
+This file lists the datasets, models, fonts and key libraries the project uses or ships, with licence and required attribution.
+Status column: "verified" = read from the official source (Hugging Face model metadata, the dataset's own README or the project
+manifest data/raw/MANIFEST.json) on the date shown; "to verify" = stated from the maintainers' public documentation and not yet
+re-read from the official page by the team. Re-check before any public release.
+
+DATASETS (not shipped in the repository; data/ is gitignored)
+
+1. Open India Law, release v2026.08.1, by Vaquill AI. Licence CC BY 4.0 for the compilation; the underlying judgments and
+   statutes are Government works (Copyright Act 1957, s.17(d) and s.52(1)(q)). Verified 2026-10-19 (data/raw/MANIFEST.json).
+   Required attribution: "Structured Indian primary-law data from the Open India Law corpus by Vaquill AI
+   (https://github.com/Vaquill-AI/open-india-law), used under CC BY 4.0." We use bail-related shards only and derive
+   orders, statutes and citation data from them (changes: filtering, chunking, normalisation).
+2. IPC2BNS-Verify (https://github.com/MS-406/IPC2BNS-Verify, commit 8d3e770). The README badge says MIT but the repository has
+   no LICENSE file at that commit. Licence status UNCONFIRMED: ask the authors for the file before redistributing derived data.
+3. Kathbath (AI4Bharat), Hindi test_known subset, from AI4Bharat's official object store (IndicSUPERB). The IndicSUPERB page
+   states CC0 for the packaging (the text comes from IndicCorp); the Hugging Face card says CC BY 4.0. Attribute AI4Bharat:
+   Javed et al., "IndicSUPERB", AAAI 2023. Verified 2026-10-19 (manifest).
+4. HLDC (Kapoor et al., Findings of ACL 2022) and IL-TUR (Exploration-Lab). NOT downloaded yet (access is manual). HLDC README:
+   CC BY-NC 4.0; the IL-TUR card says CC BY-NC-SA 4.0. NON-COMMERCIAL, research use only: nothing derived from them may be used
+   commercially, and share-alike applies to derivatives under the IL-TUR terms.
+5. Statutes taken from official Indian Government publications (Acts of Parliament) are Government works. The CrPC 1973, NDPS Act
+   and First Schedule rows are not yet loaded (official sites blocked automated download; see docs/handoff/data-and-models.md).
+
+MODELS (weights are downloaded on demand by scripts/download_models.sh into the gitignored models/ folder)
+
+- BAAI/bge-m3 (embeddings): MIT. Verified on the Hugging Face model metadata 2026-10-24.
+- MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli (NLI), built on microsoft/deberta-v3-large: MIT. Verified 2026-10-24.
+- lytang/MiniCheck-RoBERTa-Large and MiniCheck-Flan-T5-Large (faithfulness evaluation; Tang et al., EMNLP 2024): MIT. Verified 2026-10-24.
+- openai/whisper-small (speech recognition): Apache-2.0. Verified 2026-10-24.
+- ai4bharat/indictrans2-indic-en-dist-200M (Hindi to English; gated, auto-approved): MIT per the model metadata. Verified 2026-10-24.
+- Qwen3 family (Qwen3-4B, Qwen3-14B-AWQ, Qwen3-32B-AWQ, Qwen3-VL): Apache-2.0 per Alibaba's model cards. To verify per repo.
+- meta-llama/Llama-3.1-8B-Instruct (evaluation labeler only; never used by the system): Llama 3.1 Community Licence. "Built with Llama"
+  attribution and the Acceptable Use Policy apply; to verify at https://www.llama.com/llama3_1/license/.
+- Sarvam AI hosted API (sarvam-105b, sarvam-translate, saaras, bulbul): service terms at https://www.sarvam.ai apply; no weights
+  are distributed. Off by default; only public or pseudonymised data are sent, subject to the workspace data-retention setting.
+- OpenAI hosted API (gpt-6-luna): OpenAI Terms of Use and Usage Policies apply; no weights. Off by default; hard spend cap.
+- facebook/nllb-200-distilled-600M (test construction, English to Hindi): CC-BY-NC 4.0, so its outputs are for research
+  test construction only. To verify.
+- ai4bharat/indic-parler-tts (test construction): Apache-2.0 per its card. To verify.
+
+FONTS (frontend, via @fontsource packages; the font files are under the SIL Open Font License 1.1, the npm packages are MIT)
+
+- Newsreader, Noto Serif Devanagari, Schibsted Grotesk, Spline Sans Mono, Hind. Each is OFL 1.1; the copyright lines of the
+  upstream families (Production Type; The Noto Project Authors; Schibsted Media Group; Spline; Indian Type Foundry) travel with the
+  packages in node_modules. Fonts are not sold on their own and keep their names. To verify per family.
+
+KEY LIBRARIES (licences per each project's repository; to verify)
+
+- Python: FastAPI (MIT), Pydantic (MIT), Uvicorn (BSD-3), httpx (BSD-3), LangGraph (MIT), NetworkX (BSD-3), python-docx (MIT),
+  PyMuPDF (AGPL-3.0 or Artifex commercial licence; NOTE the AGPL obligations if the service is offered over a network),
+  PyYAML (MIT), pyarrow (Apache-2.0), requests (Apache-2.0), huggingface_hub (Apache-2.0), LanceDB (Apache-2.0),
+  Transformers, PEFT, TRL, Accelerate (Apache-2.0), vLLM (Apache-2.0), sentence-transformers (Apache-2.0),
+  Presidio (MIT), Docling (MIT), Surya OCR (GPL-3.0 code; model weights carry a separate modified AI Pubs Open Rail-M licence),
+  Tesseract (Apache-2.0), faster-whisper (MIT), pytest (MIT), Ruff (MIT).
+- Frontend: Next.js (MIT), React (MIT).
+
+CONTACT
+
+Questions about this notice: the project team (see README.md). Report a missing or wrong entry as an issue.

@@ -49,3 +49,25 @@ from the release; `orders.jsonl` holds a sample of 115,988 (at most 800 per cour
 cleanly split dev/test-window order). 88,121 orders (5.9%) split cleanly; 56,285 are BNS-era (6,211 of them cleanly split). Both plan targets are met
 (250 cleanly split dev + test orders; 94 BNS-era orders in the test set against the 60 required). Only 12.9% of orders carry a FIR number that `leakage.fir_key`
 finds and 4.8% an offence date, so the same-FIR leakage rule and the BNS-era test lean on the charged sections in the text.
+
+## Gap-filling status (2026-10-24)
+
+* **Statutes gap (CrPC 1973, NDPS s.37, First Schedule bailable/cognisable columns): not fetched.** On 2026-10-24 later retries from this machine timed out or were refused for indiacode.nic.in, upload.indiacode.nic.in, legislative.gov.in, lddashboard.legislative.gov.in and egazette.gov.in (Indian government hosts are unreachable from this network). `indiacode.nic.in` answers
+  automated requests with HTTP 403 (Akamai), `legislative.gov.in` and `mha.gov.in` direct PDF paths return 404, and nothing may be typed
+  from memory. The loader is ready: `StatuteStore.build` merges every `data/gaps/statutes/*.jsonl` (one `StatuteRow` per line, optional extra
+  keys such as `source_url` are ignored). **Team step:** in a browser open https://indiacode.nic.in/handle/123456789/15247 (CrPC 1973, Act ID 197402)
+  and the NDPS Act 1985 page, save the PDFs to `data/gaps/raw/`, extract s.41, 41A, 50, 57, 167, 436, 436A, 437, 438, 439, the First Schedule
+  and NDPS s.37 (and s.19, 24, 27A, 31A that its bar names) into `data/gaps/statutes/crpc.jsonl` / `ndps.jsonl`, with the URL and retrieval
+  date in each row's `source_url`, then `scripts/build_stores.sh --only statutes`. No official bailable/cognisable table for BNS offences
+  was found; the BNSS/BNS First Schedule is in the same Legislative Department publication (bnss 2023, Act 46) and has to be added the same way.
+* **Kathbath Hindi test_known:** `kathbath_fetch --limit 3130` finished: 3,130 of 3,130 utterances with transcripts (about 300 MB).
+* **e-SCR / SUVAS Hindi judgments: not attempted.** The translations (about 36,000 Hindi judgments) are on the e-SCR portal, but we found no
+  published bulk download, reuse licence or terms page, so nothing was fetched. Ask the Supreme Court Registry / NIC for written permission,
+  or use per-judgment manual downloads for a small sample. Fallback: translate with IndicTrans2/NLLB.
+* **HLDC / IL-TUR `bail` config: blocked.** No Hugging Face login or `HF_TOKEN` on this machine. **Team step:** with a Hugging Face account, open
+  https://huggingface.co/datasets/Exploration-Lab/IL-TUR , accept the access terms (non-commercial, CC BY-NC-SA 4.0), run `huggingface-cli login`
+  (or export `HF_TOKEN`), then `load_dataset("Exploration-Lab/IL-TUR", "bail")` into `data/raw/hldc/` and update `raw/MANIFEST.json`. Until then
+  the documented fallback is NLLB English to Hindi translation of constructed orders.
+* **Models:** `scripts/download_models.sh` (tiers in `configs/models.yaml`, `make models-dry-run`); T1 helpers go to `models/hf`, listed in `models/MANIFEST.json`.
+* **Stores:** full build log and result in `docs/handoff/data-and-models.md`; `data/stores/MANIFEST.json` is written when it finishes.
+* Wiring the Supreme Court metadata (`raw/open_india_law/sc_metadata.jsonl`) into the citation index is deferred (`pipelines/citation_graph/**` is owned by another change).
