@@ -17,7 +17,7 @@ from typing import Any
 from vakeel_sahayak.agents.base import AgentContext, BaseAgent
 from vakeel_sahayak.agents.munshi.decisions import LlmAdvisor
 from vakeel_sahayak.agents.munshi.toolkit import ToolFiler, route_page_with_tools
-from vakeel_sahayak.ingestion.checklist import QUESTION_PRIORITY, missing_items
+from vakeel_sahayak.ingestion.checklist import ITEM_NAMES, QUESTION_PRIORITY, missing_items
 from vakeel_sahayak.ingestion.classify import tag_paragraph
 from vakeel_sahayak.ingestion.conflicts import DOSSIER_FIELD, detect_conflicts, mark_ambiguous
 from vakeel_sahayak.ingestion.events import ExtractedEvent, extract_events
@@ -30,7 +30,7 @@ from vakeel_sahayak.ingestion.pipeline import (
     DocRead,
     FileRead,
     PageRead,
-    flag_instruction_lines,
+    page_read,
     read_file,
     read_page,
     split_and_label,
@@ -99,6 +99,7 @@ class _Run:
     declined: str | None = None
     revisions: dict[str, int] = field(default_factory=dict)
     book: QuestionBook = field(default_factory=QuestionBook)
+    gap_records: list[dict[str, Any]] = field(default_factory=list)  # one per missing item handled (S7 signals, kept for either policy)
 
 
 class MunshiAgent(BaseAgent):
@@ -211,13 +212,24 @@ class MunshiAgent(BaseAgent):
             return ToolError(tool=name, kind="tool_failed", message=type(exc).__name__, retryable=True)
 
     def _read_page(self, path: str, page: int, min_route: ParseRoute | None = None) -> PageRead | ToolError:
-        """Route one page: through the tools when Munshi has a context, else straight through the ladder."""
+        """Route one page: through the tools when Munshi has a context, else straight through the ladder. P7 (`munshi_image_only`): every page starts at the vision model."""
+        min_route = min_route or self._floor()
         if not self.tooled:
-            return read_page(path, page, self.thresholds, self.max_route, min_route=min_route)
+            return read_page(path, page, self.thresholds, self.max_route, min_route=min_route, guard=self.defences().guard)
         out = route_page_with_tools(self._raw_tool, path, page, self.thresholds, self.max_route, min_route)
         if isinstance(out, ToolError):
             return out
-        return PageRead(Path(path).name, path, page, out, flag_instruction_lines(out.text))
+        return page_read(path, page, out, self.defences().guard)
+
+    def _floor(self) -> ParseRoute | None:
+        """The weakest rung every page may start at: the vision model under P7 `munshi_image_only` (no text layer, no OCR), else no floor."""
+        return ParseRoute.VISION if self.switches.munshi_image_only else None
+
+    def image_only_signals(self) -> dict[str, Any]:
+        """P7 signals: pages read, pages that went to the vision model, pages no route could read (counts over this run's surveyed pages)."""
+        pages = [p for r in self._run.reads for p in r.pages]
+        vision = [p for p in pages if any(step.split(":")[0] == "vision" for step in p.outcome.log)]
+        return {"pages": len(pages), "vision_pages": len(vision), "unreadable": sum(1 for p in pages if p.unreadable), "image_only": self.switches.munshi_image_only}
 
     def _read_file_with_tools(self, path: str) -> FileRead:
         """Survey a file page by page through the tools; the first page `inspect_page` refuses ends the file."""
@@ -314,7 +326,12 @@ class MunshiAgent(BaseAgent):
         self._bind(state.case_id)
         files = self.files or self._inbox()
         report = self.ingest(files, state)
-        return state.model_copy(update={"ingestion": report})
+        out = self._with_injection(state.model_copy(update={"ingestion": report}))
+        if self.switches.munshi_image_only:
+            out = out.model_copy(update={"variant_signals": {**out.variant_signals, "munshi": {**out.variant_signals.get("munshi", {}), "image_only": self.image_only_signals()}}})
+        if self.switches.munshi_gap_policy == "hierarchy":
+            out = out.model_copy(update={"variant_signals": {**out.variant_signals, "munshi": {**out.variant_signals.get("munshi", {}), "gaps": self.gap_signals()}}})
+        return out
 
     def ingest(self, files: list[str] | None = None, state: CaseGraphState | None = None) -> IngestionReport:
         """Survey, categorise, file, check gaps, check conflicts, stop and report, for one or more files.
@@ -365,13 +382,18 @@ class MunshiAgent(BaseAgent):
                     if self.tooled:
                         read = self._read_file_with_tools(path)
                     else:
-                        read = read_file(path, self.thresholds, self.max_route, on_page=self._log_page)
+                        read = read_file(path, self.thresholds, self.max_route, on_page=self._log_page, guard=self.defences().guard, min_route=self._floor())
             except ModelUnavailable as exc:
                 read = FileRead(path, Path(path).name, file_kind(path), error=str(exc), error_kind="unavailable")
             if read.error:
                 self.emit(EventKind.ERROR, {"tool": "read_file", "inputs": {"file": self._alias}, "outputs": {"error": read.error, "kind": read.error_kind}})
             self._run.reads.append(read)
             routes.extend(p.page_route() for p in read.pages)
+            _, tally = self._defence_state()  # S17 signals: lines the guard kept out of the extraction view, or would have (arm no_guard)
+            tally.lines_dropped += sum(len(p.flagged_lines) for p in read.pages)
+            tally.missed += sum(len(p.missed_lines) for p in read.pages)
+        if self.switches.munshi_image_only:  # P7: the cost reference of the RQ2 comparison; the default path logs nothing extra
+            self.emit(EventKind.AGENT_MESSAGE, {"tool": "image_only", "outputs": {"type": "image_only", **self.image_only_signals()}})
         return routes
 
     def _log_page(self, read: PageRead) -> None:
@@ -418,7 +440,7 @@ class MunshiAgent(BaseAgent):
             Documents (empty when the matter is declined).
         """
         self._bind(state.case_id)
-        run, classifier = self._run, (LlmAdvisor(self.llm) if self.llm is not None else None)
+        run, classifier = self._run, (LlmAdvisor(self.llm, spotlight=self.defences().spotlighting) if self.llm is not None else None)
         counter = self._next_doc_number()
         for read in run.reads:
             docs = self._docs_with_tools(read, classifier) if self.tooled else None
@@ -681,7 +703,12 @@ class MunshiAgent(BaseAgent):
                 run.gaps.append(Gap(item=f"file {self._logname(read.name)}", action=f"not read: {read.error}"))
             elif read.error:
                 run.gaps.append(Gap(item=f"file {self._logname(read.name)}", action=f"not opened ({read.error_kind}: {read.error}); asked counsel for an intact copy"))
+        hierarchy = self.switches.munshi_gap_policy == "hierarchy"
         for item in self._missing():
+            if hierarchy and run.gap_records and item not in self._missing():  # S7: stop when the field is filled (an earlier re-read filed it)
+                run.gap_records.append({"item": item, "policy": "hierarchy", "candidates": [], "read": [], "reads": 0, "resolved_by": "earlier_reread"})
+                run.gaps.append(Gap(item=ITEM_NAMES[item], action="filed by an earlier re-read; nothing more to do"))
+                continue
             run.gaps.append(
                 resolve_gap(
                     item,
@@ -693,9 +720,27 @@ class MunshiAgent(BaseAgent):
                     search=self._search_pages if self.tooled else None,
                     thresholds=self.thresholds,
                     cases_dir=self.cases_dir,
+                    policy=self.switches.munshi_gap_policy,
+                    signals=run.gap_records,
                 )
             )
+        if self.switches.munshi_gap_policy == "hierarchy":  # S7: the signals of the policy go to the log (the default policy leaves the log unchanged)
+            self.emit(EventKind.AGENT_MESSAGE, {"tool": "gap_policy", "outputs": {"type": "gap_policy", **self.gap_signals(records=False)}})
         return run.gaps
+
+    def gap_signals(self, records: bool = True) -> dict[str, Any]:
+        """Signals of this run's gap re-reading under either policy (S7): pages re-read, gaps resolved per page read, oracle-regret inputs, per-item records.
+
+        Args:
+            records: include the per-item records (candidate pages in order, pages read); False for the short form logged in the event
+
+        Returns:
+            dict (see `ingestion.hierarchy.summarise`); `policy` is None when no gap was handled.
+        """
+        from vakeel_sahayak.ingestion.hierarchy import summarise
+
+        out = summarise(self._run.gap_records)
+        return out if records else {k: v for k, v in out.items() if k != "records"}
 
     def _missing(self) -> list[str]:
         """Checklist items still missing, in the order questions are worth asking."""

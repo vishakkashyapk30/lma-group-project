@@ -1,0 +1,40 @@
+"""The default Peshkar run is byte-identical to the run captured BEFORE the Sweep-3 injection-defence arms (S17) were added.
+
+`golden_default_run.json` holds one digest per part of the offline run over the three-chunk shelf with a planted instruction (dossier, List of Dates, the
+events in order with ids and times removed, every prompt the model saw). All three defence flags default to False (defences ON), which is the current behaviour.
+"""
+
+from __future__ import annotations
+
+import json
+
+from tests.unit.agents.peshkar import _variants_helpers as vh
+from vakeel_sahayak.orchestration.switches import Switches
+from vakeel_sahayak.privacy.defences import Defences, channels
+
+
+def test_the_default_switches_leave_every_defence_on():
+    s = Switches()
+    assert s.variant() == "full"
+    assert (s.no_typed_handoff, s.no_spotlighting, s.no_guard) == (False, False, False)
+    assert Defences.from_switches(s).all_on
+
+
+def test_default_run_matches_the_golden_digests():
+    golden = json.loads(vh.GOLDEN.read_text(encoding="utf-8"))
+    assert vh.digests(vh.canonical_run(vh.build())) == golden
+
+
+def test_default_run_has_no_variant_signals_and_no_defence_events():
+    env = vh.build()
+    run = vh.canonical_run(env)
+    assert run["variant_signals"] == {}
+    kinds = {(e.outputs or {}).get("type") for e in env.log.events}
+    assert not kinds & {"typed_handoff", "typed_handoff_off"}
+
+
+def test_default_prompts_keep_the_planted_text_inside_the_delimiter_block_only():
+    env = vh.build()
+    vh.canonical_run(env)
+    got = channels(env.llm.seen, vh.PLANTED)
+    assert got["fenced"] > 0 and got["unfenced"] == 0 and got["instructions"] == 0

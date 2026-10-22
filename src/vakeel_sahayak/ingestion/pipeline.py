@@ -34,6 +34,7 @@ class PageRead:
     page: int
     outcome: RouteOutcome
     flagged_lines: list[str] = field(default_factory=list)
+    missed_lines: list[str] = field(default_factory=list)  # instruction-like lines the guard would have flagged (S17c arm `no_guard`: nothing is flagged or dropped)
     extra_log: list[str] = field(default_factory=list)  # steps after routing, for example the translation engine
 
     @property
@@ -106,10 +107,16 @@ def flag_instruction_lines(text: str) -> list[str]:
 
 
 def read_page(path: str, page: int, thresholds: dict[str, float], max_route: ParseRoute = ParseRoute.ASK_COUNSEL,
-              min_route: ParseRoute | None = None) -> PageRead:  # fmt: skip
-    """Route one page and check its text for instruction-like lines."""
+              min_route: ParseRoute | None = None, guard: bool = True) -> PageRead:  # fmt: skip
+    """Route one page and check its text for instruction-like lines (`guard=False`: S17c arm, the lines are only counted as missed)."""
     outcome = route_page_from(path, page, thresholds, max_route, min_route)
-    return PageRead(Path(path).name, path, page, outcome, flag_instruction_lines(outcome.text))
+    return page_read(path, page, outcome, guard)
+
+
+def page_read(path: str, page: int, outcome: RouteOutcome, guard: bool = True) -> PageRead:
+    """A `PageRead` for a routed page: its instruction-like lines are flagged (guard on) or only counted as missed (guard off)."""
+    lines = flag_instruction_lines(outcome.text)
+    return PageRead(Path(path).name, path, page, outcome, lines if guard else [], [] if guard else lines)
 
 
 def read_file(
@@ -117,6 +124,8 @@ def read_file(
     thresholds: dict[str, float],
     max_route: ParseRoute = ParseRoute.ASK_COUNSEL,
     on_page: Callable[[PageRead], None] | None = None,
+    min_route: ParseRoute | None = None,
+    guard: bool = True,
 ) -> FileRead:
     """Survey a file: compute signals for every page and run the cheapest acceptable route (plan §4.3 step 1).
 
@@ -125,6 +134,8 @@ def read_file(
         thresholds: dev-tuned values
         max_route: ladder cap (baselines)
         on_page: called after each page (the agent logs the route to the event log here)
+        min_route: weakest rung allowed for every page (P7 image-only passes VISION)
+        guard: False for the S17c arm (instruction-like lines are not flagged or dropped)
 
     Returns:
         FileRead. A locked or broken file has no pages and an `error` (K9: ask counsel, never guess).
@@ -139,7 +150,7 @@ def read_file(
         return FileRead(path, name, InputKind.K9_LOCKED_OR_BROKEN, error=f"{exc}", error_kind=exc.kind)
     pages: list[PageRead] = []
     for number in range(1, source.page_count + 1):
-        read = read_page(path, number, thresholds, max_route)
+        read = read_page(path, number, thresholds, max_route, min_route, guard)
         pages.append(read)
         if on_page:
             on_page(read)

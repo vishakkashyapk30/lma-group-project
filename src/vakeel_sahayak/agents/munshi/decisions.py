@@ -27,9 +27,10 @@ _SCHEMA = {
 class LlmAdvisor:
     """Wraps an LLMClient (role `munshi_4b`) for Munshi's fallback decisions."""
 
-    def __init__(self, llm: LLMClient) -> None:
-        """Keep the client."""
+    def __init__(self, llm: LLMClient, *, spotlight: bool = True) -> None:
+        """Keep the client; `spotlight=False` (S17b arm `no_spotlighting`) passes the document text without the delimiter block."""
         self.llm = llm
+        self.spotlight = spotlight
 
     def classify(self, text: str) -> tuple[DocumentType, float] | None:
         """Label a document from its opening text; None when the model's reply cannot be used.
@@ -42,7 +43,7 @@ class LlmAdvisor:
         """
         prompt = SYSTEM_PROMPT + "\n\n" + USER_PROMPT_TEMPLATES["classify_document"].format(
             types=", ".join(t.value for t in DocumentType),
-            document=wrap_untrusted(text, SourceRef(doc="document to label")),
+            document=wrap_untrusted(text, SourceRef(doc="document to label")) if self.spotlight else text,
         )
         try:
             reply = json.loads(self.llm.generate(prompt, max_tokens=64, temperature=0.0, json_schema=_SCHEMA))

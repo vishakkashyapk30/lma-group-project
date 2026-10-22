@@ -90,6 +90,8 @@ def resolve_gap(
     search: Callable[[str], list[dict[str, Any]]] | None = None,
     thresholds: dict[str, float] | None = None,
     cases_dir: str | None = None,
+    policy: str = "sequential",
+    signals: list[dict[str, Any]] | None = None,
 ) -> Gap:
     """Decide whether to re-read a likely page with a stronger route, search remaining pages, or ask counsel; return the action taken.
 
@@ -104,6 +106,10 @@ def resolve_gap(
         search: the `search_pages` tool, given the item's name; its hits (file, page, snippet) are checked for the item's cue
         thresholds: dev-tuned values
         cases_dir: where the saved index lives
+        policy: 'sequential' (today: weak pages of the expected document types, in file order) or 'hierarchy' (S7: weak pages ranked by document type,
+            heading, position and text overlap, `ingestion.hierarchy`)
+        signals: when given, one record is appended per call: `item`, `policy`, `candidates` (the pages offered for re-reading, in order, with their
+            score under hierarchy), `read` (the pages re-read), `reads`, `resolved_by` ('reread', 'search' or None)
 
     Returns:
         Gap record: the item's name and what was done.
@@ -115,11 +121,27 @@ def resolve_gap(
         return _resolve_with_tools(item, case_id)
     idx = index if index is not None else PageIndex.load(index_path(case_id, cases_dir))
 
-    likely = [p for p in idx.pages if p.doc_type in LIKELY_TYPES[item] and is_weak(p, thresholds)][:MAX_REREAD_PAGES]
+    record: dict[str, Any] = {"item": item, "policy": policy, "candidates": [], "read": [], "reads": 0, "resolved_by": None}
+    if signals is not None:
+        signals.append(record)
+    if policy == "hierarchy":
+        from vakeel_sahayak.ingestion.hierarchy import rank_pages
+
+        ranked = rank_pages(item, idx, LIKELY_TYPES[item], cue, thresholds)
+        record["candidates"] = [{"file": r.page.file, "page": r.page.page, "score": r.score} for r in ranked]
+        likely = [r.page for r in ranked][:MAX_REREAD_PAGES]
+    else:
+        likely = [p for p in idx.pages if p.doc_type in LIKELY_TYPES[item] and is_weak(p, thresholds)][:MAX_REREAD_PAGES]
+        record["candidates"] = [{"file": p.file, "page": p.page} for p in likely]
     if reread is not None and likely:
+        done: list[IndexedPage] = []
         for page in likely:
             text = reread(page)
+            done.append(page)
+            record["read"].append({"file": page.file, "page": page.page})
+            record["reads"] = len(done)
             if text is not None and cue.search(text):
+                record["resolved_by"] = "reread"
                 steps.append(f"re-read {_where([page])} with a stronger route; found")
                 return Gap(item=name, action="; ".join(steps))
         steps.append(f"re-read {_where(likely)} with a stronger route; not found")
@@ -129,6 +151,7 @@ def resolve_gap(
     if remaining:
         hits = [p for p in remaining if cue.search(p.text) or any(h.get("page") == p.page and h.get("file") in (None, p.file) for h in found)]
         if hits and adopt is not None and item in ADOPT_AS and adopt(hits[0], item):
+            record["resolved_by"] = "search"
             steps.append(f"searched {_where(remaining)}; found on {_where(hits[:1])}")
             return Gap(item=name, action="; ".join(steps))
         steps.append(f"searched {_where(remaining)}; " + (f"mentioned on {_where(hits[:3])} but not filed" if hits else "not found"))

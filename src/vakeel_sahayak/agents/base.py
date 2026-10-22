@@ -39,6 +39,7 @@ from vakeel_sahayak.models.base import LLMClient, ModelUnavailable, NliClient
 from vakeel_sahayak.orchestration.budgets import BudgetExhausted, BudgetTracker
 from vakeel_sahayak.orchestration.state import CaseGraphState
 from vakeel_sahayak.orchestration.switches import Switches
+from vakeel_sahayak.privacy.defences import Defences, DocumentTexts, Tally
 from vakeel_sahayak.record.event_log import EventLog
 from vakeel_sahayak.schemas.common import SourceRef, TrackedField
 from vakeel_sahayak.schemas.enums import AgentName, EventKind, StoreName
@@ -387,23 +388,98 @@ class BaseAgent(ABC):
             self.error("privacy_boundary", str(exc))
             raise
 
-    @staticmethod
-    def untrusted(text: str, source: SourceRef | dict[str, Any] | None = None) -> str:
-        """Wrap document text as data for a prompt (privacy.injection_guard.wrap_untrusted)."""
+    # ------------------------------------------------------------------ injection defences (S17 / A15; privacy/defences.py)
+
+    def defences(self) -> Defences:
+        """Which injection defences are on (all three unless an S17 arm switched one off)."""
+        return Defences.from_switches(getattr(self, "switches", None))
+
+    def _defence_state(self) -> tuple[DocumentTexts, Tally]:
+        """The agent's tracked document texts and defence counters, created on first use (Munshi does not call `BaseAgent.__init__`)."""
+        state = self.__dict__.get("_vs_defence")
+        if state is None:
+            state = (DocumentTexts(), Tally())
+            self.__dict__["_vs_defence"] = state
+        return state
+
+    def untrusted(self, text: str, source: SourceRef | dict[str, Any] | None = None) -> str:
+        """Wrap document text as data for a prompt (privacy.injection_guard.wrap_untrusted); S17b `no_spotlighting` passes it unmarked."""
         from vakeel_sahayak.privacy.injection_guard import wrap_untrusted
 
+        texts, tally = self._defence_state()
+        texts.add(text)
+        if not self.defences().spotlighting:
+            tally.unmarked += 1
+            return text
+        tally.wrapped += 1
         src = source if isinstance(source, SourceRef) else SourceRef.model_validate(source or {})
         return wrap_untrusted(text, src)
 
     def flag_instructions(self, data: Any, where: str = "case") -> list[str]:
-        """Log (without the text) every path in `data` whose text looks like an instruction to the model (plan §16, T7)."""
+        """Log (without the text) every path in `data` whose text looks like an instruction to the model (plan §16, T7). S17c `no_guard` only counts them."""
         from vakeel_sahayak.privacy.injection_guard import detect_instruction_like
 
+        _, tally = self._defence_state()
         paths = [p for p, s in _walk_strings(data, where) if detect_instruction_like(s)]
+        if not self.defences().guard:
+            tally.missed += len(paths)
+            return []
+        tally.flagged_paths += len(paths)
         if paths:
             self.emit(EventKind.AGENT_MESSAGE, {"outputs": {"type": "injection_flag", "paths": paths[:50],
                       "text": "Instruction-like text found in document data; it is treated as data and not followed."}})  # fmt: skip
         return paths
+
+    def _handoff(self, instructions: str, case: Any, extra: Any) -> str:
+        """Typed hand-off (S17a): the instruction text never carries document text.
+
+        On (default): a tracked document text found in the instructions is removed and logged (no effect on any current prompt).
+        Off (`no_typed_handoff`): the document texts of this call are copied into the instruction channel as free text, as a naive pipeline would.
+        """
+        from vakeel_sahayak.privacy.defences import with_free_text, without_document_text
+
+        texts, tally = self._defence_state()
+        if len(texts) == 0:
+            return instructions
+        if self.defences().typed_handoff:
+            cleaned, removed = without_document_text(instructions, texts.all())
+            if removed:
+                tally.purged += removed
+                self.emit(EventKind.AGENT_MESSAGE, {"outputs": {"type": "typed_handoff", "action": "removed document text from the instructions", "texts": removed}})
+            return cleaned
+        used = texts.in_data({"c": jsonable(case), "x": jsonable(extra)})
+        if used:
+            tally.spliced += len(used)
+            self.emit(EventKind.AGENT_MESSAGE, {"outputs": {"type": "typed_handoff_off", "action": "document text copied into the instructions", "texts": len(used)}})
+        return with_free_text(instructions, used)
+
+    def _prefix_meter(self) -> Any:
+        """The prefix meter: shared by every agent of a batch through the retrieval cache, else by the agents of one context."""
+        from vakeel_sahayak.models.prefix import PrefixMeter
+
+        holder = getattr(getattr(self, "ctx", None), "cache", None)
+        if holder is None:
+            holder = getattr(self, "ctx", None) or self
+        try:
+            return holder.__dict__.setdefault("_prefix_meter", PrefixMeter())
+        except AttributeError:  # a holder without a __dict__ (slots): this agent keeps its own
+            return self.__dict__.setdefault("_prefix_meter", PrefixMeter())
+
+    def prefix_signals(self) -> dict[str, float]:
+        """Prompt tokens and the tokens shared with earlier prompts of the same task (S14d: `shared_prefix_tokens`); measured under either layout."""
+        return self._prefix_meter().stats()
+
+    def injection_signals(self) -> dict[str, Any]:
+        """Defence counters of this agent and which defences are off (S17 signals; counts only)."""
+        _, tally = self._defence_state()
+        return {"off": self.defences().off, **tally.as_dict()}
+
+    def _with_injection(self, state: CaseGraphState) -> CaseGraphState:
+        """Add `variant_signals['injection']` to a state, only when an S17 arm is running (default states are unchanged)."""
+        if self.defences().all_on:
+            return state
+        mine = {**state.variant_signals.get("injection", {}), self.NAME.value: self.injection_signals()}
+        return state.model_copy(update={"variant_signals": {**state.variant_signals, "injection": mine}})
 
     @staticmethod
     def prediction_language(text: str) -> list[str]:
@@ -630,7 +706,8 @@ class BaseAgent(ABC):
         data: dict[str, Any] = {"case": jsonable(case) if case is not None else {}, "corpus": jsonable(corpus) if corpus is not None else {}}
         if extra:
             data.update(jsonable(extra))
-        return render_prompt(task, instructions, data, system=self.system_prompt(), schema=schema_of(schema) if schema is not None else None)
+        return render_prompt(task, instructions, data, system=self.system_prompt(), schema=schema_of(schema) if schema is not None else None,
+                             prefix_friendly=bool(getattr(self.switches, "prefix_layout", False)))
 
     def ask(
         self,
@@ -674,11 +751,15 @@ class BaseAgent(ABC):
         fkey = None if factor is None else str(getattr(factor, "value", factor))
         fkey = fkey or _FACTOR.get()
         self.flag_instructions({"case": jsonable(case), "extra": jsonable(extra)} if extra else jsonable(case))
+        instructions = self._handoff(instructions, case, extra)
         self.guard_outbound({"system": self.system_prompt(), "instructions": instructions, "case": case, "extra": extra}, public=corpus)
         budgets = getattr(self, "budgets", None)
         if budgets is not None and _spent(budgets, 'tokens_exhausted', fkey):
             raise BudgetExhausted(f"token budget of {fkey or 'the case'} is spent", "factor" if fkey else "case", fkey, "tokens")
         prompt = self.build_prompt(task, instructions, case=case, corpus=corpus, schema=schema, extra=extra)
+        shared = self._prefix_meter().observe(task, prompt)  # S14d signal: tokens shared with an earlier prompt of this task (in memory; an event only under the variant)
+        if getattr(self.switches, "prefix_layout", False):
+            self.emit(EventKind.AGENT_MESSAGE, {"outputs": {"type": "prefix_signals", "task": task, "shared_prefix_tokens": shared}})
         attempts, value = 1, None
         try:
             if schema is not None:

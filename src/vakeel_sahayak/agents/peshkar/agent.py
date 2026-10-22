@@ -233,7 +233,7 @@ class PeshkarAgent(BaseAgent):
             rights = self.run_rights_radar(state)
             self.snapshot(state)
             self.gate1_inputs(state)
-            return state.model_copy(update={"dossier": dossier, "list_of_dates": dates, "rights": rights})
+            return self._with_injection(state.model_copy(update={"dossier": dossier, "list_of_dates": dates, "rights": rights}))
         change_set = self.detect_changes(state)
         update: dict[str, Any] = {
             "dossier": self._dossier(),
@@ -242,7 +242,7 @@ class PeshkarAgent(BaseAgent):
         }
         if not _is_empty(change_set):
             update["pending_change_set"] = change_set
-        return state.model_copy(update=update)
+        return self._with_injection(state.model_copy(update=update))
 
     # ------------------------------------------------------------------ dossier (plan §7.1)
 
