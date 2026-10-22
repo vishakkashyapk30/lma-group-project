@@ -55,6 +55,7 @@ def render_prompt(
     *,
     system: str = "",
     schema: dict[str, Any] | None = None,
+    prefix_friendly: bool = False,
 ) -> str:
     """Render a prompt in the shared layout.
 
@@ -64,6 +65,8 @@ def render_prompt(
         data: the evidence, JSON-able; by convention {'case': private pseudonymised data, 'corpus': public data}
         system: the agent's system text; `DATA_RULE` is appended
         schema: the output JSON schema for structured calls (shown to the model as well as enforced)
+        prefix_friendly: S14d: INPUT keys in a fixed order with the public corpus first and the case last (`models.prefix.prefix_ordered`), so prompts of
+            different cases share the longest possible prefix; the default layout is unchanged
 
     Returns:
         The prompt.
@@ -72,6 +75,10 @@ def render_prompt(
     if schema is not None:
         parts.append(f"{SCHEMA_HEADER}\nReply with one JSON value that matches this schema and nothing else.\n"
                      + json.dumps(schema, ensure_ascii=False, separators=(",", ":")))  # fmt: skip
+    if prefix_friendly:
+        from vakeel_sahayak.models.prefix import prefix_ordered
+
+        data = prefix_ordered(json.loads(json.dumps(data or {}, ensure_ascii=False, default=str)))
     parts.append(f"{INPUT_HEADER}\n" + json.dumps(data or {}, ensure_ascii=False, indent=1, default=str))
     return "\n\n".join(parts)
 

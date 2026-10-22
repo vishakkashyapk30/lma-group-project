@@ -130,6 +130,7 @@ class PairokarAgent(BaseAgent):
             hours_per_case=hours_per_case,
             owner=f"pairokar:{self.case_id}",
             on_event=self._record,
+            policy=self.switches.urgency_policy,
         )
 
     # ------------------------------------------------------------------ events
@@ -363,8 +364,28 @@ class PairokarAgent(BaseAgent):
             else:
                 self.queue.skip_stage2(card.case_id)
         done = self.scheduler.run_stage2(self.queue, gpu_budget_hours)
-        self.message(f"Stage 2 finished {len(done)} case(s).", case_ids=done, cache=self.cache.stats())
+        extra = {"batch_signals": self.batch_signals()} if self._serving_variant() else {}  # S14 arms only: the default message is unchanged
+        self.message(f"Stage 2 finished {len(done)} case(s).", case_ids=done, cache=self.cache.stats(), **extra)
         return done
+
+    def _serving_variant(self) -> bool:
+        """True when a serving variant (S14 plan cache, S14b / S14c scheduling policy, S14d prefix layout) is on."""
+        sw = self.switches
+        return bool(sw.plan_cache or sw.urgency_policy != "urgency" or sw.prefix_layout)
+
+    def batch_signals(self) -> dict[str, Any]:
+        """Serving signals of this batch (S14): the retrieval cache, the plan cache (hit rate, tokens saved), the scheduling policy (missed deadlines, inversions)
+        and the prefix meter (shared prefix tokens), whichever were used."""
+        from vakeel_sahayak.batch.cache import plans_of
+
+        out: dict[str, Any] = {"retrieval_cache": self.cache.stats(), "scheduling": self.scheduler.signals(self.queue)}
+        plans = plans_of(self.cache).stats()
+        if plans["lookups"]:
+            out["plan_cache"] = plans
+        meter = getattr(self.cache, "__dict__", {}).get("_prefix_meter")
+        if meter is not None:
+            out["prefix"] = meter.stats()
+        return out
 
 
 __all__ = ["BulkExportError", "PairokarAgent"]

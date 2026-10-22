@@ -27,7 +27,15 @@ from typing import Any
 from pydantic_core import to_jsonable_python
 
 from vakeel_sahayak.batch.queue import DEFAULT_CASE_HOURS, STAGE1, STAGE2, TriageQueue
-from vakeel_sahayak.batch.urgency import CODE_DEFAULT_BAIL_OPEN, CODE_DEFAULT_BAIL_SOON, card_key, parse_reasons, rank
+from vakeel_sahayak.batch.urgency import (
+    CODE_DEFAULT_BAIL_OPEN,
+    CODE_DEFAULT_BAIL_SOON,
+    card_key,
+    has_deadline,
+    order_cards,
+    parse_reasons,
+    rank,
+)
 from vakeel_sahayak.schemas.triage import TriageCard
 
 FULL_BRIEF, FLAG_COUNSEL, REQUEST_DOCUMENTS = "full_brief", "flag_counsel", "request_documents"
@@ -120,6 +128,8 @@ class Scheduler:
         hours_per_case: float = DEFAULT_CASE_HOURS,
         owner: str = "pairokar",
         on_event: EventSink | None = None,
+        policy: str = "urgency",
+        sizes: dict[str, float] | None = None,
     ) -> None:
         """Create the scheduler.
 
@@ -130,6 +140,8 @@ class Scheduler:
             hours_per_case: GPU-hours one full run is planned at
             owner: the worker name written on claims
             on_event: called with (case_id, tool, text, outputs) for every decision, so the caller can log it
+            policy: `Switches.urgency_policy` (S14b / S14c): 'urgency' (default, the fixed rule), 'fifo', 'urgency_least_work' or 'shortest_first'
+            sizes: planned size of each case's full run for 'shortest_first' (case id -> hours; missing = equal)
         """
         self.stage1 = stage1
         self.full_run = full_run
@@ -139,6 +151,9 @@ class Scheduler:
         self.on_event = on_event
         self.cards: dict[str, TriageCard] = {}
         self._barred: set[str] = set()  # cases found, by their full run, to face a statutory bar
+        self.policy = policy
+        self.sizes = dict(sizes or {})
+        self.completed: list[str] = []  # case ids in the order their full runs finished (for the S14 signals; in memory only)
 
     # ------------------------------------------------------------------ events and refusals
 
@@ -250,7 +265,7 @@ class Scheduler:
         Returns:
             Cards in urgency order with next_step set.
         """
-        cards = rank(self._stage1_cards(queue))
+        cards = self._order(self._stage1_cards(queue), queue)
         for cid in queue.done_ids(STAGE2):
             res = queue.result(cid, STAGE2)
             if res is not None and _found_bar(res):
@@ -267,6 +282,17 @@ class Scheduler:
         self.cards = {c.case_id: c for c in decided}
         return decided
 
+    def _order(self, cards: list[TriageCard], queue: TriageQueue | None = None) -> list[TriageCard]:
+        """Cards in the order of the scheduling policy (the default is `urgency.rank`, as before)."""
+        if self.policy == "urgency":
+            return rank(cards)
+        arrival = {cid: i for i, cid in enumerate(queue.case_ids())} if queue is not None else {}
+        work: dict[str, float] = {}
+        if self.policy == "urgency_least_work" and queue is not None:  # attained service: planned hours of a full run times the attempts it has had
+            for c in cards:
+                work[c.case_id] = float(queue.plan_of(c.case_id)["est_hours"] or self.hours_per_case) * queue.attempts(c.case_id, STAGE2)
+        return order_cards(cards, self.policy, arrival=arrival, work=work, sizes=self.sizes)
+
     def reprioritise(self, cards: list[TriageCard]) -> list[TriageCard]:
         """e.g. a case found to face a statutory bar moves down.
 
@@ -281,6 +307,8 @@ class Scheduler:
             Reordered cards.
         """
         ordered = sorted(cards, key=lambda c: c.urgency_rank if c.urgency_rank > 0 else 10**9)
+        if self.policy in ("fifo", "shortest_first"):  # baselines that do not use the urgency rule keep their own order (no statutory-bar demotion)
+            return [c.model_copy(update={"urgency_rank": i}) for i, c in enumerate(ordered, start=1)]
         barred = [c for c in ordered if self._faces_bar(c)]
         rest = [c for c in ordered if not self._faces_bar(c)]
         return [c.model_copy(update={"urgency_rank": i}) for i, c in enumerate([*rest, *barred], start=1)]
@@ -342,6 +370,7 @@ class Scheduler:
             queue.mark_done(cid, payload)
             left -= hours
             done.append(cid)
+            self.completed.append(cid)
             self._emit(cid, "stage2_done", "Full run finished and saved.", hours=hours)
             if _found_bar(result) and cid not in self._barred:
                 self._barred.add(cid)
@@ -353,9 +382,32 @@ class Scheduler:
         """Recompute ranks from the cards and write them to the queue, so the next claim follows the new order."""
         if not self.cards:
             self.cards = {c.case_id: c for c in self._stage1_cards(queue)}
-        ranked = self.reprioritise(list(self.cards.values()))
+        cards = list(self.cards.values())
+        if self.policy == "urgency_least_work":  # the work done changes after every case: order again
+            cards = self._order(cards, queue)
+        ranked = self.reprioritise(cards)
         self.cards = {c.case_id: c for c in ranked}
         queue.set_ranks({c.case_id: c.urgency_rank for c in ranked})
+
+    def signals(self, queue: TriageQueue | None = None) -> dict[str, Any]:
+        """S14b / S14c signals over the cards of this scheduler: the policy, cases with a legal deadline, those not finished (missed), inversions and completion order.
+
+        A deadline case counts as missed when it needs a full run and that run has not finished (the session budget ended first); an inversion is a case
+        without a legal deadline whose full run finished before one with a deadline.
+
+        Args:
+            queue: the batch queue, to read which full runs are done (default: the scheduler's own `completed` list)
+
+        Returns:
+            dict: `policy`, `deadline_cases`, `missed_deadlines`, `inversions`, `completed` (case ids in finish order), `needing_full_run`.
+        """
+        done = set(queue.done_ids(STAGE2)) if queue is not None else set(self.completed)
+        wanted = [c for c in self.cards.values() if self.needs_full_run(self.decide(c), c)]
+        deadline = [c.case_id for c in wanted if has_deadline(c)]
+        order = [c for c in self.completed if c in {w.case_id for w in wanted}]
+        inversions = sum(1 for i, a in enumerate(order) for b in order[i + 1:] if a not in deadline and b in deadline)
+        return {"policy": self.policy, "deadline_cases": len(deadline), "missed_deadlines": sum(1 for c in deadline if c not in done),
+                "inversions": inversions, "completed": list(self.completed), "needing_full_run": len(wanted)}
 
     def resume(self, queue: TriageQueue) -> list[tuple[str, str]]:
         """Start of a new session after a shard died: give back every job the old session still held.

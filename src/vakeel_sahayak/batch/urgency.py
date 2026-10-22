@@ -216,3 +216,57 @@ def rank(cards: list[TriageCard]) -> list[TriageCard]:
     """
     ordered = sorted(cards, key=lambda c: (*card_key(c), c.case_id))
     return [c.model_copy(update={"urgency_rank": i}) for i, c in enumerate(ordered, start=1)]
+
+
+# ---------------------------------------------------------------------------------------------------------------- scheduling policies (S14b / S14c)
+POLICIES = ("urgency", "fifo", "urgency_least_work", "shortest_first")
+
+
+def order_cards(cards: list[TriageCard], policy: str = "urgency", *, arrival: dict[str, int] | None = None, work: dict[str, float] | None = None,
+                sizes: dict[str, float] | None = None) -> list[TriageCard]:
+    """Order cards under a scheduling policy and assign `urgency_rank` (1 = served first). `urgency` is `rank`, unchanged.
+
+    Policies (variant S14b / S14c of `docs/evaluation-plan.md`; the batch-level versions of ideas from Autellix, Luo et al., arXiv 2025, preprint,
+    https://arxiv.org/abs/2502.13965, which schedules LLM programs by the service they have already received, and Parrot, Lin et al., OSDI 2024,
+    https://www.usenix.org/conference/osdi24/presentation/lin-chaofan, which schedules by the application's request graph; we change only the order of whole cases at
+    the application level, never the serving engine):
+
+    - `urgency`: the fixed legal-urgency rule (plan section 11); the default.
+    - `fifo` (S14b): arrival order, first come first served; ignores urgency.
+    - `urgency_least_work` (S14c): the urgency rule, and cases it ties on go to the one that has had the least work done so far (least attained service).
+    - `shortest_first`: the shortest planned full run first, ties by urgency (the classic shortest-job-first baseline; no variant id).
+
+    Args:
+        cards: the cards (not modified)
+        policy: one of `POLICIES`
+        arrival: case id -> arrival position (`fifo`); unknown ids go last
+        work: case id -> work already done, in any consistent unit (`urgency_least_work`; missing = 0)
+        sizes: case id -> planned size of the full run (`shortest_first`; missing = 0, so equal sizes fall back to urgency)
+
+    Returns:
+        Copies of the cards in order with urgency_rank set; fully equal keys are ordered by case id, so the order is deterministic.
+
+    Raises:
+        ValueError: unknown policy.
+    """
+    if policy == "urgency":
+        return rank(cards)
+    arrival, work, sizes = arrival or {}, work or {}, sizes or {}
+    if policy == "fifo":
+        def key(c: TriageCard) -> tuple:
+            return (arrival.get(c.case_id, 10**9), c.case_id)
+    elif policy == "urgency_least_work":
+        def key(c: TriageCard) -> tuple:
+            return (*card_key(c), work.get(c.case_id, 0.0), c.case_id)
+    elif policy == "shortest_first":
+        def key(c: TriageCard) -> tuple:
+            return (sizes.get(c.case_id, 0.0), *card_key(c), c.case_id)
+    else:
+        raise ValueError(f"unknown urgency policy {policy!r}: use one of {', '.join(POLICIES)}")
+    ordered = sorted(cards, key=key)
+    return [c.model_copy(update={"urgency_rank": i}) for i, c in enumerate(ordered, start=1)]
+
+
+def has_deadline(card: TriageCard) -> bool:
+    """True when the card carries a legal deadline (a default-bail window open or opening soon, or s.479 crossed): the first part of its urgency key is 0."""
+    return card_key(card)[0] == 0
