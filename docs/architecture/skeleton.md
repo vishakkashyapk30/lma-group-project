@@ -78,6 +78,56 @@ Maps `docs/plan.md` (v5) onto the code. Every module is a stub: typed signatures
 **Tests**
 - `tests/` is intentionally absent from the skeleton; the test suite is added separately.
 
+### Architecture variants implemented (literature sweep 1)
+
+Opt-in switches of `orchestration/switches.py`, default off (outputs identical to the full system); the paper behind each is cited in
+the module docstring and in `docs/literature-to-code-map.md`. Status and next steps: `docs/handoff/literature-sweep-1.md`.
+
+| Variant | Switch | Module |
+|---|---|---|
+| S1 retrieval critique / corrective re-retrieval | `retrieval_policy='self_critique'` | `agents/sutradhar/critique.py`, `SutradharAgent.assess` and `_next_move` |
+| S2 adaptive retrieval depth | `retrieval_policy='adaptive'` | `agents/sutradhar/depth.py`, `SutradharAgent._apply_depth` |
+| S4 score-skew weak signal | `weak_signal='skew'` | `agents/sutradhar/skew.py`, `SutradharAgent._apply_skew`, `search_reasoning(with_scores=)` |
+| S5 (A16) citation-graph expansion | `graph_expansion` | `pipelines/citation_graph/expansion.py`, `CitationStore.expand`, `search_reasoning(expand_graph=)` |
+| S3 (A11b) sufficiency stopping | `stopping` | `agents/sutradhar/sufficiency.py`, `SutradharAgent._apply_rater` |
+
+### Architecture variants implemented (literature sweep 2: verification and adversarial)
+
+Same rules as above (default off, byte-identical default pinned by `tests/unit/agents/vakeel/test_variants_golden.py`). Signals go to
+`CaseGraphState.variant_signals` (empty by default) and to labelled events. Status: `docs/handoff/literature-sweep-2.md`.
+
+| Variant | Switch | Module |
+|---|---|---|
+| S8 (A2b) self-critique-only repair | `repair_mode='self_critique'` | `agents/vakeel/agent.py` (`VakeelAgent._self_review`, `_run_check`), tasks `vakeel.self_critique`, `vakeel.self_revise` |
+| S10 (A8c) Abhiyojak without isolation | `abhiyojak_isolation=False` | `agents/abhiyojak/isolation.py` (`build_open_context`), `AbhiyojakAgent._context`, `guard` |
+| S9 (A8b) sampling-only critic at equal tokens | `critic_mode='sampling'` | `eval/ablations/a8b_sampling_critic.py` (`SamplingCritic`, `install`), dispatched by `eval/runners/driver.py::wire_variants` |
+| S15 (A13) reasoning-first output | `output_format='reasoning_first'` | `agents/vakeel/prompts.py` (`DraftedGroundReasoned`, `ReasonedReply`), `VakeelAgent._schema_and_limit`, `_keep_reasoning` |
+| S11 (A8d) three-role review | `critic_mode='three_role'` | `eval/ablations/a8d_three_role.py` (`ThreeRoleCritic`, `install`), dispatched by `driver.wire_variants` |
+| S11b / S11c draft debate / vote | `draft_mode='debate'`, `'vote'` | `agents/vakeel/agent.py` (`VakeelAgent._draft_many`, `_medoid`) |
+
+### Architecture variants implemented (literature sweep 3: intake, safety, serving)
+
+Same rules (default off, byte-identical default pinned by `tests/unit/agents/peshkar/test_variants_golden.py` and `tests/unit/agents/munshi/test_variants_golden.py`).
+Status: `docs/handoff/literature-sweep-3.md`.
+
+| Variant | Switch | Module |
+|---|---|---|
+| S17 / S17b / S17c / S17d (A15) injection-defence arms | `no_typed_handoff`, `no_spotlighting`, `no_guard`, all three | `privacy/defences.py`, `BaseAgent.untrusted` / `flag_instructions` / `_handoff`, `MunshiAgent` (guard, spotlight), `eval/ablations/susceptible_llm.py` (`SusceptibleLLM`) |
+| S7 (A11a) hierarchy-ranked gap re-reading | `munshi_gap_policy='hierarchy'` | `ingestion/hierarchy.py`, `ingestion/gaps.py::resolve_gap(policy=)`, `MunshiAgent.check_gaps` / `gap_signals` |
+| P7 image-only ingestion | `munshi_image_only=True` | `MunshiAgent._floor` / `_read_page` (min route VISION), `image_only_signals`, `ingestion/pipeline.read_file(min_route=)` |
+| S14 (A14) plan cache | `plan_cache=True` | `batch/cache.py` (`PlanCache`, `plans_of`), the `_ask_plan` hook in `agents/sutradhar/agent.py` |
+| S14b / S14c scheduling policies | `urgency_policy='fifo'`, `'urgency_least_work'` (and baseline `'shortest_first'`) | `batch/urgency.order_cards`, `Scheduler(policy=)`, `PairokarAgent.batch_signals` |
+| S14d prefix-friendly layout | `prefix_layout=True` | `models/prefix.py`, `render_prompt(prefix_friendly=)`, `BaseAgent.prefix_signals` |
+
+### Architecture variants implemented (literature sweep 4: routing, topology, chunking, workflow search)
+
+Same rules (default off, byte-identical default pinned by `tests/unit/agents/sutradhar/golden_default_run.json`). Status: `docs/handoff/literature-sweep-4.md`.
+
+| Variant | Switch | Module |
+|---|---|---|
+| S6 (A12) learned store prior orders calls inside a contract | `store_prior='order'` | `agents/sutradhar/store_prior.py` (`StorePrior`, `order_signals`), `SutradharAgent._apply_prior` |
+| B5 (S6b) learned store router alone, no contracts | `store_prior='only'` | `agents/sutradhar/store_prior.py` (`run_prior_only`), dispatched in `SutradharAgent.run`; trainer: `python -m vakeel_sahayak.agents.sutradhar.store_prior train` |
+
 ## 3. Interpretations made in the skeleton
 
 - The plan lists data and evaluation code without a home; both live inside the package (`pipelines/`, `finetune/`, `testsets/`, `eval/`) so there is one install and one import root.
