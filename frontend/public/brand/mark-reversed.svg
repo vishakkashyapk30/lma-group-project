@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Vakeel-Sahayak">
+  <mask id="g"><rect width="32" height="32" fill="#fff"/>
+    <path d="M9 13.5 16 25l7-11.5" fill="none" stroke="#000" stroke-width="3.2" stroke-linejoin="miter"/>
+    <path d="M7.5 8.25h17" fill="none" stroke="#000" stroke-width="2.6"/></mask>
+  <rect width="32" height="32" rx="6" fill="#FFFFFF" mask="url(#g)"/>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 196 32" width="196" height="32" role="img" aria-label="Vakeel-Sahayak">
+  <rect width="32" height="32" rx="6" fill="#FFFFFF"/>
+  <path d="M9 13.5 16 25l7-11.5" fill="none" stroke="#7A1626" stroke-width="3.2" stroke-linejoin="miter"/>
+  <path d="M7.5 8.25h17" fill="none" stroke="#7A1626" stroke-width="2.6"/>
+  <text x="42" y="22.5" font-family="Newsreader, 'Iowan Old Style', Georgia, serif" font-size="21" font-weight="600" fill="#FFFFFF">Vakeel-Sahayak</text>
+</svg>

@@ -1,16 +1,19 @@
-/* Self-hosted Manuscript fonts (@fontsource), so the build never needs the network (plan §13.2).
-   Family names are bound to the --font-* variables that styles/tokens.css reads. */
-@import "@fontsource-variable/fraunces/opsz.css";
-@import "@fontsource-variable/dm-sans/index.css";
-@import "@fontsource-variable/noto-sans-devanagari/index.css";
-@import "@fontsource/tiro-devanagari-hindi/400.css";
-@import "@fontsource/ibm-plex-mono/400.css";
-@import "@fontsource/ibm-plex-mono/500.css";
+/* Self-hosted fonts (@fontsource), so the build never needs the network. See DESIGN.md for the pairing and why.
+   Newsreader (headings, document text) · Schibsted Grotesk (interface) · Spline Sans Mono (citations, ids)
+   Noto Serif Devanagari (Hindi beside Newsreader) · Hind (Hindi beside Schibsted Grotesk). */
+@import "@fontsource-variable/newsreader/opsz.css";
+@import "@fontsource-variable/newsreader/opsz-italic.css";
+@import "@fontsource-variable/schibsted-grotesk/index.css";
+@import "@fontsource-variable/spline-sans-mono/index.css";
+@import "@fontsource-variable/noto-serif-devanagari/index.css";
+@import "@fontsource/hind/400.css";
+@import "@fontsource/hind/500.css";
+@import "@fontsource/hind/600.css";
 
 :root {
-  --font-fraunces: "Fraunces Variable", "Fraunces";
-  --font-dm-sans: "DM Sans Variable", "DM Sans";
-  --font-noto-deva: "Noto Sans Devanagari Variable", "Noto Sans Devanagari";
-  --font-tiro: "Tiro Devanagari Hindi";
-  --font-plex-mono: "IBM Plex Mono";
+  --font-newsreader: "Newsreader Variable", "Newsreader";
+  --font-schibsted: "Schibsted Grotesk Variable", "Schibsted Grotesk";
+  --font-spline-mono: "Spline Sans Mono Variable", "Spline Sans Mono";
+  --font-noto-serif-deva: "Noto Serif Devanagari Variable", "Noto Serif Devanagari";
+  --font-hind: "Hind";
 }

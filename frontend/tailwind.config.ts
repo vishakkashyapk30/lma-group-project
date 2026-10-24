@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-// Tokens come from styles/tokens.css ("Manuscript" palette, plan §13.2). Colours use RGB channel variables so that
+// Tokens come from styles/tokens.css (see DESIGN.md). Colours use RGB channel variables so that
 // opacity modifiers work (bg-maroon/10, border-gold/40).
 const rgb = (name: string) => `rgb(var(--rgb-${name}) / <alpha-value>)`;
 
@@ -17,8 +17,9 @@ const config: Config = {
         "gold-leaf": rgb("gold-leaf"),
         ink: { DEFAULT: rgb("ink"), soft: rgb("ink-soft"), muted: rgb("ink-muted") },
         line: { DEFAULT: rgb("line"), strong: rgb("line-strong") },
-        neem: rgb("neem"),
-        indigo: rgb("indigo"),
+        neem: { DEFAULT: rgb("neem"), deep: rgb("neem-deep"), tint: rgb("neem-tint") },
+        indigo: { DEFAULT: rgb("indigo"), deep: rgb("indigo-deep"), tint: rgb("indigo-tint"), pale: rgb("indigo-pale") },
+        saffron: { DEFAULT: rgb("saffron"), tint: rgb("saffron-tint"), wash: rgb("saffron-wash"), ink: rgb("saffron-ink") },
         sindoor: rgb("sindoor"),
         haldi: rgb("haldi"),
         clay: rgb("clay"),
@@ -36,8 +37,8 @@ const config: Config = {
         "2xs": ["var(--text-2xs)", { lineHeight: "1rem" }],
         xs: ["var(--text-xs)", { lineHeight: "1.125rem" }],
         sm: ["var(--text-sm)", { lineHeight: "1.375rem" }],
-        base: ["var(--text-base)", { lineHeight: "1.6rem" }],
-        lg: ["var(--text-lg)", { lineHeight: "1.75rem" }],
+        base: ["var(--text-base)", { lineHeight: "1.45rem" }],
+        lg: ["var(--text-lg)", { lineHeight: "1.7rem" }],
         xl: ["var(--text-xl)", { lineHeight: "1.85rem" }],
         "2xl": ["var(--text-2xl)", { lineHeight: "2rem" }],
         "3xl": ["var(--text-3xl)", { lineHeight: "2.35rem" }],
@@ -99,7 +100,7 @@ const config: Config = {
         toast: "70",
         tooltip: "80",
       },
-      // Transform and opacity only (plan §13.7).
+      // Transform and opacity only.
       keyframes: {
         "fade-in": { from: { opacity: "0" }, to: { opacity: "1" } },
         "fade-out": { from: { opacity: "1" }, to: { opacity: "0" } },
@@ -108,33 +109,37 @@ const config: Config = {
           to: { opacity: "1", transform: "translateY(0)" },
         },
         "scale-in": {
-          from: { opacity: "0", transform: "scale(calc(1 - 0.04 * var(--motion-amplitude)))" },
+          from: { opacity: "0", transform: "scale(calc(1 - 0.03 * var(--motion-amplitude)))" },
           to: { opacity: "1", transform: "scale(1)" },
         },
         // Centred dialogs are positioned with translate(-50%, -50%): the animation has to carry it or it would replace it.
         "dialog-in": {
-          from: { opacity: "0", transform: "translate(-50%, -50%) scale(calc(1 - 0.04 * var(--motion-amplitude)))" },
+          from: { opacity: "0", transform: "translate(-50%, -50%) scale(calc(1 - 0.03 * var(--motion-amplitude)))" },
           to: { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
         },
         "slide-in-right": { from: { transform: "translateX(100%)" }, to: { transform: "translateX(0)" } },
         "slide-out-right": { from: { transform: "translateX(0)" }, to: { transform: "translateX(100%)" } },
+        "slide-in-left": { from: { transform: "translateX(-100%)" }, to: { transform: "translateX(0)" } },
+        "slide-out-left": { from: { transform: "translateX(0)" }, to: { transform: "translateX(-100%)" } },
         "slide-in-up": { from: { transform: "translateY(100%)" }, to: { transform: "translateY(0)" } },
-        "breathe": { "0%, 100%": { opacity: "1" }, "50%": { opacity: "0.55" } },
+        "breathe": { "0%, 100%": { opacity: "1" }, "50%": { opacity: "0.6" } },
         "spin-slow": { from: { transform: "rotate(0deg)" }, to: { transform: "rotate(360deg)" } },
         "shimmer": { from: { transform: "translateX(-100%)" }, to: { transform: "translateX(100%)" } },
       },
       animation: {
-        "fade-in": "fade-in var(--dur-base) var(--ease-standard) both",
-        "fade-out": "fade-out var(--dur-fast) var(--ease-exit) both",
-        "rise-in": "rise-in var(--dur-slow) var(--ease-enter) both",
-        "scale-in": "scale-in var(--dur-base) var(--ease-enter) both",
-        "dialog-in": "dialog-in var(--dur-base) var(--ease-enter) both",
-        "slide-in-right": "slide-in-right var(--dur-slow) var(--ease-enter) both",
-        "slide-out-right": "slide-out-right var(--dur-base) var(--ease-exit) both",
-        "slide-in-up": "slide-in-up var(--dur-slow) var(--ease-enter) both",
-        breathe: "breathe var(--motion-working-loop-max) var(--ease-ink) infinite",
-        "spin-slow": "spin-slow 24s linear infinite",
-        shimmer: "shimmer 1.6s var(--ease-standard) infinite",
+        "fade-in": "fade-in var(--dur-base) var(--ease) both",
+        "fade-out": "fade-out var(--dur-fast) var(--ease) both",
+        "rise-in": "rise-in var(--dur-slow) var(--ease) both",
+        "scale-in": "scale-in var(--dur-base) var(--ease) both",
+        "dialog-in": "dialog-in var(--dur-base) var(--ease) both",
+        "slide-in-right": "slide-in-right var(--dur-slow) var(--ease) both",
+        "slide-out-right": "slide-out-right var(--dur-base) var(--ease) both",
+        "slide-in-left": "slide-in-left var(--dur-slow) var(--ease) both",
+        "slide-out-left": "slide-out-left var(--dur-base) var(--ease) both",
+        "slide-in-up": "slide-in-up var(--dur-slow) var(--ease) both",
+        breathe: "breathe var(--motion-working-loop-max) var(--ease) infinite",
+        "spin-slow": "spin-slow 1s linear infinite",
+        shimmer: "shimmer 1.4s var(--ease) infinite",
       },
     },
   },

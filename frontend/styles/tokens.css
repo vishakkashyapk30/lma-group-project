@@ -1,5 +1,5 @@
 /*
- * "Manuscript" design tokens (plan §13.2). Config, not code.
+ * Design tokens. Config, not code. See DESIGN.md.
  *
  * Every colour exists twice: as a hex value (--color-*) for plain CSS and as an RGB channel triplet (--rgb-*) so that
  * Tailwind can apply opacity modifiers (bg-maroon/10). Contrast ratios are WCAG 2.1 figures computed for these hexes.
@@ -7,84 +7,105 @@
  * --font-dm-sans and --font-plex-mono on <html>; the semantic --font-* tokens below point at them.
  */
 :root {
-  /* ── Palette (§13.2) ─────────────────────────────────────────────────────────────────────────────────────────── */
-  --color-parchment: #F6EEDC; /* page background */
-  --color-cream: #FBF7EE;     /* cards, panels; text on dark (14.4:1 on oxblood) */
-  --color-maroon: #7A1626;    /* primary: headings, buttons, links, active stage (9.2:1 on parchment) */
-  --color-oxblood: #4A0E17;   /* hero panel, stats band, footer */
-  --color-gold-leaf: #B08D57; /* borders, ornaments, line art; text only on oxblood (5.0:1); 2.7:1 on parchment = decoration only */
-  --color-ink: #231A16;       /* body text (14.8:1 on parchment) */
+  /* ── Palette: warm neutrals, one accent (maroon) for actions, links and the active state ────────────────────── */
+  --color-parchment: #F7F5F0; /* app canvas */
+  --color-cream: #FFFFFF;     /* panels, inputs, tables; text on dark */
+  --color-maroon: #7A1626;    /* primary actions, active nav, links (9.8:1 on canvas, 10.7:1 on white) */
+  --color-oxblood: #4A0E17;   /* rare dark areas only */
+  --color-gold-leaf: #B08D57; /* thin accent line only; never text */
+  --color-ink: #211C19;       /* body text (15.5:1 on canvas) */
 
-  --rgb-parchment: 246 238 220;
-  --rgb-cream: 251 247 238;
+  --rgb-parchment: 247 245 240;
+  --rgb-cream: 255 255 255;
   --rgb-maroon: 122 22 38;
   --rgb-oxblood: 74 14 23;
   --rgb-gold-leaf: 176 141 87;
-  --rgb-ink: 35 26 22;
+  --rgb-ink: 33 28 25;
 
-  /* Derived neutrals (same hues; listed with their contrast so they stay AA) */
-  --color-parchment-deep: #EFE4CB; /* hover / pressed panels (ink 13.5:1) */
-  --color-ink-soft: #4A3F38;       /* secondary text (8.8:1 on parchment) */
-  --color-ink-muted: #5C4F46;      /* tertiary text, captions (6.8:1 on parchment) */
-  --color-line: #E4D6B8;           /* hairlines, decoration only */
-  --color-line-strong: #857560;    /* input and control borders (3.9:1 on parchment, >= 3:1 for UI components) */
-  --color-gold-pale: #D4B57E;      /* text and focus ring on oxblood (7.8:1); decoration elsewhere */
+  /* Derived neutrals */
+  --color-parchment-deep: #EFEBE3; /* sidebar, hover, subtle fills (ink 14.1:1) */
+  --color-ink-soft: #484039;       /* secondary text (9.4:1 on canvas) */
+  --color-ink-muted: #675D54;      /* captions, placeholders (5.9:1 on canvas, 6.4:1 on white) */
+  --color-line: #E4DED2;           /* hairlines, dividers */
+  --color-line-strong: #8C8277;    /* input and control borders (3.8:1 on white, 3.5:1 on canvas, above the 3:1 needed for controls) */
+  --color-gold-pale: #D9BE8A;      /* text and focus ring on oxblood only (8.6:1) */
   --color-maroon-deep: #5E101D;    /* hover / pressed for maroon fills */
 
-  --rgb-parchment-deep: 239 228 203;
-  --rgb-ink-soft: 74 63 56;
-  --rgb-ink-muted: 92 79 70;
-  --rgb-line: 228 214 184;
-  --rgb-line-strong: 133 117 96;
-  --rgb-gold-pale: 212 181 126;
+  --rgb-parchment-deep: 239 235 227;
+  --rgb-ink-soft: 72 64 57;
+  --rgb-ink-muted: 103 93 84;
+  --rgb-line: 228 222 210;
+  --rgb-line-strong: 140 130 119;
+  --rgb-gold-pale: 217 190 138;
   --rgb-maroon-deep: 94 16 29;
 
-  /* ── Status colours (§13.2): always paired with an icon and a label, never colour alone ───────────────────────── */
-  --color-neem: #3D6B45;    /* VERIFIED, SUPPORTED, OK (5.8:1 on cream)            icon: check  */
-  --color-indigo: #2E3A6B;  /* COMPUTED (10.2:1 on cream)                          icon: f      */
-  --color-sindoor: #B3261E; /* UNSUPPORTED, UNANSWERED, FLAG (6.1:1 on cream)      icon: cross  */
-  --color-haldi: #8C5A0B;   /* AMBIGUOUS, CHECK, NEEDS_REVIEW, UNKNOWN (5.5:1)     icon: ?      */
-  --color-clay: #6B5E55;    /* USER_STATED, USER_EDITED (5.9:1 on cream)           icon: pencil */
+  /* ── Status colours: always an icon and a label, never colour alone ─────────────────────────────────────────── */
+  --color-neem: #2F6B3A;    /* verified, supported, ok (6.4:1 on white) */
+  --color-indigo: #2E3A6B;  /* computed (10.9:1) */
+  --color-sindoor: #B3261E; /* unsupported, unanswered, flag (6.5:1 on white) */
+  --color-haldi: #8C5A0B;   /* ambiguous, check, needs review (5.9:1 on white) */
+  --color-clay: #6B5E55;    /* stated or edited by counsel (6.3:1 on white) */
 
-  --rgb-neem: 61 107 69;
+  --rgb-neem: 47 107 58;
   --rgb-indigo: 46 58 107;
   --rgb-sindoor: 179 38 30;
   --rgb-haldi: 140 90 11;
   --rgb-clay: 107 94 85;
 
-  /* ── Type (§13.2; all SIL OFL) ───────────────────────────────────────────────────────────────────────────────── */
-  --font-display: var(--font-fraunces, "Fraunces"), Georgia, "Times New Roman", serif;
-  --font-devanagari-display: var(--font-tiro, "Tiro Devanagari Hindi"), var(--font-noto-deva, "Noto Sans Devanagari"), serif;
-  --font-devanagari-body: var(--font-noto-deva, "Noto Sans Devanagari"), var(--font-dm-sans, "DM Sans"), sans-serif;
-  --font-ui: var(--font-dm-sans, "DM Sans"), var(--font-noto-deva, "Noto Sans Devanagari"), system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: var(--font-plex-mono, "IBM Plex Mono"), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* ── Secondary colours for the landing bands and the product loop (flat fills, never gradients) ──────────────────
+     Meaning: maroon = act, indigo = information and sources, neem = confirmed, saffron = needs your check. */
+  --color-saffron: #E8A33D;       /* fills and rules only; ink on it 7.8:1 */
+  --color-saffron-tint: #FBEBCB;  /* band background (ink 14.3:1, saffron-ink 6.7:1, maroon 9.1:1) */
+  --color-saffron-wash: #FDF5E6;  /* row highlight inside white panels (saffron-ink 7.3:1) */
+  --color-saffron-ink: #764706;   /* text for "needs your check" (7.9:1 on white, 6.7:1 on the tint) */
+  --color-indigo-deep: #1E2650;   /* indigo band (white 14.5:1, parchment 13.3:1) */
+  --color-indigo-tint: #E7EAF6;   /* source highlight, info fills (indigo 9.1:1) */
+  --color-indigo-pale: #C9D0F0;   /* secondary text on the indigo band (9.5:1) */
+  --color-neem-deep: #1E4B2A;     /* text on neem tint (8.5:1), fill behind white text (10.0:1) */
+  --color-neem-tint: #E4F0E1;     /* band background (ink 14.3:1, neem 5.4:1) */
 
-  /* Type scale: UI steps are fixed; display steps are fluid */
-  --text-2xs: 0.6875rem;  /* 11px: meta only, never body */
+  --rgb-saffron: 232 163 61;
+  --rgb-saffron-tint: 251 235 203;
+  --rgb-saffron-wash: 253 245 230;
+  --rgb-saffron-ink: 118 71 6;
+  --rgb-indigo-deep: 30 38 80;
+  --rgb-indigo-tint: 231 234 246;
+  --rgb-indigo-pale: 201 208 240;
+  --rgb-neem-deep: 30 75 42;
+  --rgb-neem-tint: 228 240 225;
+
+  /* ── Type (all SIL OFL, self-hosted) ────────────────────────────────────────────────────────────────────────── */
+  --font-display: var(--font-newsreader, "Newsreader"), "Iowan Old Style", Georgia, serif;
+  --font-devanagari-display: var(--font-newsreader, "Newsreader"), var(--font-noto-serif-deva, "Noto Serif Devanagari"), serif;
+  --font-devanagari-body: var(--font-schibsted, "Schibsted Grotesk"), var(--font-hind, "Hind"), sans-serif;
+  --font-ui: var(--font-schibsted, "Schibsted Grotesk"), var(--font-hind, "Hind"), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-spline-mono, "Spline Sans Mono"), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --text-2xs: 0.6875rem;  /* 11px: meta only */
   --text-xs: 0.75rem;     /* 12px */
   --text-sm: 0.875rem;    /* 14px */
-  --text-base: 1rem;      /* 16px */
-  --text-lg: 1.125rem;    /* 18px */
+  --text-base: 0.9375rem; /* 15px: interface body */
+  --text-lg: 1.0625rem;   /* 17px: document text */
   --text-xl: 1.25rem;     /* 20px */
   --text-2xl: 1.5rem;     /* 24px */
-  --text-3xl: 1.875rem;   /* 30px */
-  --text-4xl: clamp(2rem, 1.6rem + 1.6vw, 2.75rem);
-  --text-5xl: clamp(2.5rem, 1.8rem + 3vw, 4rem);
-  --text-6xl: clamp(3rem, 2rem + 4.5vw, 5.5rem);
-  --text-display: clamp(3.25rem, 2rem + 6vw, 7rem);
+  --text-3xl: 1.75rem;    /* 28px */
+  --text-4xl: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem);
+  --text-5xl: clamp(2.25rem, 1.7rem + 2.2vw, 3.25rem);
+  --text-6xl: clamp(2.5rem, 1.8rem + 3vw, 4rem);
+  --text-display: clamp(2.5rem, 1.8rem + 3vw, 4rem);
 
   --leading-none: 1;
-  --leading-tight: 1.1;
-  --leading-snug: 1.25;
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
   --leading-normal: 1.5;
-  --leading-relaxed: 1.65;
-  --leading-devanagari: 1.75; /* Devanagari needs room for matras above and below the line */
+  --leading-relaxed: 1.6;
+  --leading-devanagari: 1.7; /* matras above and below the line need room */
 
-  --tracking-tight: -0.02em;
+  --tracking-tight: -0.01em;
   --tracking-normal: 0;
-  --tracking-caps: 0.08em;    /* small caps labels, stage numerals */
+  --tracking-caps: 0;        /* no letter-spaced labels; kept so older class names resolve */
 
-  /* ── Spacing ─────────────────────────────────────────────────────────────────────────────────────────────────── */
+  /* ── Spacing (4 / 8 px scale) ───────────────────────────────────────────────────────────────────────────────── */
   --space-0: 0;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -100,47 +121,50 @@
   --space-24: 6rem;
 
   /* Layout */
-  --nav-h: 4rem;              /* top nav */
-  --rail-h: 3.5rem;           /* stage rail */
-  --pane-gap: 1px;            /* hairline between the three panes */
-  --content-max: 80rem;       /* page content width */
+  --sidebar-w: 14.5rem;
+  --sidebar-w-collapsed: 3.75rem;
+  --nav-h: 3.25rem;           /* top bar */
+  --rail-h: 3rem;             /* stage stepper */
+  --pane-gap: 1px;
+  --content-max: 76rem;
   --prose-max: 68ch;
 
-  /* ── Radii (flat colour blocks: small radii, plus the pill and the round play button) ───────────────────────── */
+  /* ── Radii: small and consistent. "Pill" is kept as a token name but is the same 6 px, so nothing renders as a pill ── */
   --radius-xs: 2px;
   --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 20px;
-  --radius-pill: 9999px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
+  --radius-pill: 6px;
 
-  /* ── Elevation (warm, low) ───────────────────────────────────────────────────────────────────────────────────── */
-  --shadow-sm: 0 1px 0 rgb(var(--rgb-ink) / 0.05), 0 1px 2px rgb(var(--rgb-ink) / 0.06);
-  --shadow-md: 0 1px 2px rgb(var(--rgb-ink) / 0.06), 0 8px 24px -10px rgb(var(--rgb-oxblood) / 0.22);
-  --shadow-lg: 0 2px 6px rgb(var(--rgb-ink) / 0.08), 0 24px 48px -16px rgb(var(--rgb-oxblood) / 0.32);
+  /* ── Elevation: borders do the work; shadows only for things that float ─────────────────────────────────────── */
+  --shadow-sm: none;
+  --shadow-md: 0 1px 2px rgb(var(--rgb-ink) / 0.06);
+  --shadow-lg: 0 8px 24px -8px rgb(var(--rgb-ink) / 0.18), 0 0 0 1px rgb(var(--rgb-ink) / 0.06);
 
-  /* ── Focus ───────────────────────────────────────────────────────────────────────────────────────────────────── */
-  --focus-ring-color: var(--color-maroon);   /* 9.2:1 on parchment */
-  --focus-ring-width: 3px;
+  /* ── Focus ──────────────────────────────────────────────────────────────────────────────────────────────────── */
+  --focus-ring-color: var(--color-maroon);
+  --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
 
-  /* ── Motion (§13.4, §13.7): transform and opacity only ──────────────────────────────────────────────────────── */
+  /* ── Motion: 100-250 ms, one easing, transform and opacity only ─────────────────────────────────────────────── */
   --dur-instant: 80ms;
-  --dur-fast: 150ms;
-  --dur-base: 220ms;
-  --dur-slow: 360ms;
-  --dur-deliberate: 600ms;
-  --dur-scene: 1200ms;
-  --motion-working-loop-max: 2s; /* working loops are low-amplitude and at most 2 s long */
-  --motion-amplitude: 1;         /* multiply translate/scale offsets by this; 0 under reduced motion */
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-slow: 250ms;
+  --dur-deliberate: 250ms;
+  --dur-scene: 250ms;
+  --motion-working-loop-max: 1.2s; /* only small spinners and progress */
+  --motion-amplitude: 1;
 
-  --ease-standard: cubic-bezier(0.2, 0, 0, 1);    /* UI state changes */
-  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);    /* things arriving (expo out) */
-  --ease-exit: cubic-bezier(0.7, 0, 0.84, 0);     /* things leaving */
-  --ease-ink: cubic-bezier(0.65, 0, 0.35, 1);     /* line art drawing in, text inking */
-  --ease-settle: cubic-bezier(0.34, 1.3, 0.64, 1);/* scales settling, stamps landing (slight overshoot) */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --ease-standard: var(--ease);
+  --ease-enter: var(--ease);
+  --ease-exit: var(--ease);
+  --ease-ink: var(--ease);
+  --ease-settle: var(--ease);
 
-  /* ── Layers ──────────────────────────────────────────────────────────────────────────────────────────────────── */
+  /* ── Layers ─────────────────────────────────────────────────────────────────────────────────────────────────── */
   --z-base: 0;
   --z-raised: 10;
   --z-sticky: 30;
@@ -151,7 +175,7 @@
   --z-tooltip: 80;
 }
 
-/* Reduced motion: working loops stop, amplitudes collapse (plan §13.4, §13.7). */
+/* Reduced motion: durations collapse, amplitudes go to zero. */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --motion-working-loop-max: 0s;
