@@ -1,0 +1,172 @@
+/*
+ * Landing page motion. Transform, opacity and (for the one check stroke) stroke-dashoffset only; 150 to 300 ms per
+ * beat; the shared easing. See DESIGN.md "Landing bands" and "Hero loop".
+ *
+ * Every element's resting style is its FINAL state, so reduced motion, no-JS and the end of the loop all look the same.
+ */
+
+/* ── Reveal on scroll: each child marked data-rv rises 8 px and fades in, 40 ms apart, once ─────────────────────────── */
+[data-rv-state="pending"] [data-rv] {
+  opacity: 0;
+  transform: translateY(8px);
+}
+[data-rv-state="shown"] [data-rv] {
+  transition: opacity var(--dur-slow) var(--ease), transform var(--dur-slow) var(--ease);
+  transition-delay: calc(var(--i, 0) * 40ms);
+}
+
+/* Highlight sweep behind a quoted phrase: a flat band that scales in from the left. */
+.sweep {
+  position: relative;
+  isolation: isolate;
+}
+.sweep::before {
+  content: "";
+  position: absolute;
+  inset: -1px -3px;
+  z-index: -1;
+  border-radius: 2px;
+  background: var(--color-indigo-pale);
+  transform-origin: left center;
+}
+[data-rv-state="pending"] .sweep::before {
+  transform: scaleX(0);
+}
+[data-rv-state="shown"] .sweep::before {
+  transition: transform var(--dur-slow) var(--ease) 240ms;
+}
+
+/* Animated check: the stroke draws in once. */
+.check-draw path {
+  stroke-dasharray: 18;
+  stroke-dashoffset: 0;
+}
+[data-rv-state="pending"] .check-draw path {
+  stroke-dashoffset: 18;
+}
+[data-rv-state="shown"] .check-draw path {
+  transition: stroke-dashoffset var(--dur-slow) var(--ease) calc(var(--i, 0) * 40ms + 160ms);
+}
+
+/* ── Links and buttons ──────────────────────────────────────────────────────────────────────────────────────────── */
+/* Underline that draws in from the left on hover and focus. */
+.link-draw {
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition: background-size var(--dur-base) var(--ease), color var(--dur-fast) var(--ease);
+  padding-bottom: 1px;
+}
+.link-draw:hover,
+.link-draw:focus-visible {
+  background-size: 100% 1px;
+}
+/* A rest underline for links that sit in running text. */
+.link-draw[data-rest] {
+  background-size: 100% 1px;
+  background-position: 0 100%;
+}
+
+.lift {
+  transition: transform var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.lift:hover {
+  transform: translateY(-1px);
+}
+.lift:active {
+  transform: translateY(0);
+}
+.lift .arrow {
+  transition: transform var(--dur-base) var(--ease);
+}
+.lift:hover .arrow,
+.lift:focus-visible .arrow {
+  transform: translateX(3px);
+}
+
+/* Pattern for the maroon band: a faint lattice, flat, one colour. */
+.jaali-dark {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='%23FFFFFF' stroke-opacity='0.07' stroke-width='1'%3E%3Cpath d='M24 4 44 24 24 44 4 24Z'/%3E%3Cpath d='M12 12h24v24H12z'/%3E%3Ccircle cx='24' cy='24' r='4'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 48px 48px;
+}
+
+/* ── Hero product loop ──────────────────────────────────────────────────────────────────────────────────────────── */
+@keyframes hl-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hl-slide {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hl-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes hl-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes hl-sweep {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes hl-draw {
+  from { stroke-dashoffset: 18; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* Delays come from --d (enter) and --o (leave), set inline per element. */
+.hl-rise { animation: hl-rise var(--dur-slow) var(--ease) var(--d, 0s) both; }
+.hl-slide { animation: hl-slide var(--dur-slow) var(--ease) var(--d, 0s) both; }
+.hl-fade { animation: hl-fade-in var(--dur-base) var(--ease) var(--d, 0s) both; }
+.hl-leave { animation: hl-fade-out var(--dur-base) var(--ease) var(--o, 0s) both; }
+.hl-phase { animation: hl-fade-in var(--dur-base) var(--ease) var(--d, 0s) both, hl-fade-out var(--dur-base) var(--ease) var(--o, 0s) forwards; }
+.hl-mark::before { animation: hl-sweep var(--dur-slow) var(--ease) var(--d, 0s) both; }
+.hl-check path { stroke-dasharray: 18; animation: hl-draw var(--dur-slow) var(--ease) var(--d, 0s) both; }
+
+.hl-mark {
+  position: relative;
+  isolation: isolate;
+}
+.hl-mark::before {
+  content: "";
+  position: absolute;
+  inset: -1px -3px;
+  z-index: -1;
+  border-radius: 2px;
+  background: var(--color-indigo-pale);
+  transform-origin: left center;
+}
+
+/* Resting (final) state of elements that change during the run. */
+.hl-phase { opacity: 0; }
+.hl-leave { opacity: 0; }
+.hl-final { opacity: 1; }
+
+/* Paused while the tab is hidden. */
+.hl-root[data-paused="true"] *,
+.hl-root[data-paused="true"] *::before {
+  animation-play-state: paused !important;
+}
+
+/* Reduced motion (system setting or the in-app switch): no animation at all, final frame only. */
+@media (prefers-reduced-motion: reduce) {
+  .hl-root *, .hl-root *::before { animation: none !important; }
+  [data-rv-state="pending"] [data-rv] { opacity: 1; transform: none; }
+  [data-rv-state="pending"] .sweep::before { transform: none; }
+  [data-rv-state="pending"] .check-draw path { stroke-dashoffset: 0; }
+  .lift:hover { transform: none; }
+}
+:root[data-motion="reduce"] .hl-root *,
+:root[data-motion="reduce"] .hl-root *::before { animation: none !important; }
+:root[data-motion="reduce"] [data-rv-state="pending"] [data-rv] { opacity: 1; transform: none; }
+:root[data-motion="reduce"] [data-rv-state="pending"] .sweep::before { transform: none; }
+:root[data-motion="reduce"] [data-rv-state="pending"] .check-draw path { stroke-dashoffset: 0; }
+:root[data-motion="reduce"] .lift:hover { transform: none; }
+
+/* Nothing to replay when motion is off. */
+@media (prefers-reduced-motion: reduce) { .hl-replay { display: none; } }
+:root[data-motion="reduce"] .hl-replay { display: none; }
