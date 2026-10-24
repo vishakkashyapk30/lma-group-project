@@ -1,12 +1,12 @@
 "use client";
 // Batch desk: upload a folder or zip, triage board, open a case; Pairokar's cause-list bars while scoring (plan §11, §13.5).
-import { FolderUp, FileArchive, ShieldCheck } from "lucide-react";
+import { FolderUp, FileArchive } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ChangeEvent, type DragEvent, type ReactElement } from "react";
 import { AgentSignature } from "@/components/agents/AgentSignature";
+import { PageHeader } from "@/components/common/PageHeader";
 import { Button, Skeleton } from "@/components/ui";
 import { deskUpload, getDeskBoard } from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
-import { agentTitle } from "@/lib/agents";
 import { cn } from "@/lib/utils";
 import type { TriageCard } from "@/lib/types";
 import { TriageBoard } from "./TriageBoard";
@@ -74,27 +74,18 @@ export function DeskPage({ className }: DeskPageProps): ReactElement {
 
   return (
     <div className={cn("mx-auto max-w-content px-4 py-8 sm:px-6 sm:py-10", className)}>
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b-2 border-maroon/70 pb-5">
-        <div>
-          <p className="font-sans text-xs font-semibold uppercase tracking-caps text-ink-soft">{agentTitle("PAIROKAR")}</p>
-          <h1 className="font-display text-4xl font-semibold text-maroon sm:text-5xl">Batch desk</h1>
-          <p className="mt-1 max-w-prose text-sm text-ink-soft">
-            For legal-aid offices with many undertrial files. Each file is read and checked cheaply, then ranked: legal deadlines first,
-            then days past a threshold, then custody length. Ties go to cases with no missing documents.
-          </p>
-        </div>
-        <p className="flex items-center gap-2 rounded-md border border-neem/50 bg-neem/[0.07] px-3 py-2 text-sm font-semibold text-neem">
-          <ShieldCheck aria-hidden className="size-4" /> Each case needs its own approval.
-        </p>
-      </header>
+      <PageHeader
+        title="Batch desk"
+        description="Add a folder of undertrial files. Each file is read and checked, then ranked: legal deadlines first, then days past a threshold, then custody length. Each case still needs its own approval."
+      />
 
-      <section aria-label="Upload" className="mt-6 grid gap-5 md:grid-cols-[1fr_20rem]">
+      <section aria-label="Upload" className="mt-6">
         <div
           onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
           onDragLeave={() => setDrag(false)}
           onDrop={onDrop}
           className={cn(
-            "flex flex-col items-start justify-center gap-3 rounded-lg border-2 border-dashed bg-cream p-6 transition-colors duration-fast",
+            "flex flex-col items-start justify-center gap-3 rounded-lg border border-dashed bg-cream p-6 transition-colors duration-fast",
             drag ? "border-maroon bg-parchment-deep" : "border-line-strong/60",
           )}
         >
@@ -120,19 +111,17 @@ export function DeskPage({ className }: DeskPageProps): ReactElement {
             {message ? <span className="text-neem">{message}</span> : null}
           </div>
           {error ? <p role="alert" className="text-sm text-sindoor">{error}</p> : null}
-        </div>
-        <div className="rounded-lg border border-line bg-parchment-deep/50 p-3">
           <AgentSignature
             agent="PAIROKAR"
-            mode={scoring ? "working" : "full"}
+            mode={scoring ? "working" : "static"}
             active={scoring}
-            statusText={scoring ? "Pairokar is scoring and ranking cases" : "Pairokar: cause list ready"}
+            statusText={scoring ? "Scoring and ranking cases" : "Cause list ready"}
           />
         </div>
       </section>
 
       <section aria-label="Triage board" className="mt-8">
-        <h2 className="mb-3 font-display text-2xl font-semibold text-maroon">Triage board</h2>
+        <h2 className="mb-3 font-display text-xl font-semibold">Triage board</h2>
         {cards === null ? (
           <div className="space-y-2" aria-busy="true">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-24" />)}</div>
         ) : (

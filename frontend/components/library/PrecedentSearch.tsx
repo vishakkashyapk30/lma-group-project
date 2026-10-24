@@ -173,15 +173,14 @@ export function PrecedentSearch({ className, onOpenGraph, onOpenBridge }: Preced
           </p>
         ) : (
           <ol className="m-0 list-none space-y-3 p-0">
-            {results.map((h, i) => {
+            {results.map((h) => {
               const x = extra[h.doc_id] ?? {};
               const gl = h.good_law ?? x.good_law ?? "UNKNOWN";
               const root = x.sc_root;
               const ref = h.sections.find((s) => /^(IPC|BNS)\s/i.test(s));
               return (
-                <li key={hitKey(h)} className="rounded-lg border border-line bg-cream p-4 shadow-sm">
+                <li key={hitKey(h)} className="rounded-lg border border-line bg-cream p-4">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                    <span className="font-display text-2xl font-semibold text-maroon/80 tabular" aria-hidden>{i + 1}</span>
                     <h3 className="font-display text-lg font-semibold">{h.citation ?? h.doc_id}</h3>
                     <StatusBadge status={gl} kind="goodLaw" />
                     {h.transfer ? <StatusBadge status={h.transfer} kind="transfer" /> : null}

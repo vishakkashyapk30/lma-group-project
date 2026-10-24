@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import { DeskPage } from "@/components/desk/DeskPage";
 
-export const metadata: Metadata = { title: "Desk" };
+export const metadata: Metadata = { title: "Batch desk" };
 
 export default function Page() {
   return <DeskPage />;

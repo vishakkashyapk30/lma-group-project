@@ -1,4 +1,4 @@
-// `/about` The six agents, how it works and its limits (plan §13.3).
+// `/about` How it works and its limits.
 import type { Metadata } from "next";
 import { AboutPage } from "@/components/about/AboutPage";
 

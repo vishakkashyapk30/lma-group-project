@@ -102,7 +102,7 @@ export function BridgeView({ initialRef = "IPC 420", className }: BridgeViewProp
         <section aria-label={`${data.old_ref} and ${data.new_ref}`} className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-[1fr_11rem_1fr]">
             <article className="rounded-lg border border-line bg-cream p-4">
-              <p className="text-xs font-semibold uppercase tracking-caps text-ink-soft">Old law</p>
+              <p className="text-xs font-semibold text-ink-soft">Old law</p>
               <h3 className="font-display text-2xl font-semibold text-maroon">{data.old_ref}</h3>
               {data.old_heading ? <p className="text-sm text-ink-soft">{data.old_heading}</p> : null}
               <div className="mt-3"><DiffText segments={data.diff} side="old" /></div>
@@ -119,7 +119,7 @@ export function BridgeView({ initialRef = "IPC 420", className }: BridgeViewProp
             </div>
 
             <article className="rounded-lg border border-line bg-cream p-4">
-              <p className="text-xs font-semibold uppercase tracking-caps text-ink-soft">New law</p>
+              <p className="text-xs font-semibold text-ink-soft">New law</p>
               <h3 className="font-display text-2xl font-semibold text-maroon">{data.new_ref}</h3>
               {data.new_heading ? <p className="text-sm text-ink-soft">{data.new_heading}</p> : null}
               <div className="mt-3"><DiffText segments={data.diff} side="new" /></div>

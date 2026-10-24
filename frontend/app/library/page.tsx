@@ -2,7 +2,7 @@
 import type { Metadata } from "next";
 import { LibraryPage } from "@/components/library/LibraryPage";
 
-export const metadata: Metadata = { title: "Library" };
+export const metadata: Metadata = { title: "Precedent library" };
 
 export default function Page() {
   return <LibraryPage />;
