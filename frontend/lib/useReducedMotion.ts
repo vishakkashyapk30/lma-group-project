@@ -80,3 +80,11 @@ export function useReducedMotion(): boolean {
 }
 
 export default useReducedMotion;
+
+/** Flip reduced motion on or off (the override wins over the OS setting). Returns true when motion is now reduced. */
+export function toggleReducedMotion(): boolean {
+  const o = getReducedMotionOverride();
+  const reduced = o ? o === "reduce" : prefersReducedMotion();
+  setReducedMotionOverride(reduced ? "no-preference" : "reduce");
+  return !reduced;
+}

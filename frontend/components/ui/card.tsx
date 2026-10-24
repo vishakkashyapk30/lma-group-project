@@ -1,4 +1,4 @@
-// Card: cream panel with a hairline border (plan §13.2: cards and panels are cream).
+// Card: a white panel with a hairline border. No shadow; use sparingly, prefer dividers inside a page.
 import { forwardRef, type HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
@@ -9,10 +9,10 @@ export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement> & 
         ref={ref}
         data-surface={tone === "oxblood" ? "dark" : undefined}
         className={cn(
-          "rounded-lg border shadow-sm",
+          "rounded-lg border",
           tone === "cream" && "border-line bg-cream text-ink",
-          tone === "parchment" && "border-line bg-parchment text-ink",
-          tone === "oxblood" && "border-gold/40 bg-oxblood text-cream",
+          tone === "parchment" && "border-line bg-parchment-deep text-ink",
+          tone === "oxblood" && "border-oxblood bg-oxblood text-cream",
           className,
         )}
         {...props}
@@ -27,7 +27,7 @@ export const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivEleme
 
 export const CardTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadingElement> & { as?: "h2" | "h3" | "h4" }>(
   function CardTitle({ className, as: Tag = "h3", ...props }, ref) {
-    return <Tag ref={ref} className={cn("font-display text-lg font-semibold leading-snug text-maroon", className)} {...props} />;
+    return <Tag ref={ref} className={cn("font-display text-lg font-semibold leading-snug text-ink", className)} {...props} />;
   },
 );
 

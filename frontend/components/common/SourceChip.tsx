@@ -31,8 +31,8 @@ export function SourceChip({ source, label, className }: SourceChipProps): React
       title={source.quote ?? `Open ${text}`}
       aria-label={`Open source ${text}`}
       className={cn(
-        "inline-flex max-w-full items-center gap-1 rounded-sm border border-line-strong/50 bg-cream px-1.5 py-0.5 font-mono text-[11px] leading-tight text-ink-soft",
-        "transition-colors duration-fast hover:border-maroon hover:text-maroon disabled:cursor-default disabled:hover:border-line-strong/50 disabled:hover:text-ink-soft",
+        "inline-flex max-w-full items-center gap-1 rounded-sm bg-parchment-deep px-1.5 py-0.5 font-mono text-[11px] leading-tight text-ink-soft",
+        "transition-colors duration-fast hover:bg-maroon/[0.1] hover:text-maroon disabled:cursor-default disabled:hover:bg-parchment-deep disabled:hover:text-ink-soft",
         className,
       )}
     >

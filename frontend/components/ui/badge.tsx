@@ -1,26 +1,25 @@
-// Badge: small label chip. For statuses use components/common/StatusBadge (icon + label + colour, plan §13.2).
+// Badge: a small label. Quiet by default: normal type, a hairline, no fill. Statuses use components/common/StatusBadge.
 import { cva, type VariantProps } from "class-variance-authority";
 import { forwardRef, type HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 export const badgeVariants = cva(
-  "inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-sm border font-sans font-semibold leading-none [&_svg]:size-3 [&_svg]:shrink-0",
+  "inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-sm font-sans leading-none [&_svg]:size-3 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "border-maroon/40 bg-maroon/[0.06] text-maroon",
-        solid: "border-maroon bg-maroon text-cream",
-        outline: "border-line-strong/70 bg-transparent text-ink-soft",
-        muted: "border-line bg-parchment-deep text-ink-soft",
-        /** Route badges and IDs in IBM Plex Mono. */
-        mono: "border-line-strong/60 bg-cream font-mono font-medium tracking-tight text-ink",
-        /** Gold text on oxblood only (plan §13.2). */
-        gold: "border-gold/60 bg-oxblood text-gold-pale",
-        neem: "border-neem/50 bg-neem/[0.07] text-neem",
-        indigo: "border-indigo/45 bg-indigo/[0.06] text-indigo",
-        sindoor: "border-sindoor/50 bg-sindoor/[0.06] text-sindoor",
-        haldi: "border-haldi/50 bg-haldi/[0.07] text-haldi",
-        clay: "border-clay/50 bg-clay/[0.07] text-clay",
+        default: "border border-line-strong/50 text-ink-soft",
+        solid: "bg-maroon text-cream",
+        outline: "border border-line-strong/50 text-ink-soft",
+        muted: "bg-parchment-deep text-ink-soft",
+        /** Ids and citations in the mono face. */
+        mono: "border border-line bg-cream font-mono text-ink-soft",
+        gold: "bg-oxblood text-gold-pale",
+        neem: "text-neem",
+        indigo: "text-indigo",
+        sindoor: "text-sindoor",
+        haldi: "text-haldi",
+        clay: "text-clay",
       },
       size: {
         sm: "h-5 px-1.5 text-2xs",
@@ -29,7 +28,7 @@ export const badgeVariants = cva(
       },
       shape: {
         default: "",
-        pill: "rounded-pill",
+        pill: "",
       },
     },
     defaultVariants: { variant: "default", size: "md", shape: "default" },

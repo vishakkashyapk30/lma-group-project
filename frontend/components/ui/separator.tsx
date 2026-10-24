@@ -1,4 +1,4 @@
-// Separator: a hairline, or the gold ornament rule. Decorative by default (hidden from assistive tech).
+// Separator: a hairline, or a thin gold accent rule. Decorative by default (hidden from assistive tech).
 import { forwardRef, type HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 

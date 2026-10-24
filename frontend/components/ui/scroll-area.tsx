@@ -1,5 +1,5 @@
-// ScrollArea: a native scrolling region with thin gold scrollbars. It is focusable when labelled so keyboard users
-// can scroll it (WCAG 2.1.1), and it opts out of Lenis smooth scrolling.
+// ScrollArea: a native scrolling region with thin scrollbars. It is focusable when labelled so keyboard users
+// can scroll it (WCAG 2.1.1).
 import { forwardRef, type HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +15,6 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(function S
   return (
     <div
       ref={ref}
-      data-lenis-prevent=""
       role={labelled ? (props.role ?? "region") : props.role}
       tabIndex={tabIndex ?? (labelled ? 0 : undefined)}
       className={cn(

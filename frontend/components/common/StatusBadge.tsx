@@ -1,4 +1,4 @@
-// Status chip: icon + label + colour from lib/status.ts, never colour alone (plan §13.2).
+// Status: an icon and a short word in the status colour, never colour alone. Plain type, no pill, no fill.
 import type { ReactElement } from "react";
 import { cn } from "@/lib/utils";
 import { getStatusMeta, TONE_CLASSES, type StatusKind } from "@/lib/status";
@@ -43,9 +43,9 @@ export function StatusBadge({ status, kind, label, detail, size = "md", solid = 
       title={meta.description}
       data-status={status}
       className={cn(
-        "inline-flex items-center gap-1 rounded-pill border font-sans font-semibold leading-none whitespace-nowrap",
-        size === "sm" ? "px-1.5 py-[3px] text-[11px]" : "px-2 py-1 text-xs",
-        solid ? cn(tone.solid, "border-transparent") : cn(tone.text, tone.border, tone.bg),
+        "inline-flex items-center gap-1 font-sans font-medium leading-none whitespace-nowrap",
+        size === "sm" ? "text-xs" : "text-[13px]",
+        solid ? cn(tone.solid, "rounded-sm px-1.5 py-1") : tone.text,
         className,
       )}
     >

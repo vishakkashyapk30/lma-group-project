@@ -1,5 +1,5 @@
 "use client";
-// Dialog (Radix): focus is trapped and returned, Escape closes, the title names the dialog (gate modal, plan §13.5).
+// Dialog (Radix): focus is trapped and returned, Escape closes, the title names the dialog.
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import { forwardRef, type ComponentPropsWithoutRef, type ElementRef, type HTMLAttributes } from "react";
@@ -17,7 +17,7 @@ export const DialogOverlay = forwardRef<
   return (
     <DialogPrimitive.Overlay
       ref={ref}
-      className={cn("fixed inset-0 z-modal bg-oxblood/55 data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out", className)}
+      className={cn("fixed inset-0 z-modal bg-ink/40 data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out", className)}
       {...props}
     />
   );
@@ -39,7 +39,7 @@ export const DialogContent = forwardRef<ElementRef<typeof DialogPrimitive.Conten
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed left-1/2 top-1/2 z-modal flex max-h-[min(90dvh,48rem)] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-gold/50 bg-cream text-ink shadow-lg",
+          "fixed left-1/2 top-1/2 z-modal flex max-h-[min(90dvh,48rem)] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-line bg-cream text-ink shadow-lg",
           "data-[state=open]:animate-dialog-in data-[state=closed]:animate-fade-out",
           size === "sm" && "max-w-sm",
           size === "md" && "max-w-lg",
@@ -70,12 +70,12 @@ export function DialogBody({ className, ...props }: HTMLAttributes<HTMLDivElemen
 }
 
 export function DialogFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-wrap items-center justify-end gap-2 border-t border-line bg-parchment/60 px-5 py-3", className)} {...props} />;
+  return <div className={cn("flex flex-wrap items-center justify-end gap-2 border-t border-line bg-parchment px-5 py-3", className)} {...props} />;
 }
 
 export const DialogTitle = forwardRef<ElementRef<typeof DialogPrimitive.Title>, ComponentPropsWithoutRef<typeof DialogPrimitive.Title>>(
   function DialogTitle({ className, ...props }, ref) {
-    return <DialogPrimitive.Title ref={ref} className={cn("font-display text-xl font-semibold text-maroon", className)} {...props} />;
+    return <DialogPrimitive.Title ref={ref} className={cn("font-display text-xl font-semibold text-ink", className)} {...props} />;
   },
 );
 
