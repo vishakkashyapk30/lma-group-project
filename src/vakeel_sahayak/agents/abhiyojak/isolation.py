@@ -29,6 +29,7 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
+from vakeel_sahayak.agents.outbound import normalise_citation
 from vakeel_sahayak.agents.vakeel.facts import facts_of, text_fact
 from vakeel_sahayak.orchestration.state import CaseGraphState
 
@@ -82,7 +83,7 @@ def _ground_view(g: Any) -> dict[str, Any]:
     """A drafted ground as Abhiyojak may read it: id, factor, stance, argument, the authorities it cites, its check."""
     data = g if isinstance(g, Mapping) else g.model_dump(mode="json")
     auths = [
-        {"doc_id": a.get("doc_id"), "para": a.get("para"), "citation": a.get("citation")}
+        {"doc_id": a.get("doc_id"), "para": a.get("para"), "citation": normalise_citation(a.get("citation"), a.get("doc_id"), a.get("para"))}
         for a in (data.get("authorities") or [])
         if isinstance(a, Mapping)
     ]

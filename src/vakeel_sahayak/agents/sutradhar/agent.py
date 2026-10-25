@@ -205,6 +205,9 @@ class SutradharAgent(BaseAgent):
         self._last_state: CaseGraphState | None = None
         self.latest_state: CaseGraphState | None = None  # state after the latest `reopen_after_change`
         self._peers: dict[AgentName, BaseAgent] = {}
+        self._history: list[str] = []  # S12: one-line digests of the factors already done (the growing context of the sequential arms)
+        self._topo: dict[str, dict[str, Any]] = {}  # S12: per-factor topology signals
+        self._surplus: tuple[int, int] = (0, 0)  # S12b: store calls and tokens left over by earlier factors (one pooled budget)
         self._prior: Any = None  # S6 / B5: the learned store prior (loaded on first use, or set with `set_store_prior`)
         self.retrieval_signals: dict[str, dict[str, Any]] = {}  # per factor, filled when a stopping variant (S3) is on
 
@@ -399,6 +402,9 @@ class SutradharAgent(BaseAgent):
 
     def _ask_plan(self, work: FactorWork, left: BudgetLeft) -> RetrievalPlan:
         """The model's plan for a factor; with `Switches.plan_cache` (S14) a stored template of the same signature is reused instead (`batch.cache.PlanCache`)."""
+        if self.switches.topology == "single_agent":  # the merged agent writes its first calls inline: no separate planning prompt
+            steps = [st for sw in work.slots.values() for st in self._rule_steps(work, sw)]
+            return RetrievalPlan(factor=work.factor, round=1, budget_left=left, steps=steps)
         plans = self._plan_cache()
         if plans is None:
             return self._ask_plan_model(work, left)
@@ -434,6 +440,8 @@ class SutradharAgent(BaseAgent):
             if sw.sources
         ]  # fmt: skip
         case = {"factor": work.factor.value, "round": 1, "stance": work.stance.value, "budget_left": left.model_dump(), "slots": slots, "context": work.pctx.to_payload()}
+        if self.switches.topology == "sequential" and self._history:
+            case["history"] = list(self._history)  # S12: the growing context of the sequential arm
         try:
             out = self.ask(
                 TASK_PLAN, USER_PROMPT_TEMPLATES[TASK_PLAN].format(factor=work.factor.value), case=case, schema=RetrievalPlan,
@@ -454,6 +462,8 @@ class SutradharAgent(BaseAgent):
         slot = work.contract.slots.get(step.slot)
         if slot is None:
             return f"slot '{step.slot}' is not in the contract"
+        if step.tool == "ask_user":  # a contract may list it, but it is counsel-facing: the permission matrix refuses Sutradhar (a missing slot becomes an open issue)
+            return "ask_user is not Sutradhar's tool: a missing slot goes to counsel as an open issue"
         if step.tool in slot.tools:
             return None
         if step.tool not in TOOL_STORES:
@@ -559,6 +569,8 @@ class SutradharAgent(BaseAgent):
                 sw.pending, sw.exhausted = False, True
                 sw.result = SlotResult(slot=name, status=SlotStatus.MISSING, note="no allowed store is available in this run")
             work.slots[name] = sw
+        if self.switches.topology == "single_agent" and set_limits is not None and any(self._surplus):
+            set_limits(factor.value, store_calls=contract.budget.store_calls + self._surplus[0], tokens=contract.budget.tokens + self._surplus[1])
         if self.switches.store_prior == "order":
             self._apply_prior(work)
         if adaptive and self.switches.retrieval_policy == "adaptive":
@@ -1144,9 +1156,51 @@ class SutradharAgent(BaseAgent):
         chosen = [p for p in shells if p.stance != FactorStance.NOT_APPLICABLE and (want is None or p.factor in want)]
         self._pool.clear()
         self._work.clear()
+        self._history, self._topo, self._surplus = [], {}, (0, 0)
+        if self.switches.topology != "orchestrated":
+            done = self._drive_sequential([p.factor for p in chosen], state)
+            return [done[p.factor] for p in shells if p.factor in done]
         plans = {p.factor: self.plan_factor(p.factor, state) for p in chosen}
         done = self._drive(plans)
         return [done[p.factor] for p in shells if p.factor in done]
+
+    def _drive_sequential(self, factors: list[Factor], state: CaseGraphState) -> dict[Factor, EvidencePack]:
+        """S12 / S12b: one factor at a time, in Appendix A order, each seeing a digest of what the earlier ones found (a growing context).
+
+        Plan-and-Act style single thread instead of the lock-step rounds of the orchestrated arm. `single_agent` also pools the budgets (a factor may spend what
+        earlier factors left over) and writes its first plan inline by rule, with no separate planning prompt; the drafting that follows is Vakeel's unchanged.
+        """
+        done: dict[Factor, EvidencePack] = {}
+        single = self.switches.topology == "single_agent"
+        for position, factor in enumerate(factors):
+            before_chars = sum(len(h) for h in self._history)
+            self._topo[factor.value] = {"mode": self.switches.topology, "position": position, "history_entries": len(self._history), "context_chars_in": before_chars}
+            plan = self.plan_factor(factor, state)
+            done.update(self._drive({factor: plan}))
+            pack = done[factor]
+            self._history.append(_digest(pack))
+            spent = getattr(self.budgets, "spent", None)
+            tokens, calls = spent(factor.value) if spent else (0, 0)
+            topo = self._topo[factor.value]
+            topo.update(store_calls=int(calls), tokens=int(tokens), context_chars_out=sum(len(h) for h in self._history))
+            if single:
+                limit_calls, limit_tokens = self._left_limits(factor)
+                self._surplus = (max(0, limit_calls - int(calls)), max(0, limit_tokens - int(tokens)))
+                topo.update(pooled_limit_calls=limit_calls, surplus_calls=self._surplus[0])
+            if factor.value in self.retrieval_signals:
+                self.retrieval_signals[factor.value]["topology"] = dict(topo)
+            self._decision("topology", f"{factor.value}: {self.switches.topology} position {position}.", factor=factor.value, **topo)
+        return done
+
+    def _left_limits(self, factor: Factor) -> tuple[int, int]:
+        limits = getattr(self.budgets, "limits", None)
+        if limits is not None:
+            try:
+                return tuple(int(x) for x in limits(factor.value))  # type: ignore[return-value]
+            except Exception:  # noqa: BLE001
+                pass
+        b = contract_for(factor).budget
+        return b.store_calls, b.tokens
 
     def _drive(self, plans: dict[Factor, RetrievalPlan]) -> dict[Factor, EvidencePack]:
         done: dict[Factor, EvidencePack] = {}
@@ -1189,7 +1243,7 @@ class SutradharAgent(BaseAgent):
     def _variant_signals(self, work: FactorWork, spent: Any) -> dict[str, Any] | None:
         """The per-factor signals of the active retrieval variants (S3 stopping, S1 critique); None when every one is off."""
         sw = self.switches
-        if sw.stopping == "rules" and sw.retrieval_policy == "contract" and not sw.graph_expansion and sw.weak_signal == "rules" and sw.store_prior == "off":
+        if sw.stopping == "rules" and sw.retrieval_policy == "contract" and not sw.graph_expansion and sw.weak_signal == "rules" and sw.store_prior == "off" and sw.topology == "orchestrated":
             return None
         tokens, calls = spent(work.factor.value) if spent else (0, 0)
         sig: dict[str, Any] = signals_of(work, sw.stopping, int(calls), int(tokens)) if sw.stopping != "rules" else {"factor": work.factor.value}
@@ -1209,6 +1263,8 @@ class SutradharAgent(BaseAgent):
         if sw.retrieval_policy == "adaptive" and work.depth is not None:
             sig["retrieval_policy"] = sw.retrieval_policy
             sig["depth"] = depth_rules.signals(work, int(calls), int(tokens))
+        if sw.topology != "orchestrated" and work.factor.value in self._topo:
+            sig["topology"] = dict(self._topo[work.factor.value])
         if sw.store_prior == "order":
             from vakeel_sahayak.agents.sutradhar.store_prior import order_signals
 
@@ -1634,6 +1690,12 @@ class SutradharAgent(BaseAgent):
             if not isinstance(st, ToolError):
                 parts.append(f"[S:{st.code} {st.section}] {st.text.strip()[:140]}...")
         return " ".join(parts), chips
+
+
+def _digest(pack: EvidencePack) -> str:
+    """One line about a finished factor for the growing context of the sequential arms: factor, stance, slot statuses and item counts."""
+    slots = ", ".join(f"{r.slot} {r.status.value} ({len(r.items)})" for r in pack.slots)
+    return f"{pack.factor.value} [{pack.stance.value}]: {slots}"
 
 
 def jsonable_pack(pack: EvidencePack) -> dict[str, Any]:

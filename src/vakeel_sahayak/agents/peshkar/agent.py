@@ -27,6 +27,7 @@ source of truth: fields are written through the filer (STORE_WRITE `case.facts`)
 
 from __future__ import annotations
 
+import os
 import re
 import weakref
 from dataclasses import dataclass, field
@@ -94,6 +95,15 @@ from vakeel_sahayak.schemas.rights_report import RightsCheckResult, RightsReport
 from vakeel_sahayak.schemas.store_rows import TimelineEvent
 from vakeel_sahayak.tools.base import ToolError
 from vakeel_sahayak.tools.types import SpanCheckResult
+
+
+def peshkar_workers() -> int:
+    """Threads for the field readings: `VS_PESHKAR_WORKERS`; unset means 1 with the offline backend (event order stays exactly as before) and 4 with a hosted one."""
+    raw = os.environ.get("VS_PESHKAR_WORKERS", "").strip()
+    if raw.isdigit():
+        return max(1, min(int(raw), 16))
+    return 1 if os.environ.get("VS_LLM_BACKEND", "offline").strip().lower() in ("", "offline") else 4
+
 
 MAX_ATTEMPTS = 2  # the first reading, and one re-extraction of a field that failed the check
 FIRST_K, WIDE_K = 4, 12  # chunks shown per field on the first reading, and on the re-extraction
@@ -273,8 +283,9 @@ class PeshkarAgent(BaseAgent):
         existing = self._dossier()
         as_of = self._as_of(state)
         outcomes: dict[str, FieldOutcome] = {}
-        for name in [n for n in EXTRACTION_ORDER if n in names]:
-            outcomes[name] = self._read_field(name, getattr(existing.fields, name))
+        order = [n for n in EXTRACTION_ORDER if n in names]
+        read = self.parallel(order, lambda n: self._read_field(n, getattr(existing.fields, n)), max_workers=peshkar_workers())  # results in extraction order
+        outcomes.update(zip(order, read, strict=True))
         self._finish_sections(outcomes, existing)
         asks = self._conflict_asks(outcomes) + self._mapping_asks(outcomes) + self._missing_asks(outcomes)
         open_questions = self._put_to_counsel(asks)

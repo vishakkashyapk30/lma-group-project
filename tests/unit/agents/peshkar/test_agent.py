@@ -91,3 +91,35 @@ def test_changed_field_is_re_extracted_alone_and_the_radar_re_run():
     extract_calls = [c for c in toolbox.calls if c.name == "extract_dossier"]
     assert extract_calls and all(c.kwargs.get("fields") == ["charge_sheet"] for c in extract_calls)
     assert toolbox.count("rights_check") == 1
+
+
+# ---- parallel field reading (VS_PESHKAR_WORKERS) ---------------------------------------------------------------------
+def test_peshkar_workers_env(monkeypatch):
+    """Default: 1 worker with the offline backend, 4 with a hosted one; the variable overrides, clamped to 1..16."""
+    from vakeel_sahayak.agents.peshkar.agent import peshkar_workers
+
+    monkeypatch.delenv("VS_PESHKAR_WORKERS", raising=False)
+    monkeypatch.setenv("VS_LLM_BACKEND", "offline")
+    assert peshkar_workers() == 1
+    monkeypatch.setenv("VS_LLM_BACKEND", "openai")
+    assert peshkar_workers() == 4
+    monkeypatch.setenv("VS_PESHKAR_WORKERS", "0")
+    assert peshkar_workers() == 1
+    monkeypatch.setenv("VS_PESHKAR_WORKERS", "99")
+    assert peshkar_workers() == 16
+
+
+def test_parallel_extraction_gives_the_same_dossier(monkeypatch):
+    """The same dossier fields come back whether the fields are read by one thread or by four (merged in extraction order)."""
+    results = {}
+    for workers in ("1", "4"):
+        monkeypatch.setenv("VS_PESHKAR_WORKERS", workers)
+        agent, _, _ = build_agent(PeshkarAgent, toolbox=FakeToolbox(build_world()))
+        try:
+            dossier = agent.build_dossier(make_state())
+        except Exception as exc:  # a stub-limited fake world: both settings must fail the same way
+            results[workers] = type(exc).__name__
+            continue
+        results[workers] = dossier.fields.model_dump(mode="json")
+    assert results["1"] == results["4"]
+    assert isinstance(results["1"], dict), results["1"]

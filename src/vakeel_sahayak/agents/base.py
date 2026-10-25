@@ -34,6 +34,7 @@ from typing import Any, TypeVar, get_type_hints
 from pydantic import BaseModel
 from pydantic_core import to_jsonable_python
 
+from vakeel_sahayak.agents.outbound import mask_public
 from vakeel_sahayak.config import AppConfig
 from vakeel_sahayak.models.base import LLMClient, ModelUnavailable, NliClient
 from vakeel_sahayak.orchestration.budgets import BudgetExhausted, BudgetTracker
@@ -750,6 +751,8 @@ class BaseAgent(ABC):
 
         fkey = None if factor is None else str(getattr(factor, "value", factor))
         fkey = fkey or _FACTOR.get()
+        if corpus is not None and self.ada_side:
+            corpus = mask_public(jsonable(corpus))  # PII in public rows is masked, so the boundary does not refuse the call
         self.flag_instructions({"case": jsonable(case), "extra": jsonable(extra)} if extra else jsonable(case))
         instructions = self._handoff(instructions, case, extra)
         self.guard_outbound({"system": self.system_prompt(), "instructions": instructions, "case": case, "extra": extra}, public=corpus)
@@ -774,7 +777,8 @@ class BaseAgent(ABC):
             self.error("structured_output", str(exc)[:500], task=task)
             raise
         except ModelUnavailable as exc:
-            self.error("model_unavailable", str(exc), task=task)
+            tried = (getattr(self.llm, "fallbacks", None) or [])[-1:]  # a FallbackLLM: why the hosted client did not answer first
+            self.error("model_unavailable", str(exc), task=task, **({"primary_failed": tried[0]} if tried else {}))
             raise
         self._log_llm(task, fkey, prompt, p_tok, c_tok, attempts, ok=True, value=value)
         return value
@@ -786,12 +790,15 @@ class BaseAgent(ABC):
         if budgets is not None:
             _charge(budgets, factor, actor=self.NAME, tokens=charge["tokens"])
         out_text = value.model_dump_json() if isinstance(value, BaseModel) else str(jsonable(value))
+        engine = getattr(self.llm, "last_engine", None)  # a FallbackLLM: which client answered (the hosted primary, or the local fallback and why)
+        fell_back = engine is not None and engine is not getattr(self.llm, "primary", engine)
         self.emit(
             EventKind.AGENT_MESSAGE,
             {
                 "inputs": {"type": "llm_call", "task": task, "role": self.model_role(), "factor": factor},
                 "outputs": {
-                    "model": getattr(self.llm, "model_id", None) or getattr(self.llm, "name", type(self.llm).__name__),
+                    **({"fallback": (getattr(self.llm, "fallbacks", None) or [{}])[-1]} if fell_back else {}),
+                    "model": (getattr(engine, "model_id", None) or getattr(engine, "name", None)) if fell_back else (getattr(self.llm, "model_id", None) or getattr(self.llm, "name", type(self.llm).__name__)),
                     "offline": bool(getattr(self.llm, "is_offline", False)),
                     "prompt_tokens": int(p_tok), "completion_tokens": int(c_tok), "attempts": attempts, "ok": ok,
                     "prompt_hash": "h:" + hashlib.sha256(prompt.encode("utf-8")).hexdigest()[:12],
