@@ -878,6 +878,8 @@ Totals, recomputed from the rows: Tier A target = 219 (the plan's jobs 1 and 3-1
 
 Laptop work (4060, no time limit): the plan's 90 hours, plus about 30 more: store-prior labels (S6), chunk-variant embeddings (S16), MiniCheck for the extra arms, the retrieval-only runs and S4/S5 (no Ada), the T2 extras (transliterated Hindi), the memorisation probe. About 15 hours a week overnight, as in the plan, or more.
 
+**Hosted-model pilot (2026-10-25, `docs/handoff/pilot-hosted-model.md`).** Full on `gpt-6-luna`, three T1 dev cases, cache off: about 70K tokens in (14K cached) and 4K out per case, 0.0078 USD (range 0.002 to 0.009), 172 s, 100 store calls, 47 model calls, none fell back. That is under the 100K to 150K assumed above, so Full needs about 600 runs per 4.7 USD: the 4.50 USD OpenAI cap pays for one headline block of RQ1 (for example Full x2 plus B0 and B1), not the whole plan. B4 x3, the ablations, the sparring 2x2, S8-S10 and the sweeps go to Sarvam-105B (price unknown to the code) or Ada. Table in `data/eval/token_measure.json`.
+
 ### 7.3 Order of runs and weekly plan
 
 | Order | Week | Runs | Why this order |

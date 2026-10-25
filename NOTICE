@@ -46,6 +46,12 @@ FONTS (frontend, via @fontsource packages; the font files are under the SIL Open
   upstream families (Production Type; The Noto Project Authors; Schibsted Media Group; Spline; Indian Type Foundry) travel with the
   packages in node_modules. Fonts are not sold on their own and keep their names. To verify per family.
 
+FONTS USED TO RENDER TEST-SET PDFS (test construction only, looked up on the build machine; none is copied into the repository or shipped)
+
+- Noto Serif Devanagari and Noto Serif (the system Noto fonts, SIL OFL 1.1) draw the Hindi pages of the T2 messy bundles (`testsets/rendering.py`);
+  English pages use the PDF base-14 Times face. Pillow (HPND), NumPy (BSD-3) and Faker (MIT) build the degraded scans, photos and synthetic names.
+  PyMuPDF (AGPL-3.0) renders those PDFs: it is an optional extra (`pip install .[testsets]`) for the test-set builders, not needed to run the system.
+
 KEY LIBRARIES (licences per each project's repository; to verify)
 
 - Python: FastAPI (MIT), Pydantic (MIT), Uvicorn (BSD-3), httpx (BSD-3), LangGraph (MIT), NetworkX (BSD-3), python-docx (MIT),

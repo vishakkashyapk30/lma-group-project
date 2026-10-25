@@ -16,7 +16,7 @@ stores:           ## build the seven shared stores from data/interim/orders.json
 	@scripts/build_stores.sh
 
 testsets:         ## construct T1-T9 (plan §15.2)
-	@echo "TODO: scripts/build_testsets.sh"; exit 1
+	scripts/build_testsets.sh
 
 eval-rq1:         ## RQ1 runs (Ada interactive shards; see scripts/ada/run_rq1.sh)
 	@echo "TODO: run on Ada via scripts/ada/run_rq1.sh"; exit 1

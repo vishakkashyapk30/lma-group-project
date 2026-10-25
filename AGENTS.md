@@ -9,6 +9,17 @@ Vakeel-Sahayak.ai is an agentic bail-preparation engine for Indian legal-aid law
 4. `docs/evaluation-plan.md` (claims, baselines, metrics, the S/A/B/P variants) and `docs/literature-to-code-map.md` (which paper each variant comes from, with switch, module and test).
 5. `docs/product-readiness.md` (what a finished product still needs), `docs/handoff/*.md` (per-workstream status notes: done, not done, next steps), `frontend/DESIGN.md` (design rules for the UI).
 
+## Handoff notes hold decisions you cannot get from the code: read them before you edit
+`docs/handoff/*.md` records, per workstream, what is done, what is not, known bugs, measurements and decisions (for example privacy-boundary policy choices, budget numbers, store-build caveats). Before you touch an area, read its note; when you stop, write or update one (done / not done / next steps / how to check background jobs).
+
+| If you work on | Read first |
+|---|---|
+| hosted models, driver, privacy boundary, token and cost numbers, BM25 pruning | `pilot-hosted-model.md` |
+| PDF intake, Munshi, citation index | `munshi-real-pdf-reading.md`, `data-and-models.md` |
+| eval switches and variants | `ev-01-switches.md`, `eval-infrastructure.md`, `literature-sweep-1.md` to `literature-sweep-4.md` |
+| test sets T2 to T9 | `testsets-t2-t9.md` |
+| frontend | `workspace-redesign.md`, `landing-colour-motion.md`, `frontend/DESIGN.md` |
+
 ## Hard rules (do not break these)
 - **No manual annotation or hand-made datasets.** Ground truth comes from court text, official tables, existing datasets, construction, or non-Qwen labeler agreement. No LLM-judge scores.
 - **No AI attribution anywhere**: no `Co-Authored-By` trailer, no "Generated with ..." line, no AI mention in commits, PRs or documents. Only the four teammates are contributors. Commit as yourself. Run `make hooks` once after cloning (it installs a hook that strips such lines) and `make check-commits` before opening a PR.
@@ -22,6 +33,7 @@ Vakeel-Sahayak.ai is an agentic bail-preparation engine for Indian legal-aid law
 - Python: `make setup` (creates `.venv`), then use `.venv/bin/python` and `.venv/bin/pytest`. Offline stand-in models are the default (`VS_MODELS=offline`, `VS_LLM_BACKEND=offline`), so nothing needs a GPU or a key.
 - One command for the whole stack: `docker compose up` (UI http://localhost:3000, API http://localhost:8000). The API routes are still stubs (the container answers `/healthz` and returns 503 on `/api/*`), so the UI runs on sample data of case-0007. Ports: `FRONTEND_PORT`, `BACKEND_PORT`. Details in `DOCKER.md`.
 - Without Docker: `cd frontend && npm install && npm run build && NEXT_PUBLIC_API_BASE=http://localhost:8000 npx next start -p 3000`, and `.venv/bin/python -m uvicorn vakeel_sahayak.api.asgi:app --port 8000`.
+- Hosted model (OpenAI or Sarvam) for the evaluation driver: load the keys from the untracked `.env` only (`set -a; . ./.env; set +a`), then `VS_MODELS=auto VS_LLM_BACKEND=openai VS_EXTERNAL=pseudonymised VS_OPENAI_RUN_CAP_USD=0.30 .venv/bin/python -m vakeel_sahayak.eval.runners.driver eval-smoke --n 1 --out <dir>`. Use `pseudonymised`, not `public`: every agent role declares client text, and the driver pseudonymises each case's facts like the production intake (details in `docs/handoff/pilot-hosted-model.md`). For the real DeBERTa claim checker on CPU, install torch and `.[nli]`; without them `auto` falls back to the offline NLI and records it in the manifest.
 - End to end offline: `make smoke` (case-0007 through the agents, Gate 1 approved, Gate 2 left closed, export blocked) and `make eval-smoke`.
 
 ## Tests (the full suite is slow; run by area)
