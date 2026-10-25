@@ -1,48 +1,49 @@
 "use client";
-// Dispatcher: renders the right signature animation for an agent (plan §13.4). Static icon + text status under
-// reduced motion is handled by each component (shared AgentFrame).
+// An agent's status as one quiet line: its small glyph (which breathes while the agent is working) and a text status.
+// The glyph stands still under reduced motion; the text carries the meaning either way.
 import type { ReactElement } from "react";
+import { AgentGlyph } from "@/components/common/AgentGlyph";
+import { AGENTS } from "@/lib/agents";
 import type { StoreName } from "@/lib/types";
-import { AbhiyojakScales } from "./AbhiyojakScales";
-import { MunshiPaperStorm } from "./MunshiPaperStorm";
-import { PairokarCauseListBars } from "./PairokarCauseListBars";
-import { PeshkarCalendarBars } from "./PeshkarCalendarBars";
-import type { Surface } from "./shared";
-import { SutradharWheel } from "./SutradharWheel";
+import { useReducedMotion } from "@/lib/useReducedMotion";
+import { cn } from "@/lib/utils";
 import type { AgentSignatureProps as BaseProps } from "./types";
-import { VakeelManuscript } from "./VakeelManuscript";
 
 export interface AgentSignatureProps extends BaseProps {
-  /** Background the art sits on (default "light"; the landing's oxblood panels use "dark"). */
-  surface?: Surface;
-  /** Sutradhar only: stores queried so far. */
+  /** Accepted so existing call sites keep compiling; the indicator no longer draws these. */
+  surface?: "light" | "dark";
   litStores?: readonly StoreName[];
-  /** Sutradhar only: the tool being called now. */
   activeTool?: string | null;
-  /** Sutradhar only: handler for the "Show the plan" button in full mode. */
-  onShowPlan?: () => void;
-  /** Abhiyojak only: objections still unanswered. */
   unanswered?: number;
+  /** Shows a "Show the plan" button beside the status when mode is "full". */
+  onShowPlan?: () => void;
 }
 
-export function AgentSignature({
-  agent, mode, active, statusText, className, surface, litStores, activeTool, onShowPlan, unanswered,
-}: AgentSignatureProps): ReactElement {
-  const base = { mode, active, statusText, className, surface };
-  switch (agent) {
-    case "MUNSHI":
-      return <MunshiPaperStorm {...base} />;
-    case "PESHKAR":
-      return <PeshkarCalendarBars {...base} />;
-    case "SUTRADHAR":
-      return <SutradharWheel {...base} litStores={litStores} activeTool={activeTool} onShowPlan={onShowPlan} />;
-    case "VAKEEL":
-      return <VakeelManuscript {...base} />;
-    case "ABHIYOJAK":
-      return <AbhiyojakScales {...base} unanswered={unanswered} />;
-    case "PAIROKAR":
-      return <PairokarCauseListBars {...base} />;
-  }
+export function AgentSignature({ agent, mode, active, statusText, className, onShowPlan }: AgentSignatureProps): ReactElement {
+  const reduced = useReducedMotion();
+  const meta = AGENTS[agent];
+  const status = statusText ?? (active ? meta.workingText : meta.idleText);
+  const animate = active && !reduced && mode !== "static";
+  return (
+    <div
+      data-testid="agent-signature"
+      data-agent={agent}
+      data-mode={mode}
+      role="group"
+      aria-label={`${meta.name}, ${meta.subtitle}`}
+      className={cn("inline-flex max-w-full items-center gap-2 text-sm text-ink-soft", className)}
+    >
+      <span aria-hidden className={cn("shrink-0 text-maroon", animate && "animate-breathe")}>
+        <AgentGlyph agent={agent} size={16} />
+      </span>
+      <span data-testid="agent-status" role="status" className="min-w-0">{status}</span>
+      {mode === "full" && onShowPlan ? (
+        <button type="button" onClick={onShowPlan} className="shrink-0 rounded-sm text-sm font-medium text-maroon underline-offset-4 hover:underline">
+          Show the plan
+        </button>
+      ) : null}
+    </div>
+  );
 }
 
 export default AgentSignature;
