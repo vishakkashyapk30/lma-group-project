@@ -42,7 +42,27 @@ def _clean_name(name: str) -> str:
     return " ".join(words)
 
 
-def extract_citations(text: str) -> list[str]:
+SCC_NAME_WINDOW = 160  # characters before an SCC citation searched for the case name it belongs to
+
+
+def scc_name_before(text: str, start: int) -> str | None:
+    """The case name ('X v. State of Y') that stands right before an SCC citation starting at `start` ('X v. Y, (2014) 8 SCC 273'), or None.
+
+    Only a name that ends at the citation (separated by a comma, bracket or space) counts, so a name mentioned earlier in the sentence is not taken.
+    """
+    head = text[max(0, start - SCC_NAME_WINDOW) : start].rstrip(" ,;:([")
+    best = None
+    for m in _CASE_NAME.finditer(head):
+        if m.end() >= len(head):  # the name runs right up to the citation
+            best = m
+            break
+    if best is None:
+        return None
+    name = _clean_name(best.group(1))
+    return name if " v" in f" {name}" and len(name.split()) >= 3 else None
+
+
+def extract_citations(text: str, link_scc: bool = False) -> list[str]:
     """Find raw citation strings.
 
     Recognises neutral citations ('2023 INSC 123'), SCR ('[1979] 3 S.C.R. 453'), SCC ('(2014) 8 SCC 273'), AIR ('AIR 1978 SC 597'), SCC OnLine
@@ -50,13 +70,19 @@ def extract_citations(text: str) -> list[str]:
 
     Args:
         text: see behaviour
+        link_scc: an SCC citation that stands right after a case name is returned as 'Name, (2014) 8 SCC 273' so that the resolver can
+            link it through the name (`CitationIndex.resolve`); the bare name is still returned separately. Default False: unchanged.
 
     Returns:
         Citation strings as written, in order of appearance, no exact duplicates.
     """
     found: list[tuple[int, str]] = []
-    for _, pattern in _PATTERNS:
-        found.extend((m.start(), m.group(0).strip()) for m in pattern.finditer(text))
+    for kind, pattern in _PATTERNS:
+        for m in pattern.finditer(text):
+            raw = m.group(0).strip()
+            if link_scc and kind == "scc" and (name := scc_name_before(text, m.start())):
+                raw = f"{name}, {raw}"
+            found.append((m.start(), raw))
     for m in _CASE_NAME.finditer(text):
         name = _clean_name(m.group(1))
         if " v" in f" {name}" and len(name.split()) >= 3:

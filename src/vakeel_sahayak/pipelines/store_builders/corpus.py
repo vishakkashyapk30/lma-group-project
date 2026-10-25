@@ -31,6 +31,7 @@ order cannot obey the 'before' rule). Everything else missing only narrows what 
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -52,6 +53,10 @@ from vakeel_sahayak.pipelines.text_utils import normalise_date, read_jsonl, spli
 from vakeel_sahayak.schemas.enums import OrderPart, Treatment
 from vakeel_sahayak.schemas.store_rows import CitationEdge, FactSignature, ParagraphRecord
 from vakeel_sahayak.stores.chunking import chunk_order
+
+# 'Case Name, (2014) 8 SCC 273' is linked through the case name and the SCC year (docs/handoff/citation-sc-metadata.md: precision 245/245 on T9-built pairs,
+# 3 of 455 year-gate negatives linked). VS_SCC_LINK=off restores the earlier resolution (SCC numbers unresolved).
+SCC_LINK = os.environ.get("VS_SCC_LINK", "on").lower() not in ("off", "0", "false", "no")
 
 ORDERS_FILE = "orders.jsonl"
 OIL_METADATA_FILE = "oil_metadata.jsonl"
@@ -260,7 +265,7 @@ def _build_graph(
                 continue
             cited_here: set[str] = set()
             for sentence in split_sentences(rec.text):
-                for raw in extract_citations(sentence):
+                for raw in extract_citations(sentence, link_scc=SCC_LINK):
                     parsed = parse_citation(raw)
                     kind = parsed.kind if parsed else "unknown"
                     cited = index.resolve(raw)
@@ -356,6 +361,7 @@ def process_corpus(
                 "citations": o.citations} for o in kept]  # fmt: skip
     records += _external_records(Path(interim_dir) / OIL_METADATA_FILE, {o.doc_id for o in orders}, excluded, report)
     index = CitationIndex(records)
+    index.link_scc = SCC_LINK
     graph = _build_graph(processed, index, labeler, report)
     _describe_external_nodes(graph, index, report)
     resolved_edges = Path(interim_dir) / CITATION_EDGES_FILE

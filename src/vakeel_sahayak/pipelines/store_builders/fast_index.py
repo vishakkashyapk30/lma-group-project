@@ -27,7 +27,7 @@ class FastCitationIndex(CitationIndex):
             for side in (0, 1):
                 for w in set(_r._party_tokens(parties[side])):
                     self._by_word[side][w].append(i)
-        self._memo: dict[tuple[str, int | None, str | None], str | None] = {}
+        self._memo: dict[tuple[str, int | None, str | None, float], str | None] = {}
 
     def _candidates(self, wanted: tuple[str, str]) -> list[int]:
         sets = []
@@ -38,9 +38,9 @@ class FastCitationIndex(CitationIndex):
             sets.append(ids)
         return sorted(sets[0] & sets[1])
 
-    def _resolve_name(self, name: str, year: int | None, court: str | None) -> str | None:
+    def _resolve_name(self, name: str, year: int | None, court: str | None, min_score: float = _r.FUZZY_MIN) -> str | None:
         """Blocked and memoised version of the parent's fuzzy match (same scoring, year, court and ambiguity rules)."""
-        key = (name, year, court)
+        key = (name, year, court, min_score)
         if key in self._memo:
             return self._memo[key]
         wanted = _r._split_parties(name)
@@ -55,7 +55,7 @@ class FastCitationIndex(CitationIndex):
                     continue
                 s1 = _r._party_similarity(wanted[0], parties[0])
                 s2 = _r._party_similarity(wanted[1], parties[1])
-                if s1 >= _r.PARTY_MIN and s2 >= _r.PARTY_MIN and (score := 0.6 * s1 + 0.4 * s2) >= _r.FUZZY_MIN:
+                if s1 >= _r.PARTY_MIN and s2 >= _r.PARTY_MIN and (score := 0.6 * s1 + 0.4 * s2) >= min_score:
                     scored.append((score, _r._court_level(doc_court), doc_id))
             if scored:
                 scored.sort(key=lambda t: (-t[0], -t[1], t[2]))

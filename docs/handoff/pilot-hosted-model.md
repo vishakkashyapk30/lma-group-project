@@ -42,7 +42,7 @@ Read in full: t1dev-001 G1 and its sparring round. Facts are right (FIR 87/2023,
 ## What remains
 - Known failing stub tests unchanged (`test_metrics`, `test_stats`, `test_features`, `test_ingestion_pipelines`); `tests/unit/ingestion/test_signals.py::test_compute_signals_born_digital_pdf` fails independently of this work.
 - The pseudonymiser is still rule based; real production intake should use the NER detectors (T1 is public data).
-- A hosted rerun still hits the per-factor token budget (`BudgetExhausted`, logged `model_failed`) for `vakeel.reword_claim` and `abhiyojak.judge_reply` on t1dev-000; this is the budget, not the privacy boundary.
+- (Fixed 2026-10-26, see the next section) A hosted rerun hit the per-factor token budget for `vakeel.reword_claim` and `abhiyojak.judge_reply` on t1dev-000.
 
 ## Fixes after the pilot (follow-up)
 Done:
@@ -64,3 +64,12 @@ Done:
 Hosted check (t1dev-000, cap 0.10 USD, cache off): Abhiyojak raised 3 objections, no `privacy_boundary` error and no refusal in the event log. Spent in that run: see manifest (`models.openai`).
 
 Not done: Peshkar wall-clock speed-up not measured on the hosted backend; the Vakeel side was not changed for citations (its authorities travel in the public corpus).
+
+## Follow-up 2026-10-26 (nothing committed)
+
+### Per-factor token budget (bug fix, default behaviour changes by design)
+Cause: the 12,000-token factor cap was one pool shared by Sutradhar (plan, reword query), Vakeel (draft, reword, reply) and Abhiyojak (raise, judge). From the pilot-4f event log of t1dev-000 the downstream steps alone used 12.0K (antecedents), 11.4K (flight_risk) tokens per factor, so repair and judge-reply were refused after retrieval and drafting had spent the pool. Fix (`orchestration/budgets.py`, `agents/base.py`, `config.py`, `configs/budgets.yaml`): two pools per factor. The 12K cap stays for the retrieval stage (Sutradhar, Peshkar, Munshi; the 8-store-call cap is untouched); Vakeel and Abhiyojak calls draw on a drafting pool of 16K (`drafting: {tokens: 16000}`, measured 12.0K to 12.8K plus about 25% headroom); the 150K case cap still bounds the total. `BudgetTracker.tokens_exhausted(factor, actor)` picks the pool; a charge without an actor counts as retrieval (old behaviour). BUDGET_HIT events carry limit `drafting_tokens` for the new pool. Pools survive `to_dict/from_dict` and `from_events`. Tests: `tests/unit/orchestration/test_budgets.py` (5 new). RECONCILED: `tests/unit/agents/vakeel/golden_default_run.json` events digest (the offline default run now logs 1 BUDGET_HIT where it logged 3; brief, sparring, card and budget digests are unchanged).
+Hosted check (t1dev-000, cap 0.10 USD, cache off, run `budget-fix`): 5 `vakeel.reword_claim` and 2 `abhiyojak.judge_reply` calls, all ok on gpt-6-luna, no `BudgetExhausted`, no `model_failed`, no privacy error; the only BUDGET_HIT is the 8-store-call cap of gravity_and_punishment (working as a cap). Downstream tokens per factor: 12.8K, 12.2K, 7.1K (all under 16K). Cost of the run about 0.011 USD.
+
+### Weak argument: authority stance (opt-in `Switches.authority_stance='outcome'`, variant id S18)
+`agents/vakeel/stance.py` (design and paper in its docstring; row in `docs/literature-to-code-map.md`, Sweep 4). Outcome comes from the reasoning rows' `outcome` (read from the operative part by the store builders): in the current store 90,073 granted, 21,576 rejected, 2,816 withdrawn, 46,782 unrecorded rows. Test: `tests/unit/agents/vakeel/test_variants_authority_stance.py`. Not yet measured on T1 with a hosted model (next step: run t1dev-001 with and without the switch and count grounds that cite a refusal). Limits: a paragraph from a mixed order (some co-accused granted, one refused) takes the order's single outcome; 29% of rows have no outcome and count as unknown, so they are not demoted.

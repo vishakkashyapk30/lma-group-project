@@ -21,11 +21,13 @@ from vakeel_sahayak.pipelines.text_utils import normalise_date, read_jsonl, writ
 
 _STOP = {"ors", "anr", "others", "another", "etc", "alias", "through", "the", "and", "&", "its", "his", "her", "rep", "by"}
 FUZZY_MIN = 0.82
+SCC_LINK_MIN = 0.9  # stricter name score for a name-linked SCC citation (the number itself cannot be checked)
 PARTY_MIN = 0.8
 AMBIGUITY_MARGIN = 0.03
 BLOCKED_ABOVE = 5000  # records: above this `load_index` builds the word-blocked index
 
 
+_SCC_AT = re.compile(r"(?:\(\s*(?:19|20)\d{2}\s*\)|\b(?:19|20)\d{2}\s*\()\s*\d{1,3}\)?\s+SCC\s+\d{1,5}\b")
 _DOCKET_PREFIX = re.compile(r"^[^/]{1,40}/\d{1,7}/\d{4}\s+of\s+", re.IGNORECASE)
 
 
@@ -121,10 +123,29 @@ class CitationIndex:
             return None
         if parsed.kind != "case_name":
             ids = self._exact.get(parsed.key, set())
-            return next(iter(ids)) if len(ids) == 1 else None
+            if len(ids) == 1:
+                return next(iter(ids))
+            if parsed.kind == "scc" and not ids and self.link_scc:
+                return self._link_scc(citation, parsed.year)
+            return None
         return self._resolve_name(parsed.key, parsed.year or year, court)
 
-    def _resolve_name(self, name: str, year: int | None, court: str | None) -> str | None:
+    link_scc = False  # set by `load_index(link_scc=True)`: 'Name, (2014) 8 SCC 273' is linked through the name
+
+    def _link_scc(self, citation: str, year: int | None) -> str | None:
+        """Link an SCC citation that no metadata lists, through the case name written just before it.
+
+        The name (the part of `citation` before the SCC reference, see `extract_citations(link_scc=True)`) is resolved against Supreme Court
+        judgments dated within a year of the SCC year, with the stricter `SCC_LINK_MIN` score. Volume and page are not checked: no
+        metadata holds them.
+        """
+        m = _SCC_AT.search(citation)
+        name = citation[: m.start()].strip(" ,;:(") if m else ""
+        if not name or not year:
+            return None
+        return self._resolve_name(name, year, "supreme", SCC_LINK_MIN)
+
+    def _resolve_name(self, name: str, year: int | None, court: str | None, min_score: float = FUZZY_MIN) -> str | None:
         """Fuzzy match on party names with year and court filters."""
         wanted = _split_parties(name)
         if not wanted:
@@ -137,7 +158,7 @@ class CitationIndex:
                 continue
             s1 = _party_similarity(wanted[0], parties[0])
             s2 = _party_similarity(wanted[1], parties[1])
-            if s1 >= PARTY_MIN and s2 >= PARTY_MIN and (score := 0.6 * s1 + 0.4 * s2) >= FUZZY_MIN:
+            if s1 >= PARTY_MIN and s2 >= PARTY_MIN and (score := 0.6 * s1 + 0.4 * s2) >= min_score:
                 scored.append((score, _court_level(doc_court), doc_id))
         if not scored:
             return None
@@ -150,12 +171,13 @@ class CitationIndex:
 _CACHE: dict[tuple[str, float], CitationIndex] = {}
 
 
-def load_index(metadata_path: str) -> CitationIndex:
+def load_index(metadata_path: str, link_scc: bool = False) -> CitationIndex:
     """CitationIndex for a metadata file, cached by path and modification time.
 
     A file of more than `BLOCKED_ABOVE` records gets the word-blocked, memoised index (`store_builders/fast_index.py`): the plain
     index scores a cited case name against every title, which is minutes per name on the 150,000 records of `oil_metadata.jsonl`.
-    Smaller files keep the plain index, so results there are unchanged.
+    Smaller files keep the plain index, so results there are unchanged. `link_scc=True` turns on name-linked SCC resolution (see
+    `CitationIndex._link_scc`); the cached index object is shared, so the flag is set on it for every later caller of the same file.
     """
     p = Path(metadata_path)
     key = (str(p.resolve()), p.stat().st_mtime if p.exists() else 0.0)
@@ -167,6 +189,7 @@ def load_index(metadata_path: str) -> CitationIndex:
             _CACHE[key] = FastCitationIndex(records)
         else:
             _CACHE[key] = CitationIndex(records)
+    _CACHE[key].link_scc = link_scc
     return _CACHE[key]
 
 

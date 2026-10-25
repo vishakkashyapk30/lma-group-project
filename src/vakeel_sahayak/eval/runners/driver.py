@@ -575,7 +575,7 @@ def write_run_manifest(out_dir: Path, *, system: str, switches: Any, seed: int, 
     manifest = {
         "system": system, "variant": switches.variant(), "switches": switches.model_dump(), "seed": seed,
         "budgets": {"tokens_per_case": b.tokens_per_case, "store_calls_per_factor": b.store_calls_per_factor,
-                    "tokens_per_factor": b.tokens_per_factor, **(budgets or {})},
+                    "tokens_per_factor": b.tokens_per_factor, "drafting_tokens_per_factor": b.drafting_tokens_per_factor, **(budgets or {})},
         "code_version": code_version(), "config_hash": config_hash(), "models": models_stamp(), "nli": _nli_manifest(),
         "cases_file": cases_path, "cases_hash": file_hash(cases_path) if cases_path else None,
         "shard": shard, "n_shards": n_shards, **(extra or {}),
