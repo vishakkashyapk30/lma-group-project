@@ -15,18 +15,20 @@ Rule: raw client files never leave the laptop. Only pseudonymised text may be co
 ## Get the data from the team bundle (fastest)
 
 The owner shares a compressed, checksummed copy of everything that is slow to rebuild (`interim`, `stores`, `testsets`, `gaps`, `eval`, `raw/MANIFEST.json`;
-about 1.5 to 2 GB). It is a PRIVATE Hugging Face dataset, `vishakkashyapk/vakeel-sahayak-data`
+about 1.5 to 2 GB; also `interim/hindi_native.jsonl`, the Kathbath transcripts and audio index, and `bundle_manifest.json`). It is a PRIVATE Hugging Face dataset, `vishakkashyapk/vakeel-sahayak-data`
 (https://huggingface.co/datasets/vishakkashyapk/vakeel-sahayak-data); ask the owner for read access, then log in once with `hf auth login` or put
 `HF_TOKEN=...` in the untracked `.env`, and from the repository root:
 
 ```bash
+make data                                                       # all in one: skip if `make data-check` passes, else install with an HF token, else explain
+make data-check                                                 # present/missing table; non-zero when required items are missing (REQUIRE_MODELS=1 also requires the T1 models)
 make data-install SRC=hf:vishakkashyapk/vakeel-sahayak-data     # or SRC=<a folder or URL the owner gave you>
 make data-install SRC=~/vakeel-data-bundle FORCE=1             # FORCE=1 overwrites what is already in data/
 ```
 
 It verifies `SHA256SUMS`, refuses to overwrite `data/` without `FORCE=1`, unpacks, and checks row and file counts against `bundle_manifest.json`.
-Not in the bundle: model weights (`MODELS.txt` lists names and sizes; `make models`), `data/cases` (private client files), `data/openai`, `data/raw` (except
-`MANIFEST.json`) and HLDC. Owner side: `make data-bundle` (writes `~/vakeel-data-bundle`, no upload) and `make data-publish` (uploads it with `hf upload`; token
+Kathbath audio (3.6 GB) is not bundled: refetch with `python -m vakeel_sahayak.pipelines.kathbath_fetch --out data/raw/kathbath --limit 3130` (or `make datasets`). Not in the bundle: model weights (`MODELS.txt` lists names and sizes; `make models`), `data/cases` (private client files), `data/openai`, `data/raw` (except
+`MANIFEST.json` and the Kathbath transcripts) and HLDC. Owner side: `make data-bundle` (writes `~/vakeel-data-bundle`, no upload) and `make data-publish` (uploads it with `hf upload`; token
 from the environment or `.env`, never printed). If you have no access, rebuild with the commands below.
 
 ## Reproduce the data (week 0)
@@ -89,7 +91,12 @@ finds and 4.8% an offence date, so the same-FIR leakage rule and the BNS-era tes
 * **HLDC / IL-TUR `bail` config: blocked.** No Hugging Face login or `HF_TOKEN` on this machine. **Team step:** with a Hugging Face account, open
   https://huggingface.co/datasets/Exploration-Lab/IL-TUR , accept the access terms (non-commercial, CC BY-NC-SA 4.0), run `huggingface-cli login`
   (or export `HF_TOKEN`), then `load_dataset("Exploration-Lab/IL-TUR", "bail")` into `data/raw/hldc/` and update `raw/MANIFEST.json`. Until then
-  the documented fallback is NLLB English to Hindi translation of constructed orders.
+  the fallback in use is `data/interim/hindi_native.jsonl` (below); NLLB English to Hindi translation of constructed orders remains the second option.
+* **Native Hindi fallback (2026-10-26): `data/interim/hindi_native.jsonl`.** `python -m vakeel_sahayak.pipelines.hindi_native` (about 4 minutes, reads the 1,641 raw shards one at a time) keeps
+  native Hindi High Court bail orders (first chunk over 30% Devanagari, full text at least 50% Devanagari and 800 characters, no T1 dev/test/blind or `splits.json` dev/test case, deduplicated):
+  6,889 orders, 62 MB (Allahabad 6,881, Rajasthan 4, "High Court of Allahabad" 4; mostly 2023 and 2025), report in `hindi_native.report.json`. T2 draws 200 by seed into
+  `data/testsets/t2_hindi_native/` (`python -m vakeel_sahayak.testsets.t2_messy_bundles --hindi-native data/interim/hindi_native.jsonl --native-only --out data/testsets/t2_hindi_native`,
+  origin `native_hc`). **Caveat:** High Court Hindi, not Uttar Pradesh district-court Hindi like HLDC, so make no "district-court Hindi" claim; HLDC still replaces it when access arrives.
 * **Models:** `scripts/download_models.sh` (tiers in `configs/models.yaml`, `make models-dry-run`); T1 helpers go to `models/hf`, listed in `models/MANIFEST.json`.
 * **Stores:** full build log and result in `docs/handoff/data-and-models.md`; `data/stores/MANIFEST.json` is written when it finishes.
 * Supreme Court metadata is wired into the citation index (VI-05, 2026-10-25). `interim/oil_metadata.jsonl` (152,413 records: the 37,014 Supreme Court judgments of `raw/open_india_law/sc_metadata.jsonl` plus the orders' own fields) is built by `python -m vakeel_sahayak.pipelines.citation_graph.oil_metadata`; its schema is in that module's docstring and in `docs/handoff/citation-sc-metadata.md`. Candidate stores built with it live in `stores_candidate/` (see `stores_candidate/SWAP.md`); `stores/` is unchanged until someone swaps.

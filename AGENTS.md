@@ -2,6 +2,15 @@
 
 Vakeel-Sahayak.ai is an agentic bail-preparation engine for Indian legal-aid lawyers (LMA Group Project 2026, team of four). Six agents (Munshi intake, Peshkar dossier and Rights Radar, Sutradhar orchestrator, Vakeel drafter, Abhiyojak prosecution sparring, Pairokar batch desk) work over ten typed stores, with two human approval gates enforced in code. The research contribution is the agent harness, evaluated against simpler baselines.
 
+## First day (copy these, in order)
+```bash
+make setup         # creates .venv and installs the package; then run `make hooks` once
+make data          # data/ in place? skip. Else installs the team bundle (needs HF_TOKEN in .env or hf auth login), else tells you how to rebuild
+make models        # the T1 helper models (BGE-M3, DeBERTa NLI, MiniCheck, Whisper small; about 5.5 GB); `make models-dry-run` lists sizes first
+make data-check    # table of present/missing items (interim, stores, testsets, gaps, hindi_native, kathbath, models); non-zero if required items are missing
+```
+Handoff notes (what is done, not done, next steps) are in `docs/handoff/*.md`; data and model notes: `docs/handoff/data-and-models.md`, `data/README.md`.
+
 ## Read in this order
 1. `split.md`: who does what now, file ownership, merge waves, PR and review rules (appendices).
 2. `progress.md`: sections 0 to 0e hold the master to-do list, the data assessment, the plans written, the decisions, and the status of every workstream; section 5 has the per-phase test commands.

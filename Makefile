@@ -1,7 +1,7 @@
 # Skeleton targets; every recipe is a stub until implemented.
 PY ?= .venv/bin/python
 
-.PHONY: data-bundle data-install data-publish models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend hooks check-commits live-smoke
+.PHONY: data data-check data-bundle data-install data-publish models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend hooks check-commits live-smoke
 
 setup:            ## create .venv and install (scripts/setup_dev.sh)
 	@echo "TODO: scripts/setup_dev.sh"; exit 1
@@ -11,6 +11,12 @@ datasets:         ## download the public datasets into data/raw (resumable; scri
 
 interim:          ## convert data/raw into data/interim: orders.jsonl, statutes.jsonl, concordance_edges.jsonl, splits, feasibility report
 	@scripts/build_interim.sh
+
+data:             ## make sure data/ is in place: skip if data-check passes, else install the team bundle (HF token) or explain how (scripts/data_ensure.sh)
+	@scripts/data_ensure.sh
+
+data-check:       ## table of what is present or missing in data/ (interim, stores, testsets, gaps, hindi_native, kathbath, models); non-zero if required items are missing (REQUIRE_MODELS=1 to require models)
+	@$(PY) scripts/_data_check.py $(if $(REQUIRE_MODELS),--require-models,)
 
 data-bundle:      ## compress and checksum the data a teammate cannot rebuild cheaply into ~/vakeel-data-bundle (scripts/data_bundle.sh; no upload)
 	@scripts/data_bundle.sh $(BUNDLE)

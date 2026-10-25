@@ -1,8 +1,8 @@
 """Helpers of scripts/data_bundle.sh and scripts/data_install.sh: count rows of the bundled files, write the bundle manifest, check an install.
 
-    python scripts/_data_bundle.py manifest <data_dir> <out.json>     # row counts and sizes of what the bundle holds
-    python scripts/_data_bundle.py check <data_dir> <bundle_manifest.json>   # exit 1 when a count differs
-    python scripts/_data_bundle.py models <models_dir>                # names and sizes only (never the weights)
+python scripts/_data_bundle.py manifest <data_dir> <out.json>     # row counts and sizes of what the bundle holds
+python scripts/_data_bundle.py check <data_dir> <bundle_manifest.json>   # exit 1 when a count differs
+python scripts/_data_bundle.py models <models_dir>                # names and sizes only (never the weights)
 """
 
 from __future__ import annotations
@@ -12,12 +12,28 @@ import sys
 from pathlib import Path
 
 EXCLUDED = ("key", "token", "secret", ".env")  # file names left out of the tar (same patterns as data_bundle.sh)
-COUNTED = ("interim/orders.jsonl", "interim/statutes.jsonl", "interim/concordance_edges.jsonl", "interim/oil_metadata.jsonl")
+KATHBATH = "raw/kathbath/hindi/test_known"
+KATHBATH_FILES = (
+    f"{KATHBATH}/manifest.jsonl",
+    f"{KATHBATH}/transcription_n2w.txt",
+)  # transcripts and the audio index; the 3.6 GB of audio is not bundled
+COUNTED = (
+    "interim/orders.jsonl",
+    "interim/statutes.jsonl",
+    "interim/concordance_edges.jsonl",
+    "interim/oil_metadata.jsonl",
+    "interim/hindi_native.jsonl",
+    *KATHBATH_FILES,
+)
 
 
 def bundled(root: Path) -> list[Path]:
     """Files of a folder that the tar holds (names with key, token, secret or .env in them are left out)."""
-    return [p for p in root.rglob("*") if p.is_file() and not any(x in p.name.lower() for x in EXCLUDED)] if root.is_dir() else []
+    return (
+        [p for p in root.rglob("*") if p.is_file() and not any(x in p.name.lower() for x in EXCLUDED)]
+        if root.is_dir()
+        else []
+    )
 
 
 def lines(path: Path) -> int:
@@ -40,7 +56,9 @@ def manifest(data: Path) -> dict:
         files = bundled(root)
         out["folders"][folder] = {"files": len(files), "bytes": sum(p.stat().st_size for p in files)}
     raw = data / "raw" / "MANIFEST.json"
-    out["raw_manifest_datasets"] = sorted((json.loads(raw.read_text(encoding="utf-8")).get("datasets") or {}).keys()) if raw.is_file() else []
+    out["raw_manifest_datasets"] = (
+        sorted((json.loads(raw.read_text(encoding="utf-8")).get("datasets") or {}).keys()) if raw.is_file() else []
+    )
     return out
 
 

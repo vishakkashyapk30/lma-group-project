@@ -6,9 +6,11 @@
 #   VS_DATA_DIR=/scratch/data scripts/data_bundle.sh /scratch/bundle
 #   PART_SIZE=500M  scripts/data_bundle.sh          # size of one part (default 1G)
 #
-# Included (under data/): interim, stores, testsets, gaps, eval, raw/MANIFEST.json.
+# Included (under data/): interim (with hindi_native.jsonl), stores, testsets, gaps (statutes), eval, raw/MANIFEST.json, the Kathbath transcripts and audio index
+# (raw/kathbath/hindi/test_known/manifest.jsonl and transcription_n2w.txt, about 1.5 MB; not the 3.6 GB of audio), and bundle_manifest.json itself
+# (it unpacks to data/bundle_manifest.json, which `make data-check` compares counts against).
 # Left out on purpose: models/ (weights: see MODELS.txt and `make models`), data/cases (private client data), data/openai (spend ledger and cache),
-# data/raw (public, re-downloadable), data/stores_prev, data/stores_candidate, data/*_sample, .env and anything named like a key or token.
+# the rest of data/raw (public, re-downloadable: `make datasets`; Kathbath audio: python -m vakeel_sahayak.pipelines.kathbath_fetch), data/stores_prev, data/stores_candidate, data/*_sample, .env and anything named like a key or token.
 # Nothing is uploaded anywhere: `make data-publish` does that, and only when the owner runs it.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -25,6 +27,7 @@ rm -f "$OUT"/data.tar.*.part-* "$OUT"/SHA256SUMS "$OUT"/bundle_manifest.json "$O
 paths=()
 for d in interim stores testsets gaps eval; do [ -d "$DATA/$d" ] && paths+=("$d"); done
 [ -f "$DATA/raw/MANIFEST.json" ] && paths+=("raw/MANIFEST.json")
+for f in raw/kathbath/hindi/test_known/manifest.jsonl raw/kathbath/hindi/test_known/transcription_n2w.txt; do [ -f "$DATA/$f" ] && paths+=("$f"); done
 [ "${#paths[@]}" -gt 0 ] || { echo "nothing to bundle in $DATA" >&2; exit 1; }
 
 need_kb=$(du -sk "${paths[@]/#/$DATA/}" | awk '{s+=$1} END {print int(s/2)}')   # compressed size is under half of the source for these files
@@ -35,7 +38,7 @@ echo "bundling ${paths[*]} from $DATA (about $((need_kb / 1024)) MB needed, $((f
 "$PY" scripts/_data_bundle.py manifest "$DATA" "$OUT/bundle_manifest.json"
 "$PY" scripts/_data_bundle.py models "${VS_MODELS_DIR:-models}" > "$OUT/MODELS.txt"
 if command -v pigz >/dev/null 2>&1; then gz=(pigz -p 4 -6); else gz=(gzip -6); fi
-tar -C "$DATA" --exclude='*.env' --exclude='*key*' --exclude='*token*' --exclude='*secret*' -cf - "${paths[@]}" \
+tar -C "$DATA" --exclude='*.env' --exclude='*key*' --exclude='*token*' --exclude='*secret*' -cf - "${paths[@]}" -C "$OUT" bundle_manifest.json \
   | "${gz[@]}" | split -b "$PART_SIZE" -d -a 3 - "$OUT/data.tar.gz.part-"
 
 cat > "$OUT/README.md" <<'CARD'
@@ -47,7 +50,7 @@ tags: [legal, india, bail, retrieval]
 # Vakeel-Sahayak.ai: derived working data (private)
 
 A private team copy of the data that cannot be rebuilt cheaply (the full rebuild takes hours): `data/interim`, `data/stores`, `data/testsets`,
-`data/gaps`, `data/eval` and `data/raw/MANIFEST.json` of the LMA group project repository, as compressed tar parts.
+`data/gaps`, `data/eval`, `data/raw/MANIFEST.json` and the Kathbath transcripts of the LMA group project repository, as compressed tar parts.
 
 Install (from the repository root): `make data-install SRC=<this folder>` or `make data-install SRC=hf:<repo>`; it verifies `SHA256SUMS`,
 unpacks into `data/` (refusing to overwrite without `--force`) and checks the row counts against `bundle_manifest.json`.
@@ -57,7 +60,9 @@ unpacks into `data/` (refusing to overwrite without `--force`) and checks the ro
 - Court orders and statutes: derived from Open India Law. "Structured Indian primary-law data from the Open India Law corpus by Vaquill AI
   (https://github.com/Vaquill-AI/open-india-law), used under CC BY 4.0." The judgments and statutes themselves are Government works.
 - IPC to BNS concordance: derived from IPC2BNS-Verify (MS-406; MIT per the repository's README badge).
-- Hindi speech test material: derived from Kathbath (AI4Bharat; CC0 packaging, cc-by-4.0 on the Hugging Face card).
+- Hindi speech test material: derived from Kathbath (AI4Bharat; CC0 packaging, cc-by-4.0 on the Hugging Face card); only the transcripts and the audio index are
+  here, the audio is fetched with `python -m vakeel_sahayak.pipelines.kathbath_fetch`.
+- `interim/hindi_native.jsonl`: native Hindi High Court bail orders selected from Open India Law (stand-in for HLDC; High Court, not district-court Hindi).
 - Test sets T1 to T9, stores, gold labels and evaluation outputs: constructed by the project from the sources above (no manual annotation).
 - NOT included: HLDC (Kapoor et al., 2022; gated, non-commercial licence), model weights, client case files, API keys or tokens.
 
