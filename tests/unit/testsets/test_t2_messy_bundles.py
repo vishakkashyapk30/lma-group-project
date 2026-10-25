@@ -140,14 +140,14 @@ def png_bytes(w: int = 64, h: int = 64) -> bytes:
 
 
 def test_k3_degrade_is_deterministic_for_a_seed_and_differs_across_seeds():
-    pytest.importorskip("augraphy")
+    pytest.importorskip("PIL")  # RECONCILED: the degrader is Pillow/NumPy (docs say Augraphy only if it installs cleanly; it pulls OpenCV), so these need Pillow, not Augraphy
     img = png_bytes()
     a, b, c = degrade.degrade_page(img, "medium", seed=1), degrade.degrade_page(img, "medium", seed=1), degrade.degrade_page(img, "medium", seed=2)
     assert a == b and a != c and a != img
 
 
 def test_degrade_severity_changes_the_output_and_unknown_severity_is_rejected():
-    pytest.importorskip("augraphy")
+    pytest.importorskip("PIL")  # RECONCILED: see test_k3_degrade_is_deterministic_for_a_seed_and_differs_across_seeds
     img = png_bytes()
     assert degrade.degrade_page(img, "light", seed=0) != degrade.degrade_page(img, "heavy", seed=0)
     with pytest.raises(ValueError):

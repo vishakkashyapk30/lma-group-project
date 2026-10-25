@@ -1,3 +1,4655 @@
-# T4 rights-scenario specs (plan §15.2). TODO: written from the bare acts by a team member who does NOT write the Radar code.
-# Each scenario: id, rule, inputs (dates, sections, antecedents), designed_answer.
-scenarios: []
+# T4 rights-scenario specs (plan §15.2): 500 scenarios, designed answers derived from the bare-act rule text by
+# vakeel_sahayak.testsets.rights_spec_writer (which does not import the Rights Radar). Regenerate with
+#   python -m vakeel_sahayak.testsets.rights_spec_writer
+# Each scenario: id, rule, inputs, designed_answer (a RightsStatus value), note.
+scenarios:
+- id: db-001
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-20'
+    day: 1
+    max_punishment: 3 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 1, no charge sheet
+- id: db-002
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-20'
+    day: 1
+    max_punishment: 5 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 1, no charge sheet
+- id: db-003
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-09'
+    day: 1
+    max_punishment: may extend to seven years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 1, no charge sheet
+- id: db-004
+  rule: default_bail
+  inputs:
+    first_remand: '2024-11-26'
+    day: 1
+    max_punishment: 3 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 1, no charge sheet
+- id: db-005
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-24'
+    day: 1
+    max_punishment: may extend to seven years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 1, no charge sheet
+- id: db-006
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-19'
+    day: 30
+    max_punishment: may extend to seven years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 30, no charge sheet
+- id: db-007
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-30'
+    day: 30
+    max_punishment: 5 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 30, no charge sheet
+- id: db-008
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-07'
+    day: 30
+    max_punishment: 2 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 30, no charge sheet
+- id: db-009
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-08'
+    day: 30
+    max_punishment: 5 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 30, no charge sheet
+- id: db-010
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-19'
+    day: 30
+    max_punishment: 3 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 30, no charge sheet
+- id: db-011
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-03'
+    day: 45
+    max_punishment: 2 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 45, no charge sheet
+- id: db-012
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-29'
+    day: 45
+    max_punishment: may extend to seven years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 45, no charge sheet
+- id: db-013
+  rule: default_bail
+  inputs:
+    first_remand: '2024-08-08'
+    day: 45
+    max_punishment: 3 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 45, no charge sheet
+- id: db-014
+  rule: default_bail
+  inputs:
+    first_remand: '2024-11-25'
+    day: 45
+    max_punishment: 5 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 45, no charge sheet
+- id: db-015
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-08'
+    day: 45
+    max_punishment: 3 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 45, no charge sheet
+- id: db-016
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-14'
+    day: 58
+    max_punishment: may extend to seven years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 58, no charge sheet
+- id: db-017
+  rule: default_bail
+  inputs:
+    first_remand: '2024-11-17'
+    day: 58
+    max_punishment: 3 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 58, no charge sheet
+- id: db-018
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-01'
+    day: 58
+    max_punishment: may extend to seven years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 58, no charge sheet
+- id: db-019
+  rule: default_bail
+  inputs:
+    first_remand: '2024-10-16'
+    day: 58
+    max_punishment: 7 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 58, no charge sheet
+- id: db-020
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-11'
+    day: 58
+    max_punishment: 7 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 58, no charge sheet
+- id: db-021
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-20'
+    day: 59
+    max_punishment: may extend to seven years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 59, no charge sheet
+- id: db-022
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-12'
+    day: 59
+    max_punishment: may extend to seven years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 59, no charge sheet
+- id: db-023
+  rule: default_bail
+  inputs:
+    first_remand: '2024-11-11'
+    day: 59
+    max_punishment: 2 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 59, no charge sheet
+- id: db-024
+  rule: default_bail
+  inputs:
+    first_remand: '2024-08-02'
+    day: 59
+    max_punishment: may extend to seven years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 59, no charge sheet
+- id: db-025
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-18'
+    day: 59
+    max_punishment: 7 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 59, no charge sheet
+- id: db-026
+  rule: default_bail
+  inputs:
+    first_remand: '2024-08-17'
+    day: 60
+    max_punishment: 2 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 60, no charge sheet
+- id: db-027
+  rule: default_bail
+  inputs:
+    first_remand: '2024-09-03'
+    day: 60
+    max_punishment: 3 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 60, no charge sheet
+- id: db-028
+  rule: default_bail
+  inputs:
+    first_remand: '2024-10-24'
+    day: 60
+    max_punishment: 7 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 60, no charge sheet
+- id: db-029
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-19'
+    day: 60
+    max_punishment: 2 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 60, no charge sheet
+- id: db-030
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-25'
+    day: 60
+    max_punishment: 3 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 60-day limit, day 60, no charge sheet
+- id: db-031
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-21'
+    day: 61
+    max_punishment: 7 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 61, no charge sheet
+- id: db-032
+  rule: default_bail
+  inputs:
+    first_remand: '2024-07-12'
+    day: 61
+    max_punishment: may extend to seven years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 61, no charge sheet
+- id: db-033
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-03'
+    day: 61
+    max_punishment: 7 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 61, no charge sheet
+- id: db-034
+  rule: default_bail
+  inputs:
+    first_remand: '2024-09-05'
+    day: 61
+    max_punishment: 5 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 61, no charge sheet
+- id: db-035
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-05'
+    day: 61
+    max_punishment: 2 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 61, no charge sheet
+- id: db-036
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-09'
+    day: 62
+    max_punishment: 2 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 62, no charge sheet
+- id: db-037
+  rule: default_bail
+  inputs:
+    first_remand: '2024-07-13'
+    day: 62
+    max_punishment: 7 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 62, no charge sheet
+- id: db-038
+  rule: default_bail
+  inputs:
+    first_remand: '2024-10-25'
+    day: 62
+    max_punishment: 3 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 62, no charge sheet
+- id: db-039
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-02'
+    day: 62
+    max_punishment: 7 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 62, no charge sheet
+- id: db-040
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-29'
+    day: 62
+    max_punishment: 5 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 62, no charge sheet
+- id: db-041
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-17'
+    day: 75
+    max_punishment: 5 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 75, no charge sheet
+- id: db-042
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-26'
+    day: 75
+    max_punishment: 3 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 75, no charge sheet
+- id: db-043
+  rule: default_bail
+  inputs:
+    first_remand: '2024-11-21'
+    day: 75
+    max_punishment: may extend to seven years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 75, no charge sheet
+- id: db-044
+  rule: default_bail
+  inputs:
+    first_remand: '2024-07-14'
+    day: 75
+    max_punishment: 2 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 75, no charge sheet
+- id: db-045
+  rule: default_bail
+  inputs:
+    first_remand: '2024-09-19'
+    day: 75
+    max_punishment: may extend to seven years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 75, no charge sheet
+- id: db-046
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-27'
+    day: 120
+    max_punishment: 3 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 120, no charge sheet
+- id: db-047
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-10'
+    day: 120
+    max_punishment: may extend to seven years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 120, no charge sheet
+- id: db-048
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-07'
+    day: 120
+    max_punishment: 2 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 120, no charge sheet
+- id: db-049
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-06'
+    day: 120
+    max_punishment: 2 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 120, no charge sheet
+- id: db-050
+  rule: default_bail
+  inputs:
+    first_remand: '2024-11-10'
+    day: 120
+    max_punishment: 5 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 60-day limit, day 120, no charge sheet
+- id: db-051
+  rule: default_bail
+  inputs:
+    first_remand: '2024-11-09'
+    day: 1
+    max_punishment: imprisonment for life
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 1, no charge sheet
+- id: db-052
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-21'
+    day: 1
+    max_punishment: 14 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 1, no charge sheet
+- id: db-053
+  rule: default_bail
+  inputs:
+    first_remand: '2024-09-17'
+    day: 1
+    max_punishment: 14 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 1, no charge sheet
+- id: db-054
+  rule: default_bail
+  inputs:
+    first_remand: '2024-10-13'
+    day: 1
+    max_punishment: death
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 1, no charge sheet
+- id: db-055
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-26'
+    day: 1
+    max_punishment: not less than ten years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 1, no charge sheet
+- id: db-056
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-04'
+    day: 60
+    max_punishment: not less than ten years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 60, no charge sheet
+- id: db-057
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-05'
+    day: 60
+    max_punishment: imprisonment for life
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 60, no charge sheet
+- id: db-058
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-05'
+    day: 60
+    max_punishment: 20 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 60, no charge sheet
+- id: db-059
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-21'
+    day: 60
+    max_punishment: 20 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 60, no charge sheet
+- id: db-060
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-17'
+    day: 60
+    max_punishment: not less than ten years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 60, no charge sheet
+- id: db-061
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-07'
+    day: 61
+    max_punishment: 10 years or more
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 61, no charge sheet
+- id: db-062
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-11'
+    day: 61
+    max_punishment: death
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 61, no charge sheet
+- id: db-063
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-08'
+    day: 61
+    max_punishment: life
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 61, no charge sheet
+- id: db-064
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-18'
+    day: 61
+    max_punishment: 20 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 61, no charge sheet
+- id: db-065
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-24'
+    day: 61
+    max_punishment: 10 years or more
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 61, no charge sheet
+- id: db-066
+  rule: default_bail
+  inputs:
+    first_remand: '2024-10-28'
+    day: 75
+    max_punishment: life
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 75, no charge sheet
+- id: db-067
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-04'
+    day: 75
+    max_punishment: 10 years or more
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 75, no charge sheet
+- id: db-068
+  rule: default_bail
+  inputs:
+    first_remand: '2024-09-19'
+    day: 75
+    max_punishment: 10 years or more
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 75, no charge sheet
+- id: db-069
+  rule: default_bail
+  inputs:
+    first_remand: '2025-02-13'
+    day: 75
+    max_punishment: imprisonment for life
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 75, no charge sheet
+- id: db-070
+  rule: default_bail
+  inputs:
+    first_remand: '2024-08-16'
+    day: 75
+    max_punishment: 20 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 75, no charge sheet
+- id: db-071
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-17'
+    day: 88
+    max_punishment: 20 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 88, no charge sheet
+- id: db-072
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-12'
+    day: 88
+    max_punishment: life
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 88, no charge sheet
+- id: db-073
+  rule: default_bail
+  inputs:
+    first_remand: '2024-08-19'
+    day: 88
+    max_punishment: 14 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 88, no charge sheet
+- id: db-074
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-27'
+    day: 88
+    max_punishment: 10 years or more
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 88, no charge sheet
+- id: db-075
+  rule: default_bail
+  inputs:
+    first_remand: '2024-11-25'
+    day: 88
+    max_punishment: not less than ten years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 88, no charge sheet
+- id: db-076
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-23'
+    day: 89
+    max_punishment: 20 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 89, no charge sheet
+- id: db-077
+  rule: default_bail
+  inputs:
+    first_remand: '2024-07-12'
+    day: 89
+    max_punishment: imprisonment for life
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 89, no charge sheet
+- id: db-078
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-08'
+    day: 89
+    max_punishment: 20 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 89, no charge sheet
+- id: db-079
+  rule: default_bail
+  inputs:
+    first_remand: '2024-10-27'
+    day: 89
+    max_punishment: imprisonment for life
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 89, no charge sheet
+- id: db-080
+  rule: default_bail
+  inputs:
+    first_remand: '2024-10-29'
+    day: 89
+    max_punishment: death
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 89, no charge sheet
+- id: db-081
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-18'
+    day: 90
+    max_punishment: 10 years or more
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 90, no charge sheet
+- id: db-082
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-10'
+    day: 90
+    max_punishment: 14 years
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 90, no charge sheet
+- id: db-083
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-04'
+    day: 90
+    max_punishment: life
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 90, no charge sheet
+- id: db-084
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-27'
+    day: 90
+    max_punishment: imprisonment for life
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 90, no charge sheet
+- id: db-085
+  rule: default_bail
+  inputs:
+    first_remand: '2024-11-17'
+    day: 90
+    max_punishment: life
+    charge_sheet: null
+  designed_answer: NOT_YET
+  note: 90-day limit, day 90, no charge sheet
+- id: db-086
+  rule: default_bail
+  inputs:
+    first_remand: '2024-07-17'
+    day: 91
+    max_punishment: death
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 90-day limit, day 91, no charge sheet
+- id: db-087
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-01'
+    day: 91
+    max_punishment: 14 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 90-day limit, day 91, no charge sheet
+- id: db-088
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-16'
+    day: 91
+    max_punishment: not less than ten years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 90-day limit, day 91, no charge sheet
+- id: db-089
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-20'
+    day: 91
+    max_punishment: 20 years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 90-day limit, day 91, no charge sheet
+- id: db-090
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-12'
+    day: 91
+    max_punishment: death
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 90-day limit, day 91, no charge sheet
+- id: db-091
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-10'
+    day: 92
+    max_punishment: not less than ten years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 90-day limit, day 92, no charge sheet
+- id: db-092
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-17'
+    day: 92
+    max_punishment: death
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 90-day limit, day 92, no charge sheet
+- id: db-093
+  rule: default_bail
+  inputs:
+    first_remand: '2024-07-29'
+    day: 92
+    max_punishment: not less than ten years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 90-day limit, day 92, no charge sheet
+- id: db-094
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-18'
+    day: 92
+    max_punishment: imprisonment for life
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 90-day limit, day 92, no charge sheet
+- id: db-095
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-08'
+    day: 92
+    max_punishment: imprisonment for life
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 90-day limit, day 92, no charge sheet
+- id: db-096
+  rule: default_bail
+  inputs:
+    first_remand: '2024-09-06'
+    day: 120
+    max_punishment: death
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 90-day limit, day 120, no charge sheet
+- id: db-097
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-06'
+    day: 120
+    max_punishment: imprisonment for life
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 90-day limit, day 120, no charge sheet
+- id: db-098
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-24'
+    day: 120
+    max_punishment: not less than ten years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 90-day limit, day 120, no charge sheet
+- id: db-099
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-28'
+    day: 120
+    max_punishment: not less than ten years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 90-day limit, day 120, no charge sheet
+- id: db-100
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-12'
+    day: 120
+    max_punishment: not less than ten years
+    charge_sheet: null
+  designed_answer: ELIGIBLE
+  note: 90-day limit, day 120, no charge sheet
+- id: db-101
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-11'
+    day: 59
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-102
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-24'
+    day: 60
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-103
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-07'
+    day: 61
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-104
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-07'
+    day: 89
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-105
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-16'
+    day: 90
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-106
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-01'
+    day: 91
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-107
+  rule: default_bail
+  inputs:
+    first_remand: '2024-11-08'
+    day: 100
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-108
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-21'
+    day: 59
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-109
+  rule: default_bail
+  inputs:
+    first_remand: '2025-03-23'
+    day: 60
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-110
+  rule: default_bail
+  inputs:
+    first_remand: '2024-08-05'
+    day: 61
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-111
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-13'
+    day: 89
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-112
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-08'
+    day: 90
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-113
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-10'
+    day: 91
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-114
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-05'
+    day: 100
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-115
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-08'
+    day: 59
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-116
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-07'
+    day: 60
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-117
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-20'
+    day: 61
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-118
+  rule: default_bail
+  inputs:
+    first_remand: '2024-08-15'
+    day: 89
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-119
+  rule: default_bail
+  inputs:
+    first_remand: '2024-09-29'
+    day: 90
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-120
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-12'
+    day: 91
+    max_punishment: may extend to ten years
+    charge_sheet: null
+  designed_answer: CHECK
+  note: '''may extend to ten years'' is unsettled'
+- id: db-121
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-05'
+    day: 80
+    max_punishment: 2 years
+    charge_sheet: '2025-09-02'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 60
+- id: db-122
+  rule: default_bail
+  inputs:
+    first_remand: '2024-09-13'
+    day: 109
+    max_punishment: life
+    charge_sheet: '2024-12-10'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 89
+- id: db-123
+  rule: default_bail
+  inputs:
+    first_remand: '2024-07-20'
+    day: 61
+    max_punishment: 3 years
+    charge_sheet: '2024-09-18'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 61
+- id: db-124
+  rule: default_bail
+  inputs:
+    first_remand: '2024-07-31'
+    day: 105
+    max_punishment: imprisonment for life
+    charge_sheet: '2024-11-07'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 100
+- id: db-125
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-01'
+    day: 64
+    max_punishment: 5 years
+    charge_sheet: '2025-09-28'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 59
+- id: db-126
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-06'
+    day: 100
+    max_punishment: not less than ten years
+    charge_sheet: '2025-12-14'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 100
+- id: db-127
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-05'
+    day: 66
+    max_punishment: may extend to seven years
+    charge_sheet: '2025-07-04'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 61
+- id: db-128
+  rule: default_bail
+  inputs:
+    first_remand: '2025-02-28'
+    day: 95
+    max_punishment: not less than ten years
+    charge_sheet: '2025-05-28'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 90
+- id: db-129
+  rule: default_bail
+  inputs:
+    first_remand: '2024-11-09'
+    day: 61
+    max_punishment: 2 years
+    charge_sheet: '2025-01-08'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 61
+- id: db-130
+  rule: default_bail
+  inputs:
+    first_remand: '2025-02-26'
+    day: 100
+    max_punishment: imprisonment for life
+    charge_sheet: '2025-06-05'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 100
+- id: db-131
+  rule: default_bail
+  inputs:
+    first_remand: '2025-03-06'
+    day: 40
+    max_punishment: 5 years
+    charge_sheet: '2025-04-14'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 40
+- id: db-132
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-03'
+    day: 92
+    max_punishment: not less than ten years
+    charge_sheet: '2025-08-02'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 92
+- id: db-133
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-21'
+    day: 66
+    max_punishment: 5 years
+    charge_sheet: '2025-11-20'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 61
+- id: db-134
+  rule: default_bail
+  inputs:
+    first_remand: '2024-11-10'
+    day: 100
+    max_punishment: 10 years or more
+    charge_sheet: '2025-02-17'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 100
+- id: db-135
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-29'
+    day: 65
+    max_punishment: 7 years
+    charge_sheet: '2025-03-29'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 60
+- id: db-136
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-18'
+    day: 100
+    max_punishment: death
+    charge_sheet: '2025-10-25'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 100
+- id: db-137
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-24'
+    day: 61
+    max_punishment: 3 years
+    charge_sheet: '2025-08-23'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 61
+- id: db-138
+  rule: default_bail
+  inputs:
+    first_remand: '2024-08-14'
+    day: 109
+    max_punishment: 14 years
+    charge_sheet: '2024-11-10'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 89
+- id: db-139
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-03'
+    day: 82
+    max_punishment: 7 years
+    charge_sheet: '2025-11-03'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 62
+- id: db-140
+  rule: default_bail
+  inputs:
+    first_remand: '2024-09-30'
+    day: 111
+    max_punishment: 20 years
+    charge_sheet: '2024-12-29'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 91
+- id: db-141
+  rule: default_bail
+  inputs:
+    first_remand: '2024-10-21'
+    day: 80
+    max_punishment: 5 years
+    charge_sheet: '2024-12-19'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 60
+- id: db-142
+  rule: default_bail
+  inputs:
+    first_remand: '2024-11-04'
+    day: 112
+    max_punishment: death
+    charge_sheet: '2025-02-03'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 92
+- id: db-143
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-29'
+    day: 62
+    max_punishment: 3 years
+    charge_sheet: '2025-06-29'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 62
+- id: db-144
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-30'
+    day: 95
+    max_punishment: 10 years or more
+    charge_sheet: '2025-09-27'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 90
+- id: db-145
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-08'
+    day: 70
+    max_punishment: 3 years
+    charge_sheet: '2025-06-16'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 70
+- id: db-146
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-24'
+    day: 97
+    max_punishment: 10 years or more
+    charge_sheet: '2025-11-23'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 92
+- id: db-147
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-05'
+    day: 61
+    max_punishment: 5 years
+    charge_sheet: '2025-08-04'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 61
+- id: db-148
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-17'
+    day: 111
+    max_punishment: life
+    charge_sheet: '2025-03-17'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 91
+- id: db-149
+  rule: default_bail
+  inputs:
+    first_remand: '2025-03-20'
+    day: 64
+    max_punishment: 2 years
+    charge_sheet: '2025-05-17'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 59
+- id: db-150
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-23'
+    day: 95
+    max_punishment: not less than ten years
+    charge_sheet: '2025-07-21'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 90
+- id: db-151
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-01'
+    day: 60
+    max_punishment: 2 years
+    charge_sheet: '2025-09-29'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 60
+- id: db-152
+  rule: default_bail
+  inputs:
+    first_remand: '2024-08-28'
+    day: 109
+    max_punishment: 10 years or more
+    charge_sheet: '2024-11-24'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 89
+- id: db-153
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-29'
+    day: 59
+    max_punishment: may extend to seven years
+    charge_sheet: '2025-03-28'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 59
+- id: db-154
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-13'
+    day: 97
+    max_punishment: 10 years or more
+    charge_sheet: '2025-09-12'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 92
+- id: db-155
+  rule: default_bail
+  inputs:
+    first_remand: '2024-08-28'
+    day: 79
+    max_punishment: 5 years
+    charge_sheet: '2024-10-25'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 59
+- id: db-156
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-13'
+    day: 92
+    max_punishment: imprisonment for life
+    charge_sheet: '2025-08-12'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 92
+- id: db-157
+  rule: default_bail
+  inputs:
+    first_remand: '2024-11-09'
+    day: 81
+    max_punishment: 3 years
+    charge_sheet: '2025-01-08'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 61
+- id: db-158
+  rule: default_bail
+  inputs:
+    first_remand: '2024-09-13'
+    day: 109
+    max_punishment: 14 years
+    charge_sheet: '2024-12-10'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 89
+- id: db-159
+  rule: default_bail
+  inputs:
+    first_remand: '2024-07-12'
+    day: 61
+    max_punishment: 3 years
+    charge_sheet: '2024-09-10'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 61
+- id: db-160
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-03'
+    day: 95
+    max_punishment: not less than ten years
+    charge_sheet: '2025-09-30'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 90
+- id: db-161
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-26'
+    day: 80
+    max_punishment: 3 years
+    charge_sheet: '2025-07-24'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 60
+- id: db-162
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-22'
+    day: 111
+    max_punishment: not less than ten years
+    charge_sheet: '2025-03-22'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 91
+- id: db-163
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-08'
+    day: 59
+    max_punishment: 5 years
+    charge_sheet: '2025-07-05'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 59
+- id: db-164
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-19'
+    day: 100
+    max_punishment: 14 years
+    charge_sheet: '2025-10-26'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 100
+- id: db-165
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-24'
+    day: 82
+    max_punishment: 3 years
+    charge_sheet: '2025-08-24'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 62
+- id: db-166
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-26'
+    day: 105
+    max_punishment: 14 years
+    charge_sheet: '2025-10-03'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 100
+- id: db-167
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-19'
+    day: 81
+    max_punishment: may extend to seven years
+    charge_sheet: '2025-03-20'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 61
+- id: db-168
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-17'
+    day: 100
+    max_punishment: 14 years
+    charge_sheet: '2025-03-26'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 100
+- id: db-169
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-07'
+    day: 79
+    max_punishment: may extend to seven years
+    charge_sheet: '2025-07-04'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 59
+- id: db-170
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-13'
+    day: 105
+    max_punishment: not less than ten years
+    charge_sheet: '2025-11-20'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 100
+- id: db-171
+  rule: default_bail
+  inputs:
+    first_remand: '2024-10-31'
+    day: 80
+    max_punishment: 2 years
+    charge_sheet: '2024-12-29'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 60
+- id: db-172
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-28'
+    day: 109
+    max_punishment: life
+    charge_sheet: '2025-11-24'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 89
+- id: db-173
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-05'
+    day: 60
+    max_punishment: 5 years
+    charge_sheet: '2025-02-13'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 40
+- id: db-174
+  rule: default_bail
+  inputs:
+    first_remand: '2025-03-21'
+    day: 92
+    max_punishment: life
+    charge_sheet: '2025-06-20'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 92
+- id: db-175
+  rule: default_bail
+  inputs:
+    first_remand: '2025-03-31'
+    day: 90
+    max_punishment: 2 years
+    charge_sheet: '2025-06-08'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 70
+- id: db-176
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-07'
+    day: 94
+    max_punishment: imprisonment for life
+    charge_sheet: '2025-03-05'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 89
+- id: db-177
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-13'
+    day: 60
+    max_punishment: 2 years
+    charge_sheet: '2025-03-13'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 60
+- id: db-178
+  rule: default_bail
+  inputs:
+    first_remand: '2024-10-16'
+    day: 100
+    max_punishment: 20 years
+    charge_sheet: '2025-01-23'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 100
+- id: db-179
+  rule: default_bail
+  inputs:
+    first_remand: '2024-09-22'
+    day: 60
+    max_punishment: 5 years
+    charge_sheet: '2024-10-31'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 40
+- id: db-180
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-26'
+    day: 92
+    max_punishment: 14 years
+    charge_sheet: '2025-04-27'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 92
+- id: db-181
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-03'
+    day: 70
+    max_punishment: 7 years
+    charge_sheet: '2025-08-11'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 70
+- id: db-182
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-17'
+    day: 85
+    max_punishment: 20 years
+    charge_sheet: '2025-04-06'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 80
+- id: db-183
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-11'
+    day: 80
+    max_punishment: 5 years
+    charge_sheet: '2025-02-08'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 60
+- id: db-184
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-25'
+    day: 109
+    max_punishment: imprisonment for life
+    charge_sheet: '2025-09-21'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 89
+- id: db-185
+  rule: default_bail
+  inputs:
+    first_remand: '2024-08-09'
+    day: 40
+    max_punishment: 3 years
+    charge_sheet: '2024-09-17'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 40
+- id: db-186
+  rule: default_bail
+  inputs:
+    first_remand: '2024-07-28'
+    day: 112
+    max_punishment: 14 years
+    charge_sheet: '2024-10-27'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 92
+- id: db-187
+  rule: default_bail
+  inputs:
+    first_remand: '2024-07-05'
+    day: 60
+    max_punishment: may extend to seven years
+    charge_sheet: '2024-09-02'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 60
+- id: db-188
+  rule: default_bail
+  inputs:
+    first_remand: '2025-02-12'
+    day: 120
+    max_punishment: death
+    charge_sheet: '2025-05-22'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 100
+- id: db-189
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-03'
+    day: 60
+    max_punishment: 3 years
+    charge_sheet: '2025-01-11'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 40
+- id: db-190
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-11'
+    day: 105
+    max_punishment: 10 years or more
+    charge_sheet: '2025-07-19'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 100
+- id: db-191
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-19'
+    day: 81
+    max_punishment: 3 years
+    charge_sheet: '2025-02-17'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 61
+- id: db-192
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-21'
+    day: 90
+    max_punishment: 20 years
+    charge_sheet: '2025-08-18'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 90
+- id: db-193
+  rule: default_bail
+  inputs:
+    first_remand: '2024-08-16'
+    day: 66
+    max_punishment: 7 years
+    charge_sheet: '2024-10-15'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 61
+- id: db-194
+  rule: default_bail
+  inputs:
+    first_remand: '2024-12-24'
+    day: 109
+    max_punishment: not less than ten years
+    charge_sheet: '2025-03-22'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 89
+- id: db-195
+  rule: default_bail
+  inputs:
+    first_remand: '2024-10-11'
+    day: 81
+    max_punishment: may extend to seven years
+    charge_sheet: '2024-12-10'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 61
+- id: db-196
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-01'
+    day: 111
+    max_punishment: life
+    charge_sheet: '2025-06-30'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 91
+- id: db-197
+  rule: default_bail
+  inputs:
+    first_remand: '2024-08-07'
+    day: 70
+    max_punishment: may extend to seven years
+    charge_sheet: '2024-10-15'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 70
+- id: db-198
+  rule: default_bail
+  inputs:
+    first_remand: '2025-03-16'
+    day: 90
+    max_punishment: not less than ten years
+    charge_sheet: '2025-06-13'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 90
+- id: db-199
+  rule: default_bail
+  inputs:
+    first_remand: '2025-03-20'
+    day: 82
+    max_punishment: 2 years
+    charge_sheet: '2025-05-20'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 62
+- id: db-200
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-14'
+    day: 94
+    max_punishment: not less than ten years
+    charge_sheet: '2025-04-12'
+  designed_answer: WINDOW_CLOSED
+  note: charge sheet filed on day 89
+- id: ut-001
+  rule: undertrial_limit
+  inputs:
+    custody_days: 364
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2025-12-08'
+    arrest_date: '2024-12-09'
+  designed_answer: NOT_YET
+  note: one-third, first-time threshold 365 -1
+- id: ut-002
+  rule: undertrial_limit
+  inputs:
+    custody_days: 365
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2025-08-15'
+    arrest_date: '2024-08-15'
+  designed_answer: ELIGIBLE
+  note: one-third, first-time threshold 365 +0
+- id: ut-003
+  rule: undertrial_limit
+  inputs:
+    custody_days: 366
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2026-08-23'
+    arrest_date: '2025-08-22'
+  designed_answer: ELIGIBLE
+  note: one-third, first-time threshold 365 +1
+- id: ut-004
+  rule: undertrial_limit
+  inputs:
+    custody_days: 547
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2025-08-31'
+    arrest_date: '2024-03-02'
+  designed_answer: NOT_YET
+  note: one-half, repeat threshold 548 -1
+- id: ut-005
+  rule: undertrial_limit
+  inputs:
+    custody_days: 548
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-04-14'
+    arrest_date: '2024-10-13'
+  designed_answer: ELIGIBLE
+  note: one-half, repeat threshold 548 +0
+- id: ut-006
+  rule: undertrial_limit
+  inputs:
+    custody_days: 549
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-01-08'
+    arrest_date: '2024-07-08'
+  designed_answer: ELIGIBLE
+  note: one-half, repeat threshold 548 +1
+- id: ut-007
+  rule: undertrial_limit
+  inputs:
+    custody_days: 547
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2026-04-08'
+    arrest_date: '2024-10-08'
+  designed_answer: ELIGIBLE
+  note: first-time offender around one-half (548)
+- id: ut-008
+  rule: undertrial_limit
+  inputs:
+    custody_days: 364
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-09-15'
+    arrest_date: '2025-09-16'
+  designed_answer: NOT_YET
+  note: repeat offender around one-third (365)
+- id: ut-009
+  rule: undertrial_limit
+  inputs:
+    custody_days: 548
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2025-06-09'
+    arrest_date: '2023-12-09'
+  designed_answer: ELIGIBLE
+  note: first-time offender around one-half (548)
+- id: ut-010
+  rule: undertrial_limit
+  inputs:
+    custody_days: 365
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-06-08'
+    arrest_date: '2025-06-08'
+  designed_answer: NOT_YET
+  note: repeat offender around one-third (365)
+- id: ut-011
+  rule: undertrial_limit
+  inputs:
+    custody_days: 549
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2026-05-21'
+    arrest_date: '2024-11-18'
+  designed_answer: ELIGIBLE
+  note: first-time offender around one-half (548)
+- id: ut-012
+  rule: undertrial_limit
+  inputs:
+    custody_days: 366
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-02-04'
+    arrest_date: '2025-02-03'
+  designed_answer: NOT_YET
+  note: repeat offender around one-third (365)
+- id: ut-013
+  rule: undertrial_limit
+  inputs:
+    custody_days: 365
+    max_punishment: 3 years
+    first_time: null
+    as_of: '2025-08-30'
+    arrest_date: '2024-08-30'
+  designed_answer: CHECK
+  note: antecedents unknown at one-third
+- id: ut-014
+  rule: undertrial_limit
+  inputs:
+    custody_days: 547
+    max_punishment: 3 years
+    first_time: null
+    as_of: '2026-05-16'
+    arrest_date: '2024-11-15'
+  designed_answer: CHECK
+  note: antecedents unknown at just under one-half
+- id: ut-015
+  rule: undertrial_limit
+  inputs:
+    custody_days: 548
+    max_punishment: 3 years
+    first_time: null
+    as_of: '2025-10-31'
+    arrest_date: '2024-05-01'
+  designed_answer: ELIGIBLE
+  note: antecedents unknown at one-half
+- id: ut-016
+  rule: undertrial_limit
+  inputs:
+    custody_days: 549
+    max_punishment: 3 years
+    first_time: null
+    as_of: '2026-06-05'
+    arrest_date: '2024-12-03'
+  designed_answer: ELIGIBLE
+  note: antecedents unknown at just over one-half
+- id: ut-017
+  rule: undertrial_limit
+  inputs:
+    custody_days: 608
+    max_punishment: 5 years
+    first_time: true
+    as_of: '2025-11-11'
+    arrest_date: '2024-03-13'
+  designed_answer: NOT_YET
+  note: one-third, first-time threshold 609 -1
+- id: ut-018
+  rule: undertrial_limit
+  inputs:
+    custody_days: 609
+    max_punishment: 5 years
+    first_time: true
+    as_of: '2026-04-21'
+    arrest_date: '2024-08-20'
+  designed_answer: ELIGIBLE
+  note: one-third, first-time threshold 609 +0
+- id: ut-019
+  rule: undertrial_limit
+  inputs:
+    custody_days: 610
+    max_punishment: 5 years
+    first_time: true
+    as_of: '2026-06-25'
+    arrest_date: '2024-10-23'
+  designed_answer: ELIGIBLE
+  note: one-third, first-time threshold 609 +1
+- id: ut-020
+  rule: undertrial_limit
+  inputs:
+    custody_days: 912
+    max_punishment: 5 years
+    first_time: false
+    as_of: '2025-09-25'
+    arrest_date: '2023-03-28'
+  designed_answer: NOT_YET
+  note: one-half, repeat threshold 913 -1
+- id: ut-021
+  rule: undertrial_limit
+  inputs:
+    custody_days: 913
+    max_punishment: 5 years
+    first_time: false
+    as_of: '2026-08-15'
+    arrest_date: '2024-02-14'
+  designed_answer: ELIGIBLE
+  note: one-half, repeat threshold 913 +0
+- id: ut-022
+  rule: undertrial_limit
+  inputs:
+    custody_days: 914
+    max_punishment: 5 years
+    first_time: false
+    as_of: '2025-12-15'
+    arrest_date: '2023-06-15'
+  designed_answer: ELIGIBLE
+  note: one-half, repeat threshold 913 +1
+- id: ut-023
+  rule: undertrial_limit
+  inputs:
+    custody_days: 912
+    max_punishment: 5 years
+    first_time: true
+    as_of: '2025-11-08'
+    arrest_date: '2023-05-11'
+  designed_answer: ELIGIBLE
+  note: first-time offender around one-half (913)
+- id: ut-024
+  rule: undertrial_limit
+  inputs:
+    custody_days: 608
+    max_punishment: 5 years
+    first_time: false
+    as_of: '2025-09-23'
+    arrest_date: '2024-01-24'
+  designed_answer: NOT_YET
+  note: repeat offender around one-third (609)
+- id: ut-025
+  rule: undertrial_limit
+  inputs:
+    custody_days: 913
+    max_punishment: 5 years
+    first_time: true
+    as_of: '2026-06-01'
+    arrest_date: '2023-12-01'
+  designed_answer: ELIGIBLE
+  note: first-time offender around one-half (913)
+- id: ut-026
+  rule: undertrial_limit
+  inputs:
+    custody_days: 609
+    max_punishment: 5 years
+    first_time: false
+    as_of: '2025-07-25'
+    arrest_date: '2023-11-24'
+  designed_answer: NOT_YET
+  note: repeat offender around one-third (609)
+- id: ut-027
+  rule: undertrial_limit
+  inputs:
+    custody_days: 914
+    max_punishment: 5 years
+    first_time: true
+    as_of: '2025-12-12'
+    arrest_date: '2023-06-12'
+  designed_answer: ELIGIBLE
+  note: first-time offender around one-half (913)
+- id: ut-028
+  rule: undertrial_limit
+  inputs:
+    custody_days: 610
+    max_punishment: 5 years
+    first_time: false
+    as_of: '2025-07-12'
+    arrest_date: '2023-11-10'
+  designed_answer: NOT_YET
+  note: repeat offender around one-third (609)
+- id: ut-029
+  rule: undertrial_limit
+  inputs:
+    custody_days: 609
+    max_punishment: 5 years
+    first_time: null
+    as_of: '2026-06-02'
+    arrest_date: '2024-10-01'
+  designed_answer: CHECK
+  note: antecedents unknown at one-third
+- id: ut-030
+  rule: undertrial_limit
+  inputs:
+    custody_days: 912
+    max_punishment: 5 years
+    first_time: null
+    as_of: '2026-08-24'
+    arrest_date: '2024-02-24'
+  designed_answer: CHECK
+  note: antecedents unknown at just under one-half
+- id: ut-031
+  rule: undertrial_limit
+  inputs:
+    custody_days: 913
+    max_punishment: 5 years
+    first_time: null
+    as_of: '2025-07-30'
+    arrest_date: '2023-01-29'
+  designed_answer: ELIGIBLE
+  note: antecedents unknown at one-half
+- id: ut-032
+  rule: undertrial_limit
+  inputs:
+    custody_days: 914
+    max_punishment: 5 years
+    first_time: null
+    as_of: '2025-12-01'
+    arrest_date: '2023-06-01'
+  designed_answer: ELIGIBLE
+  note: antecedents unknown at just over one-half
+- id: ut-033
+  rule: undertrial_limit
+  inputs:
+    custody_days: 851
+    max_punishment: 7 years
+    first_time: true
+    as_of: '2026-04-01'
+    arrest_date: '2023-12-02'
+  designed_answer: NOT_YET
+  note: one-third, first-time threshold 852 -1
+- id: ut-034
+  rule: undertrial_limit
+  inputs:
+    custody_days: 852
+    max_punishment: 7 years
+    first_time: true
+    as_of: '2026-07-28'
+    arrest_date: '2024-03-28'
+  designed_answer: ELIGIBLE
+  note: one-third, first-time threshold 852 +0
+- id: ut-035
+  rule: undertrial_limit
+  inputs:
+    custody_days: 853
+    max_punishment: 7 years
+    first_time: true
+    as_of: '2025-10-19'
+    arrest_date: '2023-06-19'
+  designed_answer: ELIGIBLE
+  note: one-third, first-time threshold 852 +1
+- id: ut-036
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1277
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2026-09-07'
+    arrest_date: '2023-03-10'
+  designed_answer: NOT_YET
+  note: one-half, repeat threshold 1278 -1
+- id: ut-037
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1278
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2026-06-17'
+    arrest_date: '2022-12-17'
+  designed_answer: ELIGIBLE
+  note: one-half, repeat threshold 1278 +0
+- id: ut-038
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1279
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2025-11-25'
+    arrest_date: '2022-05-26'
+  designed_answer: ELIGIBLE
+  note: one-half, repeat threshold 1278 +1
+- id: ut-039
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1277
+    max_punishment: 7 years
+    first_time: true
+    as_of: '2026-03-27'
+    arrest_date: '2022-09-27'
+  designed_answer: ELIGIBLE
+  note: first-time offender around one-half (1278)
+- id: ut-040
+  rule: undertrial_limit
+  inputs:
+    custody_days: 851
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2026-08-20'
+    arrest_date: '2024-04-21'
+  designed_answer: NOT_YET
+  note: repeat offender around one-third (852)
+- id: ut-041
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1278
+    max_punishment: 7 years
+    first_time: true
+    as_of: '2025-12-19'
+    arrest_date: '2022-06-20'
+  designed_answer: ELIGIBLE
+  note: first-time offender around one-half (1278)
+- id: ut-042
+  rule: undertrial_limit
+  inputs:
+    custody_days: 852
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2026-03-21'
+    arrest_date: '2023-11-20'
+  designed_answer: NOT_YET
+  note: repeat offender around one-third (852)
+- id: ut-043
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1279
+    max_punishment: 7 years
+    first_time: true
+    as_of: '2026-06-15'
+    arrest_date: '2022-12-14'
+  designed_answer: ELIGIBLE
+  note: first-time offender around one-half (1278)
+- id: ut-044
+  rule: undertrial_limit
+  inputs:
+    custody_days: 853
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2025-09-30'
+    arrest_date: '2023-05-31'
+  designed_answer: NOT_YET
+  note: repeat offender around one-third (852)
+- id: ut-045
+  rule: undertrial_limit
+  inputs:
+    custody_days: 852
+    max_punishment: 7 years
+    first_time: null
+    as_of: '2025-08-14'
+    arrest_date: '2023-04-15'
+  designed_answer: CHECK
+  note: antecedents unknown at one-third
+- id: ut-046
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1277
+    max_punishment: 7 years
+    first_time: null
+    as_of: '2025-10-25'
+    arrest_date: '2022-04-27'
+  designed_answer: CHECK
+  note: antecedents unknown at just under one-half
+- id: ut-047
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1278
+    max_punishment: 7 years
+    first_time: null
+    as_of: '2026-05-06'
+    arrest_date: '2022-11-05'
+  designed_answer: ELIGIBLE
+  note: antecedents unknown at one-half
+- id: ut-048
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1279
+    max_punishment: 7 years
+    first_time: null
+    as_of: '2026-08-30'
+    arrest_date: '2023-02-28'
+  designed_answer: ELIGIBLE
+  note: antecedents unknown at just over one-half
+- id: ut-049
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1216
+    max_punishment: 10 years
+    first_time: true
+    as_of: '2026-01-08'
+    arrest_date: '2022-09-10'
+  designed_answer: NOT_YET
+  note: one-third, first-time threshold 1217 -1
+- id: ut-050
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1217
+    max_punishment: 10 years
+    first_time: true
+    as_of: '2026-08-23'
+    arrest_date: '2023-04-24'
+  designed_answer: ELIGIBLE
+  note: one-third, first-time threshold 1217 +0
+- id: ut-051
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1218
+    max_punishment: 10 years
+    first_time: true
+    as_of: '2026-09-10'
+    arrest_date: '2023-05-11'
+  designed_answer: ELIGIBLE
+  note: one-third, first-time threshold 1217 +1
+- id: ut-052
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1824
+    max_punishment: 10 years
+    first_time: false
+    as_of: '2026-04-29'
+    arrest_date: '2021-05-01'
+  designed_answer: NOT_YET
+  note: one-half, repeat threshold 1825 -1
+- id: ut-053
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1825
+    max_punishment: 10 years
+    first_time: false
+    as_of: '2025-08-18'
+    arrest_date: '2020-08-19'
+  designed_answer: ELIGIBLE
+  note: one-half, repeat threshold 1825 +0
+- id: ut-054
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1826
+    max_punishment: 10 years
+    first_time: false
+    as_of: '2026-05-30'
+    arrest_date: '2021-05-30'
+  designed_answer: ELIGIBLE
+  note: one-half, repeat threshold 1825 +1
+- id: ut-055
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1824
+    max_punishment: 10 years
+    first_time: true
+    as_of: '2026-09-05'
+    arrest_date: '2021-09-07'
+  designed_answer: ELIGIBLE
+  note: first-time offender around one-half (1825)
+- id: ut-056
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1216
+    max_punishment: 10 years
+    first_time: false
+    as_of: '2026-09-18'
+    arrest_date: '2023-05-21'
+  designed_answer: NOT_YET
+  note: repeat offender around one-third (1217)
+- id: ut-057
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1825
+    max_punishment: 10 years
+    first_time: true
+    as_of: '2026-07-30'
+    arrest_date: '2021-07-31'
+  designed_answer: ELIGIBLE
+  note: first-time offender around one-half (1825)
+- id: ut-058
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1217
+    max_punishment: 10 years
+    first_time: false
+    as_of: '2026-08-16'
+    arrest_date: '2023-04-17'
+  designed_answer: NOT_YET
+  note: repeat offender around one-third (1217)
+- id: ut-059
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1826
+    max_punishment: 10 years
+    first_time: true
+    as_of: '2026-03-02'
+    arrest_date: '2021-03-02'
+  designed_answer: ELIGIBLE
+  note: first-time offender around one-half (1825)
+- id: ut-060
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1218
+    max_punishment: 10 years
+    first_time: false
+    as_of: '2025-09-06'
+    arrest_date: '2022-05-07'
+  designed_answer: NOT_YET
+  note: repeat offender around one-third (1217)
+- id: ut-061
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1217
+    max_punishment: 10 years
+    first_time: null
+    as_of: '2026-08-15'
+    arrest_date: '2023-04-16'
+  designed_answer: CHECK
+  note: antecedents unknown at one-third
+- id: ut-062
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1824
+    max_punishment: 10 years
+    first_time: null
+    as_of: '2025-06-26'
+    arrest_date: '2020-06-28'
+  designed_answer: CHECK
+  note: antecedents unknown at just under one-half
+- id: ut-063
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1825
+    max_punishment: 10 years
+    first_time: null
+    as_of: '2026-04-11'
+    arrest_date: '2021-04-12'
+  designed_answer: ELIGIBLE
+  note: antecedents unknown at one-half
+- id: ut-064
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1826
+    max_punishment: 10 years
+    first_time: null
+    as_of: '2026-02-27'
+    arrest_date: '2021-02-27'
+  designed_answer: ELIGIBLE
+  note: antecedents unknown at just over one-half
+- id: ut-065
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1703
+    max_punishment: 14 years
+    first_time: true
+    as_of: '2025-06-19'
+    arrest_date: '2020-10-20'
+  designed_answer: NOT_YET
+  note: one-third, first-time threshold 1704 -1
+- id: ut-066
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1704
+    max_punishment: 14 years
+    first_time: true
+    as_of: '2025-07-10'
+    arrest_date: '2020-11-09'
+  designed_answer: ELIGIBLE
+  note: one-third, first-time threshold 1704 +0
+- id: ut-067
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1705
+    max_punishment: 14 years
+    first_time: true
+    as_of: '2026-09-17'
+    arrest_date: '2022-01-16'
+  designed_answer: ELIGIBLE
+  note: one-third, first-time threshold 1704 +1
+- id: ut-068
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2554
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2026-08-18'
+    arrest_date: '2019-08-21'
+  designed_answer: NOT_YET
+  note: one-half, repeat threshold 2555 -1
+- id: ut-069
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2555
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2026-04-01'
+    arrest_date: '2019-04-03'
+  designed_answer: ELIGIBLE
+  note: one-half, repeat threshold 2555 +0
+- id: ut-070
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2556
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2026-02-02'
+    arrest_date: '2019-02-03'
+  designed_answer: ELIGIBLE
+  note: one-half, repeat threshold 2555 +1
+- id: ut-071
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2554
+    max_punishment: 14 years
+    first_time: true
+    as_of: '2025-12-25'
+    arrest_date: '2018-12-28'
+  designed_answer: ELIGIBLE
+  note: first-time offender around one-half (2555)
+- id: ut-072
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1703
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2026-06-16'
+    arrest_date: '2021-10-17'
+  designed_answer: NOT_YET
+  note: repeat offender around one-third (1704)
+- id: ut-073
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2555
+    max_punishment: 14 years
+    first_time: true
+    as_of: '2025-08-19'
+    arrest_date: '2018-08-21'
+  designed_answer: ELIGIBLE
+  note: first-time offender around one-half (2555)
+- id: ut-074
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1704
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2026-05-08'
+    arrest_date: '2021-09-07'
+  designed_answer: NOT_YET
+  note: repeat offender around one-third (1704)
+- id: ut-075
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2556
+    max_punishment: 14 years
+    first_time: true
+    as_of: '2025-06-06'
+    arrest_date: '2018-06-07'
+  designed_answer: ELIGIBLE
+  note: first-time offender around one-half (2555)
+- id: ut-076
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1705
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2026-04-03'
+    arrest_date: '2021-08-02'
+  designed_answer: NOT_YET
+  note: repeat offender around one-third (1704)
+- id: ut-077
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1704
+    max_punishment: 14 years
+    first_time: null
+    as_of: '2025-11-07'
+    arrest_date: '2021-03-09'
+  designed_answer: CHECK
+  note: antecedents unknown at one-third
+- id: ut-078
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2554
+    max_punishment: 14 years
+    first_time: null
+    as_of: '2026-03-25'
+    arrest_date: '2019-03-28'
+  designed_answer: CHECK
+  note: antecedents unknown at just under one-half
+- id: ut-079
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2555
+    max_punishment: 14 years
+    first_time: null
+    as_of: '2025-06-04'
+    arrest_date: '2018-06-06'
+  designed_answer: ELIGIBLE
+  note: antecedents unknown at one-half
+- id: ut-080
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2556
+    max_punishment: 14 years
+    first_time: null
+    as_of: '2025-06-29'
+    arrest_date: '2018-06-30'
+  designed_answer: ELIGIBLE
+  note: antecedents unknown at just over one-half
+- id: ut-081
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1000
+    max_punishment: life
+    first_time: false
+    as_of: '2025-12-28'
+    arrest_date: '2023-04-03'
+  designed_answer: NOT_APPLICABLE
+  note: 'death or life: not applicable'
+- id: ut-082
+  rule: undertrial_limit
+  inputs:
+    custody_days: 3000
+    max_punishment: imprisonment for life
+    first_time: true
+    as_of: '2026-09-14'
+    arrest_date: '2018-06-28'
+  designed_answer: NOT_APPLICABLE
+  note: 'death or life: not applicable'
+- id: ut-083
+  rule: undertrial_limit
+  inputs:
+    custody_days: 5000
+    max_punishment: death
+    first_time: false
+    as_of: '2026-04-05'
+    arrest_date: '2012-07-27'
+  designed_answer: NOT_APPLICABLE
+  note: 'death or life: not applicable'
+- id: ut-084
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1000
+    max_punishment: life
+    first_time: true
+    as_of: '2026-05-23'
+    arrest_date: '2023-08-27'
+  designed_answer: NOT_APPLICABLE
+  note: 'death or life: not applicable'
+- id: ut-085
+  rule: undertrial_limit
+  inputs:
+    custody_days: 3000
+    max_punishment: imprisonment for life
+    first_time: false
+    as_of: '2026-01-18'
+    arrest_date: '2017-11-01'
+  designed_answer: NOT_APPLICABLE
+  note: 'death or life: not applicable'
+- id: ut-086
+  rule: undertrial_limit
+  inputs:
+    custody_days: 5000
+    max_punishment: death
+    first_time: true
+    as_of: '2026-04-27'
+    arrest_date: '2012-08-18'
+  designed_answer: NOT_APPLICABLE
+  note: 'death or life: not applicable'
+- id: ut-087
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1000
+    max_punishment: life
+    first_time: false
+    as_of: '2025-08-31'
+    arrest_date: '2022-12-05'
+  designed_answer: NOT_APPLICABLE
+  note: 'death or life: not applicable'
+- id: ut-088
+  rule: undertrial_limit
+  inputs:
+    custody_days: 3000
+    max_punishment: imprisonment for life
+    first_time: true
+    as_of: '2025-06-29'
+    arrest_date: '2017-04-12'
+  designed_answer: NOT_APPLICABLE
+  note: 'death or life: not applicable'
+- id: ut-089
+  rule: undertrial_limit
+  inputs:
+    custody_days: 5000
+    max_punishment: death
+    first_time: false
+    as_of: '2025-11-24'
+    arrest_date: '2012-03-17'
+  designed_answer: NOT_APPLICABLE
+  note: 'death or life: not applicable'
+- id: ut-090
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1000
+    max_punishment: life
+    first_time: true
+    as_of: '2025-12-17'
+    arrest_date: '2023-03-23'
+  designed_answer: NOT_APPLICABLE
+  note: 'death or life: not applicable'
+- id: ut-091
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1000
+    max_punishment: imprisonment for life
+    first_time: false
+    as_of: '2025-06-07'
+    arrest_date: '2022-09-11'
+  designed_answer: NOT_APPLICABLE
+  note: 'death or life: not applicable'
+- id: ut-092
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1000
+    max_punishment: death
+    first_time: true
+    as_of: '2026-01-22'
+    arrest_date: '2023-04-28'
+  designed_answer: NOT_APPLICABLE
+  note: 'death or life: not applicable'
+- id: ut-093
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2316
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2026-02-26'
+    arrest_date: '2019-10-25'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-094
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1128
+    max_punishment: 10 years
+    first_time: false
+    as_of: '2025-08-11'
+    arrest_date: '2022-07-10'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-095
+  rule: undertrial_limit
+  inputs:
+    custody_days: 514
+    max_punishment: 6 years
+    first_time: true
+    as_of: '2025-11-14'
+    arrest_date: '2024-06-18'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-096
+  rule: undertrial_limit
+  inputs:
+    custody_days: 901
+    max_punishment: 8 years
+    first_time: true
+    as_of: '2025-07-28'
+    arrest_date: '2023-02-08'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-097
+  rule: undertrial_limit
+  inputs:
+    custody_days: 531
+    max_punishment: 4 years
+    first_time: false
+    as_of: '2026-08-29'
+    arrest_date: '2025-03-16'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-098
+  rule: undertrial_limit
+  inputs:
+    custody_days: 241
+    max_punishment: 2 years
+    first_time: true
+    as_of: '2026-08-22'
+    arrest_date: '2025-12-24'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-099
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2967
+    max_punishment: 15 years
+    first_time: false
+    as_of: '2026-05-11'
+    arrest_date: '2018-03-27'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-100
+  rule: undertrial_limit
+  inputs:
+    custody_days: 276
+    max_punishment: 4 years
+    first_time: true
+    as_of: '2025-11-11'
+    arrest_date: '2025-02-08'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-101
+  rule: undertrial_limit
+  inputs:
+    custody_days: 246
+    max_punishment: 2 years
+    first_time: false
+    as_of: '2026-01-01'
+    arrest_date: '2025-04-30'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-102
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2434
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2026-09-06'
+    arrest_date: '2020-01-07'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-103
+  rule: undertrial_limit
+  inputs:
+    custody_days: 812
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2025-08-10'
+    arrest_date: '2023-05-21'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-104
+  rule: undertrial_limit
+  inputs:
+    custody_days: 499
+    max_punishment: 7 years
+    first_time: true
+    as_of: '2026-04-01'
+    arrest_date: '2024-11-18'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-105
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2555
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2025-11-22'
+    arrest_date: '2018-11-24'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-106
+  rule: undertrial_limit
+  inputs:
+    custody_days: 360
+    max_punishment: 2 years
+    first_time: false
+    as_of: '2026-03-09'
+    arrest_date: '2025-03-14'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-107
+  rule: undertrial_limit
+  inputs:
+    custody_days: 685
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2025-12-04'
+    arrest_date: '2024-01-19'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-108
+  rule: undertrial_limit
+  inputs:
+    custody_days: 787
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2025-07-05'
+    arrest_date: '2023-05-10'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-109
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1226
+    max_punishment: 12 years
+    first_time: true
+    as_of: '2026-09-01'
+    arrest_date: '2023-04-24'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-110
+  rule: undertrial_limit
+  inputs:
+    custody_days: 390
+    max_punishment: 4 years
+    first_time: true
+    as_of: '2026-04-17'
+    arrest_date: '2025-03-23'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-111
+  rule: undertrial_limit
+  inputs:
+    custody_days: 621
+    max_punishment: 4 years
+    first_time: true
+    as_of: '2026-03-11'
+    arrest_date: '2024-06-28'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-112
+  rule: undertrial_limit
+  inputs:
+    custody_days: 221
+    max_punishment: 2 years
+    first_time: false
+    as_of: '2026-04-30'
+    arrest_date: '2025-09-21'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-113
+  rule: undertrial_limit
+  inputs:
+    custody_days: 724
+    max_punishment: 5 years
+    first_time: false
+    as_of: '2026-02-28'
+    arrest_date: '2024-03-06'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-114
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2182
+    max_punishment: 12 years
+    first_time: false
+    as_of: '2026-08-08'
+    arrest_date: '2020-08-17'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-115
+  rule: undertrial_limit
+  inputs:
+    custody_days: 939
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2025-11-07'
+    arrest_date: '2023-04-13'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-116
+  rule: undertrial_limit
+  inputs:
+    custody_days: 682
+    max_punishment: 6 years
+    first_time: true
+    as_of: '2025-09-13'
+    arrest_date: '2023-11-01'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-117
+  rule: undertrial_limit
+  inputs:
+    custody_days: 613
+    max_punishment: 5 years
+    first_time: true
+    as_of: '2025-07-27'
+    arrest_date: '2023-11-22'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-118
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1223
+    max_punishment: 15 years
+    first_time: true
+    as_of: '2025-09-28'
+    arrest_date: '2022-05-24'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-119
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1449
+    max_punishment: 8 years
+    first_time: false
+    as_of: '2025-10-12'
+    arrest_date: '2021-10-24'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-120
+  rule: undertrial_limit
+  inputs:
+    custody_days: 442
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-06-13'
+    arrest_date: '2025-03-28'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-121
+  rule: undertrial_limit
+  inputs:
+    custody_days: 524
+    max_punishment: 4 years
+    first_time: true
+    as_of: '2025-12-03'
+    arrest_date: '2024-06-27'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-122
+  rule: undertrial_limit
+  inputs:
+    custody_days: 870
+    max_punishment: 12 years
+    first_time: true
+    as_of: '2026-04-10'
+    arrest_date: '2023-11-22'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-123
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2150
+    max_punishment: 14 years
+    first_time: true
+    as_of: '2026-01-28'
+    arrest_date: '2020-03-10'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-124
+  rule: undertrial_limit
+  inputs:
+    custody_days: 706
+    max_punishment: 7 years
+    first_time: true
+    as_of: '2026-02-13'
+    arrest_date: '2024-03-09'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-125
+  rule: undertrial_limit
+  inputs:
+    custody_days: 899
+    max_punishment: 8 years
+    first_time: false
+    as_of: '2025-06-20'
+    arrest_date: '2023-01-03'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-126
+  rule: undertrial_limit
+  inputs:
+    custody_days: 139
+    max_punishment: 2 years
+    first_time: true
+    as_of: '2025-06-09'
+    arrest_date: '2025-01-21'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-127
+  rule: undertrial_limit
+  inputs:
+    custody_days: 337
+    max_punishment: 2 years
+    first_time: false
+    as_of: '2026-03-29'
+    arrest_date: '2025-04-26'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-128
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2526
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2026-04-25'
+    arrest_date: '2019-05-26'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-129
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1634
+    max_punishment: 10 years
+    first_time: false
+    as_of: '2026-05-12'
+    arrest_date: '2021-11-20'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-130
+  rule: undertrial_limit
+  inputs:
+    custody_days: 467
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2026-05-16'
+    arrest_date: '2025-02-03'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-131
+  rule: undertrial_limit
+  inputs:
+    custody_days: 771
+    max_punishment: 7 years
+    first_time: true
+    as_of: '2025-12-13'
+    arrest_date: '2023-11-03'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-132
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1539
+    max_punishment: 8 years
+    first_time: false
+    as_of: '2026-05-09'
+    arrest_date: '2022-02-20'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-133
+  rule: undertrial_limit
+  inputs:
+    custody_days: 598
+    max_punishment: 4 years
+    first_time: false
+    as_of: '2025-11-02'
+    arrest_date: '2024-03-14'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-134
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1530
+    max_punishment: 12 years
+    first_time: false
+    as_of: '2025-12-25'
+    arrest_date: '2021-10-17'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-135
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1482
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2026-02-12'
+    arrest_date: '2022-01-22'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-136
+  rule: undertrial_limit
+  inputs:
+    custody_days: 221
+    max_punishment: 2 years
+    first_time: true
+    as_of: '2026-07-28'
+    arrest_date: '2025-12-19'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-137
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1267
+    max_punishment: 15 years
+    first_time: true
+    as_of: '2026-04-30'
+    arrest_date: '2022-11-10'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-138
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2746
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2026-06-30'
+    arrest_date: '2018-12-23'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-139
+  rule: undertrial_limit
+  inputs:
+    custody_days: 504
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-07-27'
+    arrest_date: '2025-03-10'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-140
+  rule: undertrial_limit
+  inputs:
+    custody_days: 662
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2026-06-19'
+    arrest_date: '2024-08-26'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-141
+  rule: undertrial_limit
+  inputs:
+    custody_days: 996
+    max_punishment: 10 years
+    first_time: false
+    as_of: '2025-08-10'
+    arrest_date: '2022-11-18'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-142
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2236
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2026-01-08'
+    arrest_date: '2019-11-25'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-143
+  rule: undertrial_limit
+  inputs:
+    custody_days: 420
+    max_punishment: 5 years
+    first_time: true
+    as_of: '2026-05-02'
+    arrest_date: '2025-03-08'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-144
+  rule: undertrial_limit
+  inputs:
+    custody_days: 866
+    max_punishment: 5 years
+    first_time: false
+    as_of: '2026-03-02'
+    arrest_date: '2023-10-18'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-145
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2043
+    max_punishment: 14 years
+    first_time: true
+    as_of: '2026-08-31'
+    arrest_date: '2021-01-26'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-146
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2025
+    max_punishment: 10 years
+    first_time: false
+    as_of: '2026-01-13'
+    arrest_date: '2020-06-28'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-147
+  rule: undertrial_limit
+  inputs:
+    custody_days: 422
+    max_punishment: 4 years
+    first_time: false
+    as_of: '2026-09-15'
+    arrest_date: '2025-07-20'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-148
+  rule: undertrial_limit
+  inputs:
+    custody_days: 249
+    max_punishment: 2 years
+    first_time: true
+    as_of: '2025-09-06'
+    arrest_date: '2024-12-31'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-149
+  rule: undertrial_limit
+  inputs:
+    custody_days: 968
+    max_punishment: 7 years
+    first_time: true
+    as_of: '2025-06-07'
+    arrest_date: '2022-10-13'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-150
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2134
+    max_punishment: 15 years
+    first_time: false
+    as_of: '2026-06-01'
+    arrest_date: '2020-07-28'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-151
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1177
+    max_punishment: 5 years
+    first_time: false
+    as_of: '2026-02-10'
+    arrest_date: '2022-11-21'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-152
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1100
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2025-06-03'
+    arrest_date: '2022-05-30'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-153
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1523
+    max_punishment: 15 years
+    first_time: false
+    as_of: '2025-06-29'
+    arrest_date: '2021-04-28'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-154
+  rule: undertrial_limit
+  inputs:
+    custody_days: 696
+    max_punishment: 10 years
+    first_time: true
+    as_of: '2025-10-17'
+    arrest_date: '2023-11-21'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-155
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1846
+    max_punishment: 14 years
+    first_time: true
+    as_of: '2025-11-18'
+    arrest_date: '2020-10-29'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-156
+  rule: undertrial_limit
+  inputs:
+    custody_days: 423
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2025-08-17'
+    arrest_date: '2024-06-20'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-157
+  rule: undertrial_limit
+  inputs:
+    custody_days: 537
+    max_punishment: 4 years
+    first_time: true
+    as_of: '2026-09-17'
+    arrest_date: '2025-03-29'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-158
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1174
+    max_punishment: 6 years
+    first_time: false
+    as_of: '2026-03-13'
+    arrest_date: '2022-12-25'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-159
+  rule: undertrial_limit
+  inputs:
+    custody_days: 736
+    max_punishment: 8 years
+    first_time: true
+    as_of: '2026-03-01'
+    arrest_date: '2024-02-24'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-160
+  rule: undertrial_limit
+  inputs:
+    custody_days: 597
+    max_punishment: 4 years
+    first_time: false
+    as_of: '2026-02-09'
+    arrest_date: '2024-06-22'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-161
+  rule: undertrial_limit
+  inputs:
+    custody_days: 3233
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2025-12-24'
+    arrest_date: '2017-02-16'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-162
+  rule: undertrial_limit
+  inputs:
+    custody_days: 637
+    max_punishment: 5 years
+    first_time: false
+    as_of: '2025-10-15'
+    arrest_date: '2024-01-17'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-163
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2142
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2025-06-17'
+    arrest_date: '2019-08-06'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-164
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2581
+    max_punishment: 12 years
+    first_time: false
+    as_of: '2025-12-29'
+    arrest_date: '2018-12-05'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-165
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2223
+    max_punishment: 15 years
+    first_time: false
+    as_of: '2025-06-02'
+    arrest_date: '2019-05-02'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-166
+  rule: undertrial_limit
+  inputs:
+    custody_days: 346
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-06-27'
+    arrest_date: '2025-07-16'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-167
+  rule: undertrial_limit
+  inputs:
+    custody_days: 938
+    max_punishment: 5 years
+    first_time: false
+    as_of: '2025-11-24'
+    arrest_date: '2023-05-01'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-168
+  rule: undertrial_limit
+  inputs:
+    custody_days: 693
+    max_punishment: 4 years
+    first_time: false
+    as_of: '2026-08-01'
+    arrest_date: '2024-09-07'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-169
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1287
+    max_punishment: 10 years
+    first_time: false
+    as_of: '2026-07-20'
+    arrest_date: '2023-01-10'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-170
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1727
+    max_punishment: 14 years
+    first_time: true
+    as_of: '2026-04-27'
+    arrest_date: '2021-08-04'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-171
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1729
+    max_punishment: 8 years
+    first_time: false
+    as_of: '2026-09-15'
+    arrest_date: '2021-12-21'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-172
+  rule: undertrial_limit
+  inputs:
+    custody_days: 385
+    max_punishment: 6 years
+    first_time: true
+    as_of: '2026-02-13'
+    arrest_date: '2025-01-24'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-173
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2370
+    max_punishment: 10 years
+    first_time: false
+    as_of: '2026-06-08'
+    arrest_date: '2019-12-12'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-174
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1201
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2026-04-04'
+    arrest_date: '2022-12-20'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-175
+  rule: undertrial_limit
+  inputs:
+    custody_days: 619
+    max_punishment: 5 years
+    first_time: true
+    as_of: '2025-09-21'
+    arrest_date: '2024-01-11'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-176
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1489
+    max_punishment: 12 years
+    first_time: true
+    as_of: '2025-12-07'
+    arrest_date: '2021-11-09'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-177
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1009
+    max_punishment: 5 years
+    first_time: false
+    as_of: '2025-09-11'
+    arrest_date: '2022-12-07'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-178
+  rule: undertrial_limit
+  inputs:
+    custody_days: 524
+    max_punishment: 6 years
+    first_time: true
+    as_of: '2025-12-03'
+    arrest_date: '2024-06-27'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-179
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1078
+    max_punishment: 5 years
+    first_time: false
+    as_of: '2025-08-01'
+    arrest_date: '2022-08-19'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-180
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1353
+    max_punishment: 6 years
+    first_time: false
+    as_of: '2025-09-13'
+    arrest_date: '2021-12-30'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-181
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2300
+    max_punishment: 10 years
+    first_time: false
+    as_of: '2025-11-18'
+    arrest_date: '2019-08-02'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-182
+  rule: undertrial_limit
+  inputs:
+    custody_days: 798
+    max_punishment: 5 years
+    first_time: false
+    as_of: '2025-08-11'
+    arrest_date: '2023-06-05'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-183
+  rule: undertrial_limit
+  inputs:
+    custody_days: 2249
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2026-06-12'
+    arrest_date: '2020-04-15'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-184
+  rule: undertrial_limit
+  inputs:
+    custody_days: 425
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-01-11'
+    arrest_date: '2024-11-12'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-185
+  rule: undertrial_limit
+  inputs:
+    custody_days: 498
+    max_punishment: 4 years
+    first_time: false
+    as_of: '2026-09-22'
+    arrest_date: '2025-05-12'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-186
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1814
+    max_punishment: 14 years
+    first_time: true
+    as_of: '2026-07-06'
+    arrest_date: '2021-07-18'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-187
+  rule: undertrial_limit
+  inputs:
+    custody_days: 195
+    max_punishment: 2 years
+    first_time: false
+    as_of: '2026-02-07'
+    arrest_date: '2025-07-27'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-188
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1541
+    max_punishment: 8 years
+    first_time: false
+    as_of: '2026-06-28'
+    arrest_date: '2022-04-09'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-189
+  rule: undertrial_limit
+  inputs:
+    custody_days: 413
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-07-09'
+    arrest_date: '2025-05-22'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-190
+  rule: undertrial_limit
+  inputs:
+    custody_days: 283
+    max_punishment: 2 years
+    first_time: true
+    as_of: '2026-05-11'
+    arrest_date: '2025-08-01'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-191
+  rule: undertrial_limit
+  inputs:
+    custody_days: 560
+    max_punishment: 4 years
+    first_time: true
+    as_of: '2026-04-29'
+    arrest_date: '2024-10-16'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-192
+  rule: undertrial_limit
+  inputs:
+    custody_days: 873
+    max_punishment: 14 years
+    first_time: true
+    as_of: '2026-01-20'
+    arrest_date: '2023-08-31'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-193
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1342
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2025-11-07'
+    arrest_date: '2022-03-06'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: ut-194
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1135
+    max_punishment: 7 years
+    first_time: false
+    as_of: '2026-06-01'
+    arrest_date: '2023-04-23'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-195
+  rule: undertrial_limit
+  inputs:
+    custody_days: 563
+    max_punishment: 5 years
+    first_time: true
+    as_of: '2026-09-23'
+    arrest_date: '2025-03-09'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-196
+  rule: undertrial_limit
+  inputs:
+    custody_days: 857
+    max_punishment: 8 years
+    first_time: false
+    as_of: '2025-09-02'
+    arrest_date: '2023-04-29'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-197
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1398
+    max_punishment: 14 years
+    first_time: true
+    as_of: '2026-06-14'
+    arrest_date: '2022-08-16'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-198
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1802
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2026-09-19'
+    arrest_date: '2021-10-13'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-199
+  rule: undertrial_limit
+  inputs:
+    custody_days: 1813
+    max_punishment: 14 years
+    first_time: false
+    as_of: '2026-06-11'
+    arrest_date: '2021-06-24'
+  designed_answer: NOT_YET
+  note: random custody around the applicable threshold
+- id: ut-200
+  rule: undertrial_limit
+  inputs:
+    custody_days: 387
+    max_punishment: 2 years
+    first_time: false
+    as_of: '2026-01-23'
+    arrest_date: '2025-01-01'
+  designed_answer: ELIGIBLE
+  note: random custody around the applicable threshold
+- id: na-001
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 1 year
+    arrest_memo: true
+    arrest_date: '2025-06-18'
+  designed_answer: OK
+  note: 1 year, arrest memo True
+- id: na-002
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 1 year
+    arrest_memo: false
+    arrest_date: '2024-11-29'
+  designed_answer: FLAG
+  note: 1 year, arrest memo False
+- id: na-003
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 1 year
+    arrest_memo: null
+    arrest_date: '2025-09-13'
+  designed_answer: UNKNOWN
+  note: 1 year, arrest memo None
+- id: na-004
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 3 years
+    arrest_memo: true
+    arrest_date: '2025-06-28'
+  designed_answer: OK
+  note: 3 years, arrest memo True
+- id: na-005
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 3 years
+    arrest_memo: false
+    arrest_date: '2024-12-09'
+  designed_answer: FLAG
+  note: 3 years, arrest memo False
+- id: na-006
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 3 years
+    arrest_memo: null
+    arrest_date: '2024-10-23'
+  designed_answer: UNKNOWN
+  note: 3 years, arrest memo None
+- id: na-007
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 5 years
+    arrest_memo: true
+    arrest_date: '2024-12-22'
+  designed_answer: OK
+  note: 5 years, arrest memo True
+- id: na-008
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 5 years
+    arrest_memo: false
+    arrest_date: '2024-12-21'
+  designed_answer: FLAG
+  note: 5 years, arrest memo False
+- id: na-009
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 5 years
+    arrest_memo: null
+    arrest_date: '2024-08-07'
+  designed_answer: UNKNOWN
+  note: 5 years, arrest memo None
+- id: na-010
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 7 years
+    arrest_memo: true
+    arrest_date: '2024-12-23'
+  designed_answer: OK
+  note: 7 years, arrest memo True
+- id: na-011
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 7 years
+    arrest_memo: false
+    arrest_date: '2024-09-25'
+  designed_answer: FLAG
+  note: 7 years, arrest memo False
+- id: na-012
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 7 years
+    arrest_memo: null
+    arrest_date: '2025-02-02'
+  designed_answer: UNKNOWN
+  note: 7 years, arrest memo None
+- id: na-013
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: seven years
+    arrest_memo: true
+    arrest_date: '2025-05-13'
+  designed_answer: OK
+  note: seven years, arrest memo True
+- id: na-014
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: seven years
+    arrest_memo: false
+    arrest_date: '2025-08-05'
+  designed_answer: FLAG
+  note: seven years, arrest memo False
+- id: na-015
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: seven years
+    arrest_memo: null
+    arrest_date: '2025-02-28'
+  designed_answer: UNKNOWN
+  note: seven years, arrest memo None
+- id: na-016
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 8 years
+    arrest_memo: true
+    arrest_date: '2025-08-29'
+  designed_answer: OK
+  note: 8 years, arrest memo True
+- id: na-017
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 8 years
+    arrest_memo: false
+    arrest_date: '2024-09-18'
+  designed_answer: OK
+  note: 8 years, arrest memo False
+- id: na-018
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 8 years
+    arrest_memo: null
+    arrest_date: '2025-06-11'
+  designed_answer: OK
+  note: 8 years, arrest memo None
+- id: na-019
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 9 years
+    arrest_memo: true
+    arrest_date: '2025-06-15'
+  designed_answer: OK
+  note: 9 years, arrest memo True
+- id: na-020
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 9 years
+    arrest_memo: false
+    arrest_date: '2024-08-22'
+  designed_answer: OK
+  note: 9 years, arrest memo False
+- id: na-021
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 9 years
+    arrest_memo: null
+    arrest_date: '2024-08-17'
+  designed_answer: OK
+  note: 9 years, arrest memo None
+- id: na-022
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 10 years
+    arrest_memo: true
+    arrest_date: '2024-10-03'
+  designed_answer: OK
+  note: 10 years, arrest memo True
+- id: na-023
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 10 years
+    arrest_memo: false
+    arrest_date: '2025-06-25'
+  designed_answer: OK
+  note: 10 years, arrest memo False
+- id: na-024
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 10 years
+    arrest_memo: null
+    arrest_date: '2025-03-01'
+  designed_answer: OK
+  note: 10 years, arrest memo None
+- id: na-025
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 14 years
+    arrest_memo: true
+    arrest_date: '2025-07-15'
+  designed_answer: OK
+  note: 14 years, arrest memo True
+- id: na-026
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 14 years
+    arrest_memo: false
+    arrest_date: '2025-03-07'
+  designed_answer: OK
+  note: 14 years, arrest memo False
+- id: na-027
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 14 years
+    arrest_memo: null
+    arrest_date: '2025-03-10'
+  designed_answer: OK
+  note: 14 years, arrest memo None
+- id: na-028
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: life
+    arrest_memo: true
+    arrest_date: '2024-12-18'
+  designed_answer: OK
+  note: life, arrest memo True
+- id: na-029
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: life
+    arrest_memo: false
+    arrest_date: '2024-07-30'
+  designed_answer: OK
+  note: life, arrest memo False
+- id: na-030
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: life
+    arrest_memo: null
+    arrest_date: '2025-07-30'
+  designed_answer: OK
+  note: life, arrest memo None
+- id: na-031
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 8 years
+    arrest_memo: null
+    arrest_date: '2025-09-27'
+  designed_answer: OK
+  note: 8 years, arrest memo None
+- id: na-032
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: life
+    arrest_memo: null
+    arrest_date: '2025-05-17'
+  designed_answer: OK
+  note: life, arrest memo None
+- id: na-033
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 3 years
+    arrest_memo: true
+    arrest_date: '2024-09-30'
+  designed_answer: OK
+  note: 3 years, arrest memo True
+- id: na-034
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 1 year
+    arrest_memo: true
+    arrest_date: '2025-03-06'
+  designed_answer: OK
+  note: 1 year, arrest memo True
+- id: na-035
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: life
+    arrest_memo: true
+    arrest_date: '2025-02-15'
+  designed_answer: OK
+  note: life, arrest memo True
+- id: na-036
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 14 years
+    arrest_memo: false
+    arrest_date: '2025-08-08'
+  designed_answer: OK
+  note: 14 years, arrest memo False
+- id: na-037
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 5 years
+    arrest_memo: false
+    arrest_date: '2025-01-10'
+  designed_answer: FLAG
+  note: 5 years, arrest memo False
+- id: na-038
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 14 years
+    arrest_memo: true
+    arrest_date: '2025-09-12'
+  designed_answer: OK
+  note: 14 years, arrest memo True
+- id: na-039
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 3 years
+    arrest_memo: true
+    arrest_date: '2024-10-05'
+  designed_answer: OK
+  note: 3 years, arrest memo True
+- id: na-040
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 9 years
+    arrest_memo: null
+    arrest_date: '2024-07-26'
+  designed_answer: OK
+  note: 9 years, arrest memo None
+- id: na-041
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 14 years
+    arrest_memo: null
+    arrest_date: '2024-12-26'
+  designed_answer: OK
+  note: 14 years, arrest memo None
+- id: na-042
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 8 years
+    arrest_memo: null
+    arrest_date: '2025-02-25'
+  designed_answer: OK
+  note: 8 years, arrest memo None
+- id: na-043
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 1 year
+    arrest_memo: false
+    arrest_date: '2025-07-17'
+  designed_answer: FLAG
+  note: 1 year, arrest memo False
+- id: na-044
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: life
+    arrest_memo: null
+    arrest_date: '2024-09-02'
+  designed_answer: OK
+  note: life, arrest memo None
+- id: na-045
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 5 years
+    arrest_memo: null
+    arrest_date: '2024-10-04'
+  designed_answer: UNKNOWN
+  note: 5 years, arrest memo None
+- id: na-046
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 1 year
+    arrest_memo: true
+    arrest_date: '2024-10-27'
+  designed_answer: OK
+  note: 1 year, arrest memo True
+- id: na-047
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 9 years
+    arrest_memo: null
+    arrest_date: '2025-06-10'
+  designed_answer: OK
+  note: 9 years, arrest memo None
+- id: na-048
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 10 years
+    arrest_memo: null
+    arrest_date: '2025-03-21'
+  designed_answer: OK
+  note: 10 years, arrest memo None
+- id: na-049
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 10 years
+    arrest_memo: false
+    arrest_date: '2025-02-10'
+  designed_answer: OK
+  note: 10 years, arrest memo False
+- id: na-050
+  rule: notice_of_appearance
+  inputs:
+    max_punishment: 1 year
+    arrest_memo: true
+    arrest_date: '2025-01-18'
+  designed_answer: OK
+  note: 1 year, arrest memo True
+- id: pr-001
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-08-12'
+    arrest_time: 04:02
+    production_date: '2025-08-12'
+    production_time: 05:02
+  designed_answer: OK
+  note: produced 60 minutes after arrest
+- id: pr-002
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-07-09'
+    arrest_time: '21:28'
+    production_date: '2025-07-09'
+    production_time: '22:28'
+  designed_answer: OK
+  note: produced 60 minutes after arrest
+- id: pr-003
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-07-22'
+    arrest_time: 07:55
+    production_date: '2024-07-22'
+    production_time: 08:55
+  designed_answer: OK
+  note: produced 60 minutes after arrest
+- id: pr-004
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-09-27'
+    arrest_time: '19:32'
+    production_date: '2025-09-27'
+    production_time: '20:32'
+  designed_answer: OK
+  note: produced 60 minutes after arrest
+- id: pr-005
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-07-28'
+    arrest_time: 01:57
+    production_date: '2025-07-28'
+    production_time: 02:57
+  designed_answer: OK
+  note: produced 60 minutes after arrest
+- id: pr-006
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-04-11'
+    arrest_time: '18:25'
+    production_date: '2025-04-12'
+    production_time: 04:25
+  designed_answer: OK
+  note: produced 600 minutes after arrest
+- id: pr-007
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-10-24'
+    arrest_time: '15:46'
+    production_date: '2024-10-25'
+    production_time: 01:46
+  designed_answer: OK
+  note: produced 600 minutes after arrest
+- id: pr-008
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-01-26'
+    arrest_time: '16:23'
+    production_date: '2025-01-27'
+    production_time: 02:23
+  designed_answer: OK
+  note: produced 600 minutes after arrest
+- id: pr-009
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-09-11'
+    arrest_time: 05:23
+    production_date: '2025-09-11'
+    production_time: '15:23'
+  designed_answer: OK
+  note: produced 600 minutes after arrest
+- id: pr-010
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-09-11'
+    arrest_time: '13:14'
+    production_date: '2025-09-11'
+    production_time: '23:14'
+  designed_answer: OK
+  note: produced 600 minutes after arrest
+- id: pr-011
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-10-01'
+    arrest_time: '23:16'
+    production_date: '2024-10-02'
+    production_time: '22:16'
+  designed_answer: OK
+  note: produced 1380 minutes after arrest
+- id: pr-012
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-09-17'
+    arrest_time: '17:07'
+    production_date: '2025-09-18'
+    production_time: '16:07'
+  designed_answer: OK
+  note: produced 1380 minutes after arrest
+- id: pr-013
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-01-16'
+    arrest_time: '13:02'
+    production_date: '2025-01-17'
+    production_time: '12:02'
+  designed_answer: OK
+  note: produced 1380 minutes after arrest
+- id: pr-014
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-01-11'
+    arrest_time: '22:36'
+    production_date: '2025-01-12'
+    production_time: '21:36'
+  designed_answer: OK
+  note: produced 1380 minutes after arrest
+- id: pr-015
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-07-28'
+    arrest_time: 04:06
+    production_date: '2025-07-29'
+    production_time: 03:06
+  designed_answer: OK
+  note: produced 1380 minutes after arrest
+- id: pr-016
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-08-14'
+    arrest_time: '23:52'
+    production_date: '2024-08-15'
+    production_time: '23:51'
+  designed_answer: OK
+  note: produced 1439 minutes after arrest
+- id: pr-017
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-02-26'
+    arrest_time: 08:46
+    production_date: '2025-02-27'
+    production_time: 08:45
+  designed_answer: OK
+  note: produced 1439 minutes after arrest
+- id: pr-018
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-08-28'
+    arrest_time: '11:39'
+    production_date: '2024-08-29'
+    production_time: '11:38'
+  designed_answer: OK
+  note: produced 1439 minutes after arrest
+- id: pr-019
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-11-20'
+    arrest_time: '17:20'
+    production_date: '2024-11-21'
+    production_time: '17:19'
+  designed_answer: OK
+  note: produced 1439 minutes after arrest
+- id: pr-020
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-04-10'
+    arrest_time: '17:53'
+    production_date: '2025-04-11'
+    production_time: '17:52'
+  designed_answer: OK
+  note: produced 1439 minutes after arrest
+- id: pr-021
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-03-23'
+    arrest_time: 04:33
+    production_date: '2025-03-24'
+    production_time: 04:33
+  designed_answer: OK
+  note: produced 1440 minutes after arrest
+- id: pr-022
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-09-09'
+    arrest_time: 06:34
+    production_date: '2024-09-10'
+    production_time: 06:34
+  designed_answer: OK
+  note: produced 1440 minutes after arrest
+- id: pr-023
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-03-27'
+    arrest_time: '13:43'
+    production_date: '2025-03-28'
+    production_time: '13:43'
+  designed_answer: OK
+  note: produced 1440 minutes after arrest
+- id: pr-024
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-12-26'
+    arrest_time: 00:53
+    production_date: '2024-12-27'
+    production_time: 00:53
+  designed_answer: OK
+  note: produced 1440 minutes after arrest
+- id: pr-025
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-08-15'
+    arrest_time: '17:39'
+    production_date: '2025-08-16'
+    production_time: '17:39'
+  designed_answer: OK
+  note: produced 1440 minutes after arrest
+- id: pr-026
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-12-29'
+    arrest_time: 05:00
+    production_date: '2024-12-30'
+    production_time: 05:01
+  designed_answer: FLAG
+  note: produced 1441 minutes after arrest
+- id: pr-027
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-10-18'
+    arrest_time: 08:02
+    production_date: '2024-10-19'
+    production_time: 08:03
+  designed_answer: FLAG
+  note: produced 1441 minutes after arrest
+- id: pr-028
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-04-18'
+    arrest_time: '13:47'
+    production_date: '2025-04-19'
+    production_time: '13:48'
+  designed_answer: FLAG
+  note: produced 1441 minutes after arrest
+- id: pr-029
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-11-24'
+    arrest_time: '21:29'
+    production_date: '2024-11-25'
+    production_time: '21:30'
+  designed_answer: FLAG
+  note: produced 1441 minutes after arrest
+- id: pr-030
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-11-01'
+    arrest_time: 08:42
+    production_date: '2024-11-02'
+    production_time: 08:43
+  designed_answer: FLAG
+  note: produced 1441 minutes after arrest
+- id: pr-031
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-01-25'
+    arrest_time: '15:00'
+    production_date: '2025-01-26'
+    production_time: '15:30'
+  designed_answer: FLAG
+  note: produced 1470 minutes after arrest
+- id: pr-032
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-07-25'
+    arrest_time: 00:41
+    production_date: '2024-07-26'
+    production_time: 01:11
+  designed_answer: FLAG
+  note: produced 1470 minutes after arrest
+- id: pr-033
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-02-18'
+    arrest_time: 08:08
+    production_date: '2025-02-19'
+    production_time: 08:38
+  designed_answer: FLAG
+  note: produced 1470 minutes after arrest
+- id: pr-034
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-07-20'
+    arrest_time: '23:59'
+    production_date: '2024-07-22'
+    production_time: 00:29
+  designed_answer: FLAG
+  note: produced 1470 minutes after arrest
+- id: pr-035
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-11-29'
+    arrest_time: '11:19'
+    production_date: '2024-11-30'
+    production_time: '11:49'
+  designed_answer: FLAG
+  note: produced 1470 minutes after arrest
+- id: pr-036
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-08-23'
+    arrest_time: '19:08'
+    production_date: '2025-08-25'
+    production_time: 01:08
+  designed_answer: FLAG
+  note: produced 1800 minutes after arrest
+- id: pr-037
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-05-10'
+    arrest_time: 04:17
+    production_date: '2025-05-11'
+    production_time: '10:17'
+  designed_answer: FLAG
+  note: produced 1800 minutes after arrest
+- id: pr-038
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-01-28'
+    arrest_time: '19:43'
+    production_date: '2025-01-30'
+    production_time: 01:43
+  designed_answer: FLAG
+  note: produced 1800 minutes after arrest
+- id: pr-039
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-08-10'
+    arrest_time: '12:25'
+    production_date: '2024-08-11'
+    production_time: '18:25'
+  designed_answer: FLAG
+  note: produced 1800 minutes after arrest
+- id: pr-040
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-12-31'
+    arrest_time: '11:36'
+    production_date: '2025-01-01'
+    production_time: '17:36'
+  designed_answer: FLAG
+  note: produced 1800 minutes after arrest
+- id: pr-041
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-05-20'
+    arrest_time: '12:33'
+    production_date: '2025-05-22'
+    production_time: '11:33'
+  designed_answer: FLAG
+  note: produced 2820 minutes after arrest
+- id: pr-042
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-03-02'
+    arrest_time: 04:47
+    production_date: '2025-03-04'
+    production_time: 03:47
+  designed_answer: FLAG
+  note: produced 2820 minutes after arrest
+- id: pr-043
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-08-07'
+    arrest_time: '14:46'
+    production_date: '2024-08-09'
+    production_time: '13:46'
+  designed_answer: FLAG
+  note: produced 2820 minutes after arrest
+- id: pr-044
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-08-12'
+    arrest_time: '22:08'
+    production_date: '2024-08-14'
+    production_time: '21:08'
+  designed_answer: FLAG
+  note: produced 2820 minutes after arrest
+- id: pr-045
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-01-06'
+    arrest_time: 09:42
+    production_date: '2025-01-08'
+    production_time: 08:42
+  designed_answer: FLAG
+  note: produced 2820 minutes after arrest
+- id: pr-046
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-03-24'
+    arrest_time: 06:58
+    production_date: '2025-03-27'
+    production_time: 01:38
+  designed_answer: FLAG
+  note: produced 4000 minutes after arrest
+- id: pr-047
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-02-08'
+    arrest_time: '12:39'
+    production_date: '2025-02-11'
+    production_time: 07:19
+  designed_answer: FLAG
+  note: produced 4000 minutes after arrest
+- id: pr-048
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-06-22'
+    arrest_time: 05:46
+    production_date: '2025-06-25'
+    production_time: 00:26
+  designed_answer: FLAG
+  note: produced 4000 minutes after arrest
+- id: pr-049
+  rule: production_24h
+  inputs:
+    arrest_date: '2025-05-23'
+    arrest_time: 02:36
+    production_date: '2025-05-25'
+    production_time: '21:16'
+  designed_answer: FLAG
+  note: produced 4000 minutes after arrest
+- id: pr-050
+  rule: production_24h
+  inputs:
+    arrest_date: '2024-07-15'
+    arrest_time: 00:36
+    production_date: '2024-07-17'
+    production_time: '19:16'
+  designed_answer: FLAG
+  note: produced 4000 minutes after arrest
