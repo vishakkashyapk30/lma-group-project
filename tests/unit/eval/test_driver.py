@@ -8,7 +8,7 @@ import pytest
 
 from tests.integration._helpers import full_pipeline_llm
 from vakeel_sahayak.eval.runners import driver, jobs
-from vakeel_sahayak.eval.runners.driver import ScriptedCounsel, build_context, run_agents
+from vakeel_sahayak.eval.runners.driver import build_context, run_agents
 from vakeel_sahayak.schemas.enums import EventKind
 
 FACTS = "The accused was arrested on 20.08.2024 under Section 318(4) BNS. Charge sheet filed 02.11.2024."
@@ -84,7 +84,28 @@ def test_the_output_layout_follows_contract_c6(tmp_path):
     assert driver.outputs_dir("rq1_full", "full", 2, root=str(tmp_path)).name == "full__run2"
 
 
-@pytest.mark.parametrize("job", ["rq2_vision", "rq2_full", "f2_change_sets", "f1_f5_f6", "f3_baselines", "f4_nocache"])
+# RECONCILED: VI-07 built the RQ2 pipelines and the feature evaluations, so these jobs are dispatched to `eval/ingestion/rq2.py` and `eval/features/*`; only a job whose code is
+# still missing (the teacher dossiers) names its dependency. The routing of the built jobs is checked below with the runners replaced (nothing is run here).
+@pytest.mark.parametrize("job", ["teacher_dossiers"])
 def test_jobs_waiting_for_unbuilt_code_name_their_dependency(job):
     with pytest.raises(NotImplementedError, match="needs"):
         jobs.run_job(job, {}, 0, 1, "unused", 0.0)
+
+
+@pytest.mark.parametrize("job", sorted({*jobs.RQ2_JOBS, *jobs.FEATURE_JOBS}))
+def test_vi07_jobs_are_dispatched_to_their_runners(job, monkeypatch, tmp_path):
+    called = []
+    if job in jobs.RQ2_JOBS:
+        from vakeel_sahayak.eval.ingestion import rq2
+
+        monkeypatch.setattr(rq2, "run", lambda arm, *a, **k: called.append(arm) or {"done": 0})
+        jobs.run_job(job, {}, 0, 1, str(tmp_path), 0.0)
+        assert called == jobs.RQ2_JOBS[job]
+    else:
+        import importlib
+
+        for name in jobs.FEATURE_JOBS[job]:
+            mod = importlib.import_module("vakeel_sahayak.eval.features." + name)
+            monkeypatch.setattr(mod, "run", lambda out, shard, n, _n=name: called.append(_n))
+        jobs.run_job(job, {}, 0, 1, str(tmp_path), 0.0)
+        assert called == jobs.FEATURE_JOBS[job]

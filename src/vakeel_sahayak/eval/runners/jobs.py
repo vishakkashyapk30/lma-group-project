@@ -22,14 +22,12 @@ ABLATION_MODULES = {
 
 # Jobs whose arms depend on code that is not built yet: the dependency is named in the error.
 NEEDS = {
-    "rq2_vision": "the RQ2 ingestion pipelines P1-P6 and the T2 builder (EV-18, EV-19)",
-    "rq2_full": "munshi_full and the T2 builder (EV-18, EV-19)",
-    "f2_change_sets": "the T3 builder and the F2 feature runners (EV-18, EV-20)",
-    "f1_f5_f6": "the export modules (PR-13, PR-14) and the F1/F5/F6 feature runners (EV-20)",
-    "f3_baselines": "the T4 builder and the F3 baselines (EV-18, EV-20)",
-    "f4_nocache": "the T5 builder (EV-20)",
     "teacher_dossiers": "the teacher dossier pipeline (EV-08); it has its own Ada script, not a shard",
 }
+# VI-07: jobs run by the ingestion pipelines (`eval/ingestion/rq2.py`) and the feature evaluations (`eval/features/*`); results land in `<out>/runs/<job>/outputs/<arm>/` (RQ2) or
+# `<out>/runs/<job>/outputs/<feature>/<arm>/` (features). F5 and F6 need the export modules (their `run` raises NotImplementedError naming that).
+RQ2_JOBS = {"rq2_vision": ["p1", "p2", "p3", "p4"], "rq2_full": ["p5", "p6", "munshi"]}
+FEATURE_JOBS = {"f1_f5_f6": ["f1_sparring", "f5_application", "f6_hearing_card"], "f2_change_sets": ["f2_incremental_redraft"], "f3_baselines": ["f3_rights_radar"], "f4_nocache": ["f4_batch_desk"]}
 # Jobs run as the existing scripted system tests: job -> (pytest files, repeat count key).
 SYSTEM_SUITES = {
     "t7_safety": ["tests/system/test_t7_*.py"],
@@ -117,6 +115,20 @@ def run_job(job: str, cfg: dict[str, Any], shard: int, n_shards: int, out_dir: s
         return len(driver.load_progress(str(Path(out_dir) / "runs" / job / "outputs" / key.lower())))
     if job in SYSTEM_SUITES:
         return _run_system_suite(job, cfg, shard, n_shards, out_dir, deadline)
+    if job in RQ2_JOBS:
+        from vakeel_sahayak.eval.ingestion import rq2
+
+        truth = str(Path(driver.REPO) / "data" / "testsets" / "t2" / "truth.jsonl")
+        return sum(rq2.run(arm, truth, out_dir, shard, n_shards, limit=cfg.get("bundles_per_kind"), job=job, page_budget=1500 if arm == "p4" else None)["done"] for arm in RQ2_JOBS[job])
+    if job in FEATURE_JOBS:
+        for name in FEATURE_JOBS[job]:
+            dest = Path(out_dir) / "runs" / job / "outputs" / name
+            try:
+                importlib.import_module("vakeel_sahayak.eval.features." + name).run(str(dest), shard, n_shards)
+            except NotImplementedError as exc:  # F5 and F6: the export modules are not built; the other features of the job still run
+                dest.mkdir(parents=True, exist_ok=True)
+                (dest / "NOT_RUN.txt").write_text(str(exc), encoding="utf-8")
+        return 0
     if cfg.get("runner") == "workflow_search":
         raise NotImplementedError(f"job {job!r}: S13 runs through eval/runners/workflow_search.search on dev cases with a model-backed evaluator; none is wired to a hosted or local model yet")
     if cfg.get("systems") and job not in NEEDS:  # a VI-03 job: systems of `systems.system_runner` on the rows of its test set
