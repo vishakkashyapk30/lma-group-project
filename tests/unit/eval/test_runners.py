@@ -34,6 +34,7 @@ RUNNER_JOBS = {
     "run_features": ["f2_change_sets", "f1_f5_f6", "f3_baselines", "f4_nocache"],
     "run_tool_calling": ["t6_tool_calling"],
     "run_safety": ["t7_safety"],
+    "run_variants": __import__("importlib").import_module("vakeel_sahayak.eval.runners.run_variants").JOBS,  # RECONCILED: VI-03 adds a runner for the variant and hosted-block jobs of runs.yaml
 }
 
 

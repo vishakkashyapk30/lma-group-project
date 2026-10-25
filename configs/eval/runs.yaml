@@ -1,4 +1,5 @@
 # Eval run registry (plan §15, §17). Each job runs as resumable shards of about 5 h on an Ada interactive session.
+# Hosted models are CAPPED resources (see `budgets:` at the end): one headline block on OpenAI gpt-6-luna (5 USD) and one pilot-size block on Sarvam-105B (INR 25). Everything else stays on Ada (Qwen) or is marked `deferred`. An arm is only comparable with Full on the SAME backend, so each hosted block carries its own Full run.
 shard_hours: 5
 jobs:
   teacher_dossiers: {where: ada, model: teacher, node_hours: 60}
@@ -17,6 +18,30 @@ jobs:
   t6_tool_calling:  {where: ada, questions: 150, runs: 3, node_hours: 2}
   t7_safety:        {where: ada, scenarios: 60, runs: 3, node_hours: 9}
   qlora:            {where: ada-batch, gpus: 1, runs: 3, max_days: 1.5}
+  # --- VI-03 carve-outs (not plan rows): the hosted blocks that the OpenAI cap and the Sarvam cap pay for. Each carries its own Full run (the same backend as its arms).
+  openai_sparring_block: {where: openai, systems: [full, A2, A8, A9, S8, S9], cases: 100, testset: T1}
+  rq1_secondary_sarvam: {where: sarvam, systems: [full, b1, b4], runs: 1, cases: 6, testset: T1}   # pilot-size only (6 cases, about INR 21 of the INR 25 cap): shows the path and the per-case cost; no test is run on n=6
+  # --- VI-03: one job per implemented variant (evaluation plan 7.2 rows 15-33; ids in `Switches.implemented_variants()`). Sizes are the plan's targets; the
+  # floor sizes are in docs/evaluation-plan.md 7.2. `runs` is absent where the plan says one run. Costs come from `estimate:` below (`driver plan --job <name>`).
+  s8_self_critique:   {where: ada, systems: [S8], cases: 100, testset: T1, node_hours: 6.25}       # plan job 15 (C13)
+  s9_sampling_critic: {where: ada, systems: [S9], cases: 100, testset: T1, node_hours: 6.25}       # plan job 16 (C7)
+  s10_no_isolation:   {where: ada, systems: [S10], cases: 100, testset: T1, node_hours: 6.25}      # plan job 17 (C8)
+  s1_critique_retrieval: {where: ada, systems: [S1], cases: 100, testset: T1, node_hours: 8.75}   # plan job 18
+  s3_stopping:        {where: ada, systems: [S3, S3b], cases: 100, testset: T1, node_hours: 15}    # plan job 19 (C6)
+  s7_gap_reread:      {where: laptop, systems: [full, S7], cases: 100, testset: T2, node_hours: 1}    # plan job 20: sequential arm is Full; needs T2 bundles as case rows
+  s15_output_format:  {where: ada, systems: [S15], cases: 100, testset: T1, node_hours: 5}         # plan job 21; S15b is declared but not built (see `exclusions`)
+  s17_defences:       {where: ada, systems: [S17, S17b, S17c, S17d], runs: 3, cases: 60, testset: T7, node_hours: 7}  # plan job 22 (C37); needs T7 scenarios as case rows
+  s2_adaptive_depth:  {where: ada, systems: [S2], cases: 100, testset: T1, node_hours: 5}          # plan job 25
+  s6_b5_router:       {where: ada, systems: [S6, B5], cases: 100, testset: T1, node_hours: 12.5}   # plan job 26
+  s12_topology:       {where: ada, systems: [S12, S12b], cases: 100, testset: T1, node_hours: 12.5}  # plan job 27
+  s14_batch:          {where: ada, systems: [S14, S14d], cases: 100, testset: T1, node_hours: 12}  # plan job 28: one shared retrieval cache per run (a batch)
+  s14_scheduling:     {where: laptop, systems: [S14b, S14c], testset: T5, node_hours: 0}           # plan job 28, scheduler arms: read by Pairokar only, measured on T5 (counted in s14_batch)
+  s16_chunking:       {where: laptop, systems: [S16, S16b], cases: 100, testset: T1, node_hours: 0.5}  # plan job 29: the chunking study (`compare_strategies`); a per-case run equals Full
+  s4_s5_retrieval:    {where: laptop, systems: [S4, S5], cases: 100, testset: T1}                  # retrieval-level claims (F-retrieval); plan 7.1: no Ada
+  s11_review_debate:  {where: ada, systems: [S11, S11b, S11c], cases: 100, testset: T1, node_hours: 7.5}  # plan job 32 (tier C)
+  s13_workflow_search: {where: ada, systems: ["S13:stopping=llm"], cases: 50, testset: T1, node_hours: 36, runner: workflow_search}  # plan job 33 (tier C): dev only; the grid point is the smoke arm
+  s18_authority_stance: {where: ada, systems: [S18], cases: 100, testset: T1}                      # not in the plan (sweep 4)
+  p_munshi_variants:  {where: ada, systems: [P5, P6, P7, P8], cases: 100, testset: T2, node_hours: 7.5}  # Munshi switches on bundles (P5, P6 as switches; P1-P4 are the rq2 pipelines); needs T2 bundles as case rows
 laptop_jobs:
   embeddings: 20h
   eval_labels_llama: 30h
@@ -26,3 +51,141 @@ laptop_jobs:
   indictrans2_speech: 5h
   triage_and_ui_checks: 2h
 statistics: {bootstrap_ci: 0.95, test: wilcoxon_signed_rank, correction: holm_bonferroni, repeats: {full: 3, b0: 3, b1: 3, b4: 3, others: 1}}
+
+# --- VI-03: what `driver plan` and the validator read ---------------------------------------------------------------------------------------------------
+# Measured numbers (data/eval/token_measure.json, 2026-10-25): the Full pipeline on gpt-6-luna, three T1 dev cases, OpenAI cache off, Gate 1 approved, Gate 2 closed.
+estimate:
+  source: data/eval/token_measure.json
+  model: gpt-6-luna
+  usd_per_case: 0.0078
+  tokens_in_per_case: 70265
+  tokens_out_per_case: 3963
+  seconds_per_case: 172
+  openai_cap_usd: 4.5          # the code's default run cap (hard cap 5.0); `make openai-spend` shows what is left
+  # Tokens of a system relative to Full (1.0), from the evaluation plan 7.2 'Tokens or basis' column (Full cap 150K): ablations and sparring arms 125K, S1 175K, S2 100K, B0 family 10K.
+  # A system not listed counts as 1.0: B1 and B4 are NOT measured here (B4 queries every store, so it is probably above 1.0), and the plan figure for A10 is a retrieval-only run.
+  cached_input_share: 0.2009   # 14,116 of 70,265 input tokens were cached in the pilot (same share assumed on Sarvam, where cached input is priced lower)
+  token_ratio:
+    default: 1.0
+    full: 1.0
+    b0: 0.07
+    b0l: 0.07
+    b0s: 0.07
+    b6: 0.0                    # rule baseline, no model
+    A1: 0.83
+    A2: 0.83
+    A3: 0.83
+    A4: 0.83
+    A6: 0.83
+    A7: 0.83
+    A8: 0.83
+    A9: 0.83
+    S1: 1.17
+    S2: 0.67
+    S6: 0.83
+    B5: 0.83
+    S8: 0.83
+    S9: 0.83
+    S10: 0.83
+    S12: 0.83
+    S12b: 0.83
+    S3: 1.0                    # 150K basis (plan job 19)
+    S3b: 1.0
+    S11: 1.0                   # 150K basis (plan job 32)
+    S11b: 1.0
+    S11c: 1.0
+
+# Jobs in the order the OpenAI cap and the Ada hours are spent: tier A first (plan 7.3), then B, then C. `driver plan --all` prints the running totals.
+priority:
+  - openai_sparring_block
+  - rq1_b0l_b0s_b6
+  - rq1_full
+  - rq1_secondary_sarvam
+  - ablations
+  - s8_self_critique
+  - s9_sampling_critic
+  - s10_no_isolation
+  - s1_critique_retrieval
+  - s3_stopping
+  - s7_gap_reread
+  - s15_output_format
+  - s17_defences
+  - rq1_b2_b3
+  - a5_extractors
+  - a10_knockouts
+  - s2_adaptive_depth
+  - s6_b5_router
+  - s12_topology
+  - s14_batch
+  - s14_scheduling
+  - s16_chunking
+  - s4_s5_retrieval
+  - p_munshi_variants
+  - s18_authority_stance
+  - s11_review_debate
+  - s13_workflow_search
+
+# Tier (split.md appendix D and evaluation plan 7.2: A must, B should, C could, X not in the plan), the backend the job is planned on (the price of a Sarvam job is unknown: see `estimate.sarvam`), and the variant ids a job covers
+# beyond its `systems` (A5 and A10 have jobs of their own shape). backend: openai (the hosted block under the 5 USD cap), sarvam (the two small Sarvam-105B blocks under the 25-unit cap), ada (Qwen on Ada), laptop (4060). status: deferred = not in the committed floor; run only if the window and caps allow (evaluation plan 7.4).
+job_meta:
+  openai_sparring_block: {tier: A, backend: openai, note: "Full plus the sparring 2x2 (A2, A8, A9) plus S8 and S9 on the first 100 cases, all on gpt-6-luna: the one coherent block the cap pays for (about 4.0 of 4.5 USD); S10, S1, S3 and the rest stay on Ada"}
+  rq1_secondary_sarvam: {tier: A, backend: sarvam, note: "Full, B1, B4 on 6 cases on Sarvam-105B, the most INR 25 buys (about 18 case-runs at INR 1.15): a cost and path check, not a result. The large blocks (RQ1 main x3, ablations on 100 cases) cannot fit INR 25 and stay on OpenAI (5 USD), Ada or reduced floor sizes"}
+  teacher_dossiers: {tier: A, backend: ada}
+  rq1_full: {tier: A, backend: ada, note: "target 2400 case-runs (14 USD on gpt-6-luna): over the OpenAI cap, so it runs on Ada (Qwen); B1 and B4 also have a 6-case Sarvam block"}
+  rq1_b0l_b0s_b6: {tier: A, backend: ada, note: "B0L on the local teacher role (Ada), B0S on the base 4B (local, small GPU or laptop), B6 needs no model"}
+  rq1_b2_b3: {tier: A, backend: ada}
+  ablations: {tier: A, backend: ada, note: "A1-A4, A6-A9 on 100 cases"}
+  a5_extractors: {tier: A, backend: ada, covers: [A5], note: "Peshkar extraction only (3 extractors x 400 inputs); run as the A5:<arm> systems on the driver for a full-pipeline arm"}
+  a10_knockouts: {tier: A, backend: laptop, covers: [A10], note: "retrieval and slot fill only, no drafting: seven stores, one at a time"}
+  rq2_vision: {tier: A, backend: ada}
+  rq2_full: {tier: A, backend: ada}
+  f2_change_sets: {tier: A, backend: ada}
+  f1_f5_f6: {tier: A, backend: ada}
+  f3_baselines: {tier: A, backend: ada}
+  f4_nocache: {tier: A, backend: ada}
+  t6_tool_calling: {tier: A, backend: ada}
+  t7_safety: {tier: A, backend: ada}
+  qlora: {tier: A, backend: ada}
+  s8_self_critique: {tier: A, backend: ada}
+  s9_sampling_critic: {tier: A, backend: ada}
+  s10_no_isolation: {tier: A, backend: ada}
+  s1_critique_retrieval: {tier: A, backend: ada}
+  s3_stopping: {tier: A, backend: ada}
+  s7_gap_reread: {tier: A, backend: laptop, note: "mostly laptop (plan job 20); the case rows are T2 bundles"}
+  s15_output_format: {tier: A, backend: ada, note: "S15b (free text then parse) is declared but not built; the 400-input field-accuracy arm is scored with the A5 harness"}
+  s17_defences: {tier: A, backend: ada, note: "arms scored on T7 injection scenarios (attack success rate); the case rows are T7 scenarios"}
+  s2_adaptive_depth: {tier: B, status: deferred, backend: ada}
+  s6_b5_router: {tier: B, status: deferred, backend: ada, note: "S6 needs the store-prior artefact (`agents.sutradhar.store_prior train`); without it the prior is neutral and S6 equals Full"}
+  s12_topology: {tier: B, status: deferred, backend: ada}
+  s14_batch: {tier: B, status: deferred, backend: ada, note: "S14 and S14d share one in-memory retrieval cache across the run's cases"}
+  s14_scheduling: {tier: B, status: deferred, backend: laptop, note: "urgency policy is read by the batch desk; measured on T5 (case rows with deadlines), not by a per-case Full run"}
+  s16_chunking: {tier: B, status: deferred, backend: laptop, note: "the chunking switch is read by the retrieval-only study, not the per-case pipeline"}
+  s4_s5_retrieval: {tier: B, status: deferred, backend: laptop, note: "scored by recall@10; plan 7.1: no Ada hours"}
+  s11_review_debate: {tier: C, status: deferred, backend: ada}
+  s13_workflow_search: {tier: C, status: deferred, backend: ada, note: "dev cases only; the search harness is eval/runners/workflow_search.py (no model-backed evaluator yet)"}
+  s18_authority_stance: {tier: X, status: deferred, backend: ada, note: "added in sweep 4, not in the evaluation plan"}
+  p_munshi_variants: {tier: B, status: deferred, backend: ada, note: "P5, P6, P7, P8 are Munshi switches; they change a run only when a bundle is given"}
+
+# Variant ids that are declared in `Switches` but have no job, with the reason. The validator fails when a declared id is neither implemented-with-a-job nor listed here.
+exclusions:
+  S15b: "declared, behaviour not built: output_format='free_then_parse' is not read by any agent (agents/vakeel/agent.py says so); system_runner raises NotImplementedError"
+
+# Capped hosted resources. `driver plan` sums the estimated spend per provider over the jobs it is given, in the provider's currency, and warns when a cap is exceeded.
+budgets:
+  openai_usd: 5.0                   # whole project (hard cap in code); the code's default cap is 4.5 (`openai_usd_code_default`); about 0.06 spent so far
+  openai_usd_code_default: 4.5
+  sarvam_cap_inr: 25                # default; env VS_SARVAM_CAP_INR overrides it (more credits may be added). pay-as-you-go, INR, excl. GST; 1 credit = INR 1. The Sarvam spend ledger (not built) must read the same value as a hard cap
+  sarvam_model: sarvam-105b         # the model the estimate prices
+  # Price per 1M tokens in INR (input / cached input / output). source: Sarvam dashboard 2026-10-26, reported by the owner (not verified in code; there is no price table in models/sarvam).
+  sarvam_prices_inr_per_1m:
+    sarvam-105b:       {input: 15,    cached: 5,    output: 60}
+    deepseek-v4.1-flash: {input: 25,  cached: 0.5,  output: 105}
+    mimo-v2.6-flash:   {input: 12.5,  cached: 0.25, output: 25}
+    mimo-v2.6-pro:     {input: 40,    cached: 0.3,  output: 80}
+    glm-5.3-flash:     {input: 13.5,  cached: 2.5,  output: 45}
+    gemma-4:           {input: 35,    cached: 10,   output: 90}
+    deepseek-v4-pro:   {input: 115,   cached: 4,    output: 350}
+    glm-5.3:           {input: 126,   cached: 20,   output: 390}
+    kimi-k3:           {input: 270,   cached: 27,   output: 1350}
+  sarvam_other_inr: {translate_per_1000_chars: 2, stt_per_min: 0.49, tts_v3_per_1000_chars: 3, tts_v4_flash_per_1000_chars: 1, language_id_per_1000_chars: 0.35, note: "TTS V4 Flash price is a promotion until 12 Nov"}
+  price_source: "dashboard 2026-10-26"

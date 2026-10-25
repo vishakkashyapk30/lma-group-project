@@ -82,6 +82,19 @@ def t1_cases_path() -> Path:
     return Path(load_config().paths.testsets_dir) / "t1" / "cases.jsonl"
 
 
+def testset_cases_path(testset: str) -> Path:
+    """The driver case rows of a test set: `<testsets>/t1/cases.jsonl` for T1; for the others `<testsets>/<t2|t5|t7>/driver_cases.jsonl` (rows with `case_id`,
+    `facts` or `facts_text`, `before`, and `bundle` for T2), which the set's builder or an adapter writes. A missing file is a `NotImplementedError` naming the path."""
+    from vakeel_sahayak.config import load_config
+
+    key = str(testset or "T1").lower()
+    root = Path(load_config().paths.testsets_dir) / key
+    path = root / ("cases.jsonl" if key == "t1" else "driver_cases.jsonl")
+    if not path.is_file():
+        raise NotImplementedError(f"test set {testset} has no driver case rows at {path}: build the set, or write its rows (case_id, facts, before, bundle) there")
+    return path
+
+
 def first_n_cases(src: Path, n: int | None, dest: Path) -> str:
     """Write the first `n` cases of `src` (the fixed run order) to `dest` and return its path (all cases when n is None)."""
     lines = [ln for ln in src.read_text(encoding="utf-8").splitlines() if ln.strip()]
@@ -104,13 +117,18 @@ def run_job(job: str, cfg: dict[str, Any], shard: int, n_shards: int, out_dir: s
         return len(driver.load_progress(str(Path(out_dir) / "runs" / job / "outputs" / key.lower())))
     if job in SYSTEM_SUITES:
         return _run_system_suite(job, cfg, shard, n_shards, out_dir, deadline)
+    if cfg.get("runner") == "workflow_search":
+        raise NotImplementedError(f"job {job!r}: S13 runs through eval/runners/workflow_search.search on dev cases with a model-backed evaluator; none is wired to a hosted or local model yet")
+    if cfg.get("systems") and job not in NEEDS:  # a VI-03 job: systems of `systems.system_runner` on the rows of its test set
+        return _run_systems(job, cfg, shard, n_shards, out_dir, deadline)
     if job in NEEDS:
         raise NotImplementedError(f"job {job!r} needs {NEEDS[job]}")
     raise NotImplementedError(f"job {job!r}: no arm is wired for it yet")
 
 
 def _run_systems(job: str, cfg: dict[str, Any], shard: int, n_shards: int, out_dir: str, deadline: float) -> int:
-    cases = first_n_cases(t1_cases_path(), cfg.get("cases"), Path(out_dir) / "runs" / job / "cases.jsonl")
+    src = t1_cases_path() if str(cfg.get("testset", "T1")).upper() == "T1" else testset_cases_path(cfg["testset"])
+    cases = first_n_cases(src, cfg.get("cases"), Path(out_dir) / "runs" / job / "cases.jsonl")
     total = 0
     for run_index in range(1, int(cfg.get("runs", 1)) + 1):
         for system in cfg["systems"]:

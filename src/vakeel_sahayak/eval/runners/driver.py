@@ -112,7 +112,7 @@ def case_facts(case: dict[str, Any]) -> str:
 
 
 def build_context(case: dict[str, Any], switches: Any = None, *, tools: dict[str, Any] | None = None, llm: Any = None,
-                  budgets: dict[str, int] | None = None, cases_dir: str | None = None, log: Any = None) -> AgentContext:
+                  budgets: dict[str, int] | None = None, cases_dir: str | None = None, log: Any = None, cache: Any = None) -> AgentContext:
     """An `AgentContext` for one case: in-memory event log (dumped afterwards), budgets from configs/budgets.yaml or the override.
 
     Args:
@@ -123,6 +123,7 @@ def build_context(case: dict[str, Any], switches: Any = None, *, tools: dict[str
         budgets: `{"tokens_per_case", "store_calls_per_factor", "tokens_per_factor"}` overrides
         cases_dir: cases folder for logs; default in-memory
         log: an existing event log
+        cache: a shared retrieval cache (`batch.cache.RetrievalCache`) for the batch variants S14 and S14d; None (default) means no cache
     """
     from vakeel_sahayak.config import load_config
     from vakeel_sahayak.orchestration.budgets import BudgetTracker
@@ -135,7 +136,8 @@ def build_context(case: dict[str, Any], switches: Any = None, *, tools: dict[str
     for key, value in (budgets or {}).items():
         setattr(tracker, key, int(value))
     return AgentContext(case_id=case["case_id"], config=config, log=log, budgets=tracker, llm=llm,
-                        switches=switches or Switches(), tools=dict(tools or {}), before=case.get("before"), cases_dir=cases_dir)
+                        switches=switches or Switches(), tools=dict(tools or {}), before=case.get("before"), cases_dir=cases_dir,
+                        cache=cache)
 
 
 # ---------------------------------------------------------------------------------------------------------------- pipeline
@@ -474,6 +476,7 @@ def run_cases(cases_path: str, out_dir: str, system: str, runner: Any, switches:
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     write_run_manifest(out, system=system, switches=switches, seed=seed, budgets=budgets, cases_path=cases_path, shard=shard, n_shards=n_shards)
+    cache = shared_cache_for(switches)  # one retrieval cache for the whole run when a batch variant (S14, S14d) is on; None otherwise
     done = load_progress(out_dir)
     completed = 0
     for i, case in mine:
@@ -486,7 +489,7 @@ def run_cases(cases_path: str, out_dir: str, system: str, runner: Any, switches:
         if scenario and "scenario" not in case:
             case = {**case, "scenario": scenario}
         random.seed(seed + i)
-        ctx = build_context(case, switches, tools=tools, llm=llm, budgets=budgets)
+        ctx = build_context(case, switches, tools=tools, llm=llm, budgets=budgets, cache=cache)
         t0 = time.monotonic()
         error = None
         try:
@@ -521,6 +524,7 @@ def run_dir_for(run_id: str, root: str | None = None) -> Path:
 
 def outputs_dir(run_id: str, system: str, run_index: int = 1, root: str | None = None) -> Path:
     """`<run_dir>/outputs/<system>` for the first run, `<system>__run<k>` for repeat k > 1 (README C6 plus repeats)."""
+    system = system.replace(":", "-")  # 'A10:caselaw.reasoning' -> 'A10-caselaw.reasoning' (a colon is not safe in a path)
     name = system if run_index <= 1 else f"{system}__run{run_index}"
     return run_dir_for(run_id, root) / "outputs" / name
 
@@ -567,13 +571,50 @@ def _nli_manifest() -> dict[str, Any]:
     return {**st, "label": f"nli: offline stand-in ({st['fallback_reason']})" if st["fallback_reason"] else f"nli: {st['backend']}"}
 
 
+PROMPT_FILES = ("src/vakeel_sahayak/models/prompting.py",)  # plus every agents/**/prompts.py
+
+
+@functools.lru_cache(maxsize=1)
+def prompt_hash() -> str:
+    """SHA-256 (first 16 hex) over the prompt templates of the code under test: `models/prompting.py` and every `agents/**/prompts.py`, in sorted order.
+
+    It changes when a template changes, so two manifests with the same hash ran the same prompt text (the switch set is recorded beside it)."""
+    h = hashlib.sha256()
+    files = [REPO / f for f in PROMPT_FILES] + sorted((REPO / "src" / "vakeel_sahayak" / "agents").rglob("prompts.py"))
+    for p in files:
+        if p.is_file():
+            h.update(p.relative_to(REPO).as_posix().encode())
+            h.update(p.read_bytes())
+    return h.hexdigest()[:16]
+
+
+def system_scope(system: str) -> str:
+    """What the system changes in a per-case run (`runners.systems.SCOPES`); 'pipeline' for a label that is not a system id (tests, ad hoc runs)."""
+    from vakeel_sahayak.eval.runners.systems import SCOPES, scope_of
+
+    try:
+        return SCOPES[scope_of(system)]
+    except ValueError:
+        return SCOPES["pipeline"]
+
+
+def shared_cache_for(switches: Any) -> Any:
+    """A fresh in-memory retrieval cache for the batch variants (plan cache S14, shared prefix S14d), else None (the default run is unchanged)."""
+    if getattr(switches, "plan_cache", False) or getattr(switches, "prefix_layout", False):
+        from vakeel_sahayak.batch.cache import RetrievalCache
+
+        return RetrievalCache()
+    return None
+
+
 def write_run_manifest(out_dir: Path, *, system: str, switches: Any, seed: int, budgets: dict[str, int] | None = None,
                        cases_path: str | None = None, shard: int = 0, n_shards: int = 1, extra: dict[str, Any] | None = None) -> dict[str, Any]:
     """Write `MANIFEST.json`: code version, config hash, model/version/date stamp, seed, switches, budgets, the case-file hash."""
     from vakeel_sahayak.config import load_config
     b = load_config().budgets
     manifest = {
-        "system": system, "variant": switches.variant(), "switches": switches.model_dump(), "seed": seed,
+        "system": system, "variant": switches.variant(), "describe": switches.describe(), "scope": system_scope(system),
+        "prompt_hash": prompt_hash(), "switches": switches.model_dump(), "seed": seed,
         "budgets": {"tokens_per_case": b.tokens_per_case, "store_calls_per_factor": b.store_calls_per_factor,
                     "tokens_per_factor": b.tokens_per_factor, "drafting_tokens_per_factor": b.drafting_tokens_per_factor, **(budgets or {})},
         "code_version": code_version(), "config_hash": config_hash(), "models": models_stamp(), "nli": _nli_manifest(),
@@ -655,15 +696,165 @@ def eval_smoke(argv: list[str] | None = None) -> int:
     return 0 if n >= 1 or done else 1
 
 
+# ---------------------------------------------------------------------------------------------------------------- run, plan, smoke-all
+def run_system(argv: list[str] | None = None) -> int:
+    """`driver run --system <id> [--cases F] [--out DIR] [--n N] [--shard i --n-shards k] [--seed S] [--run-index K]`: one system on a case file, through
+    `systems.system_runner` (the single entry for Full, the baselines, the ablations and every implemented variant). Writes the per-case outputs, `_events/` and
+    `MANIFEST.json` (switch set, `Switches.describe()`, prompt hash, code and config hashes, models, seed). A declared but unbuilt id exits 2 with the reason.
+
+    Default cases are the 200 T1 test cases in the fixed run order (`data/testsets/t1/cases.jsonl`); default output is `data/eval/runs/adhoc/outputs/<system>`.
+    Hosted models are chosen by the environment as for `eval-smoke` (see the module docstring); with nothing set the offline stand-ins run."""
+    from vakeel_sahayak.eval.runners.systems import canonical_system, system_runner
+
+    ap = argparse.ArgumentParser(prog="driver run")
+    ap.add_argument("--system", required=True)
+    ap.add_argument("--cases", default=None)
+    ap.add_argument("--out", default=None)
+    ap.add_argument("--run-id", default="adhoc")
+    ap.add_argument("--run-index", type=int, default=1, help="repeat number: output goes to <system>__run<k> for k > 1 and the seed is k")
+    ap.add_argument("--n", type=int, default=None, help="stop after this many cases of the shard")
+    ap.add_argument("--shard", type=int, default=0)
+    ap.add_argument("--n-shards", type=int, default=1)
+    ap.add_argument("--seed", type=int, default=None)
+    args = ap.parse_args(argv)
+    try:
+        system = canonical_system(args.system)
+        runner, switches = system_runner(system)
+    except NotImplementedError as exc:
+        print(f"REFUSED: {exc}", file=sys.stderr)
+        return 2
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+    cases = args.cases or str(REPO / "data" / "testsets" / "t1" / "cases.jsonl")
+    if not Path(cases).is_file():
+        print(f"ERROR: no case file at {cases}: build T1 first (python -m vakeel_sahayak.testsets.t1_court_grounded)", file=sys.stderr)
+        return 2
+    out = args.out or str(outputs_dir(args.run_id, system, args.run_index))
+    seed = args.seed if args.seed is not None else args.run_index
+    n = run_cases(cases, out, system, runner, switches, shard=args.shard, n_shards=args.n_shards, seed=seed, limit=args.n)
+    print(f"{system} ({switches.describe()}): {n} case(s) completed now, {len(load_progress(out))} saved in {out}")
+    return 0
+
+
+def plan_command(argv: list[str] | None = None) -> int:
+    """`driver plan --job <name>[,<name>...] | --all | --sarvam-full`: print the cases, systems, runs, estimated tokens and cost of a job of configs/eval/runs.yaml. Runs nothing and calls no model."""
+    from vakeel_sahayak.eval.runners import plan
+
+    ap = argparse.ArgumentParser(prog="driver plan")
+    ap.add_argument("--job", default=None)
+    ap.add_argument("--all", action="store_true", help="one line per job in priority order, with the running OpenAI spend")
+    ap.add_argument("--sarvam-full", action="store_true", help="price every generative job on Sarvam-105B: the credits needed to run everything there (cap: VS_SARVAM_CAP_INR or budgets.sarvam_cap_inr)")
+    ap.add_argument("--json", action="store_true")
+    args = ap.parse_args(argv)
+    try:
+        if args.sarvam_full:
+            print(plan.sarvam_full_view())
+        elif args.all or not args.job:
+            rows = plan.plan_all()
+            print(json.dumps(rows, indent=1) if args.json else plan.format_table(rows))
+        else:
+            rows = plan.jobs_plan([j.strip() for j in args.job.split(",") if j.strip()])
+            if args.json:
+                print(json.dumps(rows, indent=1))
+            else:
+                print("\n".join(plan.format_plan(p) for p in rows))
+                spend, warnings = plan.spend_summary(rows)
+                print(f"planned on openai: {spend['openai_usd']:.2f} USD; planned on sarvam: INR {spend['sarvam_inr']:.2f}")
+                print("\n".join(warnings))
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+    return 0
+
+
+def _smoke_data_dir(stores: str) -> str:
+    """A scratch data directory for a smoke run. `real` links the built stores into it (read only use), so retrieval is the system that is measured; nothing is written to `data/`."""
+    import os
+    import tempfile
+
+    root = tempfile.mkdtemp(prefix="vs-smoke-all-")
+    real = REPO / "data" / "stores"
+    if stores == "real" and real.is_dir():
+        os.symlink(real, Path(root) / "stores")
+    return root
+
+
+def smoke_all(argv: list[str] | None = None) -> int:
+    """`driver smoke-all [--ids a,b] [--n 1] [--stores real|empty] [--out DIR]`: run every dispatchable id (Full, the baselines, every implemented variant; A5, A10 and S13
+    once per default arm) offline on the first T1 dev case(s) and print a pass/fail table; `S15b`, declared but unbuilt, must be refused loudly to pass. 0 when all pass.
+
+    Offline only: `VS_MODELS`, `VS_LLM_BACKEND` and `VS_EXTERNAL` are forced to the offline stand-ins and `VS_DATA_DIR` is a scratch directory (stores linked read-only with
+    `--stores real`, the default when `data/stores` exists). A row passes when the case completed with no crashed-case error and no stage error, and the manifest
+    names the switch set, its `describe()` line and the prompt hash."""
+    import os
+    import tempfile
+
+    ap = argparse.ArgumentParser(prog="driver smoke-all")
+    ap.add_argument("--cases", default=str(REPO / "data" / "testsets" / "t1" / "dev.jsonl"))
+    ap.add_argument("--out", default=None)
+    ap.add_argument("--n", type=int, default=1)
+    ap.add_argument("--ids", default=None, help="comma-separated subset of ids (default: all)")
+    ap.add_argument("--stores", choices=["real", "empty"], default="real" if (REPO / "data" / "stores").is_dir() else "empty")
+    ap.add_argument("--json", default=None, help="also write the table as JSON here")
+    args = ap.parse_args(argv)
+    if not Path(args.cases).is_file():
+        print(f"no dev cases at {args.cases}: build T1 first (python -m vakeel_sahayak.testsets.t1_court_grounded)")
+        return 2
+    os.environ.update(VS_MODELS="offline", VS_LLM_BACKEND="offline", VS_EXTERNAL="off", VS_NLI="offline", VS_HEAVY_CLIENTS="offline")
+    os.environ["VS_DATA_DIR"] = _smoke_data_dir(args.stores)
+    from vakeel_sahayak.eval.runners.systems import canonical_system, dispatchable_ids, system_runner
+
+    ids = [i.strip() for i in args.ids.split(",") if i.strip()] if args.ids else dispatchable_ids() + ["S15b"]
+    out_root = Path(args.out or tempfile.mkdtemp(prefix="vs-smoke-all-out-"))
+    rows: list[dict[str, Any]] = []
+    for ident in ids:
+        row: dict[str, Any] = {"id": ident, "status": "FAIL", "seconds": 0.0, "tokens": 0, "variant": "", "detail": ""}
+        t0 = time.monotonic()
+        try:
+            system = canonical_system(ident)
+            runner, switches = system_runner(system)
+            row["variant"] = switches.variant()
+            out = outputs_dir("smoke-all", system, 1, root=str(out_root))
+            run_cases(args.cases, str(out), system, runner, switches, limit=args.n)
+            saved = sorted(out.glob("t1*.json"))
+            manifest = json.loads((out / "MANIFEST.json").read_text(encoding="utf-8"))
+            rec = json.loads(saved[0].read_text(encoding="utf-8")) if saved else {}
+            problems = []
+            if len(saved) < args.n:
+                problems.append(f"{len(saved)} of {args.n} case(s) saved")
+            if rec.get("error"):
+                problems.append(f"case error: {rec['error']}")
+            if rec.get("errors"):
+                problems.append("stage errors: " + "; ".join(rec["errors"])[:300])
+            for key in ("describe", "prompt_hash", "switches", "variant"):
+                if not manifest.get(key):
+                    problems.append(f"manifest lacks {key}")
+            row["tokens"] = int((rec.get("meta") or {}).get("tokens", 0))
+            row["status"], row["detail"] = ("FAIL", " | ".join(problems)) if problems else ("PASS", manifest["describe"][:90])
+        except NotImplementedError as exc:
+            expected = ident.upper() == "S15B"
+            row["status"], row["detail"] = ("PASS", f"refused loudly as declared-but-unbuilt: {str(exc)[:70]}") if expected else ("FAIL", f"NotImplementedError: {str(exc)[:200]}")
+        except Exception as exc:  # noqa: BLE001 - one id's crash is a row of the table, the others still run
+            row["detail"] = f"{type(exc).__name__}: {str(exc)[:240]}"
+        row["seconds"] = round(time.monotonic() - t0, 1)
+        rows.append(row)
+        print(f"{row['status']:<5}{ident:<28}{row['seconds']:>7.1f}s {row['tokens']:>8} tok  {row['detail'][:140]}", flush=True)
+    failed = [r["id"] for r in rows if r["status"] != "PASS"]
+    print(f"\nsmoke-all: {len(rows) - len(failed)} of {len(rows)} passed offline on {args.n} T1 dev case(s); outputs in {out_root}" + (f"; FAILED: {', '.join(failed)}" if failed else ""))
+    if args.json:
+        Path(args.json).write_text(json.dumps(rows, indent=1), encoding="utf-8")
+    return 1 if failed else 0
+
+
 def main(argv: list[str] | None = None) -> int:
-    """`python -m vakeel_sahayak.eval.runners.driver smoke|eval-smoke`."""
+    """`python -m vakeel_sahayak.eval.runners.driver smoke|eval-smoke|smoke-all|run|plan`."""
     args = list(sys.argv[1:] if argv is None else argv)
     cmd = args.pop(0) if args else "smoke"
-    if cmd == "smoke":
-        return smoke(args)
-    if cmd == "eval-smoke":
-        return eval_smoke(args)
-    print("usage: driver smoke | eval-smoke")
+    commands = {"smoke": smoke, "eval-smoke": eval_smoke, "smoke-all": smoke_all, "run": run_system, "plan": plan_command}
+    if cmd in commands:
+        return commands[cmd](args)
+    print("usage: driver smoke | eval-smoke | smoke-all | run --system <id> | plan --job <name>")
     return 2
 
 
