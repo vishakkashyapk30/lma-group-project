@@ -1307,7 +1307,7 @@ Four parallel workstreams, one owner each (assigned in week 0). Evaluation for e
 | **Compute:** ≈56 sessions (≈73 with buffer) is about twice v4 | Use all three accounts from week 2; use the API teacher if the pilot allows (≈−12 sessions); ask about batch inference. If still short: cut main runs from 3 to 2, ablations from 100 to 60 cases, and F2 to 40 cases. Cuts shrink samples, never drop a feature's evaluation |
 | **Scope:** 8 features, 6 agents and a rich frontend in 8 weeks | Four parallel workstreams with one owner each; feature freeze at the end of week 5 |
 | The vision model is slow or weak on the 2080 Ti | Use the smaller model (Qwen3-VL-4B), or OCR only with "unreadable → ask counsel"; report |
-| Hindi sources are unavailable | Use HLDC only, or NLLB-translated companion documents; report |
+| Hindi sources are unavailable | Use HLDC only, or NLLB-translated companion documents; report. HLDC is gated: the fallback in use is 200 native Hindi High Court orders from Open India Law (`native_hc`; High Court, not district-court Hindi); see `docs/evaluation-plan.md` |
 | Low citation resolution rate | Report coverage; show the good-law badge only for resolved citations |
 | The orchestrator loops or overspends | Hard budgets per factor and per case; fall back to the fixed router (A6) as the default; report |
 | The animations and artwork take too long | Static frames first; time-box the landing to about 1.5 weeks of one person; scenes 3–5 fall back to simpler geometric transitions |

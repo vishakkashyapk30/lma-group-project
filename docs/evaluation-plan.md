@@ -173,7 +173,7 @@ L12: "A benchmark score is a property of the model and all five of these." Each 
 | Set | Items | Prompt template | Response protocol | Scoring rule | Aggregation |
 |---|---|---|---|---|---|
 | **T1** court-grounded | 200 High Court orders from the test window (mid-2024 to 2025), at least 60 BNS-era, High Court only; facts part as input | Fixed system prompt per system, same 12-factor checklist for all (Appendix A of plan.md); same clean facts text | A `BailBrief` JSON (schema-constrained decoding) | G1 recall and precision, G2 recall@k, G4, G5, G6, G7, MiniCheck unsupported-fact rate, verbatim-span check | Per case, then mean over cases; per-court, BNS-era vs IPC-era slices; three runs averaged per case |
-| **T2** messy bundles | About 600 bundles (about 4,800 pages): 100 T1 cases with 2-3 constructed companions rendered as K1-K6, about 200 HLDC (or NLLB-translated) Hindi documents | None (ingestion has no prompt from us beyond Munshi's own); scripted counsel answers questions | `IngestionReport` and a `CaseDossier` | CER against known text, boundary F1, document-type accuracy, field accuracy against construction truth, escalation rate, GPU-seconds | Per page, per bundle, per input kind and noise type |
+| **T2** messy bundles | About 600 bundles (about 4,800 pages): 100 T1 cases with 2-3 constructed companions rendered as K1-K6, about 200 HLDC (or NLLB-translated) Hindi documents; while HLDC is gated, 200 native Hindi High Court orders (`native_hc`, opt-in build into `data/testsets/t2_hindi_native/`) | None (ingestion has no prompt from us beyond Munshi's own); scripted counsel answers questions | `IngestionReport` and a `CaseDossier` | CER against known text, boundary F1, document-type accuracy, field accuracy against construction truth, escalation rate, GPU-seconds | Per page, per bundle, per input kind and noise type |
 | **T3** change sets | 60 T1 cases x 3 changes (charge sheet filed, co-accused bail, threshold crossed) plus 60 no-op controls: 240 updates | The new document; same drafting prompts as the first draft | A new `BailBrief` and a `ChangeSet` | Stale-claim, missed-stale and over-redraft rates; byte-identity of unchanged claims; tokens; quality gap to full regeneration | Per update; by change type |
 | **T4** rights scenarios | 500 scenarios from the bare acts, dates on both sides of each threshold | Document bundles rendered from scenario specs | `RightsReport` | Designed status per check; false-ELIGIBLE; CHECK rate | Per rule family; overall macro average |
 | **T5** batch | 200 T1 cases plus 100 T4 scenarios with deadlines planted in the next 7 days | The batch is a folder | Triage board and per-case outputs | Missed deadline, pairwise ranking accuracy, cases per node-hour, cache hit rate, output equality | Per batch; per urgency class |
@@ -431,7 +431,7 @@ The guest lecture: "Mean multilingual accuracy is the wrong sufficient statistic
 | Era | BNS-era vs IPC-era | Recodification (H1c) |
 | Script | Devanagari vs Latin pages (T2, T8) | Script as a variable (Guest) |
 | Input kind | K1-K10 | RQ2 |
-| Origin of Hindi text | Native HLDC vs NLLB-translated | Guest: translationese; report native and translated separately |
+| Origin of Hindi text | Native HLDC vs native High Court (`native_hc`) vs NLLB-translated | Guest: translationese; report each origin separately. HLDC is gated, so `native_hc` (Allahabad High Court Hindi bail orders from Open India Law) stands in; it is High Court Hindi, not UP district-court Hindi, so no claim is made about district-court Hindi until HLDC arrives |
 | Register | Court order vs constructed companion (FIR, remand, certificate) | Register mismatch |
 | Noise type | Character confusion, dropped lines, table damage, stamps | Literature review U4 |
 
@@ -743,7 +743,7 @@ File: `data/eval/tables/table8_slices.csv`.
 | Era | BNS-era; IPC-era | | | | | | | | |
 | Script | Devanagari; Latin; transliterated | | | | | | | | |
 | Input kind | K1-K10 | | | | | | | | |
-| Hindi origin | native (HLDC); translated (NLLB) | | | | | | | | |
+| Hindi origin | native (HLDC; not available yet); native High Court (`native_hc`, Open India Law, 200 Allahabad High Court orders, the fallback in use); translated (NLLB) | | | | | | | | |
 | Failure-discovery slices | the slices written from Section 5.10 | | | | | | | | |
 | Survival table | raw 1,483,143 -> clean 88,121 (5.9%) -> test window -> BNS-era -> FIR present (12.9%) -> offence date (4.8%) -> resolved citation (about 17%) | | | | | | | | |
 
@@ -1027,3 +1027,10 @@ The existing registry test asserts the plan's totals (about 279 node-hours and a
 - The statement "Qwen3 released April 2025" is from the plan; the repository config uses 2025-04-01.
 - Paper links are from the literature review; those marked S there were not re-fetched. In this plan Adaptive-RAG, From RAG to Memory (HippoRAG 2), Debate or Vote and Barnett et al. were re-fetched and matched; Self-RAG's venue is confirmed by the L14 slide.
 - The course slides are image-heavy; ideas such as "context budget" are used as the slide text states them, and no slide figure was rendered for this plan.
+
+
+### Native Hindi fallback while HLDC is gated (2026-10-26)
+
+Decision: HLDC (IL-TUR `bail`) still needs a Hugging Face approval, so the Hindi slice of T2 is built from data we hold. `python -m vakeel_sahayak.pipelines.hindi_native` scans all 1,641 raw Open India Law shards (all courts, one parquet file at a time) and writes `data/interim/hindi_native.jsonl`: bail-candidate High Court orders whose first chunk is more than 30% Devanagari, joined in chunk order, kept when the full text is at least 50% Devanagari and at least 800 characters, not a T1 dev, test or blind case, not a `splits.json` dev or test order, no duplicate id or text. Result: 7,554 candidates, 6,889 kept (6,881 Allahabad High Court, 4 Rajasthan, 4 "High Court of Allahabad"; years 2019: 1, 2020: 92, 2021: 9, 2022: 1, 2023: 3,991, 2024: 71, 2025: 2,724); dropped: 364 below 50% Devanagari, 292 shorter than 800 characters, 8 Supreme Court, 1 duplicate, 0 leakage matches. T2 takes 200 of them by seed (`--hindi-native data/interim/hindi_native.jsonl --native-only --out data/testsets/t2_hindi_native`): 200 one-document K5 bundles (452 pages, 28 MB), type `COURT_JUDGMENT_HI`, text cut at 5,000 characters, exact text layer, truth row `origin: "native_hc"`. The default T2 output is unchanged (the source is opt-in). Report `native_hc` apart from `translated` and from HLDC.
+
+Caveat: these are Allahabad High Court orders (a few from Rajasthan), not Uttar Pradesh district-court documents as in HLDC; the register, layout and length differ, 99% are 2023 or 2025, and there are no gold fields beyond the text and the document type. Write "native Hindi High Court bail orders", never "district-court Hindi".
