@@ -42,15 +42,17 @@ class EvalLabeler:
     name = "llama-3.1-8b-labeler"
     SYSTEM_USE = False
 
-    def __init__(self, model: str | None = None, llm: LLMClient | None = None) -> None:
+    def __init__(self, model: str | None = None, llm: LLMClient | None = None, backend: str | None = None) -> None:
         """Configure the labeler; nothing loads yet.
 
         Args:
             model: checkpoint (default configs/models.yaml `llm.eval_labeler.model`)
             llm: an LLMClient to use instead of loading Llama locally (e.g. a VllmClient serving Llama on Ada)
+            backend: 'openai' or 'sarvam' to pick a hosted labeler for this object (wins over `VS_LABELER` and the yaml); None keeps them
         """
         self.model_id = model
         self._llm = llm
+        self._backend = (backend or "").strip().lower() or None
 
     def _model_name(self) -> str:
         if self.model_id:
@@ -81,6 +83,8 @@ class EvalLabeler:
 
     def _use_openai(self) -> bool:
         """The other non-Qwen, non-Llama option: an OpenAI model as labeler (`VS_LABELER=openai` or yaml `llm.eval_labeler.runtime: openai`). Public text only; spend-capped."""
+        if self._backend:
+            return self._backend == "openai"
         raw = os.environ.get("VS_LABELER", "").strip().lower()
         if raw:
             return raw == "openai"
@@ -90,6 +94,8 @@ class EvalLabeler:
 
     def _use_sarvam(self) -> bool:
         """The documented non-Qwen, non-Llama option: Sarvam-105B as labeler (`VS_LABELER=sarvam` or yaml `llm.eval_labeler.runtime: sarvam`). Not the default."""
+        if self._backend:
+            return self._backend == "sarvam"
         raw = os.environ.get("VS_LABELER", "").strip().lower()
         if raw:
             return raw == "sarvam"
@@ -116,6 +122,7 @@ class EvalLabeler:
 
     def client(self) -> LLMClient:
         """The underlying LLM client (built on first use)."""
+        assert_not_system_use()
         if self._llm is not None:
             return self._llm
         if os.environ.get("VS_MODELS", "auto").lower() == "offline":
