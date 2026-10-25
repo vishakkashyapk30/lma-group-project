@@ -67,22 +67,21 @@ cleanly split dev/test-window order). 88,121 orders (5.9%) split cleanly; 56,285
 (250 cleanly split dev + test orders; 94 BNS-era orders in the test set against the 60 required). Only 12.9% of orders carry a FIR number that `leakage.fir_key`
 finds and 4.8% an offence date, so the same-FIR leakage rule and the BNS-era test lean on the charged sections in the text.
 
-## Gap-filling status (2026-10-24)
+## Gap-filling status (2026-10-26)
 
-* **Statutes retry (2026-10-26):** `indiacode.nic.in` now answers (302) and `www.indiacode.nic.in` returns a "Site Migration" page pointing to
-  `https://indiacode.gov.in`, a DSpace 9 site whose REST API (`https://indiacode.gov.in/server/api`) answers without a login (it also redirects
-  `legislative.gov.in` to `www.legislative.gov.in`). The old handle URLs (`/handle/123456789/15247`) and `upload.indiacode.nic.in` do not work. Nothing was
-  downloaded: the files in `data/gaps/raw/` are HTML error pages saved with a `.pdf` name (not statutes), and no `data/gaps/statutes/*.jsonl` exists. Next
-  step for a person: find the CrPC 1973 and NDPS Act items on the new site (search "Code of Criminal Procedure, 1973" in the browser or via
-  `/server/api/discover/search/objects?query=...`), save the official PDF, then follow the team step below. Do not type statute text from memory.
-* **Statutes gap (CrPC 1973, NDPS s.37, First Schedule bailable/cognisable columns): not fetched.** On 2026-10-24 later retries from this machine timed out or were refused for indiacode.nic.in, upload.indiacode.nic.in, legislative.gov.in, lddashboard.legislative.gov.in and egazette.gov.in (Indian government hosts are unreachable from this network). `indiacode.nic.in` answers
-  automated requests with HTTP 403 (Akamai), `legislative.gov.in` and `mha.gov.in` direct PDF paths return 404, and nothing may be typed
-  from memory. The loader is ready: `StatuteStore.build` merges every `data/gaps/statutes/*.jsonl` (one `StatuteRow` per line, optional extra
-  keys such as `source_url` are ignored). **Team step:** in a browser open https://indiacode.nic.in/handle/123456789/15247 (CrPC 1973, Act ID 197402)
-  and the NDPS Act 1985 page, save the PDFs to `data/gaps/raw/`, extract s.41, 41A, 50, 57, 167, 436, 436A, 437, 438, 439, the First Schedule
-  and NDPS s.37 (and s.19, 24, 27A, 31A that its bar names) into `data/gaps/statutes/crpc.jsonl` / `ndps.jsonl`, with the URL and retrieval
-  date in each row's `source_url`, then `scripts/build_stores.sh --only statutes`. No official bailable/cognisable table for BNS offences
-  was found; the BNSS/BNS First Schedule is in the same Legislative Department publication (bnss 2023, Act 46) and has to be added the same way.
+* **Statutes (2026-10-26): CrPC and NDPS rows now built from official PDFs.** Retrieved 2026-10-26 (a text PDF each, no OCR needed):
+  CrPC 1973 consolidated text, https://cdnbbsr.s3waas.gov.in/s3ec044a11654ad1e1e48352252859ff30/uploads/2023/11/2023110156.pdf (saved as
+  `data/gaps/raw/crpc_candidate.pdf`, 261 pages), and NDPS Act 1985 from the Department of Revenue, https://dor.gov.in/files/acts_files/NDPS_1985.pdf
+  ("Last Update 3-1-2022", saved as `data/gaps/raw/ndps_dor_clean.pdf`; the older `ndps_candidate.pdf` is a bad OCR scan and is not used). The
+  India Code REST API (`https://indiacode.gov.in/server/api/core/items`) answers 401 without a login, so it was not used. `python scripts/extract_gap_statutes.py`
+  (its docstring lists every mechanical edit) writes `data/gaps/statutes/crpc.jsonl` (s.41, 41A, 50, 57, 167, 436, 436A, 437, 438, 439),
+  `ndps.jsonl` (s.19, 24, 27A, 31A, 37; `cognisable` and `bailable` read from the s.37 text) and `first_schedule_ipc.jsonl` (382 IPC rows with empty
+  text that add `bailable`/`cognisable` from the CrPC First Schedule Part I to the existing IPC rows; `_merge_gap_rows` keeps the text). Rebuild
+  only the statutes store in place: `.venv/bin/python -c "from vakeel_sahayak.stores.law_statutes import StatuteStore as S; S().build('data/interim', 'data/stores/law')"`.
+  **Still missing:** BNS/BNSS First Schedule flags (only the CrPC schedule is parsed, so BNS rows have no bailable/cognisable), the rest of the CrPC
+  sections (only the ten the bail pipeline needs), First Schedule Part II (offences under other laws, a generic three-class table, not mapped to
+  sections), conditional IPC cells ("according as the offence abetted is cognizable", a few dozen sections) which stay `None`, and UAPA 43D(5) / PMLA 45 /
+  BNS 318(4) statute text. The CrPC text is the consolidated Act as published in that PDF; later amendments are not tracked.
 * **Kathbath Hindi test_known:** `kathbath_fetch --limit 3130` finished: 3,130 of 3,130 utterances with transcripts (about 300 MB).
 * **e-SCR / SUVAS Hindi judgments: not attempted.** The translations (about 36,000 Hindi judgments) are on the e-SCR portal, but we found no
   published bulk download, reuse licence or terms page, so nothing was fetched. Ask the Supreme Court Registry / NIC for written permission,

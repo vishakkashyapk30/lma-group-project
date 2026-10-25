@@ -196,7 +196,7 @@ class StatuteStore(SharedStore):
 
 
 def _merge_gap_rows(rows: list[StatuteRow], gaps_dir: Path) -> list[StatuteRow]:
-    """Add rows from `<gaps_dir>/*.jsonl` (official-source statutes the Open India Law release lacks); a gap row replaces the same (code, section)."""
+    """Add rows from `<gaps_dir>/*.jsonl` (official-source statutes the Open India Law release lacks); a gap row replaces the same (code, section); a gap row with empty text only adds its bailable/cognisable flags to an existing row."""
     from vakeel_sahayak.pipelines.text_utils import read_jsonl
 
     merged = {(r.code, r.section): r for r in rows}
@@ -207,7 +207,13 @@ def _merge_gap_rows(rows: list[StatuteRow], gaps_dir: Path) -> list[StatuteRow]:
             except ValueError:
                 continue
             row = row.model_copy(update={"code": normalise_code(row.code), "section": normalise_section(row.section)})
-            merged[(row.code, row.section)] = row
+            key = (row.code, row.section)
+            if not row.text.strip():  # a flags-only row (First Schedule): add bailable/cognisable to the existing row, keep its text
+                if key in merged:
+                    flags = {k: v for k, v in (("bailable", row.bailable), ("cognisable", row.cognisable)) if v is not None}
+                    merged[key] = merged[key].model_copy(update=flags)
+                continue
+            merged[key] = row
     return list(merged.values())
 
 
