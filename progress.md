@@ -1,5 +1,8 @@
 # progress.md: Vakeel-Sahayak.ai
 
+> **Start here:** read `AGENTS.md` (rules, how to run, what is not in the repo), then `split.md` (who does what), then sections 0 to 0e below (master to-do list, data assessment, plans, status of every workstream).
+
+
 Status as of 2026-10-14. Nothing is committed yet; all work below sits uncommitted on branch `ideation-v1`.
 
 ---

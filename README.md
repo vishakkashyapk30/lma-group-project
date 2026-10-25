@@ -2,14 +2,20 @@
 
 **A bail-preparation assistant for legal-aid lawyers (LMA Group Project 2026).**
 
-Vakeel-Sahayak.ai helps a lawyer prepare a regular bail application in an Indian court. It has two agents:
+Vakeel-Sahayak.ai helps a lawyer prepare a regular bail application in an Indian court from the case file. Six agents work together:
 
-1. **Case-File Agent.** It reads the uploaded court orders, or facts typed into a chat, and builds a case dossier. Every field in the dossier comes with the source sentence it was taken from.
-2. **Bail-Brief Agent.** It drafts a bail brief from the approved dossier. Every claim in the brief is checked against the dossier or against a retrieved judgment. IPC-era case law is carried over to BNS-era cases, and the brief warns when a provision has changed.
+1. **Munshi** (intake) reads any kind of PDF (digital, scanned, photographed, Hindi, several documents in one file), files what it finds into typed stores and asks the lawyer only for what is missing.
+2. **Peshkar** builds the source-checked dossier and the List of Dates, runs a rules-based Rights Radar (default bail, BNSS s.479, notice of appearance, grounds of arrest, and more), and spots what changed when a new order arrives.
+3. **Sutradhar** decides, for each bail factor, which of ten stores to query and when it has enough evidence.
+4. **Vakeel** drafts grounds that cite only facts on record and real judgments, checks every claim, and never drops one silently.
+5. **Abhiyojak** attacks the draft the way the prosecution would, kept deliberately isolated from the drafter.
+6. **Pairokar** ranks many files by legal urgency for a legal-aid office.
 
-The project combines all five course capabilities: a QLoRA-fine-tuned extractor, retrieval over Open India Law, a plan, draft and check loop, two agents with approval steps for the lawyer, and deterministic tools. Every model is open-weight, and no part of the project needs manual annotation.
+The lawyer approves the dossier and the final draft; nothing is exported without that approval, and this is enforced in code. The project combines all five course capabilities and is evaluated against simpler baselines (see `docs/evaluation-plan.md`).
 
-**Status:** proposal stage. Implementation starts after TA approval.
+**Status (2026-10-25):** the agents, stores, Rights Radar, evaluation infrastructure and a redesigned frontend are built and unit-tested on offline stand-in models. Not yet built: the LangGraph flow that connects the agents, the real API routes, DOCX export, the metrics and statistics code, and any real-model results. Start with `AGENTS.md`, then `split.md` (who does what) and `progress.md` (status of everything).
+
+**Quick start:** `docker compose up`, then open http://localhost:3000 (the UI runs on sample data until the API routes exist). See `DOCKER.md`.
 
 ## Repository layout
 
@@ -17,7 +23,7 @@ The project combines all five course capabilities: a QLoRA-fine-tuned extractor,
 .
 ├── README.md
 ├── pyproject.toml                 Package `vakeel_sahayak` (Python >= 3.10); extras: ocr, speech, models, train, eval, dev
-├── Makefile                       Stub targets: setup, stores, testsets, eval-*, api, frontend, lint, test
+├── Makefile                       Targets: setup, datasets, interim, stores, models, smoke, eval-*, test-*, docker-*
 ├── .env.example  .gitignore
 ├── configs/                       YAML: models, stores, budgets, thresholds, paths, tools, rights rules, splits
 │   ├── finetune/                  QLoRA and teacher-pilot configs
