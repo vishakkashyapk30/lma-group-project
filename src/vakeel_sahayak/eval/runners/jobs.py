@@ -41,7 +41,7 @@ def _run_system_suite(job: str, cfg: dict[str, Any], shard: int, n_shards: int, 
     """T6 (quick chat) and T7 (safety) as the scripted `tests/system` scenarios: `runs` repeats, one result file per scenario and run.
 
     The scenarios run on the fakes of `tests/`; a result file records pass or fail per test id (`<out>/runs/<job>/outputs/system/run<k>/<id>.json`).
-    The T6/T7 builders (EV-04) will replace these with generated sets; the scripted tests are the fallback set (docs/team/vishak.md job map, job 14).
+    The T6/T7 builders (EV-04) will replace these with generated sets; the scripted tests are the fallback set (split.md vishak.md job map, job 14).
     """
     import glob
     import re
