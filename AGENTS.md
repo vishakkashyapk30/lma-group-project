@@ -14,7 +14,7 @@ Handoff notes (what is done, not done, next steps) are in `docs/handoff/*.md`; d
 ## Read in this order
 1. `split.md`: who does what now, file ownership, merge waves, PR and review rules (appendices).
 2. `progress.md`: sections 0 to 0e hold the master to-do list, the data assessment, the plans written, the decisions, and the status of every workstream; section 5 has the per-phase test commands.
-3. `docs/plan.md` (the design; v5, with proposed edits listed in `docs/literature-review-and-usage.md` §7 not yet applied), `docs/architecture/skeleton.md` (module map and conventions).
+3. `docs/plan.md` (the design; v6, which applies the 25 edits of `docs/literature-review-and-usage.md` §7), `docs/architecture/skeleton.md` (module map and conventions).
 4. `docs/evaluation-plan.md` (claims, baselines, metrics, the S/A/B/P variants) and `docs/literature-to-code-map.md` (which paper each variant comes from, with switch, module and test).
 5. `docs/product-readiness.md` (what a finished product still needs), `docs/handoff/*.md` (per-workstream status notes: done, not done, next steps), `frontend/DESIGN.md` (design rules for the UI).
 
