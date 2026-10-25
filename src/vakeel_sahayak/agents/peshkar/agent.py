@@ -826,7 +826,7 @@ class PeshkarAgent(BaseAgent):
         as_of = self._as_of(state)
         res = self._tool("rights_check", case_id=self.case_id, as_of=as_of)
         if isinstance(res, ToolError):
-            self.error("rights_check_failed", res.message, tool="rights_check", kind=res.kind)
+            self.error("rights_check_failed", res.message, tool="rights_check", tool_error=res.kind)
             res = RightsReport(
                 case_id=self.case_id,
                 as_of=as_of,
@@ -858,7 +858,7 @@ class PeshkarAgent(BaseAgent):
         previous = base.rights if base is not None and base.rights is not None else self.case_state().rights_report()
         diff = self._tool("diff_case_state", case_id=self.case_id, since_hash=base.dossier_hash if base else None)
         if isinstance(diff, ToolError):
-            self.error("diff_failed", diff.message, tool="diff_case_state", kind=diff.kind)
+            self.error("diff_failed", diff.message, tool="diff_case_state", tool_error=diff.kind)
             diff = ChangeSet(case_id=self.case_id, trigger="new_document")
         touched = [f.field for f in diff.fields]
         trigger = "new_document" if (touched or diff.new_event_ids) else "clock"
