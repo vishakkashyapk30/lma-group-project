@@ -4,6 +4,234 @@ Status as of 2026-10-14. Nothing is committed yet; all work below sits uncommitt
 
 ---
 
+## 0e. In flight when the usage limit hit (2026-10-24, about 18:30) and what to resume
+
+**Why this section exists:** the 5-hour usage limit was about 85% used. Four agents were running; each was told to keep the code consistent, finish one item at a time, and write a handoff note in `docs/handoff/`. A snapshot of all uncommitted work (about 150 changed files) is in the session scratchpad (`snapshot-*.tgz`); nothing from this session after the 20 commits has been committed.
+
+**Agents running at that point, and where their notes are:**
+| Agent | Task | Handoff note |
+|---|---|---|
+| Workspace redesign | One-step-at-a-time case workspace (stepper, "what needs you", side source panel, chat drawer, Details drawer, plain labels, privacy wording fix) | `docs/handoff/workspace-redesign.md` |
+| Literature sweep 1 | Sutradhar and retrieval variants (sufficiency stopping, Self-RAG/CRAG-style critique, adaptive depth, graph expansion), each default-off, cited, in `docs/literature-to-code-map.md` | `docs/handoff/literature-sweep-1.md` |
+| Eval infrastructure | EV-07 driver and `make smoke`, EV-05 baselines (B6 first), EV-03 T1 builder, EV-06a ablation wrappers | `docs/handoff/eval-infrastructure.md` |
+| Data and models | Full store build (background job), CrPC/NDPS statutes, Kathbath remainder, model download script, NOTICE, HLDC check, e-SCR attempt | `docs/handoff/data-and-models.md` |
+
+**Status updates (2026-10-24, evening):**
+- **Workspace redesign: finished** and live on port 3000 (builds clean; Vitest and Playwright not run, so the old tests fail on purpose). Not yet checked by eye: mobile layout, the source panel, the chat and Details drawers, the confirm dialogs. `frontend/DESIGN.md` still lacks a "Workspace principles" section. Details: `docs/handoff/workspace-redesign.md`.
+- **Literature sweep 1: partly done.** Only **S3 sufficiency stopping** is finished (switch `Switches.stopping` = `rules` (default), `rules_llm`, `llm`; `for_variant("S3")`, `"S3b"`, alias `"A11b"`; module `agents/sutradhar/sufficiency.py`; 20 new tests plus a default-off golden-output check; cited to Joren et al. ICLR 2025, Sun et al. Findings of ACL 2026, Park et al. NeurIPS 2025 workshop; those details come from the literature review and were not re-checked on the official pages). **Not started:** S1 (Self-RAG/CRAG critique), S2 (adaptive depth), S5 (graph expansion), S4 (score-skew signal). The sweep's S-numbers follow the evaluation plan; the literature review numbers the same ideas differently (its S2 = plan S5, its R1 = S3, its R2 = S4). Test status: regression 2,146 passed, 16 skipped; the 30 targeted failures are the unbuilt graph (26) and 3 registry tests with an extra `b6` module, plus one unchecked. Details: `docs/handoff/literature-sweep-1.md`.
+
+- **Eval infrastructure: done** (EV-03, EV-05, EV-06a, EV-07, PR-12; note `docs/handoff/eval-infrastructure.md`). All four tasks work offline.
+  - **Driver:** `make smoke` exits 0 (case-0007 end to end, no LangGraph, the export gate still enforced), and `make eval-smoke` runs 3 real dev cases. Shards resume, and there is a run manifest.
+  - **Baselines and ablations:** baselines B0, B0L, B0S, B1, B2, B3, B4, B6 and Full; ablation wrappers A1 to A10.
+  - **T1 on real data:** test 200 (80 BNS-era, 137 after 2025-04, 22 High Courts), dev 50, open 120, blind 80 (hashed ids; the blind slice opens once with `--open-blind`, which needs the `eval-freeze-v1` git tag).
+  - **Weak spots:** the 8-word overlap rule drops 68% of the clean test window, so T1 skews to orders with distinctive facts text. Gold is rule-only and provisional until a non-Qwen labeler runs. Citation resolution is 0 of 80 because `oil_metadata.jsonl` is missing. Dossier fields found in the test set: sections 84.5%, charge sheet 22%, arrest date 18%, co-accused bail 12.5%, custody days 12%, trial stage 6.5%, previous bail 2.5%. G7 is nearly empty (0.5%). Dev is all IPC-era.
+  - **Left:** the `Switches` fields for the new arms (EV-01: `critic_mode`, `repair_mode`, `abhiyojak_isolation`, `retrieval_policy`, `store_prior`, `munshi_gap_policy`), jobs for RQ2, F1 to F4 and the S-variants, and the failing `tests/unit/eval` files owned by others (metrics 36, stats 16, features 18, ingestion pipelines 13) and `tests/unit/testsets` (T2 to T9, 31 failures).
+  - **Changes to shared data:** `data/interim/splits.json` was rewritten with the T1 labels (backup `splits.json.pre-t1`); a path bug in `pipelines/gold/g2_cited_precedents.py` was fixed.
+
+- **EV-01 switches: done** (note `docs/handoff/ev-01-switches.md`). `Switches` now has the fields for every planned variant (`retrieval_policy`, `weak_signal`, `graph_expansion`, `store_prior`, `munshi_gap_policy`, `repair_mode`, `critic_mode`, `abhiyojak_isolation`, `draft_mode`, `topology`, `plan_cache`, `urgency_policy`, `output_format`, the three S17 flags, `munshi_image_only`, `chunking`), all defaulting to today's behaviour. `for_variant` builds full, A1 to A10, P5 to P7, B5, S1 to S17 (and extra arms) and the plan aliases. **Behaviour implemented today:** full, A1 to A10, S3, S3b, P5, P6. Everything else fails loudly via `assert_variant_implemented`; each variant task must add its id to `IMPLEMENTED_VARIANTS` in `orchestration/switches.py`. Defaults to confirm: S15 `answer_only` (`reasoning_first` is the arm), S7 `sequential` (`hierarchy` is the arm), three separate S17 booleans, the extra `chunking` field, and the A12 "prior alone" arm being B5 with alias S6b.
+
+- **Data and models: mostly done** (note `docs/handoff/data-and-models.md`; nothing left running).
+  - **Full store build finished** in about 35 minutes (hashed-ngram embedder) and `data/stores/MANIFEST.json` is written (1.76 GB). The first build (5 h 20 min, stuck) was killed. The cause was the fuzzy case-name citation matching scoring every one of about 116K titles for each cited name. The fix is `pipelines/store_builders/fast_index.py` (only titles sharing a word with the cited party are scored, with a cache) plus progress logging; a citation whose parties share no whole word with the indexed title is no longer matched.
+  - **Rows:** concordance 554, citations 3,492 (plan 100–300K, far below), reasoning 161,247, arguments 70,691, objections 55,024, similar 114,544, statutes 1,411. 115,376 orders used, 612 excluded. Citation resolution is 0.19. Wiring the Supreme Court metadata (`data/raw/open_india_law/sc_metadata.jsonl`) into the citation index is still to do and needs `pipelines/citation_graph/**`.
+  - **Kathbath complete:** 3,130 of 3,130 Hindi test utterances (293 MB).
+  - **Models (PR-21 done):** `scripts/download_models.sh` (tier from an argument or `VS_MODELS`, `--dry-run`, disk check, licence shown, resumable, SHA-256 verified), tier table under `weights:` in `configs/models.yaml`, `make models` and `make models-dry-run`. T1 helper models downloaded: BGE-M3 (2.31 GB), DeBERTa-v3-large NLI (0.88 GB), MiniCheck-RoBERTa-Large (1.42 GB); Whisper small skipped. T2 and T3 sizes in the table are approximate.
+  - **NOTICE written** at the repo root. Licences for the four T1 models and IndicTrans2 are verified. Qwen, Llama, NLLB, fonts and libraries are marked "to verify". PyMuPDF is AGPL, and the IPC2BNS-Verify repo has no LICENSE file.
+  - **Disk:** 12 GB free.
+  - **Blocked, needs a person:**
+    - **CrPC 1973, NDPS s.37 and the First Schedule:** every Indian government host refused or timed out from here, and no statute text was typed from memory. The wiring is ready (`StatuteStore.build` merges `data/gaps/statutes/*.jsonl`, with a test). A teammate must save the CrPC and NDPS PDFs from https://indiacode.nic.in/handle/123456789/15247 into `data/gaps/raw/`, extract the sections s.41, 41A, 50, 57, 167, 436, 436A, 437, 438, 439, the First Schedule and NDPS s.37 into `crpc.jsonl` and `ndps.jsonl` with a source URL on each row, then run `scripts/build_stores.sh --only statutes`. The steps are in `data/README.md`.
+    - **HLDC:** no Hugging Face login on this machine. A teammate must accept the gated terms for `Exploration-Lab/IL-TUR` (licence CC BY-NC-SA 4.0), log in, and put the `bail` folder in `data/raw/hldc/`.
+    - **e-SCR Hindi translations:** no published bulk download or reuse terms; written permission from the Supreme Court Registry or NIC is needed, or a small manual sample. The fallback is IndicTrans2 or NLLB translation.
+
+- **Literature sweep 1: complete** (S3 earlier; S1, S2, S5 and S4 now; note `docs/handoff/literature-sweep-1.md`, rows in `docs/literature-to-code-map.md`). All opt-in and default-off (the golden default-run test still passes). Regression 2,168 passed, 16 skipped; targeted 980 passed; ruff clean.
+  - **S1** `retrieval_policy='self_critique'` (`agents/sutradhar/critique.py`): Self-RAG (ICLR 2024) and CRAG (arXiv 2024) style critic with corrective actions.
+  - **S2** `retrieval_policy='adaptive'` (`depth.py`): Adaptive-RAG (NAACL 2024) style none/single/multi depth.
+  - **S5** `graph_expansion=True` (alias A16; `pipelines/citation_graph/expansion.py`, `CitationStore.expand`): personalised PageRank in the style of HippoRAG 2 (ICML 2025) and HippoRAG (NeurIPS 2024).
+  - **S4** `weak_signal='skew'` (`skew.py`): SkewRoute (Findings of EMNLP 2025) style score-skew signal; the plan's Gini and top-gap measures are the plan's choice, not necessarily the paper's.
+  - **Not done / assumptions:** the S4 AUROC metric (M19) is not built; the thresholds and constants (PPR damping 0.5, expansion weight 0.3, 5 expanded documents) are untuned; no comparison on the real stores has been run (G2 recall@10, share of Supreme Court roots); CRAG's correct/ambiguous/incorrect actions come from the plan's framing, not the paper page. Case-0007 is BNS-era, so under S2 every factor is classed "multi" there.
+  - **Signature changes (optional args, default False):** `search_reasoning(..., expand_graph=False, with_scores=False)`; new `ReasoningStore.search_scored`/`search_docs`, `CitationStore.expand`/`graph`. The event that carries retrieval signals is now named "retrieval variant signals".
+
+- **Landing colour and motion pass: done** (note `docs/handoff/landing-colour-motion.md`; builds clean; Vitest and Playwright not run). Full-width bands (cream hero with a saffron offset block, saffron tint "How it works", indigo "sources" band with a highlight sweep, neem tint "What you stay in control of", maroon closing band with a faint lattice, neutral footer), contrast pairs in `frontend/DESIGN.md`. The hero product loop plays once (8.55 s, every beat 180 to 250 ms, opacity and transform only), then rests; Replay is a quiet text button; it pauses on a hidden tab; reduced motion shows the final frame. Not yet checked by eye: the later loop frames after a fix, 360/768/1920 px after the change, the reduced-motion frame, paint time. Old unit and e2e specs still describe the earlier landing.
+
+- **Literature sweep 2: complete** (note `docs/handoff/literature-sweep-2.md`; six rows under "Sweep 2" in `docs/literature-to-code-map.md`). All off by default, each with its own tests and a default-off golden check (`tests/unit/agents/vakeel/test_variants_golden.py`).
+  - **S8 / A2b** `repair_mode='self_critique'`: self-critique-only repair, no NLI or re-retrieval (CRITIC, ICLR 2024; Huang et al., ICLR 2024; Zhang et al., Findings of ACL 2024).
+  - **S10 / A8c** `abhiyojak_isolation=False`: Abhiyojak also reads Vakeel's notes (Wynn et al., "Talk Isn't Always Cheap", arXiv 2025).
+  - **S9 / A8b** `critic_mode='sampling'`: k samples at an equal token budget (Debate or Vote, NeurIPS 2025; Should We Be Going MAD?, ICML 2024; Du et al., ICML 2024); lives in `eval/ablations/a8b_sampling_critic.py`.
+  - **S11 / A8d** `critic_mode='three_role'`: Grader, Critic, Defender, Grader (CourtEval, Findings of ACL 2025). **S11b/c** `draft_mode='debate'` and `'vote'`.
+  - **S15 / A13** `output_format='reasoning_first'`: a free reasoning field before the answer fields; stored but never cited (Let Me Speak Freely, EMNLP 2024 Industry; CRANE, ICML 2025).
+  - **Not done:** S15b (`free_then_parse`); S15 covers Vakeel only (Peshkar and Sutradhar prompts untouched); no `configs/eval/runs.yaml` jobs for S8 to S11 or S15.
+  - **Caveats:** the offline stand-ins are weak by design (offline S8 never repairs by itself; offline S10 ignores what it reads), so real effects need a hosted model. S10's flip rate is only a proxy (`conceded_share`) because there is no withdraw action. The S11b/c draft debate and vote spend about 3x and 4x the tokens without equalising them. The S9 budget stop uses an estimated sample cost.
+  - **New:** `CaseGraphState.variant_signals`; `Switches` rejects `abhiyojak_isolation=False` with `critic_mode` `sampling` or `three_role`.
+
+- **Literature sweep 3: complete** (note `docs/handoff/literature-sweep-3.md`; six rows under "Sweep 3" in `docs/literature-to-code-map.md`; three new golden default-run files for Peshkar, Munshi and Pairokar). Final regression 3,351 passed, 16 skipped; the one failure (`models/prefix.py` missing from the helper list in `test_interfaces.py`) was fixed and re-run alone (59 passed), but the full regression was not re-run after that fix.
+  - **S17 / S17b-d (alias A15)** `no_typed_handoff`, `no_spotlighting`, `no_guard`: typed hand-off (CaMeL-style data/control separation as a channel rule enforced by `ask`, not CaMeL's interpreter), spotlighting (delimiting form only), the existing detector as guard. Papers: Beurer-Kellner et al. design patterns (arXiv 2025), CaMeL (Debenedetti et al., arXiv 2025), Spotlighting (Hines et al., arXiv 2024), AgentDojo (NeurIPS 2024 D&B); StruQ and SecAlign cited as related only. The `SusceptibleLLM` stand-in models susceptibility; it is not a measurement of any real model.
+  - **S7 (A11a)** `munshi_gap_policy='hierarchy'` (`ingestion/hierarchy.py`): IntrAgent (ACL 2026) style page choice from the page index; on a constructed file it re-reads 1 page against 4 for sequential. Weights untuned.
+  - **P7** `munshi_image_only`: every page to the vision route (cost reference).
+  - **S14 / S14b / S14c / S14d:** agentic plan caching (NeurIPS 2025; on case-0007 the second same-signature case skips all 8 planning calls and tokens fall from 30,633 to 12,836, packs byte-identical), `urgency_policy` fifo / least-work / shortest-first (under the same 3-case budget urgency misses 0 deadline cases, FIFO misses 2), and a prefix-friendly prompt layout (`prefix_layout`, SGLang, KVFlow; a lower-bound signal).
+  - **Not done:** the OCR vs text-layer cross-check of S17(c); datamarking and encoding forms of spotlighting; `runs.yaml` jobs for the new variants; real-model measurements (injection success on a real model, G1 recall with the plan cache, tuning S7 weights). Open: whether a batch sets `store_version` on `plans_of` when a store is rebuilt; whether to keep S14d as a named variant.
+
+**First thing after the reset:** read the four handoff notes, then run `ruff check src`, the regression test command in section 5, and `cd frontend && npx tsc --noEmit -p . && npm run lint && npm run build`. If anything is half-edited, finish or fix it before starting new work. Check on the background store build (`docs/handoff/data-and-models.md` gives the log path).
+
+**Queued, in this order (not started):**
+1. **Landing page colour and animation pass:** a wider palette (saffron/ochre, deep indigo, neem green, with colour-block bands), a short hero product loop of 8 to 10 seconds that plays once, light reveal and hover motion. No pinned scenes, no long intros, none of the AI tells.
+2. **Update the frontend tests** (Vitest and Playwright) to the redesigned shell and workspace; the old expectations will fail intentionally (Cases page title and numerals, top nav, stage-rail words, agent markup, Help route, mode chip, desk rank numerals).
+3. **Swagger / OpenAPI documentation:** make `create_app()` mount all routers so `/docs` and `/openapi.json` work, export `docs/api/openapi.json`, and write `docs/api/README.md` (the routes are still stubs, so it documents the contract and marks what is not implemented).
+4. **Literature sweeps 2 to 5:**
+   - Sweep 2: verification and adversarial variants (self-critique-only, sampling critic, no isolation, reasoning-first output).
+   - Sweep 3: Munshi hierarchy re-reading, injection defences, cache-friendly prompts and plan caching.
+   - Sweep 4: routing and the remaining should-priority variants.
+   - Sweep 5: apply the 25 proposed edits to `docs/plan.md` and check every citation.
+   - Each sweep adds a section to `docs/literature-to-code-map.md` (paper, venue, year, link, switch, module, test, status).
+5. Evaluation steps that need Ada (bring-up, real runs, freeze) and the remaining items in section 0.
+
+**Rules to keep:** one backend and one frontend agent at a time at most; agents save as they go; no Claude attribution in any commit or document; commit only with the four-teammate strategy; API keys only in the environment; OpenAI spend capped at 5 USD.
+
+## 0d. Decision on 2026-10-24: hosted LLMs are allowed
+
+- The team has a **Sarvam API key** (all Sarvam models) and an **OpenAI API key worth about 5 USD**. We no longer need local open-weight models to run the system. This relaxes the plan's original "open weights, no paid API at run time" rule.
+- **Keys** live only in environment variables (`SARVAM_API_KEY`, `OPENAI_API_KEY`) or an untracked `.env`. Never commit them.
+- **OpenAI spend is a hard cap of 5 USD.** An OpenAI adapter must keep a persisted token and cost ledger, refuse calls past the cap, use the cheapest suitable model, and cache outputs. Put the large evaluation runs on Sarvam or the offline stand-ins.
+- **Privacy rules stay:** hosted APIs only see public or constructed data and pseudonymised text; raw client files need counsel's recorded consent (the existing policy gate in `models/sarvam/policy.py`).
+- **Evaluation consequence:** hosted models change over time, so every run records the model name, version and date (course rule). The GPU node-hour budget in the evaluation plan becomes a token and dollar budget; the plan documents still describe the GPU budget and need updating.
+- **OpenAI adapter: built** (mocked HTTP only; no live call, because `OPENAI_API_KEY` is not set in this environment).
+  - **Spend cap:** a SQLite ledger records every call (tokens and cost, never prompt text). It reserves the worst-case cost before each call and refuses it before any request goes out if the total would pass the cap. Default 4.50 USD; the code clamps any config or env value to 5.00. In-flight reservations count, so parallel calls cannot overshoot. Check spend with `make openai-spend`.
+  - **Model:** default `gpt-6-luna` (0.10 / 0.50 USD per million input / output tokens, verified on the OpenAI pricing page on 2026-10-24). A model missing from the price table is refused. A response cache makes repeated temperature-0 calls free.
+  - **Switches:** `VS_LLM_BACKEND=offline|local|sarvam|openai` picks the backend for the agent roles, `VS_LABELER` and `VS_TEACHER` pick the labeler and teacher (public data only), and `VS_EXTERNAL=off|public|pseudonymised|consented` is the shared privacy gate for all providers. Model families (qwen, llama, sarvam, openai, offline) are exposed, and `describe_run_models()` stamps model, version and date into each evaluation run.
+  - **Tests:** 63 new in `tests/unit/models/test_openai.py`, all passing.
+  - **To verify live:** whether `gpt-6-luna` accepts `temperature` and `reasoning_effort: none` (the client drops a rejected parameter and retries). The families rule allows the teacher and the judged system to share a family (Qwen) but forbids it for the labeler.
+- **What this changes in the plans:** `docs/evaluation-plan.md` §7 (run plan), `docs/product-readiness.md` (hardware tiers, model download tasks PR-20 to PR-23, PR-33 to PR-35) and the team plan's Ada tasks; the independence of the B0L (prompted 32B) and labeler/teacher families also needs a re-check (OpenAI and Sarvam are both non-Qwen).
+
+## 0c. Plans written on 2026-10-24 (read these first)
+
+| Document | What it is |
+|---|---|
+| [docs/evaluation-plan.md](docs/evaluation-plan.md) | How the work will be presented like a paper: 42 falsifiable claims, baselines (B0–B6, with the course's four baseline types), 17 architecture variants S1–S17 based on the literature (8 must, 7 should, 2 could), 50 metrics, statistics (McNemar, bootstrap, Wilcoxon, Holm), a sealed blind slice, empty results tables and figures, the run budget, and threats to validity. Built on the course evaluation slides (L12), the guest lecture on Indian-language models, and RAG L14. |
+| [docs/product-readiness.md](docs/product-readiness.md) | What is left to be a product a lawyer can use: acceptance criteria, gaps by area, a release plan, and 86 tasks PR-01…PR-86 with priorities, effort and a critical path. Defines a "Preview v0.9" scope. |
+| [docs/team/README.md](docs/team/README.md) | The whole team plan: file ownership, shared-file rules, a day-0 contract PR, merge waves, PR template, review rotation, history sync steps, risks and decisions. Per-person files: [vishak](docs/team/vishak.md), [shravani](docs/team/shravani.md), [satvik](docs/team/satvik.md), [harshita](docs/team/harshita.md). Each person updates only their own file. |
+
+**Findings that need the team's attention:**
+- **The plan does not fit the time.** Committed work is 72.5 person-days against 61 (3.5 weeks) to 70 (4 weeks) of capacity. Fine-tuning, the RQ2 ingestion study and the F1–F8 feature evaluations are stretch items. The evaluation plan itself is about 408 node-hours at full size against about 255 available.
+- The evaluation freeze cannot be at the start of week 2, because the graph, evaluation driver, metrics and T1 builder do not exist yet. The team plan recommends day 14 (hard limit day 15).
+- Headline factor-recall must be paired with precision (arguing all 12 factors scores recall 1.0).
+- The default Docker stack runs stand-in models; real quality on a lawyer's laptop is unmeasured and Qwen3-14B does not fit an 8 GB GPU.
+- The frontend silently shows case-0007 demo data on any API error; a product build must be strict.
+
+**Decisions before Day 1:** capacity (add a fifth person, or ship the Preview), the evaluation freeze date, squash merge and branch protection, who holds the three Ada accounts, and the product and evaluation decision lists (readiness D1–D11, evaluation §9).
+
+## 0. Everything left to do (master checklist, 2026-10-21)
+
+Order of priority: A and B unblock a runnable system; C and D produce the research results; E to H are data, review and cleanup. Details for each item are in the sections below and in `docs/plan.md`.
+
+### A. Make the system run end to end (highest priority)
+- [ ] **LangGraph flow** in `src/vakeel_sahayak/orchestration/graph.py`: Munshi → Peshkar → Gate 1 (interrupt) → Sutradhar ⇄ Vakeel ⇄ Abhiyojak → Gate 2 (interrupt) → export; SQLite checkpointer (thread id = case id); the change-set path (new document → Peshkar diff → Gate 1 re-approval → truth maintenance → partial redraft). Tests: `tests/unit/orchestration/test_graph.py` (about 30).
+- [ ] **Plain-Python fallback** in `orchestration/fallback_state_machine.py` with the same gate rules; selected when langgraph is missing or `VS_ORCHESTRATOR=plain`. Tests: `test_fallback_state_machine.py` (about 4).
+- [ ] **Real FastAPI routes** (`src/vakeel_sahayak/api/routers/*`; `api/app.py` `create_app()` still raises NotImplementedError): cases, upload, chat, SSE events, gates, export, desk, library. Today `api/asgi.py` returns 503 on `/api/*` and the UI falls back to demo data. Tests: `tests/unit/api` (116 failing), `tests/integration/test_api_routes.py`. The API must pin the shapes of the rights report and the hearing-prep card, which the frontend fixtures currently tolerate loosely. Library search must enforce the required `before` date on the server and return `sc_root` and `good_law`. `CaseSummary` needs a `last_activity` field.
+- [ ] **DOCX export** in `src/vakeel_sahayak/export/*`: court-ready application (§8.2), List of Dates, annexure index, hearing-prep card, PDF. Tests: `tests/unit/export` (26 failing, 9 errors).
+- [ ] **System tests** `tests/system` (257 failing before): they pass once the three items above exist. Real-model variants carry `models` / `gpu` markers.
+- [ ] **Integration tests** `tests/integration` (107 failing before): re-run after the graph; fix what is left.
+- [ ] Settle `request_approval(...).unresolved` wording between the code and the test (the test now expects plain ids).
+
+### B. Verify what was built (nobody has done these)
+- [ ] **A person uses the frontend in a browser** (`docker compose up`, http://localhost:3000): all frontend checks so far were automated (Vitest 233/233, Playwright 69/69 on a production build). Check visuals, the landing scenes, the workspace and the mobile layout.
+- [ ] Fix the Playwright setup: the tests wanted chromium-1248 but 1243 was installed (the agent symlinked it). Run `npx playwright install`, or pin `@playwright/test` to the 1.59 line.
+- [ ] One landing scroll test flakes under `next dev` with 8 workers (cold chunk compiles). Use `next start` for e2e, or lower `workers`.
+- [ ] Run the Playwright container (`docker compose --profile test`), whose image pull was cancelled, and the GPU profile (`--profile real`).
+- [ ] **Live Sarvam test** with a real key (only mocked HTTP so far). Confirm the `json_schema` response format. Set Sarvam's dashboard data retention to the shortest option. Decide whether `agents_14b` should switch to `runtime: sarvam` (the default stays Qwen).
+- [ ] Install PyMuPDF (16 ingestion tests skip without it) and the real OCR, vision, translation and speech libraries; test the non-offline paths.
+- [ ] Munshi: it reads each page twice on real files in tool mode, and its in-memory shelf starts empty each run (see `agents/munshi/toolkit.py`).
+- [ ] Re-check the **Rights Radar rule texts** against the bare acts (week-0 item). Open readings: a bare "10 years" counts as `CHECK`; grounds of arrest are always `FLAG` when not communicated; IPC 420 → BNS 318(4) is treated as `SAME`; the Antil category D list is an assumption; the sexual-offence decline list is deliberately broad. *Kapil Wadhawan* and *M. Ravindran* were cited from memory.
+
+### C. Evaluation (plan §15)
+- [ ] Test-set builders T1–T9 in `testsets/` (T1 court-grounded, T2 messy bundles with Augraphy, T3 change sets, T4 rights scenarios, T5 batch, T6 chat, T7 safety, T8 speech incl. Sarvam TTS in `public_scope()`, T9 citation formats). Tests: `tests/unit/testsets`.
+- [ ] Baselines B0–B4, ablations A1–A10, ingestion pipelines P1–P6, feature evals F1–F8, metrics, bootstrap/Wilcoxon/Holm statistics, retrieval-only analysis, failure analysis, runners in `eval/`. Tests: `tests/unit/eval` (175 failing).
+- [ ] Use a non-Qwen labeler (Llama-3.1-8B, or Sarvam as the documented independent option) for gold agreement; report agreement and rule-only coverage.
+- [ ] Restrict the test pool to High Court orders: `assign_splits` drew one Supreme Court judgment into the test set.
+
+### D. Fine-tuning (plan §3 / §12)
+- [ ] Teacher dossiers, NLI span filter, OCR-noise augmentation (30% of pairs), QLoRA training of Qwen3-4B on the Ada cluster, adapter merge. Tests: `tests/unit/finetune` (70 failing).
+- [ ] Week-1 teacher pilot (Qwen3-32B on Ada vs a free Mistral API); measure throughput.
+
+### E. Data (partly done; see section 5b)
+- [ ] **HLDC**: a teammate requests access on Hugging Face (the `bail` config of `Exploration-Lab/IL-TUR`, non-commercial licence), then puts the `bail` folder in `data/raw/hldc/`. Fallback: NLLB-200 translation.
+- [ ] **Statutes missing from Open India Law**: CrPC 1973, NDPS s.37 and the CrPC/BNSS First Schedule (bailable/cognisable) from India Code.
+- [ ] **Open India Law**: only bail-related shards were kept (1.4 GB of 53.6 GB). The Hugging Face repo is gated; the ungated mirror was used. Request access if the full release is needed.
+- [ ] **Kathbath**: only the first 1,000 of 3,130 Hindi test utterances were taken.
+- [ ] **e-SCR / SUVAS Hindi judgments**: not attempted (optional; no bulk download).
+- [ ] **IPC2BNS-Verify**: the repo has no LICENSE file despite an MIT badge. Ask the authors before redistributing.
+- [ ] **Form layouts** (FIR IIF-1, remand order, custody certificate): no national templates found; build constructed ones.
+- [ ] **Model weights**: none downloaded (Qwen3-4B/14B/32B, BGE-M3, DeBERTa-v3, MiniCheck, Surya, Qwen3-VL, IndicTrans2, Whisper, Llama-3.1-8B). `scripts/download_models.sh` is still a stub.
+- [ ] **Full store build** (about 2 GB, about 85 minutes, about 200K reasoning paragraphs) on a machine with more disk; this laptop had about 20 GB free after clearing Docker's cache. Only a 2,000-order sample build ran. Wire the Supreme Court metadata into the citation index.
+- [ ] Data risks found in week 0 that the plan did not expect:
+  - FIR numbers appear in only 12.9% of orders, so the same-FIR leakage rule is weak.
+  - About 17% of citations resolve (none of the SCC/AIR ones, because the corpus has no such field).
+  - Only 5.9% of orders split cleanly, and several courts have no BNS-era orders (Madhya Pradesh 0, Kerala 3).
+  - The text has glued-word artefacts ("theapplicant").
+
+### F. Literature review (written; adoption still to do)
+- [x] **Written:** `docs/literature-review-and-usage.md` is complete. It has 145 papers across 14 topics (114 top-venue, 8 workshop or other, 23 preprints; 34 rated 4 or 5), plus 24 more in the "not catalogued" table. 51 were checked on an official page; the other 94 carry an official link from the earlier sweep but their venue was not re-fetched (marked S in the Check column).
+- [x] **IntrAgent** exists: ACL 2026 Long Papers, pp. 674–715 (https://aclanthology.org/2026.acl-long.29/). **AgentRouter** exists: ACL 2026 Long Papers, pp. 788–809 (https://aclanthology.org/2026.acl-long.33/). Both are only moderately relevant (only their ideas transfer), and the document says so.
+- [x] Venue corrections found: olmOCR, AutoGen and Mem0 have no venue on arXiv, so they are now marked unconfirmed or preprint.
+- [ ] **Apply the 25 proposed edits to `docs/plan.md`** (section 7 of the review). None are applied yet, because Phase 4 was built against the current plan. Also check that each proposal's module path exists (all do except the new `agents/sutradhar/store_prior.py`).
+- [ ] **Implement the adoptions.** Must-priority items:
+  - Munshi gap-driven re-reading with hierarchy-ranked page choice (ablation A11a).
+  - Sutradhar sufficiency and stopping variants, with stopped-too-early and over-search rates (A11b).
+  - A cost-quality frontier across budgets, and cost per passed case.
+  - A self-critique-only arm against Vakeel's tool-grounded repair (A2b).
+  - A sampling-only critic at equal tokens, and an Abhiyojak arm without context isolation (A8b, A8c).
+  - Structured-output ordering with a free reasoning field before the answer fields (A13).
+  - Injection defences (typed hand-off plus spotlighting), tested on T7 (A15).
+  - A null-agent audit of every metric.
+  - Position the project as bail preparation, not outcome prediction.
+- [ ] Should-priority items: a learned store prior against the evidence contracts (baseline B5, ablation A12); oracle regret for the ingestion ladder; proposition and late-chunking variants in B3; implicit-staleness tests for truth maintenance; citation faithfulness by removal; a text-layer vs OCR cross-check for font-injected PDFs; scheduling-policy comparison and prefix caching for Pairokar; a policy for when to ask counsel; a LoRA rank sweep. The new baselines and ablations are B5, A2b, A8b–d, A11–A16 and P7.
+- [ ] Caveats: contribution lines come from abstracts, not full-paper reads; several adopted ideas rest on 2026 preprints; data availability for IL-PCSR, IBPS and the legal hallucination benchmark is unchecked; the compute estimate for the extra runs is still "not yet estimated".
+
+### G. Documents
+- [ ] Update `docs/proposal/proposal.tex` and `proposal.pdf` (they are still v4; only `proposal.md` is v5); re-render the PDF and use `figures/architecture_v5` for the diagram.
+- [ ] The proposal's new references [21]–[26] (Self-RAG, Adaptive-RAG, Docling, HLDC, Augraphy, Doyle 1979) were written from memory: verify authors, venues and links.
+- [ ] Plan questions from the proposal agent: is the 3-questions-per-round limit per round or per case? Is the week 6–7 run schedule too tight? Do the RQ2 vision results come from the laptop's 4B model or Ada's 8B?
+- [ ] Final report and demo video (plan week 8).
+
+### H. Git and housekeeping
+- [ ] **Push** the 20 local commits (branch `ideation-v1`); nothing has been pushed.
+- [ ] Eight commits from 1–2 Oct mention Claude and are already on GitHub. Removing them needs a history rewrite and a force-push, which affects teammates' clones. Decide first.
+- [ ] Open design choices still on defaults: an unconfirmed "overruled" treatment from cue words still raises the good-law flag; optional `confidence`/`route`/`lang` fields exist on `SourceRef` and `CaseChunk`; Devanagari and Latin spellings of one name get two aliases; re-ingesting a file duplicates its documents and events; counsel's answers to Munshi's questions are stored but not parsed into facts.
+- [ ] Disk space is tight on the laptop: prune Docker build cache (`docker builder prune`) when needed.
+
+## 0b. Do we have enough data? (assessment, 2026-10-21)
+
+Based on the week-0 feasibility report (`data/interim/feasibility_report.md`), which used samples and heuristics that nobody has checked by hand. **Verdict: mostly yes for the core questions, with four weak spots and two blockers that are not data.**
+
+**Enough**
+- **Main test set (RQ1):** 1,483,143 High Court bail orders remain after filtering, and 88,121 of them split cleanly. The test pool has 94 BNS-era orders against the 60 needed, so the H1c pilot fallback is not needed.
+- **Fine-tuning:** the training pool is far larger than the roughly 4,000 orders needed to get about 2,000 verified pairs.
+- **Precedent index, argument bank, objection bank:** the 2,000-order sample build gave 3,414 reasoning paragraphs, which extrapolates to about 200K for the full set (within the plan's range).
+- **Concordance:** 544 typed IPC↔BNS edges plus the 1,140-query benchmark.
+- **Hindi speech test (T8):** 1,000 Kathbath utterances against the roughly 300 needed.
+- **T3, T4, T5, T7:** constructed by us, so external data does not limit them.
+
+**Weak or missing**
+1. **Citations (biggest risk):**
+   - Only about 17% resolve to Open India Law records, and none of the SCC/AIR ones, because the corpus has no such field.
+   - Recall@10 of court-cited precedents (the RQ2 / H1c metric) would be scored on a thin subset per order.
+   - The citation graph and the good-law check will be sparse.
+   - Wiring in the metadata of the 37,014 Supreme Court judgments should help, but by an unknown amount.
+2. **Dossier ground truth:**
+   - FIR numbers appear in 12.9% of orders and offence dates in 4.8%, so accuracy on those fields is measured on few examples.
+   - The same-FIR leakage rule is also weak.
+3. **Test-set skew:** only clean-splitting orders qualify. Allahabad and Madras carry most BNS-era orders, while Madhya Pradesh has 0 and Kerala 3, so results may not generalise across High Courts.
+4. **Missing statutes:** no CrPC 1973, no NDPS s.37 and no bailable/cognisable table, so the statute store is incomplete. This is fixable from India Code.
+
+**Not data, but equally blocking**
+- **No model weights are downloaded.** Qwen3-4B, 14B and 32B, the labeler and the embedder total many tens of GB. They do not fit on the laptop (about 20 GB free), so they belong on the Ada cluster.
+- **HLDC is blocked** (manual approval needed). The fallback, NLLB translation, works but gives weaker Hindi tests.
+
+**To do about it**
+- [ ] Add a coverage report to the citation and dossier metrics, so thin evidence is visible in the results.
+- [ ] Wire the Supreme Court metadata into the citation index and re-measure the resolution rate.
+- [ ] Fetch the missing statutes from India Code.
+- [ ] Request HLDC access.
+- [ ] Report results per court and check whether the test sample can be balanced across courts.
+- [ ] Download the model weights on Ada and size the disk before the real runs.
+
 ## 1. Plan v5 (done)
 
 **File:** [docs/plan.md](docs/plan.md), rewritten from v4 to v5 in response to the TA's feedback.
