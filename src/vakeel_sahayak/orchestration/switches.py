@@ -122,7 +122,7 @@ INGESTION: dict[str, dict[str, Any]] = {
 }
 BASELINE_SWITCHES: dict[str, dict[str, Any]] = {"B5": {"store_prior": "only"}}  # learned store router, no contracts
 # Ids whose behaviour exists today (S3 and the A1-A10 ablations, P5, P6, full). Everything else is defined but not implemented.
-IMPLEMENTED_VARIANTS: frozenset[str] = frozenset({"full", *ABLATIONS, "S1", "S2", "S3", "S3b", "S4", "S5", "S6", "B5", "S8", "S9", "S10", "S11", "S11b", "S11c", "S7", "S14", "S14b", "S14c", "S14d", "S15", "S17", "S17b", "S17c", "S17d", "P5", "P6", "P7"})
+IMPLEMENTED_VARIANTS: frozenset[str] = frozenset({"full", *ABLATIONS, "S1", "S2", "S3", "S3b", "S4", "S5", "S6", "B5", "S12", "S12b", "S13", "S16", "S16b", "S8", "S9", "S10", "S11", "S11b", "S11c", "S7", "S14", "S14b", "S14c", "S14d", "S15", "S17", "S17b", "S17c", "S17d", "P5", "P6", "P7"})
 VARIANT_DESCRIPTIONS: dict[str, str] = {
     "full": "Munshi -> Peshkar -> Sutradhar, with Vakeel, Abhiyojak and all checks",
     "A1": "no dossier: Sutradhar and Vakeel read the raw facts",
@@ -208,7 +208,7 @@ class Switches(BaseModel):
     no_spotlighting: bool = False
     no_guard: bool = False
     munshi_image_only: bool = False  # P7
-    chunking: Literal["structure", "proposition", "late"] = "structure"  # S16 (not named in plan 3.4: the chunker of the retrieval-only runner)
+    chunking: Literal["structure", "proposition", "late", "fixed", "recursive", "semantic", "page"] = "structure"  # S16 (not named in plan 3.4: the chunker of the retrieval-only runner)
 
     @model_validator(mode="after")
     def _variants_need_the_planner(self) -> Switches:
@@ -226,8 +226,10 @@ class Switches(BaseModel):
         if self.store_prior == "only":
             planner = [n for n, on in {"stopping": self.stopping != "rules", "retrieval_policy": self.retrieval_policy != "contract",
                                        "weak_signal": self.weak_signal != "rules", "graph_expansion": self.graph_expansion, "plan_cache": self.plan_cache}.items() if on]
-            if self.free_planner or planner:
-                raise ValueError("store_prior='only' (B5) replaces the contracts: it cannot combine with free_planner (A7) or the contract-loop variants " + ", ".join(planner))
+            if planner:  # free_planner (A7) is a legal partner: B5 has no contracts either
+                raise ValueError("store_prior='only' (B5) replaces the contracts: it cannot combine with the contract-loop variants " + ", ".join(planner))
+        if self.topology == "sequential" and (self.fixed_router or self.free_planner):
+            raise ValueError("topology='sequential' (S12) runs Sutradhar's planned loop one factor at a time: it cannot combine with fixed_router (A6) or free_planner (A7)")
         if self.topology == "single_agent":
             planner_switches = [
                 name for name, active in {

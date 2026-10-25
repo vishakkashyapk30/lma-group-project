@@ -52,8 +52,7 @@ def test_switches_and_aliases():
     assert S6.store_prior == "order" and S6.variant() == "S6" and Switches.for_variant("a12") == S6
     assert B5.store_prior == "only" and B5.variant() == "B5" and Switches.for_variant("s6b") == B5
     assert {"S6", "B5"} <= Switches.implemented_variants()
-    with pytest.raises(ValueError):
-        Switches(store_prior="only", free_planner=True)
+    assert Switches(store_prior="only", free_planner=True).store_prior == "only"
     with pytest.raises(ValueError):
         Switches(store_prior="only", stopping="llm")
 

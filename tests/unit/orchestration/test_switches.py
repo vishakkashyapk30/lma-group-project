@@ -212,20 +212,24 @@ def test_implemented_variants_are_s3_and_the_existing_ablations():
     # RECONCILED: sweep 2 implemented S8 (repair_mode='self_critique'), S10 (abhiyojak_isolation=False) S9 (critic_mode='sampling'), S11 (critic_mode='three_role'), S11b / S11c (draft_mode) and S15 (output_format='reasoning_first')
     # RECONCILED: sweep 3 implemented S17, S17b, S17c, S17d (the injection-defence flags) and S7 (munshi_gap_policy='hierarchy') and P7 (munshi_image_only) and S14, S14b, S14c, S14d (serving)
     # RECONCILED: sweep 4 implemented S6 / A12 (store_prior='order') and B5 / S6b (store_prior='only')
-    assert done == {"full", "S6", "B5", "S7", "S14", "S14b", "S14c", "S14d", "S1", "S2", "S3", "S3b", "S4", "S5", "S8", "S9", "S10", "S11", "S11b", "S11c", "S15", "S17", "S17b", "S17c", "S17d", "P5", "P6", "P7", *(f"A{i}" for i in range(1, 11))}
-    assert not set(done) & {"S13"}  # RECONCILED: B5 is built in sweep 4
+    # RECONCILED: sweep 4 implemented S16 / S16b (chunking) and S12 (topology='sequential') and S12b ('single_agent')
+    assert done == {"full", "S6", "B5", "S12", "S12b", "S13", "S16", "S16b", "S7", "S14", "S14b", "S14c", "S14d", "S1", "S2", "S3", "S3b", "S4", "S5", "S8", "S9", "S10", "S11", "S11b", "S11c", "S15", "S17", "S17b", "S17c", "S17d", "P5", "P6", "P7", *(f"A{i}" for i in range(1, 11))}
+    # RECONCILED: every defined id is now implemented (S13 as the search harness, `eval/runners/workflow_search.py`)
 
 
-@pytest.mark.parametrize("name", ["full", "A9", "a10", "S1", "S2", "S3", "S5", "S8", "A2b", "S10", "A8c", "S9", "A8b", "S15", "A13", "S11", "A8d", "A16", "A11b", "s3b", "P5", "S17", "A15", "S17b", "S17c", "S17d", "S7", "A11a", "P7", "S6", "A12", "B5", "S6b"])  # RECONCILED: S17 / A15, S7 / A11a and P7 built in sweep 3; S8 / A2b, S10 / A8c and S9 / A8b and S15 / A13 and S11 / A8d built in sweep 2
+@pytest.mark.parametrize("name", ["full", "A9", "a10", "S1", "S2", "S3", "S5", "S8", "A2b", "S10", "A8c", "S9", "A8b", "S15", "A13", "S11", "A8d", "A16", "A11b", "s3b", "P5", "S17", "A15", "S17b", "S17c", "S17d", "S7", "A11a", "P7", "S6", "A12", "B5", "S6b", "S12", "S12b", "S13", "S16", "S16b"])  # RECONCILED: S17 / A15, S7 / A11a and P7 built in sweep 3; S8 / A2b, S10 / A8c and S9 / A8b and S15 / A13 and S11 / A8d built in sweep 2
 def test_assert_variant_implemented_accepts_built_variants(name):
     """Built variants (and the alias of S3) pass silently."""
     assert_variant_implemented(name)
 
 
-@pytest.mark.parametrize("name", ["S13"])  # RECONCILED: S6 / A12 and B5 / S6b built in sweep 4
+@pytest.mark.parametrize("name", ["S13", "S6", "A12", "B5"])  # RECONCILED: every id is built in sweep 4, so the id is removed from the implemented set for this test
 #  # RECONCILED: A15 (S17), S7 / A11a and P7 built in sweep 3; A2b (S8), A8c (S10) and A8b (S9) and A13 (S15) and A8d (S11) built in sweep 2
-def test_assert_variant_implemented_fails_loudly_on_the_rest(name):
+def test_assert_variant_implemented_fails_loudly_on_the_rest(name, monkeypatch):
     """A selected variant with no behaviour raises NotImplementedError naming it."""
+    from vakeel_sahayak.orchestration import switches as sw_mod
+
+    monkeypatch.setattr(sw_mod, "IMPLEMENTED_VARIANTS", sw_mod.IMPLEMENTED_VARIANTS - {sw_mod.canonical_variant(name)})
     with pytest.raises(NotImplementedError, match=name):
         assert_variant_implemented(name)
 
@@ -246,9 +250,8 @@ def test_runner_dispatch_raises_for_unimplemented_variant():
     """The system runner refuses an unimplemented arm with a NotImplementedError naming it; built arms still resolve."""
     from vakeel_sahayak.eval.runners.systems import system_runner
 
-    with pytest.raises(NotImplementedError, match="S12"):  # RECONCILED: S9 is built in sweep 2 and S7 in sweep 3, S12 is the next unbuilt arm
-        system_runner("S12")
-    with pytest.raises(NotImplementedError, match="S13"):  # RECONCILED: B5 is built in sweep 4
+    assert system_runner("S12b")[1].variant() == "S12b"  # RECONCILED: S12 is built in sweep 4
+    with pytest.raises(ValueError, match="grid point"):  # RECONCILED: S13 is built in sweep 4 (a searched grid point needs fields, so the runner cannot name it)
         system_runner("S13")
     assert system_runner("b5")[1].variant() == "B5"
     assert system_runner("A9")[1].variant() == "A9"

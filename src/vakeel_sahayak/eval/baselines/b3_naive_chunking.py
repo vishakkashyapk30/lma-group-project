@@ -16,6 +16,8 @@ from vakeel_sahayak.schemas.bail_brief import BailBrief
 TASK = "baseline.b3_naive_chunking"
 K = 10
 VARIANTS = {"fixed_512": cv.fixed_512, "fixed_512_overlap": cv.fixed_512_overlap, "recursive": cv.recursive_split, "semantic": cv.semantic_chunks}
+# S16: proposition units (Dense X Retrieval, EMNLP 2024) can be tried on the retrieved paragraphs too; the other S16 strategies need whole documents (`cv.evaluate_strategy`)
+VARIANTS["proposition"] = lambda text: __import__("vakeel_sahayak.stores.chunk_strategies", fromlist=["propositions"]).propositions(text)
 DEFAULT_VARIANT = "recursive"  # replaced by the dev choice (`select_best_variant`) once the retrieval-only analysis has run
 
 

@@ -127,6 +127,9 @@ Same rules (default off, byte-identical default pinned by `tests/unit/agents/sut
 |---|---|---|
 | S6 (A12) learned store prior orders calls inside a contract | `store_prior='order'` | `agents/sutradhar/store_prior.py` (`StorePrior`, `order_signals`), `SutradharAgent._apply_prior` |
 | B5 (S6b) learned store router alone, no contracts | `store_prior='only'` | `agents/sutradhar/store_prior.py` (`run_prior_only`), dispatched in `SutradharAgent.run`; trainer: `python -m vakeel_sahayak.agents.sutradhar.store_prior train` |
+| S12 / S12b sequential and single-agent topology | `topology='sequential'`, `'single_agent'` | `SutradharAgent._drive_sequential`, `_ask_plan`, `_new_work` (pooled budget) |
+| S16 / S16b chunk strategies | `chunking='proposition'`, `'late'` (and `'fixed'`, `'recursive'`, `'semantic'`, `'page'`) | `stores/chunk_strategies.py`, `eval/baselines/chunking_variants.evaluate_strategy` |
+| S13 workflow search (could) | grid of the other switches | `eval/runners/workflow_search.py` (harness and offline smoke; a real search needs a model) |
 
 ## 3. Interpretations made in the skeleton
 
