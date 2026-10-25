@@ -443,7 +443,10 @@ class MunshiAgent(BaseAgent):
         run, classifier = self._run, (LlmAdvisor(self.llm, spotlight=self.defences().spotlighting) if self.llm is not None else None)
         counter = self._next_doc_number()
         for read in run.reads:
-            docs = self._docs_with_tools(read, classifier) if self.tooled else None
+            if self.switches.munshi_no_bundle_split:  # P6: one document, neither split nor labelled (no split_bundle, no classify_document)
+                docs = [DocRead("", read, DocumentType.OTHER, 0.0, 1, len(read.pages), read.pages)] if read.pages else []
+            else:
+                docs = self._docs_with_tools(read, classifier) if self.tooled else None
             if docs is None:
                 docs = split_and_label(read, self.thresholds, split=not self.switches.munshi_no_bundle_split, fallback=classifier)
             for doc in docs:
@@ -458,7 +461,7 @@ class MunshiAgent(BaseAgent):
         return run.entries
 
     def _docs_with_tools(self, read: FileRead, classifier: LlmAdvisor | None) -> list[DocRead] | None:
-        """The documents of a surveyed file from `split_bundle` (or `classify_document` for the whole file under P6).
+        """The documents of a surveyed file from `split_bundle` (P6 never gets here).
 
         Returns:
             Documents, or None when the tool gave nothing usable (the caller splits and labels locally).
@@ -466,10 +469,6 @@ class MunshiAgent(BaseAgent):
         n = len(read.pages)
         if not n:
             return []
-        if self.switches.munshi_no_bundle_split:
-            got = self.call_tool("classify_document", file_path=read.path, pages=list(range(1, n + 1)))
-            doc_type, confidence = (DocumentType.OTHER, 0.3) if isinstance(got, ToolError) else (DocumentType(got[0]), float(got[1]))
-            return [DocRead("", read, doc_type, confidence, 1, n, read.pages)]
         entries = self.call_tool("split_bundle", file_path=read.path)
         ranges = [] if isinstance(entries, ToolError) else [tuple(e.pages) for e in entries]
         if not ranges or ranges[0][0] != 1 or ranges[-1][1] != n or any(b[0] != a[1] + 1 for a, b in zip(ranges, ranges[1:], strict=False)):
@@ -819,7 +818,7 @@ class MunshiAgent(BaseAgent):
         """File a document found by the page search under the type the missing item expects (an OTHER document that is that paper)."""
         found = self._find(page)
         target = ADOPT_AS.get(item)
-        if found is None or target is None:
+        if found is None or target is None or self.switches.munshi_no_bundle_split:  # P6: the one document is never relabelled
             return False
         doc, _ = found
         before = self.filer.counts.model_copy(deep=True)

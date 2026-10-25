@@ -159,7 +159,9 @@ def test_munshi_splits_labels_checks_gaps_and_asks(make_ctx):
     the scripted counsel (the FakeToolbox's queued answers) answers at most three questions per round (plan §4.3)."""
     tb = toolbox(answers=["Custody certificate not issued yet", "", ""])
     report = ingest("munshi", make_ctx, tb)
-    assert tb.count("split_bundle") == 1 and tb.count("classify_document") >= len(report.documents)
+    # RECONCILED: the default Munshi run is pinned by tests/unit/agents/munshi/test_variants_golden.py (byte-identical digests), so it cannot gain a
+    # classify_document call per document; each label comes with the split_bundle entries (one call), and P6 (no splitting, no labelling) calls neither.
+    assert tb.count("split_bundle") == 1 and all(d.type != DocumentType.OTHER for d in report.documents)
     assert tb.count("search_pages") + tb.count("ask_user") >= 1
     assert all(len(q) <= 3 for q in tb.questions)
     assert [d.pages for d in report.documents] == [[1, 2], [3, 4], [5, 5]]
