@@ -12,6 +12,23 @@ Everything here except this README and the `.gitkeep` files is gitignored.
 
 Rule: raw client files never leave the laptop. Only pseudonymised text may be copied to Ada. No manual annotation: every label comes from court text, official tables, existing datasets, construction or non-Qwen labeler consensus.
 
+## Get the data from the team bundle (fastest)
+
+The owner shares a compressed, checksummed copy of everything that is slow to rebuild (`interim`, `stores`, `testsets`, `gaps`, `eval`, `raw/MANIFEST.json`;
+about 1.5 to 2 GB). It is a PRIVATE Hugging Face dataset, `vishakkashyapk/vakeel-sahayak-data`
+(https://huggingface.co/datasets/vishakkashyapk/vakeel-sahayak-data); ask the owner for read access, then log in once with `hf auth login` or put
+`HF_TOKEN=...` in the untracked `.env`, and from the repository root:
+
+```bash
+make data-install SRC=hf:vishakkashyapk/vakeel-sahayak-data     # or SRC=<a folder or URL the owner gave you>
+make data-install SRC=~/vakeel-data-bundle FORCE=1             # FORCE=1 overwrites what is already in data/
+```
+
+It verifies `SHA256SUMS`, refuses to overwrite `data/` without `FORCE=1`, unpacks, and checks row and file counts against `bundle_manifest.json`.
+Not in the bundle: model weights (`MODELS.txt` lists names and sizes; `make models`), `data/cases` (private client files), `data/openai`, `data/raw` (except
+`MANIFEST.json`) and HLDC. Owner side: `make data-bundle` (writes `~/vakeel-data-bundle`, no upload) and `make data-publish` (uploads it with `hf upload`; token
+from the environment or `.env`, never printed). If you have no access, rebuild with the commands below.
+
 ## Reproduce the data (week 0)
 
 ```bash
@@ -52,6 +69,12 @@ finds and 4.8% an offence date, so the same-FIR leakage rule and the BNS-era tes
 
 ## Gap-filling status (2026-10-24)
 
+* **Statutes retry (2026-10-26):** `indiacode.nic.in` now answers (302) and `www.indiacode.nic.in` returns a "Site Migration" page pointing to
+  `https://indiacode.gov.in`, a DSpace 9 site whose REST API (`https://indiacode.gov.in/server/api`) answers without a login (it also redirects
+  `legislative.gov.in` to `www.legislative.gov.in`). The old handle URLs (`/handle/123456789/15247`) and `upload.indiacode.nic.in` do not work. Nothing was
+  downloaded: the files in `data/gaps/raw/` are HTML error pages saved with a `.pdf` name (not statutes), and no `data/gaps/statutes/*.jsonl` exists. Next
+  step for a person: find the CrPC 1973 and NDPS Act items on the new site (search "Code of Criminal Procedure, 1973" in the browser or via
+  `/server/api/discover/search/objects?query=...`), save the official PDF, then follow the team step below. Do not type statute text from memory.
 * **Statutes gap (CrPC 1973, NDPS s.37, First Schedule bailable/cognisable columns): not fetched.** On 2026-10-24 later retries from this machine timed out or were refused for indiacode.nic.in, upload.indiacode.nic.in, legislative.gov.in, lddashboard.legislative.gov.in and egazette.gov.in (Indian government hosts are unreachable from this network). `indiacode.nic.in` answers
   automated requests with HTTP 403 (Akamai), `legislative.gov.in` and `mha.gov.in` direct PDF paths return 404, and nothing may be typed
   from memory. The loader is ready: `StatuteStore.build` merges every `data/gaps/statutes/*.jsonl` (one `StatuteRow` per line, optional extra

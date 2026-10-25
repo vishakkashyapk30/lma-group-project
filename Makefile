@@ -1,7 +1,7 @@
 # Skeleton targets; every recipe is a stub until implemented.
 PY ?= .venv/bin/python
 
-.PHONY: models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend hooks check-commits live-smoke
+.PHONY: data-bundle data-install data-publish models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend hooks check-commits live-smoke
 
 setup:            ## create .venv and install (scripts/setup_dev.sh)
 	@echo "TODO: scripts/setup_dev.sh"; exit 1
@@ -11,6 +11,15 @@ datasets:         ## download the public datasets into data/raw (resumable; scri
 
 interim:          ## convert data/raw into data/interim: orders.jsonl, statutes.jsonl, concordance_edges.jsonl, splits, feasibility report
 	@scripts/build_interim.sh
+
+data-bundle:      ## compress and checksum the data a teammate cannot rebuild cheaply into ~/vakeel-data-bundle (scripts/data_bundle.sh; no upload)
+	@scripts/data_bundle.sh $(BUNDLE)
+
+data-install:     ## install a data bundle into data/: make data-install SRC=<dir | URL | hf:repo> [FORCE=1] (scripts/data_install.sh)
+	@scripts/data_install.sh $(if $(FORCE),--force,) $(SRC)
+
+data-publish:     ## owner only: upload the bundle folder to the private Hugging Face dataset (scripts/data_publish.sh)
+	@scripts/data_publish.sh $(BUNDLE)
 
 stores:           ## build the seven shared stores from data/interim/orders.jsonl (plan §5)
 	@scripts/build_stores.sh
