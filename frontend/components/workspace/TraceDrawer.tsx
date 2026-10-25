@@ -1,14 +1,15 @@
 "use client";
-// "Show the plan" (plan §13.1, §13.4, §6.3): a side drawer with the live agent-trace graph (React Flow, dynamic, ssr: false),
-// the current RetrievalPlan steps and each slot's state (FILLED, WEAK, MISSING), the budget and the raw event log. The graph is
-// a picture of the same event stream that the log lists in text, so nothing is graph-only.
+// "Details" (plan §13.1, §13.4, §6.3): a side drawer, closed by default, with everything that is not the lawyer's task: the raw
+// statuses and ids of the record, the live agent-trace graph (React Flow, dynamic, ssr: false), the current RetrievalPlan steps and
+// each slot's state (FILLED, WEAK, MISSING), the budget and the raw event log. The graph is a picture of the same event stream
+// that the log lists in text, so nothing is graph-only.
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import dynamic from "next/dynamic";
-import { Radio, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useMemo, useState, type ReactElement } from "react";
-import { AgentSignature } from "@/components/agents/AgentSignature";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { agentTitle, isAgentName } from "@/lib/agents";
+import { isAgentName } from "@/lib/agents";
+import { dossierEntries } from "@/lib/fields";
 import { formatClock, humanize } from "@/lib/format";
 import { FACTOR_LABELS } from "@/lib/labels";
 import { MOCK_CASE_ID, MOCK_RETRIEVAL_PLANS } from "@/lib/mock/case0007";
@@ -101,7 +102,6 @@ export function TraceDrawer({ caseId, open, onClose, className }: TraceDrawerPro
   const plan = plans.find((p) => p.key === picked) ?? plans[plans.length - 1] ?? null;
   const slots = plan ? Array.from(new Set([...plan.steps.map((s) => s.slot), ...Object.keys(plan.assessment)])) : [];
   const recent = ws.events.slice(-30).reverse();
-  const sutradhar = ws.activity.byAgent.SUTRADHAR;
   const sutradharCalls = ws.events.slice(ws.activity.runStart).filter((e) => e.kind === "TOOL_CALL" && String(e.actor).toUpperCase() === "SUTRADHAR");
   const calls = ws.events.slice(ws.activity.runStart).filter((e) => e.kind === "TOOL_CALL").length;
 
@@ -113,46 +113,65 @@ export function TraceDrawer({ caseId, open, onClose, className }: TraceDrawerPro
           data-testid="trace-drawer"
           aria-describedby="trace-desc"
           className={cn(
-            "fixed bottom-0 right-0 top-14 z-drawer flex w-[min(100vw,36rem)] flex-col border-l border-gold/60 bg-cream shadow-lg",
+            "fixed bottom-0 right-0 top-[var(--nav-h)] z-drawer flex w-[min(100vw,36rem)] flex-col border-l border-line bg-cream shadow-lg",
             "data-[state=open]:animate-slide-in-right data-[state=closed]:animate-slide-out-right",
             className,
           )}
         >
-          <header className="flex items-start gap-3 border-b border-line bg-parchment/70 px-4 py-3">
+          <header className="flex items-start gap-3 border-b border-line px-4 py-3">
             <div className="min-w-0 flex-1">
-              <DialogPrimitive.Title className="font-display text-lg font-semibold text-maroon">The plan, live</DialogPrimitive.Title>
-              <DialogPrimitive.Description id="trace-desc" className="text-xs text-ink-soft">
-                {agentTitle("SUTRADHAR")} picks what to fetch from which store for each bail factor, checks it is enough and stops within budget.
+              <DialogPrimitive.Title className="font-display text-lg font-semibold text-ink">Details</DialogPrimitive.Title>
+              <DialogPrimitive.Description id="trace-desc" className="text-sm text-ink-soft">
+                How this case was worked out: the record, the lookups made, the budget and the event log.
               </DialogPrimitive.Description>
-              <p className="mt-1 flex items-center gap-1.5 text-xs text-ink-soft">
-                <Radio aria-hidden className={cn("size-3.5", ws.streamStatus === "open" ? "text-neem" : "text-haldi")} />
+              <p className="mt-1 text-sm text-ink-soft">
                 {ws.streamStatus === "open" ? "Receiving events" : ws.streamStatus === "reconnecting" ? "Reconnecting to the event stream" : `Event stream ${ws.streamStatus}`}
-                {ws.mode === "demo" ? " (demo data)" : ""} · {calls} call{calls === 1 ? "" : "s"} in this run
+                {ws.mode === "demo" ? " (sample data)" : ""}, {calls} call{calls === 1 ? "" : "s"} in this run
               </p>
-            </div>
-            <div className="hidden w-28 shrink-0 sm:block">
-              <AgentSignature
-                agent="SUTRADHAR"
-                mode="working"
-                active={sutradhar.phase === "working"}
-                litStores={ws.activity.activeStores}
-                activeTool={sutradhar.tool}
-                statusText={sutradhar.text}
-                className="max-w-[7rem]"
-              />
             </div>
             <DialogPrimitive.Close className="grid size-8 shrink-0 place-items-center rounded-md text-ink-soft hover:bg-ink/[0.06] hover:text-ink">
               <X aria-hidden className="size-4" />
-              <span className="sr-only">Close the plan</span>
+              <span className="sr-only">Close details</span>
             </DialogPrimitive.Close>
           </header>
 
-          <div data-lenis-prevent="" className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
-            <section aria-labelledby="trace-graph-title">
-              <h3 id="trace-graph-title" className="mb-1.5 font-display text-sm font-semibold text-maroon">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+            <section aria-labelledby="trace-record-title">
+              <h3 id="trace-record-title" className="mb-2 font-display text-base font-semibold text-ink">
+                Record
+              </h3>
+              <dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-1 text-xs">
+                {(["GATE_1_DOSSIER", "GATE_2_EXPORT"] as const).map((g) => (
+                  <div key={g} className="contents">
+                    <dt className="font-mono text-ink-soft">{g}</dt>
+                    <dd className="m-0 font-mono text-ink">{ws.gates.status[g] ? (ws.gates.status[g]?.open ? "OPEN" : "APPROVED") : "NOT_LOADED"}</dd>
+                  </div>
+                ))}
+                {ws.data.dossier
+                  ? dossierEntries(ws.data.dossier).map(([name, f]) => (
+                      <div key={name} className="contents">
+                        <dt className="font-mono text-ink-soft">{name}</dt>
+                        <dd className="m-0 font-mono text-ink" data-status={f.status}>
+                          {f.status}
+                          {f.source?.route ? <span className="text-ink-muted"> {f.source.route}</span> : null}
+                        </dd>
+                      </div>
+                    ))
+                  : null}
+              </dl>
+              {ws.data.ingestion ? (
+                <p className="mt-2 text-xs text-ink-muted">
+                  Filed from {ws.data.ingestion.file}: {ws.data.ingestion.filed.timeline_events} dated events, {ws.data.ingestion.filed.parties} parties,{" "}
+                  {ws.data.ingestion.filed.sections} sections, {ws.data.ingestion.filed.chunks} chunks.
+                </p>
+              ) : null}
+            </section>
+
+            <section aria-labelledby="trace-graph-title" className="mt-6">
+              <h3 id="trace-graph-title" className="mb-1.5 font-display text-base font-semibold text-ink">
                 Agents, tools and stores
               </h3>
-              <div role="group" aria-label={`Trace graph of the current run: ${calls} calls. The event log below lists the same calls in text.`} className="h-72 overflow-hidden rounded-md border border-line-strong/50 bg-parchment/50">
+              <div role="group" aria-label={`Trace graph of the current run: ${calls} calls. The event log below lists the same calls in text.`} className="h-72 overflow-hidden rounded-md border border-line bg-parchment">
                 {open ? <TraceGraph events={ws.events} runStart={ws.activity.runStart} /> : null}
               </div>
               <p className="mt-1 text-2xs text-ink-muted">Edges light gold as calls happen: agent to tool to store. ×n counts repeated calls.</p>
@@ -160,7 +179,7 @@ export function TraceDrawer({ caseId, open, onClose, className }: TraceDrawerPro
 
             <section aria-labelledby="trace-plan-title" className="mt-5">
               <div className="mb-2 flex flex-wrap items-center gap-2">
-                <h3 id="trace-plan-title" className="font-display text-sm font-semibold text-maroon">
+                <h3 id="trace-plan-title" className="font-display text-base font-semibold text-ink">
                   Retrieval plan
                 </h3>
                 {plans.length > 1 ? (
@@ -205,7 +224,7 @@ export function TraceDrawer({ caseId, open, onClose, className }: TraceDrawerPro
                             <p className="text-sm">
                               <span className="font-semibold text-ink">{s.slot.replace(/_/g, " ")}</span>
                               <span className="text-ink-soft"> via </span>
-                              <span className="font-mono text-xs text-maroon" title={toolLabel(s.tool)}>{s.tool}</span>
+                              <span className="font-mono text-xs text-ink" title={toolLabel(s.tool)}>{s.tool}</span>
                             </p>
                             <p className="truncate font-mono text-2xs text-ink-muted" title={JSON.stringify(s.args)}>{argSummary(s.args)}</p>
                           </div>
@@ -219,7 +238,7 @@ export function TraceDrawer({ caseId, open, onClose, className }: TraceDrawerPro
                     })}
                   </ol>
                   <div className="border-t border-line px-3 py-2">
-                    <p className="mb-1 text-2xs font-semibold uppercase tracking-caps text-ink-soft">Slot states</p>
+                    <p className="mb-1 text-2xs font-semibold text-ink-soft">Slot states</p>
                     <ul className="flex flex-wrap gap-1.5" aria-label="Slot states">
                       {slots.map((slot) => {
                         const parsed = plan.assessment[slot] ? parseSlotAssessment(plan.assessment[slot]) : null;
@@ -233,7 +252,7 @@ export function TraceDrawer({ caseId, open, onClose, className }: TraceDrawerPro
                     </ul>
                     {plan.next ? (
                       <p className="mt-2 text-xs text-ink">
-                        <span className="font-semibold text-maroon">Next: </span>
+                        <span className="font-semibold text-ink">Next: </span>
                         {plan.next}
                       </p>
                     ) : null}
@@ -247,7 +266,7 @@ export function TraceDrawer({ caseId, open, onClose, className }: TraceDrawerPro
             </section>
 
             <section aria-labelledby="trace-calls-title" className="mt-5">
-              <h3 id="trace-calls-title" className="mb-2 font-display text-sm font-semibold text-maroon">
+              <h3 id="trace-calls-title" className="mb-2 font-display text-base font-semibold text-ink">
                 Sutradhar&apos;s tool calls <span className="font-sans text-xs font-normal text-ink-soft">({sutradharCalls.length})</span>
               </h3>
               {sutradharCalls.length === 0 ? (
@@ -257,7 +276,7 @@ export function TraceDrawer({ caseId, open, onClose, className }: TraceDrawerPro
                   {sutradharCalls.map((e, i) => (
                     <li key={e.event_id} data-testid="trace-step" data-tool={e.tool ?? ""} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 px-3 py-2">
                       <span className="font-mono text-2xs text-ink-muted">{i + 1}</span>
-                      <span className="font-mono text-xs font-semibold text-maroon" title={e.tool ? toolLabel(e.tool) : undefined}>{e.tool}</span>
+                      <span className="font-mono text-xs font-semibold text-ink" title={e.tool ? toolLabel(e.tool) : undefined}>{e.tool}</span>
                       <span className="min-w-0 flex-1 truncate font-mono text-2xs text-ink-muted" title={JSON.stringify(e.inputs)}>{argSummary(e.inputs ?? {})}</span>
                       <time className="font-mono text-2xs text-ink-muted" dateTime={e.ts}>{formatClock(e.ts)}</time>
                     </li>
@@ -267,14 +286,14 @@ export function TraceDrawer({ caseId, open, onClose, className }: TraceDrawerPro
             </section>
 
             <section aria-labelledby="trace-budget-title" className="mt-5">
-              <h3 id="trace-budget-title" className="mb-2 font-display text-sm font-semibold text-maroon">
+              <h3 id="trace-budget-title" className="mb-2 font-display text-base font-semibold text-ink">
                 Budget
               </h3>
-              <BudgetMeter caseId={caseId} variant="panel" />
+              <BudgetMeter caseId={caseId} />
             </section>
 
             <section aria-labelledby="trace-log-title" className="mt-5">
-              <h3 id="trace-log-title" className="mb-2 font-display text-sm font-semibold text-maroon">
+              <h3 id="trace-log-title" className="mb-2 font-display text-base font-semibold text-ink">
                 Event log <span className="font-sans text-xs font-normal text-ink-soft">(latest {recent.length})</span>
               </h3>
               {recent.length === 0 ? (
@@ -285,7 +304,7 @@ export function TraceDrawer({ caseId, open, onClose, className }: TraceDrawerPro
                     <li key={e.event_id} className="flex flex-wrap items-baseline gap-x-2 px-2.5 py-1.5">
                       <time className="font-mono text-2xs text-ink-muted" dateTime={e.ts}>{formatClock(e.ts)}</time>
                       <span className="font-semibold text-ink">{isAgentName(String(e.actor).toUpperCase()) ? humanize(String(e.actor)) : String(e.actor)}</span>
-                      <span className="font-mono text-2xs text-maroon">{e.kind.toLowerCase()}</span>
+                      <span className="font-mono text-2xs text-ink">{e.kind.toLowerCase()}</span>
                       {e.tool ? <span className="font-mono text-2xs text-ink-soft">{e.tool}</span> : null}
                       {typeof e.outputs?.text === "string" ? <span className="basis-full text-ink-soft">{e.outputs.text}</span> : null}
                     </li>

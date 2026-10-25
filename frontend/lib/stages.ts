@@ -1,62 +1,86 @@
-// Workspace stages (plan §13.5): numbered like the Parts of the Constitution. Gate 1 follows II Dossier and Gate 2
-// precedes VII File. Counsel can jump to any open stage; later stages unlock after Gate 1; File needs Gate 2.
+// Workspace stages (plan §13.5). The workspace shows one step at a time. Six steps appear in the stepper: Add documents,
+// Review facts, Check rights, Draft grounds, Prepare for the hearing, Export. Sparring has its own stage id (the backend
+// records it) but its results appear inside Draft grounds as "Likely objections". Gate 1 follows Review facts and Gate 2
+// precedes Export. Later steps unlock after Gate 1; export stays disabled until Gate 2.
 import type { AgentName, GateId, Stage } from "./types";
 import { STAGE_IDS } from "./types";
 
-/** Right-pane tabs (plan §13.5): Dossier · Dates · Rights · Brief · Spar · Prep. */
+/**
+ * Sections of the workspace. A section is where an item lives (a fact, a date, a ground, an objection); a step shows one
+ * or two of them. Checklist links point at a section and an id.
+ */
 export const WORKSPACE_TABS = ["dossier", "dates", "rights", "brief", "spar", "prep"] as const;
 export type WorkspaceTab = (typeof WORKSPACE_TABS)[number];
 
 export const TAB_LABELS: Record<WorkspaceTab, string> = {
-  dossier: "Dossier",
-  dates: "Dates",
+  dossier: "Facts",
+  dates: "List of dates",
   rights: "Rights",
-  brief: "Brief",
-  spar: "Spar",
-  prep: "Prep",
+  brief: "Grounds",
+  spar: "Likely objections",
+  prep: "Hearing notes",
 };
 
 export interface StageMeta {
   id: Stage;
-  /** Roman numeral, Constitution-style. */
-  numeral: string;
+  /**
+   * Key of the stepper button's test id (`stage-<key>`). It is not shown anywhere; the labels are plain words.
+   */
+  key: string;
   label: string;
-  /** Gate drawn as a diamond right after this stage (Gate 1) or right before it (Gate 2). */
+  /** What this step is for, in one short sentence. */
+  description: string;
+  /** Gate asked for right after this step (Gate 1) or right before it (Gate 2). */
   gate?: GateId;
   gatePosition?: "after" | "before";
-  /** Right-pane tab shown for this stage. */
+  /** Section shown first for this stage. */
   tab: WorkspaceTab;
   /** Agent mainly at work in this stage. */
   agent: AgentName | null;
-  description: string;
+  /** False when the stage is shown inside another step (Likely objections inside Draft grounds). */
+  inStepper?: boolean;
 }
 
 export const STAGES: readonly StageMeta[] = [
-  { id: "INTAKE", numeral: "I", label: "Intake", tab: "dossier", agent: "MUNSHI", description: "Munshi reads, splits, labels and files every page." },
-  { id: "DOSSIER", numeral: "II", label: "Dossier", gate: "GATE_1_DOSSIER", gatePosition: "after", tab: "dossier", agent: "PESHKAR", description: "Peshkar builds the source-checked dossier and the List of Dates." },
-  { id: "RIGHTS", numeral: "III", label: "Rights", tab: "rights", agent: "PESHKAR", description: "The Rights Radar checks procedural rights from the timeline." },
-  { id: "BRIEF", numeral: "IV", label: "Brief", tab: "brief", agent: "VAKEEL", description: "Sutradhar plans retrieval; Vakeel drafts and checks every ground." },
-  { id: "SPAR", numeral: "V", label: "Spar", tab: "spar", agent: "ABHIYOJAK", description: "Abhiyojak attacks the draft the way the prosecution would." },
-  { id: "HEARING_PREP", numeral: "VI", label: "Hearing prep", tab: "prep", agent: "VAKEEL", description: "The one-page hearing-prep card." },
-  { id: "FILE", numeral: "VII", label: "File", gate: "GATE_2_EXPORT", gatePosition: "before", tab: "prep", agent: null, description: "Export the application after counsel's approval." },
+  { id: "INTAKE", key: "I", label: "Add documents", tab: "dossier", agent: "MUNSHI", description: "Add the case papers. They are read and filed page by page." },
+  { id: "DOSSIER", key: "II", label: "Review facts", gate: "GATE_1_DOSSIER", gatePosition: "after", tab: "dossier", agent: "PESHKAR", description: "Check each fact against the page it came from, then confirm." },
+  { id: "RIGHTS", key: "III", label: "Check rights", tab: "rights", agent: "PESHKAR", description: "Procedural rights worked out from the dates in the file." },
+  { id: "BRIEF", key: "IV", label: "Draft grounds", tab: "brief", agent: "VAKEEL", description: "The draft grounds, each tied to the facts and authorities it relies on." },
+  { id: "SPAR", key: "V", label: "Likely objections", tab: "spar", agent: "ABHIYOJAK", inStepper: false, description: "What the prosecution is likely to say, and the reply to each point." },
+  { id: "HEARING_PREP", key: "VI", label: "Prepare for the hearing", tab: "prep", agent: "VAKEEL", description: "One page to take into the hearing." },
+  { id: "FILE", key: "VII", label: "Export", gate: "GATE_2_EXPORT", gatePosition: "before", tab: "prep", agent: null, description: "Approve the draft, then export the application." },
 ];
+
+/** The stages that have a button in the stepper, in order. */
+export const STEPPER_STAGES: readonly StageMeta[] = STAGES.filter((s) => s.inStepper !== false);
 
 export const STAGE_BY_ID: Record<Stage, StageMeta> = Object.fromEntries(STAGES.map((s) => [s.id, s])) as Record<Stage, StageMeta>;
 
+/** The stepper step a stage is shown in (Likely objections belong to Draft grounds). */
+export function stepOf(stage: Stage): Stage {
+  return stage === "SPAR" ? "BRIEF" : stage;
+}
+
+/** The step after this one, or null at the end. */
+export function nextStep(stage: Stage): Stage | null {
+  const at = STEPPER_STAGES.findIndex((s) => s.id === stepOf(stage));
+  return STEPPER_STAGES[at + 1]?.id ?? null;
+}
+
 export const GATE_LABELS: Record<GateId, { short: string; label: string; description: string }> = {
   GATE_1_DOSSIER: {
-    short: "Gate 1",
-    label: "Gate 1: approve the dossier",
-    description: "Counsel approves the dossier before anything goes to the drafting agents.",
+    short: "Confirm facts",
+    label: "Confirm these facts",
+    description: "Once you confirm, drafting starts from these facts. If a fact changes later, you will be asked to confirm again.",
   },
   GATE_2_EXPORT: {
-    short: "Gate 2",
-    label: "Gate 2: approve the final draft",
-    description: "Counsel approves the draft. Nothing is exported without this approval.",
+    short: "Approve for export",
+    label: "Approve this draft for export",
+    description: "Nothing is exported until you approve it. Approving records the decision as yours.",
   },
 };
 
-/** Position of a stage in I-VII (0-based). */
+/** Position of a stage in the stage list (0-based). */
 export function stageIndex(stage: Stage): number {
   return STAGE_IDS.indexOf(stage);
 }
@@ -65,13 +89,13 @@ export function compareStages(a: Stage, b: Stage): number {
   return stageIndex(a) - stageIndex(b);
 }
 
-/** Stage for a right-pane tab (Dates belongs to the Dossier stage; Prep to Hearing prep). */
+/** Step for a section (List of dates belongs to Review facts; Likely objections to Draft grounds). */
 export const TAB_STAGE: Record<WorkspaceTab, Stage> = {
   dossier: "DOSSIER",
   dates: "DOSSIER",
   rights: "RIGHTS",
   brief: "BRIEF",
-  spar: "SPAR",
+  spar: "BRIEF",
   prep: "HEARING_PREP",
 };
 
@@ -96,9 +120,8 @@ export interface StageContext {
 
 /**
  * Unlock rules (plan §13.5):
- * - I Intake and II Dossier are always open.
- * - III Rights to VII File unlock after Gate 1 ("later stages unlock after Gate 1"). The Rights flags are still shown in the
- *   Gate 1 checklist context; File is where Gate 2 is approved, and export stays disabled until Gate 2 (a 403 otherwise).
+ * - Add documents and Review facts are always open.
+ * - Every later step unlocks after Gate 1. Export is where Gate 2 is approved, and export stays disabled until Gate 2 (a 403 otherwise).
  */
 export function isStageUnlocked(stage: Stage, ctx: StageContext): boolean {
   switch (stage) {
@@ -117,10 +140,10 @@ export function isStageUnlocked(stage: Stage, ctx: StageContext): boolean {
 /** Why a stage is locked, for tooltips and aria-descriptions; null when it is open. */
 export function lockReason(stage: Stage, ctx: StageContext): string | null {
   if (isStageUnlocked(stage, ctx)) return null;
-  return "Unlocks after Gate 1: counsel approves the dossier.";
+  return "Opens once you confirm the facts.";
 }
 
-/** Can the right-pane tab be opened? Dates follows the Dossier stage. */
+/** Can the section be opened? List of dates follows Review facts. */
 export function isTabUnlocked(tab: WorkspaceTab, ctx: StageContext): boolean {
   return isStageUnlocked(stageForTab(tab), ctx);
 }
@@ -128,12 +151,12 @@ export function isTabUnlocked(tab: WorkspaceTab, ctx: StageContext): boolean {
 export type StageState = "done" | "current" | "open" | "locked";
 
 /**
- * Visual state of a stage on the rail, given the case's progress stage (CaseSummary.stage):
- * done = before the progress stage; current = the progress stage; open = after it but unlocked; locked otherwise.
+ * Visual state of a step in the stepper, given the case's progress stage (CaseSummary.stage):
+ * done = before the progress step; current = the progress step; open = after it but unlocked; locked otherwise.
  */
 export function stageState(stage: Stage, progress: Stage, ctx: StageContext): StageState {
   if (!isStageUnlocked(stage, ctx)) return "locked";
-  const d = compareStages(stage, progress);
+  const d = compareStages(stage, stepOf(progress));
   if (d < 0) return "done";
   if (d === 0) return "current";
   return "open";

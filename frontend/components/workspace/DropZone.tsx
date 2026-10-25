@@ -1,5 +1,5 @@
 "use client";
-// Drop zone: drag and drop, a file picker, and a mic for dictation (plan §13.5, §4.5). Keyboard: the zone is a button.
+// Add documents: drag and drop or a file picker, plus dictation (plan §13.5, §4.5). Keyboard: the zone is a button.
 import { FileUp, Headphones, Loader2 } from "lucide-react";
 import { useCallback, useId, useRef, useState, type DragEvent, type ReactElement } from "react";
 import { Button } from "@/components/ui/button";
@@ -30,20 +30,20 @@ export function DropZone({ caseId, className, compact = false }: DropZoneProps):
     async (files: File[]) => {
       if (files.length === 0) return;
       rememberUpload(caseId, files);
-      setStatus(`Sending ${files.length} file${files.length === 1 ? "" : "s"} to Munshi…`);
+      setStatus(`Sending ${files.length} file${files.length === 1 ? "" : "s"}…`);
       const res = await ws.upload(files);
-      setStatus(res ? `Munshi accepted ${res.accepted.length} file${res.accepted.length === 1 ? "" : "s"} and is reading them.` : "The upload did not go through.");
+      setStatus(res ? `Added ${res.accepted.length} file${res.accepted.length === 1 ? "" : "s"}. Reading them now.` : "The upload did not go through.");
     },
     [caseId, ws],
   );
 
   const sendAudio = useCallback(
     async (blob: Blob, name: string) => {
-      setStatus("Munshi is transcribing your dictation…");
+      setStatus("Transcribing your dictation…");
       setDictation("Transcribing");
       const res = await ws.uploadAudio(blob, name);
       setDictation(res ? "Heard" : "");
-      setStatus(res ? "Dictation received. Munshi will read back the dates and sections for you to confirm in the chat." : "The dictation did not go through.");
+      setStatus(res ? "Dictation received. The dates and sections it heard will appear in the chat for you to confirm." : "The dictation did not go through.");
     },
     [ws],
   );
@@ -55,7 +55,7 @@ export function DropZone({ caseId, className, compact = false }: DropZoneProps):
   };
 
   return (
-    <div className={cn("flex flex-col gap-2", className)}>
+    <div className={cn("flex flex-col gap-3", className)}>
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -64,29 +64,30 @@ export function DropZone({ caseId, className, compact = false }: DropZoneProps):
         onDragLeave={() => setOver(false)}
         onDrop={onDrop}
         className={cn(
-          "rounded-md border-2 border-dashed transition-colors duration-fast",
-          over ? "border-maroon bg-gold/15" : "border-line-strong/70 bg-cream hover:border-maroon/70 hover:bg-parchment-deep/60",
+          "rounded-lg border border-dashed transition-colors duration-fast",
+          over ? "border-maroon bg-maroon/[0.04]" : "border-line-strong bg-cream hover:border-ink-soft",
         )}
       >
         <button
           type="button"
+          id="add-files"
           aria-label="Add files to this case: drop them here or press Enter to choose"
           aria-describedby={`${inputId}-hint`}
           onClick={() => fileInput.current?.click()}
           className={cn(
-            "flex w-full cursor-pointer items-center gap-3 rounded-md px-3",
-            compact ? "py-2 text-left" : "flex-col justify-center py-6 text-center",
+            "flex w-full cursor-pointer items-center gap-3 rounded-lg px-4",
+            compact ? "py-3 text-left" : "flex-col justify-center py-12 text-center",
           )}
         >
           {ws.uploading ? (
-            <Loader2 aria-hidden className="size-5 shrink-0 animate-spin text-maroon" />
+            <Loader2 aria-hidden className="size-5 shrink-0 animate-spin text-ink-soft" />
           ) : (
-            <FileUp aria-hidden className={cn("shrink-0 text-maroon", compact ? "size-5" : "size-8")} strokeWidth={1.6} />
+            <FileUp aria-hidden className={cn("shrink-0 text-ink-soft", compact ? "size-5" : "size-7")} strokeWidth={1.6} />
           )}
           <span className="min-w-0">
-            <span className="block font-display text-sm font-semibold text-maroon">{over ? "Release to add" : compact ? "Add files" : "Drop the bundle here"}</span>
-            <span id={`${inputId}-hint`} className="block text-xs text-ink-soft">
-              PDF, photos of pages or DOCX. Hindi and English, scanned or typed.
+            <span className="block font-medium text-ink">{over ? "Release to add" : compact ? "Add more documents" : "Drop the case papers here, or choose files"}</span>
+            <span id={`${inputId}-hint`} className="block text-sm text-ink-soft">
+              PDF, photos of pages or Word. Hindi and English, scanned or typed.
             </span>
           </span>
         </button>
@@ -113,20 +114,20 @@ export function DropZone({ caseId, className, compact = false }: DropZoneProps):
           testId="mic-button"
           onRecorded={sendAudio}
           busy={ws.uploading}
-          label="Dictate"
-          variant="secondary"
+          label="Dictate what you know"
+          variant="ghost"
           size="sm"
           onUnavailable={setStatus}
           onRecordingChange={(r) => {
             if (r) setDictation("Recording");
           }}
         />
-        <span data-testid="dictation-status" role="status" aria-live="polite" className="text-xs font-semibold text-ink-soft">
-          {dictation}
-        </span>
         <Button variant="ghost" size="sm" onClick={() => audioInput.current?.click()} disabled={ws.uploading}>
           <Headphones aria-hidden /> Upload audio
         </Button>
+        <span data-testid="dictation-status" role="status" aria-live="polite" className="text-sm text-ink-soft">
+          {dictation}
+        </span>
         <input
           ref={audioInput}
           type="file"
@@ -141,7 +142,7 @@ export function DropZone({ caseId, className, compact = false }: DropZoneProps):
           }}
         />
         <p className="sr-only" role="status" aria-live="polite">{status}</p>
-        {status ? <p className="min-w-0 flex-1 text-xs text-ink-soft" aria-hidden>{status}</p> : null}
+        {status ? <p className="min-w-0 basis-full text-sm text-ink-soft" aria-hidden>{status}</p> : null}
       </div>
     </div>
   );

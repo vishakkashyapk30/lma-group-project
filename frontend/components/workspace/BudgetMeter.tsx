@@ -1,8 +1,7 @@
 "use client";
-// Budget meter (plan §6.2): tokens spent against the case budget (150K) and store calls made, with the per-factor limit
-// (8 calls) and any BUDGET_HIT where Sutradhar stopped and reported what was missing. Never colour alone.
-import { Gauge } from "lucide-react";
-import { useEffect, useId, useRef, useState, type ReactElement } from "react";
+// Budget meter (plan §6.2), shown under "Details": tokens spent against the case budget (150K) and store calls made, with the
+// per-factor limit (8 calls) and any BUDGET_HIT where Sutradhar stopped and reported what was missing. Never colour alone.
+import type { ReactElement } from "react";
 import { STORES, STORE_LIST } from "@/lib/stores";
 import { formatNumberIN } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -14,8 +13,6 @@ export const STORE_CALLS_PER_FACTOR = 8;
 export interface BudgetMeterProps {
   caseId: string;
   className?: string;
-  /** "popover": a compact button that opens the breakdown (header); "panel": the breakdown inline (trace drawer). */
-  variant?: "popover" | "panel";
 }
 
 function tone(ratio: number): { bar: string; text: string; word: string } {
@@ -101,65 +98,11 @@ function BudgetBody({ className }: { className?: string }): ReactElement {
   );
 }
 
-export function BudgetMeter({ className, variant = "popover" }: BudgetMeterProps): ReactElement {
-  const ws = useWorkspace();
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const panelId = useId();
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  if (variant === "panel") {
-    return (
-      <section aria-label="Budget" className={className}>
-        <BudgetBody />
-      </section>
-    );
-  }
-
-  const budget = ws.data.budget;
-  const cap = budget?.tokens_cap ?? TOKEN_BUDGET;
-  const spent = budget?.tokens_spent ?? 0;
-  const ratio = cap ? spent / cap : 0;
-  const t = tone(ratio);
+export function BudgetMeter({ className }: BudgetMeterProps): ReactElement {
   return (
-    <div ref={rootRef} className={cn("relative", className)}>
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => setOpen((v) => !v)}
-        className="flex h-9 items-center gap-2 rounded-md border border-line-strong/60 bg-cream px-2.5 text-xs text-ink hover:border-maroon/60"
-      >
-        <Gauge aria-hidden className="size-4 text-maroon" />
-        <span className="font-semibold">Budget</span>
-        <span aria-hidden className="hidden h-1.5 w-14 overflow-hidden rounded-pill bg-line sm:block">
-          <span className={cn("block h-full rounded-pill", t.bar)} style={{ width: `${Math.min(100, Math.round(ratio * 100))}%` }} />
-        </span>
-        <span className="font-mono text-ink-soft">{formatNumberIN(Math.round(spent / 1000))}K / {formatNumberIN(Math.round(cap / 1000))}K</span>
-        <span className="sr-only">tokens, {t.word}. Open the breakdown.</span>
-      </button>
-      {open ? (
-        <div id={panelId} className="absolute right-0 top-full z-drawer mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-gold/50 bg-cream p-4 shadow-lg">
-          <p className="mb-3 font-display text-sm font-semibold text-maroon">What this case has spent</p>
-          <BudgetBody />
-        </div>
-      ) : null}
-    </div>
+    <section aria-label="Budget" className={className}>
+      <BudgetBody />
+    </section>
   );
 }
 

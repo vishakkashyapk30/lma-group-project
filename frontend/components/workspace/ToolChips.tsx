@@ -1,4 +1,4 @@
-// Store and tool chips on every answer (plan §13.5): "date_calc · timeline", "search_reasoning · reasoning".
+// Store and tool chips for an answer (plan §13.5), shown under "How this was found".
 import { Database, Wrench } from "lucide-react";
 import type { ReactElement } from "react";
 import { STORES, toolLabel } from "@/lib/stores";
@@ -24,14 +24,14 @@ export function ToolChips({ chips, className }: ToolChipsProps): ReactElement | 
             key={`${chip.tool}-${chip.store ?? "none"}-${i}`}
             data-testid="tool-chip"
             title={description}
-            className="inline-flex items-center gap-1 rounded-sm border border-gold/50 bg-parchment px-1.5 py-0.5 font-mono text-[11px] leading-tight text-ink-soft"
+            className="inline-flex items-center gap-1 rounded-sm bg-parchment-deep px-1.5 py-0.5 font-mono text-xs leading-tight text-ink-soft"
           >
-            <Wrench aria-hidden className="size-3 shrink-0 text-gold-leaf" />
+            <Wrench aria-hidden className="size-3 shrink-0 text-ink-muted" />
             <span className="font-medium text-ink">{chip.tool}</span>
             {store ? (
               <>
                 <span aria-hidden>·</span>
-                <Database aria-hidden className="size-3 shrink-0 text-gold-leaf" />
+                <Database aria-hidden className="size-3 shrink-0 text-ink-muted" />
                 <span>{store.id.split(".")[1]}</span>
                 <span className="sr-only">store, {store.shelf} shelf</span>
               </>

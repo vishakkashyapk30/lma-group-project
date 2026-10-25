@@ -34,7 +34,7 @@ export type StatusKind =
   | "field" | "claim" | "verdict" | "rights" | "slot" | "state" | "transfer" | "goodLaw" | "page" | "gate"
   | "openIssue" | "treatment";
 
-/** UI-only gate states shown on the rail diamonds and in the gate modal. */
+/** UI-only gate states shown in the stepper tooltips and the confirm dialog. */
 export type GateUiStatus = "LOCKED" | "BLOCKED" | "READY" | "APPROVED";
 
 const COLOR_VAR: Record<StatusTone, string> = {
@@ -70,26 +70,26 @@ function meta(tone: StatusTone, icon: StatusIconName, label: string, description
 
 /** Dossier field statuses (plan §7.1, table §13.2). */
 export const FIELD_STATUS_META: Record<FieldStatus, StatusMeta> = {
-  VERIFIED: meta("neem", "check", "Verified", "The quoted source supports this value."),
-  COMPUTED: meta("indigo", "function", "Computed", "Produced by a tool from verified values."),
-  UNSUPPORTED: meta("sindoor", "cross", "Unsupported", "Not found in the file, or the check failed."),
-  AMBIGUOUS: meta("haldi", "question", "Ambiguous", "Documents disagree or the section mapping is unclear."),
-  USER_STATED: meta("clay", "pencil", "Stated by counsel", "Typed or dictated by counsel; no court record behind it."),
-  USER_EDITED: meta("clay", "pencil", "Edited by counsel", "Corrected by counsel."),
+  VERIFIED: meta("neem", "check", "Confirmed from the documents", "The quoted page supports this value."),
+  COMPUTED: meta("indigo", "function", "Calculated", "Worked out from confirmed values."),
+  UNSUPPORTED: meta("sindoor", "cross", "Not found", "Not found in the file, or the check failed."),
+  AMBIGUOUS: meta("haldi", "question", "Conflicting documents", "The documents disagree, or the section mapping is unclear."),
+  USER_STATED: meta("clay", "pencil", "Entered by you", "Typed or dictated by you; no court record behind it."),
+  USER_EDITED: meta("clay", "pencil", "Entered by you", "Corrected by you; no court record behind it."),
 };
 
 /** Claim checks (plan §8.1). REPAIRED is not in the §13.2 table: it is supported after rewording, so neem. */
 export const CLAIM_CHECK_META: Record<ClaimCheck, StatusMeta> = {
-  SUPPORTED: meta("neem", "check", "Supported", "Fact and authority support the claim."),
-  REPAIRED: meta("neem", "wrench", "Repaired", "Reworded or re-retrieved until the source supports it."),
-  NEEDS_REVIEW: meta("haldi", "question", "Needs review", "The check failed after two repair rounds; counsel must review."),
+  SUPPORTED: meta("neem", "check", "Supported", "The facts and authorities support the claim."),
+  REPAIRED: meta("neem", "wrench", "Reworded to fit the record", "Reworded until the source supports it."),
+  NEEDS_REVIEW: meta("haldi", "question", "Needs your check", "The check failed after two repair rounds; you need to review it."),
 };
 
 /** Sparring verdicts (plan §9). PARTLY is between answered and unanswered: haldi. */
 export const VERDICT_META: Record<SparringVerdict, StatusMeta> = {
   ANSWERED: meta("neem", "check", "Answered", "The reply answers the objection."),
   PARTLY: meta("haldi", "half", "Partly answered", "The reply answers part of the objection."),
-  UNANSWERED: meta("sindoor", "cross", "Unanswered", "No adequate reply yet; counsel must resolve it."),
+  UNANSWERED: meta("sindoor", "cross", "No answer yet", "There is no adequate reply yet; you need to resolve it."),
 };
 
 /**
@@ -99,14 +99,14 @@ export const VERDICT_META: Record<SparringVerdict, StatusMeta> = {
  * (neutral categories).
  */
 export const RIGHTS_STATUS_META: Record<RightsStatus, StatusMeta> = {
-  ELIGIBLE: meta("neem", "check", "Possibly eligible", "A possible entitlement to check now."),
+  ELIGIBLE: meta("neem", "check", "Possibly open", "A possible entitlement to check now."),
   NOT_YET: meta("haldi", "clock", "Not yet", "The threshold has not been reached; see the date."),
   WINDOW_CLOSED: meta("sindoor", "lock", "Window closed", "The window has passed; check whether an application was made."),
-  CHECK: meta("haldi", "question", "Check", "Unsettled law or missing facts; counsel should check."),
-  NOT_APPLICABLE: meta("clay", "dash", "Not applicable", "This rule does not apply to the case."),
-  FLAG: meta("sindoor", "cross", "Flag", "A possible procedural lapse on the record."),
-  OK: meta("neem", "check", "OK", "The record shows this requirement was met."),
-  UNKNOWN: meta("haldi", "question", "Unknown", "The file does not say."),
+  CHECK: meta("haldi", "question", "Needs your check", "Unsettled law or missing facts; check it."),
+  NOT_APPLICABLE: meta("clay", "dash", "Does not apply", "This rule does not apply to the case."),
+  FLAG: meta("sindoor", "cross", "Possible lapse", "A possible procedural lapse on the record."),
+  OK: meta("neem", "check", "Met", "The record shows this requirement was met."),
+  UNKNOWN: meta("haldi", "question", "Not known", "The file does not say."),
   BAR_APPLIES: meta("sindoor", "alert", "Statutory bar applies", "Twin conditions under a special act apply."),
   A: meta("clay", "letter", "Category A", "Antil category A: punishable up to 7 years.", "A"),
   B: meta("clay", "letter", "Category B", "Antil category B: death, life, or more than 7 years.", "B"),
@@ -124,7 +124,7 @@ export const SLOT_STATUS_META: Record<SlotStatus, StatusMeta> = {
 /** Truth-maintenance state (plan §10). */
 export const CLAIM_STATE_META: Record<ClaimState, StatusMeta> = {
   CURRENT: meta("neem", "check", "Current", "No dependency has changed."),
-  STALE: meta("haldi", "refresh", "Stale", "A dependency changed; this claim is being redrafted."),
+  STALE: meta("haldi", "refresh", "Being redrafted", "Something it depends on changed; this ground is being redrafted."),
 };
 
 /** Transfer flags (plan §5.4). */
@@ -144,23 +144,23 @@ export const GOOD_LAW_META: Record<GoodLawStatus, StatusMeta> = {
 
 /** Page status after routing (plan §4.6). */
 export const PAGE_STATUS_META: Record<PageStatus, StatusMeta> = {
-  OK: meta("neem", "check", "Read", "The page passed the quality check."),
-  UNREADABLE: meta("sindoor", "cross", "Unreadable", "Every route failed; counsel was asked for a clearer copy."),
+  OK: meta("neem", "check", "Read", "The page was read."),
+  UNREADABLE: meta("sindoor", "cross", "Could not be read", "The page could not be read; a clearer copy is needed."),
 };
 
-/** Gate states for the rail diamonds and the gate modal (plan §13.5). */
+/** Gate states for the stepper and the confirm dialog (plan §13.5). */
 export const GATE_STATUS_META: Record<GateUiStatus, StatusMeta> = {
-  LOCKED: meta("ink", "lock", "Locked", "Unlocks after the earlier gate is approved."),
-  BLOCKED: meta("sindoor", "cross", "Items to resolve", "The checklist has unresolved items."),
-  READY: meta("haldi", "question", "Ready for approval", "The checklist is clear; counsel can approve."),
-  APPROVED: meta("neem", "check", "Approved", "Counsel approved this gate."),
+  LOCKED: meta("ink", "lock", "Locked", "Opens after the earlier step is confirmed."),
+  BLOCKED: meta("sindoor", "cross", "Needs you", "Some items still need you."),
+  READY: meta("haldi", "question", "Ready to confirm", "Nothing is outstanding; you can confirm."),
+  APPROVED: meta("neem", "check", "Confirmed", "You confirmed this step."),
 };
 
 /** Open issues in a brief (plan §8.1). */
 export const OPEN_ISSUE_META: Record<OpenIssueType, StatusMeta> = {
-  NEEDS_REVIEW: meta("haldi", "question", "Needs review", "Counsel must review before export."),
+  NEEDS_REVIEW: meta("haldi", "question", "Needs your check", "Check this before export."),
   CHANGED_PROVISION: meta("haldi", "question", "Changed provision", "The old and new sections differ: qualify."),
-  MISSING_EVIDENCE: meta("sindoor", "cross", "Missing evidence", "A required slot stayed empty within the budget."),
+  MISSING_EVIDENCE: meta("sindoor", "cross", "Missing evidence", "Nothing was found for a required point."),
 };
 
 /** Citation treatments (plan §5.3). */

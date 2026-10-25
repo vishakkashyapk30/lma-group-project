@@ -5,7 +5,7 @@
 //  - demo mode: the IngestionReport's pages as paper-like facsimiles with real Hindi text.
 // Every source supports the same highlight: pick a dossier field or a citation chip and the page scrolls to the box.
 import dynamic from "next/dynamic";
-import { ChevronLeft, ChevronRight, Languages, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Languages } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from "react";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,6 @@ export interface PdfPagesProps {
   nonce: number;
   /** Local object URL of the PDF counsel dropped in (react-pdf). */
   pdfUrl?: string | null;
-  onClear?: () => void;
   className?: string;
 }
 
@@ -77,11 +76,11 @@ function MockPaper({ page, showEn, selection }: { page: MockPage; showEn: boolea
                 className={cn(
                   "absolute overflow-hidden whitespace-nowrap",
                   asHindi ? "font-devanagari-body" : "font-sans",
-                  line.style === "heading" && "text-center font-display font-semibold uppercase tracking-wide text-oxblood",
+                  line.style === "heading" && "text-center font-display font-semibold tracking-wide text-oxblood",
                   line.style === "table" && "font-mono",
                   line.style === "signature" && "text-right font-display italic text-ink-soft",
                   line.style === "stamp" &&
-                    "flex items-center justify-center -rotate-6 rounded-[3px] border-2 border-maroon/70 text-center font-mono font-semibold uppercase text-maroon/80",
+                    "flex items-center justify-center -rotate-6 rounded-[3px] border-2 border-maroon/70 text-center font-mono font-semibold text-maroon/80",
                   line.handwritten && "font-display italic text-indigo",
                   showEn && line.text_en && "italic",
                 )}
@@ -94,7 +93,7 @@ function MockPaper({ page, showEn, selection }: { page: MockPage; showEn: boolea
         {page.unreadable ? (
           <div className="absolute inset-x-6 top-[38%] z-[5] flex flex-col items-center gap-2 rounded-md border border-sindoor/50 bg-cream/95 p-3 text-center shadow-sm">
             <StatusBadge status="UNREADABLE" kind="page" />
-            <p className="text-xs text-ink-soft">Every route failed on this page. Munshi has asked counsel for a clearer copy.</p>
+            <p className="text-xs text-ink-soft">This page could not be read. A clearer copy is needed.</p>
           </div>
         ) : null}
         {selected && isBox(selected.box) ? (
@@ -174,7 +173,7 @@ function PageView({
 
 /* ── The viewer body ────────────────────────────────────────────────────────────────────────────────────────────── */
 
-export default function PdfPages({ caseId, doc, selection, nonce, pdfUrl, onClear, className }: PdfPagesProps): ReactElement {
+export default function PdfPages({ caseId, doc, selection, nonce, pdfUrl, className }: PdfPagesProps): ReactElement {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showEn, setShowEn] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
@@ -255,8 +254,8 @@ export default function PdfPages({ caseId, doc, selection, nonce, pdfUrl, onClea
 
   return (
     <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
-      <div className="flex flex-wrap items-center gap-2 border-b border-line bg-parchment/70 px-3 py-1.5">
-        <p className="min-w-0 flex-1 truncate font-display text-sm font-semibold text-maroon" title={docLabel}>
+      <div className="flex flex-wrap items-center gap-2 border-b border-line bg-parchment px-3 py-1.5">
+        <p className="min-w-0 flex-1 truncate font-display text-sm font-semibold text-ink" title={docLabel}>
           {docLabel}
           {doc ? <span className="ml-2 font-sans text-xs font-normal text-ink-soft">{langLabel(doc.lang)}</span> : null}
         </p>
@@ -286,43 +285,19 @@ export default function PdfPages({ caseId, doc, selection, nonce, pdfUrl, onClea
         ) : null}
       </div>
 
-      {activeSelection ? (
-        <div className="flex items-start gap-2 border-b border-gold/40 bg-gold/10 px-3 py-2 text-sm" role="status">
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-caps text-maroon">
-              Source{activeSelection.origin ? `: ${activeSelection.origin}` : ""} · {activeSelection.doc_id} · p.{activeSelection.page}
-            </p>
-            {activeSelection.quote ? (
-              <p
-                lang={DEVANAGARI.test(activeSelection.quote) ? "hi" : undefined}
-                className={cn("mt-0.5 line-clamp-3 text-ink", DEVANAGARI.test(activeSelection.quote) && "font-devanagari-body leading-devanagari")}
-              >
-                “{activeSelection.quote}”
-              </p>
-            ) : null}
-            {activeSelection.quote_en ? <p className="mt-0.5 line-clamp-2 text-xs italic text-ink-soft">{activeSelection.quote_en}</p> : null}
-          </div>
-          {onClear ? (
-            <Button variant="ghost" size="icon-sm" onClick={onClear} aria-label="Clear the highlighted source">
-              <X aria-hidden />
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-
       <div
         ref={scrollRef}
         data-viewer-scroll=""
-        data-lenis-prevent=""
+       
         role="region"
         aria-label={`Pages of ${docLabel}`}
         tabIndex={0}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-parchment-deep/60 p-3"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-parchment-deep p-3"
       >
         {pdfUrl && !pdfError ? (
           <PdfCanvas url={pdfUrl} pages={pages} selection={activeSelection} docLabel={docLabel} onError={setPdfError} />
         ) : !doc ? (
-          <p className="p-6 text-center text-sm text-ink-soft">Choose a document above, or select a source in the dossier, to see its page here.</p>
+          <p className="p-6 text-center text-sm text-ink-soft">This page is not in the case file.</p>
         ) : (
           <div className="flex flex-col gap-4">
             {pdfError ? <p className="text-xs text-haldi">The local PDF preview failed ({pdfError}); showing the filed pages instead.</p> : null}

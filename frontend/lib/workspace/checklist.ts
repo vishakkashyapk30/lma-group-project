@@ -93,8 +93,8 @@ export function rawChecklistItems(gate: GateId, input: ChecklistInput): Omit<Che
           key: checklistKey("UNSUPPORTED", name),
           kind: "UNSUPPORTED",
           ref: name,
-          label: `${fieldLabel(name)}: not found in the file`,
-          detail: "Edit the field, state it from your instructions, or acknowledge that it stays unsupported.",
+          label: `${fieldLabel(name)}: not found`,
+          detail: "Add the value, or mark it as unknown.",
           target: { tab: "dossier", id: name },
           canAcknowledge: true,
         });
@@ -108,8 +108,8 @@ export function rawChecklistItems(gate: GateId, input: ChecklistInput): Omit<Che
           key: checklistKey("NEEDS_REVIEW", g.id),
           kind: "NEEDS_REVIEW",
           ref: g.id,
-          label: `${g.id} ${FACTOR_SHORT_LABELS[g.factor] ?? g.factor}: claim failed its check`,
-          detail: "Review the ground: reword it, accept it with your note, or remove it from the draft.",
+          label: `${g.id} ${FACTOR_SHORT_LABELS[g.factor] ?? g.factor}: needs your check`,
+          detail: "Reword the ground, or accept it with a note.",
           target: { tab: "brief", id: g.id },
           canAcknowledge: false,
         });
@@ -169,14 +169,14 @@ export function computeChecklist(
   const canApprove = !approved && reachable && hasData && blocking.length === 0;
   const uiStatus: GateUiStatus = approved ? "APPROVED" : !reachable || !hasData ? "LOCKED" : blocking.length ? "BLOCKED" : "READY";
   const summary = approved
-    ? "Approved by counsel."
+    ? "Confirmed."
     : !reachable
-      ? "Unlocks after Gate 1."
+      ? "Opens once you confirm the facts."
       : !hasData
-        ? gate === "GATE_1_DOSSIER" ? "Waiting for the dossier." : "Waiting for the draft."
+        ? gate === "GATE_1_DOSSIER" ? "Waiting for the facts." : "Waiting for the draft."
         : blocking.length
-          ? `${blocking.length} item${blocking.length === 1 ? "" : "s"} to resolve before approval.`
-          : "Checklist clear: ready for counsel's approval.";
+          ? `${blocking.length} item${blocking.length === 1 ? "" : "s"} still need${blocking.length === 1 ? "s" : ""} you.`
+          : "Nothing is outstanding.";
   return { gate, items, blocking, approved, reachable, canApprove, uiStatus, summary };
 }
 

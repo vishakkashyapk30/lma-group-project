@@ -1,57 +1,26 @@
 "use client";
-// Dates tab (plan §7.2): the List of Dates and Events, sorted by date. Every row carries its source; conflicting dates
-// sit side by side; counsel can edit any row (it becomes USER_EDITED). Peshkar's calendar signature shows while it works.
-import { Pencil, Undo2 } from "lucide-react";
+// List of Dates and Events (plan §7.2): a plain timeline, one row per dated event in date order. Choosing a row shows its page
+// in the side panel. Rows that disagree sit together with a single "Check" action. Any row can be edited.
+import { Pencil } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
-import { AgentSignature } from "@/components/agents/AgentSignature";
-import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { daysBetween, formatCourtDate, parseIsoDate } from "@/lib/format";
-import type { TimelineEvent } from "@/lib/types";
+import { useToast } from "@/components/ui/toast";
+import { daysBetween, formatCourtDate, parseIsoDate, plural } from "@/lib/format";
+import type { SourceRef, TimelineEvent } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useAgentActivity, useCaseData, useEdits } from "@/lib/workspace";
-import {
-  focusClass, focusDomId, InlineNote, SourceLine, SourceQuote, TabHeader, tabState, TabShell, useFocusItem,
-} from "./shared";
+import { groupConflicts, useCaseData, useEdits, useWorkspace } from "@/lib/workspace";
+import { focusClass, focusDomId, InlineNote, stepState, useFocusItem, type FocusedItem } from "./shared";
 
-export interface DatesTabProps {
-  caseId: string;
-  className?: string;
-}
-
-/** Group events that conflict with each other (directly or through a chain) so they can be shown side by side. */
-function groupConflicts(events: TimelineEvent[]): TimelineEvent[][] {
-  const byId = new Map(events.map((e) => [e.event_id, e]));
-  const seen = new Set<string>();
-  const groups: TimelineEvent[][] = [];
-  for (const e of events) {
-    if (seen.has(e.event_id)) continue;
-    const group: TimelineEvent[] = [];
-    const stack = [e.event_id];
-    while (stack.length) {
-      const id = stack.pop() as string;
-      if (seen.has(id)) continue;
-      seen.add(id);
-      const ev = byId.get(id);
-      if (!ev) continue;
-      group.push(ev);
-      for (const other of ev.conflicts_with) if (byId.has(other) && !seen.has(other)) stack.push(other);
-      for (const o of events) if (o.conflicts_with.includes(id) && !seen.has(o.event_id)) stack.push(o.event_id);
-    }
-    group.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-    groups.push(group);
-  }
-  return groups;
-}
-
-interface EventCardProps {
+interface EventRowProps {
   event: TimelineEvent;
   dayNumber: number | null;
-  focusedId: string | null;
+  focused: FocusedItem | null;
 }
 
-function EventCard({ event, dayNumber, focusedId }: EventCardProps): ReactElement {
+function EventRow({ event, dayNumber, focused }: EventRowProps): ReactElement {
+  const ws = useWorkspace();
+  const toast = useToast();
   const { editDate, resetDate } = useEdits();
   const [editing, setEditing] = useState(false);
   const [date, setDate] = useState(event.date);
@@ -61,6 +30,7 @@ function EventCard({ event, dayNumber, focusedId }: EventCardProps): ReactElemen
   const editBtn = useRef<HTMLButtonElement | null>(null);
   const wasEditing = useRef(false);
   const domId = focusDomId("dates", event.event_id);
+  const hasSource = Boolean(event.source?.doc && event.source.page != null);
 
   useEffect(() => {
     if (editing) dateRef.current?.focus();
@@ -68,11 +38,10 @@ function EventCard({ event, dayNumber, focusedId }: EventCardProps): ReactElemen
     wasEditing.current = editing;
   }, [editing]);
 
-  const start = () => {
-    setDate(event.date);
-    setLabel(event.label);
-    setError(null);
-    setEditing(true);
+  const show = () => {
+    ws.clearSource();
+    ws.openDetail({ kind: "date", label: event.label, date: event.date, status: event.status });
+    if (hasSource) ws.selectSource(event.source as SourceRef, event.label);
   };
 
   const save = () => {
@@ -84,38 +53,31 @@ function EventCard({ event, dayNumber, focusedId }: EventCardProps): ReactElemen
       setError("The row needs a description.");
       return;
     }
+    const before = { date: event.date, label: event.label };
+    const wasEdited = event.status === "USER_EDITED";
     editDate(event.event_id, { date, label: label.trim() });
     setEditing(false);
+    toast({ title: "Date saved", action: { label: "Undo", onClick: () => (wasEdited ? editDate(event.event_id, before) : resetDate(event.event_id)) } });
   };
 
   return (
-    <article
+    <li
       id={domId}
+      data-testid="date-row"
+      data-status={event.status}
       tabIndex={-1}
       aria-labelledby={`${domId}-label`}
-      className={cn(
-        "scroll-mt-4 rounded-lg border bg-cream p-3 shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-maroon",
-        event.status === "AMBIGUOUS" ? "border-haldi/60" : "border-line",
-        focusClass(focusedId, event.event_id),
-      )}
+      className={cn("group scroll-mt-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-maroon", focusClass(focused?.id ?? null, event.event_id))}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="flex items-baseline gap-2">
-          <time dateTime={event.date} className="numeral text-lg font-semibold text-maroon">{formatCourtDate(event.date)}</time>
-          {dayNumber !== null ? <span className="cite text-xs text-ink-soft">day {dayNumber}</span> : null}
-        </p>
-        <StatusBadge status={event.status} kind="field" size="sm" />
-      </div>
-
       {editing ? (
-        <div className="mt-2 space-y-2">
-          <div className="grid gap-2 sm:grid-cols-[10rem_1fr]">
+        <div className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
             <div>
-              <label htmlFor={`${domId}-date`} className="block text-xs font-semibold text-ink-soft">Date</label>
+              <label htmlFor={`${domId}-date`} className="block text-sm font-medium text-ink-soft">Date</label>
               <Input id={`${domId}-date`} type="date" ref={dateRef} value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
             <div>
-              <label htmlFor={`${domId}-text`} className="block text-xs font-semibold text-ink-soft">What happened</label>
+              <label htmlFor={`${domId}-text`} className="block text-sm font-medium text-ink-soft">What happened</label>
               <Input
                 id={`${domId}-text`}
                 value={label}
@@ -128,107 +90,118 @@ function EventCard({ event, dayNumber, focusedId }: EventCardProps): ReactElemen
             </div>
           </div>
           {error ? <InlineNote>{error}</InlineNote> : null}
-          <InlineNote tone="info">Saving marks this row as edited by counsel.</InlineNote>
           <div className="flex gap-2">
             <Button size="sm" onClick={save}>Save</Button>
             <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
           </div>
         </div>
       ) : (
-        <p id={`${domId}-label`} className="mt-1 text-sm text-ink">{event.label}</p>
-      )}
-
-      <div className="mt-2 space-y-2">
-        <SourceLine source={event.source} />
-        <SourceQuote source={event.source} />
-      </div>
-
-      {!editing ? (
-        <div className="mt-2 flex flex-wrap gap-2" data-print-hide>
-          <Button ref={editBtn} size="sm" variant="secondary" onClick={start} aria-label={`Edit row: ${event.label}`}>
-            <Pencil aria-hidden /> Edit
-          </Button>
-          {event.status === "USER_EDITED" ? (
-            <Button size="sm" variant="ghost" onClick={() => resetDate(event.event_id)} aria-label={`Restore the original of row: ${event.label}`}>
-              <Undo2 aria-hidden /> Restore original
+        <div className="grid grid-cols-[6.5rem_minmax(0,1fr)_auto] items-baseline gap-x-4 sm:grid-cols-[7.5rem_minmax(0,1fr)_auto]">
+          <time dateTime={event.date} className="tabular text-ink">{formatCourtDate(event.date)}</time>
+          <div className="min-w-0">
+            <button
+              type="button"
+              id={`${domId}-label`}
+              onClick={show}
+              title="Show the page this came from"
+              className="rounded-sm text-left text-ink underline-offset-4 hover:underline"
+            >
+              {event.label}
+            </button>
+            <p className="mt-0.5 text-sm text-ink-muted">
+              {dayNumber !== null ? <span className="tabular">Day {dayNumber}</span> : null}
+              {dayNumber !== null && event.status === "USER_EDITED" ? ", " : null}
+              {event.status === "USER_EDITED" ? "edited by you" : null}
+            </p>
+          </div>
+          <div className="flex gap-1 lg:opacity-0 lg:transition-opacity lg:duration-fast lg:group-focus-within:opacity-100 lg:group-hover:opacity-100" data-print-hide>
+            <Button
+              ref={editBtn}
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setDate(event.date);
+                setLabel(event.label);
+                setError(null);
+                setEditing(true);
+              }}
+              aria-label={`Edit row: ${event.label}`}
+            >
+              <Pencil aria-hidden /> Edit
             </Button>
-          ) : null}
+            {event.status === "USER_EDITED" ? (
+              <Button size="sm" variant="ghost" onClick={() => resetDate(event.event_id)} aria-label={`Restore the original of row: ${event.label}`}>
+                Restore
+              </Button>
+            ) : null}
+          </div>
         </div>
-      ) : null}
-    </article>
+      )}
+    </li>
   );
 }
 
-export function DatesTab({ caseId, className }: DatesTabProps): ReactElement {
-  void caseId;
+export function DatesTab(): ReactElement {
+  const ws = useWorkspace();
   const data = useCaseData();
-  const activity = useAgentActivity();
   const dates = data.dates;
-  const focusedId = useFocusItem("dates", Boolean(dates));
-
+  const focused = useFocusItem("dates", Boolean(dates));
   const firstRemand = data.dossier?.fields.first_remand.value ?? null;
   const groups = useMemo(() => groupConflicts(dates ?? []), [dates]);
 
-  const state = tabState({
-    tab: "dates", resource: "dates", noun: "List of Dates", loading: data.loading.dates, error: data.errors.dates, hasData: Boolean(dates),
+  const state = stepState({
+    resource: "dates", noun: "List of Dates", loading: data.loading.dates, error: data.errors.dates, hasData: Boolean(dates),
     onRetry: () => void data.refresh(["dates"]),
     emptyTitle: "No dates yet",
-    emptyBody: "The List of Dates and Events is built from the dated events Munshi files from your documents.",
+    emptyBody: "The list is built from the dated events found in your documents.",
   });
   if (state || !dates) return state ?? <></>;
 
-  const working = activity.byAgent.PESHKAR.phase === "working";
   const conflicts = groups.filter((g) => g.length > 1).length;
   const dayNumber = (e: TimelineEvent): number | null => {
     if (!firstRemand || e.date < firstRemand) return null;
     const d = daysBetween(firstRemand, e.date);
     return d === null ? null : d + 1;
   };
-
-  // Keep the rows in date order: a conflict group sits where its earliest date falls.
   const ordered = [...groups].sort((a, b) => (a[0].date < b[0].date ? -1 : a[0].date > b[0].date ? 1 : 0));
 
   return (
-    <TabShell label="List of Dates and Events" className={className}>
-      <TabHeader
-        agent="PESHKAR"
-        title="List of Dates and Events"
-        description="One row per dated event, sorted by date, each with its source. This list feeds the Rights Radar and the filed application. Edit any row; conflicting dates are shown side by side."
-        signature={<AgentSignature agent="PESHKAR" mode="working" active={working} statusText={working ? activity.byAgent.PESHKAR.text : undefined} />}
-      />
-
-      <p className="text-sm text-ink-soft" aria-live="polite">
-        {dates.length} event{dates.length === 1 ? "" : "s"}
-        {conflicts > 0 ? `, ${conflicts} conflict${conflicts === 1 ? "" : "s"} for counsel to settle` : ", no conflicts"}.
-        {firstRemand ? ` Day numbers count from the first remand, ${formatCourtDate(firstRemand)}, as day 1.` : ""}
+    <div>
+      <p className="text-ink-soft" aria-live="polite">
+        {plural(dates.length, "event")}
+        {conflicts > 0 ? `, ${plural(conflicts, "conflict")} to check` : ""}.
+        {firstRemand ? ` Days count from the first remand, ${formatCourtDate(firstRemand)}, as day 1.` : ""}
       </p>
-
-      <ol className="relative flex flex-col gap-4 border-l-2 border-gold/60 pl-5">
+      <ol className="mt-3 divide-y divide-line border-y border-line">
         {ordered.map((group) => {
           const first = group[0];
+          if (group.length === 1) return <EventRow key={first.event_id} event={first} dayNumber={dayNumber(first)} focused={focused} />;
           return (
-            <li key={group.map((g) => g.event_id).join("-")} className="relative">
-              <span aria-hidden className="absolute -left-[1.72rem] top-4 size-2.5 rounded-full border-2 border-maroon bg-parchment" />
-              {group.length === 1 ? (
-                <EventCard event={first} dayNumber={dayNumber(first)} focusedId={focusedId} />
-              ) : (
-                <div role="group" aria-label={`Conflicting dates: ${first.label}`} className="rounded-lg border border-haldi bg-haldi/[0.06] p-3">
-                  <p className="mb-2 flex items-center gap-2 text-sm font-semibold text-ink">
-                    <StatusBadge status="AMBIGUOUS" kind="field" size="sm" />
-                    The documents give {group.length} different dates for this event. Compare and edit the one that is wrong.
-                  </p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {group.map((e) => (
-                      <EventCard key={e.event_id} event={e} dayNumber={dayNumber(e)} focusedId={focusedId} />
-                    ))}
-                  </div>
-                </div>
-              )}
+            <li key={group.map((g) => g.event_id).join("-")} role="group" aria-label={`Conflicting dates: ${first.label}`} className="border-l-2 border-haldi pl-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-3">
+                <p className="text-sm font-medium text-haldi">The documents give different dates for this event</p>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    ws.clearSource();
+                    ws.openDetail({ kind: "date", label: first.label, date: first.date, status: first.status });
+                    if (first.source?.doc) ws.selectSource(first.source as SourceRef, first.label);
+                  }}
+                >
+                  Check
+                </Button>
+              </div>
+              <ol className="divide-y divide-line">
+                {group.map((e) => (
+                  <EventRow key={e.event_id} event={e} dayNumber={dayNumber(e)} focused={focused} />
+                ))}
+              </ol>
             </li>
           );
         })}
       </ol>
-    </TabShell>
+    </div>
   );
 }
 

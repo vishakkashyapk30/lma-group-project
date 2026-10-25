@@ -10,11 +10,11 @@ import { ApiError, errorMessage } from "../errors";
 import { toSelectedSource } from "../format";
 import { getDemoResolutions } from "../mock/server";
 import {
-  isStageUnlocked, isTabUnlocked, stageForTab, tabForStage, type StageContext, type WorkspaceTab,
+  isStageUnlocked, isTabUnlocked, stageForTab, stepOf, tabForStage, type StageContext, type WorkspaceTab,
 } from "../stages";
 import type {
-  AgentEvent, BailBrief, BudgetState, CaseDossier, CaseSummary, ChatMessage, DossierFieldName, DossierFields,
-  ExportFormat, GateId, GateStatus, GroundRevision, HearingPrepCard, IngestionReport, RightsReport, SelectedSource,
+  AgentEvent, Authority, BailBrief, BudgetState, CaseDossier, CaseSummary, ChatMessage, DossierFieldName, DossierFields,
+  ExportFormat, FieldStatus, GateId, GateStatus, GroundRevision, HearingPrepCard, IngestionReport, RightsReport, SelectedSource,
   SourceRef, SparringRecord, Stage, TimelineEvent, UploadResponse,
 } from "../types";
 import { DOSSIER_FIELD_NAMES } from "../types";
@@ -24,6 +24,7 @@ import { changeSetOf, deriveChanges, type ChangeState } from "./changes";
 import {
   acknowledgedForApproval, computeChecklist, type GateChecklist, type ResolutionState,
 } from "./checklist";
+import { needsFor, type NeedItem } from "./needs";
 import {
   applyDateEdits, EMPTY_LOCAL_STATE, loadLocalState, saveLocalState, type DateEdit, type LocalWorkspaceState,
 } from "./local";
@@ -53,6 +54,12 @@ export type Resource =
 export const ALL_RESOURCES: readonly Resource[] = [
   "summary", "ingestion", "dossier", "dates", "rights", "brief", "revisions", "spar", "prep", "budget", "chat", "gates",
 ];
+
+/** What the side panel explains besides a page: a dossier fact or a cited authority. */
+export type DetailTarget =
+  | { kind: "field"; name: DossierFieldName }
+  | { kind: "authority"; authority: Authority }
+  | { kind: "date"; label: string; date: string; status: FieldStatus };
 
 export interface GateState {
   approvals: { gate1: boolean; gate2: boolean };
@@ -88,8 +95,24 @@ export interface WorkspaceValue {
   isStageUnlocked: (stage: Stage) => boolean;
   isTabUnlocked: (tab: WorkspaceTab) => boolean;
   /** Item to scroll to in the active tab (a field name, ground id, objection id...), set by checklist links. */
-  focusTarget: { tab: WorkspaceTab; id: string; nonce: number } | null;
-  focusItem: (tab: WorkspaceTab, id: string) => void;
+  focusTarget: { tab: WorkspaceTab; id: string; nonce: number; intent?: "edit" } | null;
+  focusItem: (tab: WorkspaceTab, id: string, intent?: "edit") => void;
+  /** Go to a step as soon as it is unlocked (right after a gate is confirmed, before the new state has arrived). */
+  goToWhenOpen: (stage: Stage) => void;
+
+  /* Drawers and the side panel: one at a time on the right. */
+  chatOpen: boolean;
+  openChat: () => void;
+  closeChat: () => void;
+  detailsOpen: boolean;
+  setDetailsOpen: (open: boolean) => void;
+  /** The fact or authority the side panel explains. */
+  detail: DetailTarget | null;
+  openDetail: (target: DetailTarget) => void;
+  /** Close the side panel (the page and the explanation). */
+  closePanel: () => void;
+  /** When counsel's last edit was saved; drives the quiet "Saved" note. */
+  savedAt: number | null;
 
   /* Source highlight */
   selectedSource: SelectedSource | null;
@@ -251,6 +274,11 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
   const [selectedSource, setSelectedSource] = useState<SelectedSource | null>(null);
   const [sourceNonce, setSourceNonce] = useState(0);
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detail, setDetail] = useState<DetailTarget | null>(null);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [wanted, setWanted] = useState<Stage | null>(null);
   const [highlightsHidden, setHighlightsHidden] = useState<string | null>(null);
   const [readback, setReadback] = useState<string[] | null>(null);
   const [drafting, setDrafting] = useState(false);
@@ -432,7 +460,7 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
   useEffect(() => {
     if (placedStage.current || loading.summary || loading.gates || !data.summary) return;
     placedStage.current = true;
-    let stage = data.summary.stage;
+    let stage = stepOf(data.summary.stage);
     if (!isStageUnlocked(stage, stageContext)) stage = "DOSSIER";
     setActiveStage(stage);
     setActiveTab(tabForStage(stage));
@@ -452,12 +480,21 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
     (stage: Stage) => {
       if (!isStageUnlocked(stage, stageContext)) return false;
       placedStage.current = true; // counsel chose: the automatic first placement must not override it
-      setActiveStage(stage);
-      setActiveTab(tabForStage(stage));
+      setActiveStage(stepOf(stage));
+      setActiveTab(tabForStage(stepOf(stage)));
       return true;
     },
     [stageContext],
   );
+
+  const goToWhenOpen = useCallback((stage: Stage) => setWanted(stage), []);
+  useEffect(() => {
+    if (!wanted || !isStageUnlocked(wanted, stageContext)) return;
+    placedStage.current = true;
+    setActiveStage(stepOf(wanted));
+    setActiveTab(tabForStage(stepOf(wanted)));
+    setWanted(null);
+  }, [wanted, stageContext]);
 
   const setTab = useCallback(
     (tab: WorkspaceTab) => {
@@ -471,9 +508,9 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
   );
 
   const focusItem = useCallback(
-    (tab: WorkspaceTab, id: string) => {
+    (tab: WorkspaceTab, id: string, intent?: "edit") => {
       setTab(tab);
-      setFocusTarget((prev) => ({ tab, id, nonce: (prev?.nonce ?? 0) + 1 }));
+      setFocusTarget((prev) => ({ tab, id, intent, nonce: (prev?.nonce ?? 0) + 1 }));
     },
     [setTab],
   );
@@ -489,15 +526,33 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
         : toSelectedSource(source as SourceRef, origin);
     if (!sel) return;
     setSelectedSource(sel);
+    setChatOpen(false);
     setActiveDocId(sel.doc_id);
     setSourceNonce((n) => n + 1);
   }, []);
 
   const clearSource = useCallback(() => setSelectedSource(null), []);
 
+  const openChat = useCallback(() => {
+    setSelectedSource(null);
+    setDetail(null);
+    setChatOpen(true);
+  }, []);
+  const closeChat = useCallback(() => setChatOpen(false), []);
+  const openDetail = useCallback((target: DetailTarget) => {
+    setDetail(target);
+    setChatOpen(false);
+  }, []);
+  const closePanel = useCallback(() => {
+    setSelectedSource(null);
+    setDetail(null);
+  }, []);
+  const markSaved = useCallback(() => setSavedAt(Date.now()), []);
+
   /* Resolutions and edits */
   const updateResolutions = useCallback((fn: (r: ResolutionState) => ResolutionState) => {
     setLocal((prev) => ({ ...prev, resolutions: fn(prev.resolutions) }));
+    setSavedAt(Date.now());
   }, []);
 
   const acknowledge = useCallback(
@@ -537,6 +592,7 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
       try {
         const updated = await api.editField(caseId, field, value);
         setRaw((prev) => ({ ...prev, dossier: updated }));
+        markSaved();
         void refresh(["gates", "summary"]);
       } catch (e) {
         setRaw((prev) => ({ ...prev, dossier: before }));
@@ -544,11 +600,12 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
         throw e;
       }
     },
-    [caseId, raw.dossier, refresh],
+    [caseId, raw.dossier, refresh, markSaved],
   );
 
   const editDate = useCallback((eventId: string, patch: Omit<DateEdit, "at">) => {
     setLocal((prev) => ({ ...prev, dateEdits: { ...prev.dateEdits, [eventId]: { ...prev.dateEdits[eventId], ...patch, at: new Date().toISOString() } } }));
+    setSavedAt(Date.now());
   }, []);
   const resetDate = useCallback((eventId: string) => {
     setLocal((prev) => {
@@ -556,6 +613,7 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
       delete dateEdits[eventId];
       return { ...prev, dateEdits };
     });
+    setSavedAt(Date.now());
   }, []);
 
   const editGround = useCallback(
@@ -564,6 +622,7 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
         ...prev,
         groundEdits: { ...prev.groundEdits, [groundId]: { argument, note: note ?? null, at: new Date().toISOString() } },
       }));
+      setSavedAt(Date.now());
       resolveItem(`NEEDS_REVIEW:${groundId}`, note ?? "Reworded by counsel");
     },
     [resolveItem],
@@ -738,6 +797,16 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
     isTabUnlocked: (t) => isTabUnlocked(t, stageContext),
     focusTarget,
     focusItem,
+    goToWhenOpen,
+    chatOpen,
+    openChat,
+    closeChat,
+    detailsOpen,
+    setDetailsOpen,
+    detail,
+    openDetail,
+    closePanel,
+    savedAt,
     selectedSource,
     sourceNonce,
     selectSource,
@@ -817,7 +886,21 @@ export function useStageNav() {
     isTabUnlocked: w.isTabUnlocked,
     focusTarget: w.focusTarget,
     focusItem: w.focusItem,
+    goToWhenOpen: w.goToWhenOpen,
   };
+}
+
+/** What needs the lawyer in a step (defaults to the step on screen). */
+export function useNeedsYou(stage?: Stage): NeedItem[] {
+  const w = useWorkspace();
+  const at = stage ?? w.activeStage;
+  const { dossier, dates, ingestion, brief, spar, prep } = w.data;
+  const gate1 = w.gates.checklists.GATE_1_DOSSIER;
+  const gate2 = w.gates.checklists.GATE_2_EXPORT;
+  return useMemo(
+    () => needsFor(at, { dossier, dates, ingestion, brief, spar, prep, gate1, gate2, resolutions: w.resolutions }),
+    [at, dossier, dates, ingestion, brief, spar, prep, gate1, gate2, w.resolutions],
+  );
 }
 
 /** The selected source for highlight-and-scroll. */

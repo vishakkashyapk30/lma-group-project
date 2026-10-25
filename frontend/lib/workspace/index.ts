@@ -3,3 +3,6 @@ export * from "./WorkspaceProvider";
 export * from "./checklist";
 export * from "./activity";
 export * from "./local";
+export * from "./needs";
+export * from "./progress";
+export * from "./conflicts";

@@ -1,14 +1,11 @@
 "use client";
-// Centre pane, the core of the workspace (plan §13.5, §6.4): counsel's questions and the agents' answers, each with the agent's
-// name, subtitle and signature (in working mode while it runs), tool and store chips, "Show the plan", and a composer with a
-// mic and attach. Answers are short and cited; requests for outcome predictions or lay advice are refused (NALSA 15100).
-import { ArrowUp, FileText, MessageSquareText, Paperclip, Scale, ShieldAlert, Sparkles } from "lucide-react";
-import { Fragment, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactElement } from "react";
+// "Ask about this case": the chat, as a drawer on the right (plan §13.5, §6.4). Short, cited answers from the case file; a
+// request for an outcome prediction or lay advice is refused and points to NALSA 15100. The composer has attach and a mic.
+import { ArrowUp, FileText, Paperclip, ShieldAlert } from "lucide-react";
+import { Fragment, useEffect, useRef, useState, type KeyboardEvent, type ReactElement } from "react";
 import { AgentSignature } from "@/components/agents/AgentSignature";
-import { AgentGlyph } from "@/components/common/AgentGlyph";
 import { Button } from "@/components/ui/button";
 import { agentTitle, AGENTS } from "@/lib/agents";
-import { formatClock } from "@/lib/format";
 import type { AgentName, ChatMessage } from "@/lib/types";
 import { prefersReducedMotion } from "@/lib/useReducedMotion";
 import { cn } from "@/lib/utils";
@@ -16,7 +13,6 @@ import { useWorkspace } from "@/lib/workspace";
 import { MicButton } from "./MicButton";
 import { rememberUpload } from "./pdfShared";
 import { ToolChips } from "./ToolChips";
-import { TraceDrawer } from "./TraceDrawer";
 
 export interface ChatPaneProps {
   caseId: string;
@@ -48,7 +44,7 @@ function RichText({ text, onSource }: { text: string; onSource: (doc: string, pa
     const ref = DOC_REF.exec(token);
     if (token.startsWith("[")) {
       parts.push(
-        <span key={n++} className="rounded-sm bg-gold/15 px-1 font-mono text-[0.8em] text-ink-soft">
+        <span key={n++} className="rounded-sm bg-parchment-deep px-1 font-mono text-[0.8em] text-ink-soft">
           {ref ? (
             <>
               {token.slice(1, token.search(DOC_REF))}
@@ -74,25 +70,12 @@ function SourceButton({ doc, page, onSource }: { doc: string; page: number; onSo
     <button
       type="button"
       onClick={() => onSource(doc, page)}
-      className="mx-0.5 inline-flex items-center gap-0.5 rounded-sm border border-line-strong/50 bg-cream px-1 font-mono text-[0.8em] text-maroon hover:border-maroon"
+      className="mx-0.5 inline-flex items-center gap-0.5 rounded-sm font-mono text-[0.8em] text-maroon underline underline-offset-2 hover:bg-maroon/[0.08]"
       aria-label={`Open ${doc}, page ${page}`}
     >
       <FileText aria-hidden className="size-3" />
       {doc} · p.{page}
     </button>
-  );
-}
-
-function AgentHeading({ agent }: { agent: AgentName }): ReactElement {
-  const meta = AGENTS[agent];
-  return (
-    <p className="flex items-center gap-2">
-      <span aria-hidden className="grid size-7 shrink-0 place-items-center rounded-full border border-gold/60 bg-parchment text-maroon">
-        <AgentGlyph agent={agent} size={16} />
-      </span>
-      <span className="font-display text-sm font-semibold text-maroon">{meta.name}</span>
-      <span className="text-xs text-ink-soft">{meta.subtitle}</span>
-    </p>
   );
 }
 
@@ -106,8 +89,7 @@ function Bubble({ message, onSource }: { message: ChatMessage; onSource: (doc: s
   if (message.role === "counsel") {
     return (
       <li className="flex justify-end">
-        <article aria-label="Counsel" data-testid="chat-message" data-role="counsel" className="max-w-[88%] rounded-lg rounded-br-sm border border-maroon/25 bg-maroon/[0.07] px-3.5 py-2.5">
-          <p className="mb-1 text-2xs font-semibold uppercase tracking-caps text-maroon">Counsel</p>
+        <article aria-label="You" data-testid="chat-message" data-role="counsel" className="max-w-[88%] rounded-lg bg-parchment-deep px-3.5 py-2.5">
           {body}
         </article>
       </li>
@@ -116,62 +98,57 @@ function Bubble({ message, onSource }: { message: ChatMessage; onSource: (doc: s
   const agent: AgentName = message.agent ?? "SUTRADHAR";
   return (
     <li>
-      <article
-        aria-label={agentTitle(agent)}
-        data-testid="chat-message"
-        data-role="agent"
-        data-agent={agent}
-        className={cn(
-          "max-w-[94%] rounded-lg rounded-bl-sm border px-3.5 py-3",
-          message.refused ? "border-haldi/50 bg-haldi/[0.07]" : "border-line-strong/50 bg-cream shadow-sm",
-        )}
-      >
-        <AgentHeading agent={agent} />
+      <article aria-label={agentTitle(agent)} data-testid="chat-message" data-role="agent" data-agent={agent} className="max-w-[94%]">
+        <p className="mb-1 text-xs font-medium text-ink-muted">{AGENTS[agent].name}</p>
         {message.refused ? (
-          <p className="mt-2 inline-flex items-center gap-1 rounded-pill border border-haldi/50 bg-cream px-2 py-1 text-xs font-semibold text-haldi">
-            <ShieldAlert aria-hidden className="size-3.5" /> Out of scope: not answered
+          <p className="mb-1 inline-flex items-center gap-1 text-sm font-medium text-haldi">
+            <ShieldAlert aria-hidden className="size-4" /> Not answered: outside what this tool does
           </p>
         ) : null}
-        <div className="mt-2">{body}</div>
+        {body}
         {message.refused && !message.text.includes("15100") ? (
-          <p className="mt-2 text-xs text-ink-soft">
+          <p className="mt-2 text-sm text-ink-soft">
             Members of the public can call the NALSA legal-aid helpline on{" "}
-            <a href="tel:15100" className="font-semibold text-maroon underline underline-offset-2">15100</a>.
+            <a href="tel:15100" className="font-medium text-maroon underline underline-offset-2">15100</a>.
           </p>
         ) : null}
-        {message.chips.length > 0 ? <ToolChips chips={message.chips} className="mt-2.5" /> : null}
+        {message.chips.length > 0 ? (
+          <details className="mt-2 text-sm">
+            <summary className="inline-flex cursor-pointer select-none rounded-sm text-ink-muted underline-offset-4 hover:text-ink hover:underline">How this was found</summary>
+            <ToolChips chips={message.chips} className="mt-2" />
+          </details>
+        ) : null}
       </article>
     </li>
   );
 }
 
-/** Munshi's read-back of a dictation: the dates and sections it heard. Nothing is filed until counsel confirms (plan §4.5). */
+/** A dictation read back: the dates and sections heard. Nothing is filed until the lawyer confirms (plan §4.5). */
 function ReadbackCard({ lines, onConfirm, onDismiss }: { lines: string[]; onConfirm: () => void; onDismiss: () => void }): ReactElement {
   const heard = lines.filter((l) => /\d/.test(l));
   const asks = lines.filter((l) => !/\d/.test(l));
   return (
-    <section data-testid="readback-card" aria-label="Munshi's read-back of your dictation" className="mt-4 max-w-[94%] rounded-lg rounded-bl-sm border border-gold/60 bg-cream px-3.5 py-3 shadow-sm">
-      <AgentHeading agent="MUNSHI" />
-      <p className="mt-2 text-sm text-ink">This is what I heard. Nothing is filed until you confirm.</p>
+    <section data-testid="readback-card" aria-label="Read-back of your dictation" className="mt-4 border-l-2 border-line-strong pl-4">
+      <p className="text-sm text-ink">This is what I heard. Nothing is filed until you confirm.</p>
       <ul className="mt-2 space-y-1">
         {heard.map((l) => (
-          <li key={l} data-testid="readback-item" className="rounded-md border border-line bg-parchment/60 px-2.5 py-1.5 text-sm text-ink">
+          <li key={l} data-testid="readback-item" className="text-sm text-ink">
             {l}
           </li>
         ))}
       </ul>
       {asks.map((a) => (
-        <p key={a} className="mt-2 text-sm font-semibold text-maroon">{a}</p>
+        <p key={a} className="mt-2 text-sm font-medium text-ink">{a}</p>
       ))}
       <div className="mt-3 flex flex-wrap gap-2">
         <Button size="sm" data-testid="readback-confirm" onClick={onConfirm}>
           Confirm
         </Button>
         <Button size="sm" variant="ghost" onClick={onDismiss}>
-          Not right: dismiss
+          Not right, dismiss
         </Button>
       </div>
-      <p className="mt-2 text-xs text-ink-soft">Confirmed facts are filed as stated by counsel, and the brief will say so.</p>
+      <p className="mt-2 text-sm text-ink-soft">Confirmed facts are entered as yours, and the draft says so.</p>
     </section>
   );
 }
@@ -179,32 +156,19 @@ function ReadbackCard({ lines, onConfirm, onDismiss }: { lines: string[]; onConf
 export function ChatPane({ caseId, className }: ChatPaneProps): ReactElement {
   const ws = useWorkspace();
   const [draft, setDraft] = useState("");
-  const [planOpen, setPlanOpen] = useState(false);
   const logRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
-  const planButton = useRef<HTMLButtonElement>(null);
 
   const messages = ws.data.chat;
   const working = ws.activity.working;
-  const runningAgent: AgentName | null = working[0] ?? (ws.chatPending ? "SUTRADHAR" : ws.drafting ? "SUTRADHAR" : null);
+  const runningAgent: AgentName | null = working[0] ?? (ws.chatPending || ws.drafting ? "SUTRADHAR" : null);
   const running = runningAgent ? ws.activity.byAgent[runningAgent] : null;
 
   // Munshi's questions after an upload, unless the chat history already carries them (the demo does).
   const questions = ws.uploadQuestions.filter((q) => !messages.some((m) => m.text === q));
 
-  const notes = useMemo(
-    () =>
-      ws.events
-        .filter((e) => e.kind === "AGENT_MESSAGE" && typeof e.outputs?.text === "string")
-        .filter((e) => {
-          const t = e.outputs.text as string;
-          return t !== "Answered in chat" && !t.startsWith("Refused:");
-        })
-        .slice(-8)
-        .reverse(),
-    [ws.events],
-  );
+  useEffect(() => taRef.current?.focus(), []);
 
   useEffect(() => {
     const el = logRef.current;
@@ -233,80 +197,10 @@ export function ChatPane({ caseId, className }: ChatPaneProps): ReactElement {
   };
 
   const openSource = (doc: string, page: number) => ws.selectSource({ doc, page }, "chat answer");
-  const gate1 = ws.gates.approvals.gate1;
+  const empty = messages.length === 0 && questions.length === 0;
 
   return (
-    <section aria-labelledby="chat-title" className={cn("flex min-h-0 flex-col bg-parchment/40", className)}>
-      <header className="flex flex-wrap items-center gap-2 border-b border-line bg-cream px-4 py-2.5">
-        <MessageSquareText aria-hidden className="size-4 text-maroon" />
-        <div className="min-w-0 flex-1">
-          <h2 id="chat-title" className="font-display text-base font-semibold text-maroon">
-            Ask the case
-          </h2>
-          <p className="text-xs text-ink-soft">Short, cited answers from the case file and the stores. For counsel only.</p>
-        </div>
-        <div className="flex w-full flex-wrap items-center gap-2">
-        <AgentSignature
-          agent="SUTRADHAR"
-          mode="working"
-          active={ws.activity.byAgent.SUTRADHAR.phase === "working"}
-          className="max-w-[7rem]"
-          litStores={ws.activity.activeStores}
-          activeTool={ws.activity.byAgent.SUTRADHAR.tool}
-          statusText={ws.activity.byAgent.SUTRADHAR.phase === "working" ? ws.activity.byAgent.SUTRADHAR.text : undefined}
-        />
-        <Button
-          ref={planButton}
-          data-testid="show-plan-button"
-          variant="pill"
-          size="sm"
-          onClick={() => setPlanOpen(true)}
-          aria-haspopup="dialog"
-          aria-expanded={planOpen}
-        >
-          <Scale aria-hidden /> Show the plan
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          data-testid="draft-brief-button"
-          onClick={() => void ws.startDraft()}
-          disabled={!gate1 || ws.drafting}
-          title={gate1 ? "Sutradhar plans, Vakeel drafts, Abhiyojak spars" : "Approve the dossier (Gate 1) before drafting"}
-          aria-describedby={gate1 ? undefined : "draft-why"}
-        >
-          <Sparkles aria-hidden /> {ws.drafting ? "Drafting…" : "Draft bail brief"}
-        </Button>
-        {!gate1 ? (
-          <span id="draft-why" className="sr-only">
-            Drafting opens after counsel approves the dossier at Gate 1.
-          </span>
-        ) : null}
-        </div>
-      </header>
-
-      {notes.length > 0 ? (
-        <details className="border-b border-line bg-cream/70 px-4 py-1.5 text-xs">
-          <summary className="cursor-pointer select-none font-semibold text-ink-soft hover:text-ink">Agent notes ({notes.length})</summary>
-          <ul className="mt-1.5 flex flex-col gap-1.5 pb-1">
-            {notes.map((e) => {
-              const actor = String(e.actor).toUpperCase() as AgentName;
-              const known = actor in AGENTS;
-              return (
-                <li key={e.event_id} className="flex gap-2">
-                  {known ? <AgentGlyph agent={actor} size={14} className="mt-0.5 shrink-0 text-maroon" /> : null}
-                  <span className="min-w-0 text-ink-soft">
-                    <span className="font-semibold text-ink">{known ? AGENTS[actor].name : String(e.actor)}</span>{" "}
-                    <time dateTime={e.ts} className="font-mono text-2xs text-ink-muted">{formatClock(e.ts)}</time>
-                    <span className="block">{e.outputs.text as string}</span>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </details>
-      ) : null}
-
+    <section aria-label="Chat" className={cn("flex min-h-0 flex-1 flex-col", className)}>
       <div
         ref={logRef}
         role="log"
@@ -314,18 +208,24 @@ export function ChatPane({ caseId, className }: ChatPaneProps): ReactElement {
         aria-live="polite"
         aria-relevant="additions"
         tabIndex={0}
-        data-lenis-prevent=""
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5"
       >
-        {messages.length === 0 && questions.length === 0 ? (
-          <div className="mx-auto mt-6 max-w-md rounded-lg border border-dashed border-gold/60 bg-cream p-5 text-center">
-            <p className="font-display text-lg text-maroon">Ask anything about this case</p>
-            <p className="mt-1 text-sm text-ink-soft">
-              Custody days, BNS equivalents, rights that may be open, precedents, or how the State usually opposes. Every answer shows where it came from.
-            </p>
+        {empty ? (
+          <div className="max-w-sm">
+            <p className="font-display text-lg font-semibold text-ink">Ask anything about this case</p>
+            <p className="mt-1 text-sm text-ink-soft">Custody days, BNS equivalents, rights that may be open, precedents. Each answer shows where it came from.</p>
+            <ul aria-label="Suggested questions" className="mt-4 flex flex-col items-start gap-1">
+              {SUGGESTIONS.slice(0, 4).map((s) => (
+                <li key={s}>
+                  <button type="button" onClick={() => void submit(s)} disabled={ws.chatPending} className="rounded-sm py-1 text-left text-sm text-maroon underline-offset-4 hover:underline disabled:opacity-50">
+                    {s}
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         ) : (
-          <ol className="flex flex-col gap-4">
+          <ol className="flex flex-col gap-5">
             {messages.map((m) => (
               <Bubble key={m.message_id} message={m} onSource={openSource} />
             ))}
@@ -342,47 +242,40 @@ export function ChatPane({ caseId, className }: ChatPaneProps): ReactElement {
         {ws.readback ? <ReadbackCard lines={ws.readback} onConfirm={() => void ws.confirmReadback()} onDismiss={ws.dismissReadback} /> : null}
 
         {runningAgent && running ? (
-          <div className="mt-4" role="status" aria-label={`${agentTitle(runningAgent)} is working`}>
-            <div className="max-w-[94%] rounded-lg rounded-bl-sm border border-gold/50 bg-cream px-3.5 py-3 shadow-sm" aria-busy="true">
-              <AgentHeading agent={runningAgent} />
-              <div className="mt-2">
-                <AgentSignature
-                  agent={runningAgent}
-                  mode="working"
-                  active
-                  className="max-w-[13rem]"
-                  statusText={running.phase === "working" ? running.text : AGENTS[runningAgent].workingText}
-                  litStores={runningAgent === "SUTRADHAR" ? ws.activity.activeStores : undefined}
-                  activeTool={runningAgent === "SUTRADHAR" ? running.tool : undefined}
-                  unanswered={runningAgent === "ABHIYOJAK" ? ws.gates.checklists.GATE_2_EXPORT.blocking.filter((i) => i.kind === "UNANSWERED").length : undefined}
-                />
-              </div>
-            </div>
+          <div className="mt-5" aria-busy="true">
+            <AgentSignature
+              agent={runningAgent}
+              mode="working"
+              active
+              statusText={running.phase === "working" ? running.text : AGENTS[runningAgent].workingText}
+            />
           </div>
         ) : null}
       </div>
 
-      <div className="border-t border-line bg-cream px-3 pb-3 pt-2">
-        <ul aria-label="Suggested questions" data-lenis-prevent="" className="mb-2 flex gap-1.5 overflow-x-auto pb-1">
-          {SUGGESTIONS.map((s) => (
-            <li key={s} className="shrink-0">
-              <button
-                type="button"
-                onClick={() => void submit(s)}
-                disabled={ws.chatPending}
-                className="rounded-pill border border-line-strong/60 bg-parchment px-2.5 py-1 text-xs text-ink hover:border-maroon hover:text-maroon disabled:opacity-50"
-              >
-                {s}
-              </button>
-            </li>
-          ))}
-        </ul>
+      <div className="shrink-0 border-t border-line bg-cream px-4 pb-3 pt-2">
+        {!empty ? (
+          <ul aria-label="Suggested questions" className="mb-2 flex gap-1.5 overflow-x-auto pb-1">
+            {SUGGESTIONS.map((s) => (
+              <li key={s} className="shrink-0">
+                <button
+                  type="button"
+                  onClick={() => void submit(s)}
+                  disabled={ws.chatPending}
+                  className="rounded-md border border-line-strong/60 px-2.5 py-1 text-sm text-ink-soft hover:border-ink-soft hover:text-ink disabled:opacity-50"
+                >
+                  {s}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <form
           onSubmit={(e) => {
             e.preventDefault();
             void submit(draft);
           }}
-          className="flex items-end gap-1.5 rounded-lg border border-line-strong/70 bg-parchment/50 p-1.5 focus-within:border-maroon"
+          className="flex items-end gap-1 rounded-lg border border-line-strong/70 bg-cream p-1.5 focus-within:border-maroon"
         >
           <label htmlFor="chat-input" className="sr-only">
             Ask a question about this case (Hindi or English)
@@ -395,7 +288,7 @@ export function ChatPane({ caseId, className }: ChatPaneProps): ReactElement {
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={onKey}
             rows={1}
-            placeholder="Ask about custody, sections, rights, precedents…"
+            placeholder="Ask about custody, sections, rights, precedents"
             aria-describedby="chat-hint"
             className="max-h-36 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus-visible:outline-none"
           />
@@ -424,19 +317,10 @@ export function ChatPane({ caseId, className }: ChatPaneProps): ReactElement {
             <ArrowUp aria-hidden />
           </Button>
         </form>
-        <p id="chat-hint" className="mt-1.5 px-1 text-2xs text-ink-muted">
-          Enter sends, Shift+Enter adds a line. No outcome predictions or advice to the public: for free legal aid the public can call NALSA on 15100.
+        <p id="chat-hint" className="mt-1.5 px-1 text-xs text-ink-muted">
+          Enter sends, Shift+Enter adds a line. No outcome predictions. Free legal aid for the public: NALSA 15100.
         </p>
       </div>
-
-      <TraceDrawer
-        caseId={caseId}
-        open={planOpen}
-        onClose={() => {
-          setPlanOpen(false);
-          planButton.current?.focus();
-        }}
-      />
     </section>
   );
 }

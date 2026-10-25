@@ -1,9 +1,9 @@
 "use client";
-// Rights tab (plan §7.3, Appendix C): the Rights Radar, one card per check. Outputs are possible entitlements to check,
-// never advice. Every card shows the rule, its source and the dates it used; urgent flags come first.
-import { ArrowUpRight, BookOpenCheck } from "lucide-react";
-import type { ReactElement } from "react";
-import { AgentSignature } from "@/components/agents/AgentSignature";
+// Check rights (plan §7.3, Appendix C): the Rights Radar as a short plain list. What may be open now comes first; the rest
+// sit behind one line. "Why" shows the rule, its source and the dates used. Outputs are possible entitlements to check, never
+// advice or a prediction.
+import { ChevronDown } from "lucide-react";
+import { useEffect, useState, type ReactElement } from "react";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { fieldLabel } from "@/lib/fields";
 import { daysBetween, formatCourtDate, plural } from "@/lib/format";
@@ -11,16 +11,12 @@ import { RIGHTS_CHECK_LABELS } from "@/lib/labels";
 import { RIGHTS_URGENCY } from "@/lib/status";
 import { DOSSIER_FIELD_NAMES, type RightsCheckResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useAgentActivity, useCaseData, useEdits, useStageNav } from "@/lib/workspace";
-import { ChangedTag, focusClass, focusDomId, SectionTitle, TabHeader, tabState, TabShell, useFocusItem } from "./shared";
+import { useCaseData, useEdits, useStageNav, useWorkspace } from "@/lib/workspace";
+import { StepFooter, StepFrame } from "../StepFrame";
+import { ChangedTag, focusClass, focusDomId, SectionTitle, stepState, useFocusItem } from "./shared";
 
-export interface RightsTabProps {
-  caseId: string;
-  className?: string;
-}
-
-/** Statuses at the top of the list: something to look at now. */
-const URGENT = new Set(["ELIGIBLE", "FLAG", "NOT_YET", "BAR_APPLIES"]);
+/** Statuses that lead the list: something may be open, closed, flagged or unclear. */
+const LEAD = new Set(["ELIGIBLE", "FLAG", "NOT_YET", "BAR_APPLIES", "CHECK", "UNKNOWN", "WINDOW_CLOSED"]);
 
 const DATE_KEY_LABELS: Record<string, string> = {
   first_remand: "First remand",
@@ -48,42 +44,20 @@ function daysLeft(check: RightsCheckResult, asOf: string): number | null {
   return m ? Number(m[1].replace(/,/g, "")) : null;
 }
 
-function UsesLinks({ uses }: { uses: string[] }): ReactElement | null {
+function CheckRow({ check, asOf, focusedId, changed }: { check: RightsCheckResult; asOf: string; focusedId: string | null; changed: boolean }): ReactElement {
   const { focusItem } = useStageNav();
-  if (uses.length === 0) return null;
-  return (
-    <ul aria-label="Dossier fields used" className="flex flex-wrap gap-1.5">
-      {uses.map((u) => {
-        const isField = (DOSSIER_FIELD_NAMES as readonly string[]).includes(u);
-        return (
-          <li key={u}>
-            {isField ? (
-              <button
-                type="button"
-                onClick={() => focusItem("dossier", u)}
-                aria-label={`Go to ${fieldLabel(u)} in the dossier`}
-                className="inline-flex items-center gap-1 rounded-sm border border-line-strong/50 bg-cream px-1.5 py-0.5 font-mono text-[11px] text-ink-soft transition-colors duration-fast hover:border-maroon hover:text-maroon"
-              >
-                {u} <ArrowUpRight aria-hidden className="size-3" />
-              </button>
-            ) : (
-              <span className="inline-flex rounded-sm border border-line bg-cream px-1.5 py-0.5 font-mono text-[11px] text-ink-soft">{u}</span>
-            )}
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-function CheckCard({ check, asOf, focusedId, changed }: { check: RightsCheckResult; asOf: string; focusedId: string | null; changed: boolean }): ReactElement {
+  const [open, setOpen] = useState(false);
   const domId = focusDomId("rights", check.check);
   const label = RIGHTS_CHECK_LABELS[check.check] ?? check.check;
   const left = daysLeft(check, asOf);
   const dates = Object.entries(check.dates ?? {});
-  const urgent = URGENT.has(check.status);
+  const focused = focusedId === check.check;
+  useEffect(() => {
+    if (focused) setOpen(true);
+  }, [focused]);
+
   return (
-    <article
+    <li
       id={domId}
       data-testid="rights-chip"
       data-check={check.check}
@@ -91,149 +65,170 @@ function CheckCard({ check, asOf, focusedId, changed }: { check: RightsCheckResu
       data-changed={changed || undefined}
       tabIndex={-1}
       aria-labelledby={`${domId}-label`}
-      className={cn(
-        "scroll-mt-4 rounded-lg border bg-cream p-4 shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-maroon",
-        urgent ? "border-maroon/50 border-l-4" : "border-line",
-        focusClass(focusedId, check.check),
-      )}
+      className={cn("scroll-mt-4 py-4 outline-none focus-visible:ring-2 focus-visible:ring-maroon", focusClass(focusedId, check.check))}
     >
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <h4 id={`${domId}-label`} className="font-display text-base font-semibold text-maroon">{label}</h4>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {changed ? <ChangedTag /> : null}
-          <StatusBadge
-            status={check.status}
-            kind="rights"
-            detail={left !== null ? `${plural(left, "day")} left` : undefined}
-          />
-        </div>
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h4 id={`${domId}-label`} className="font-sans text-base font-semibold text-ink">{label}</h4>
+        <StatusBadge status={check.status} kind="rights" size="sm" detail={left !== null ? `(${plural(left, "day")} left)` : undefined} />
+        {changed ? <ChangedTag /> : null}
       </div>
-
-      {check.detail ? <p className="mt-2 text-sm leading-relaxed text-ink">{check.detail}</p> : null}
-
-      <dl className="mt-3 grid gap-x-4 gap-y-2 text-sm sm:grid-cols-[8rem_1fr]">
-        {check.rule ? (
-          <>
-            <dt className="eyebrow pt-0.5">Rule</dt>
-            <dd className="cite text-ink">{check.rule}</dd>
-          </>
-        ) : null}
-        {check.rule_text ? (
-          <>
-            <dt className="eyebrow pt-0.5">As coded</dt>
-            <dd className="text-ink-soft">{check.rule_text}</dd>
-          </>
-        ) : null}
-        {check.sources && check.sources.length > 0 ? (
-          <>
-            <dt className="eyebrow pt-0.5">Sources</dt>
-            <dd>
-              <ul className="space-y-0.5 text-ink-soft">
-                {check.sources.map((s) => (
-                  <li key={s} className="flex gap-1.5">
-                    <BookOpenCheck aria-hidden className="mt-1 size-3 shrink-0 text-gold-leaf" />
-                    <span>{s}</span>
-                  </li>
-                ))}
-              </ul>
-            </dd>
-          </>
-        ) : null}
-        {dates.length > 0 ? (
-          <>
-            <dt className="eyebrow pt-0.5">Dates used</dt>
-            <dd>
-              <ul className="flex flex-wrap gap-x-4 gap-y-1">
-                {dates.map(([k, v]) => (
-                  <li key={k} className="text-ink">
-                    <span className="text-ink-soft">{dateKeyLabel(k)}: </span>
-                    <time dateTime={v} className="cite">{formatCourtDate(v)}</time>
-                  </li>
-                ))}
-              </ul>
-            </dd>
-          </>
-        ) : null}
-        {check.uses.length > 0 ? (
-          <>
-            <dt className="eyebrow pt-0.5">Fields used</dt>
-            <dd><UsesLinks uses={check.uses} /></dd>
-          </>
-        ) : null}
-      </dl>
-      {check.last_verified ? (
-        <p className="mt-3 text-xs text-ink-muted">Rule last verified {formatCourtDate(check.last_verified)}.</p>
+      {check.detail ? <p className="mt-1 max-w-prose text-ink">{check.detail}</p> : null}
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={`${domId}-why`}
+        onClick={() => setOpen((v) => !v)}
+        className="mt-1.5 inline-flex items-center gap-1 rounded-sm text-sm font-medium text-maroon underline-offset-4 hover:underline"
+      >
+        Why
+        <ChevronDown aria-hidden className={cn("size-4 transition-transform duration-fast", open && "rotate-180")} />
+        <span className="sr-only"> for {label}</span>
+      </button>
+      {open ? (
+        <dl id={`${domId}-why`} className="mt-3 grid gap-x-4 gap-y-2 border-l-2 border-line pl-4 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]">
+          {check.rule ? (
+            <>
+              <dt className="text-ink-muted">Rule</dt>
+              <dd className="m-0 text-ink"><span className="cite">{check.rule}</span>{check.rule_text ? <span className="block text-ink-soft">{check.rule_text}</span> : null}</dd>
+            </>
+          ) : null}
+          {check.sources && check.sources.length > 0 ? (
+            <>
+              <dt className="text-ink-muted">Source</dt>
+              <dd className="m-0 text-ink-soft">
+                <ul className="m-0 list-none space-y-0.5 p-0">
+                  {check.sources.map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ul>
+              </dd>
+            </>
+          ) : null}
+          {dates.length > 0 ? (
+            <>
+              <dt className="text-ink-muted">Dates used</dt>
+              <dd className="m-0">
+                <ul className="m-0 list-none space-y-0.5 p-0">
+                  {dates.map(([k, v]) => (
+                    <li key={k} className="text-ink">
+                      <span className="text-ink-soft">{dateKeyLabel(k)}: </span>
+                      <time dateTime={v} className="tabular">{formatCourtDate(v)}</time>
+                    </li>
+                  ))}
+                </ul>
+              </dd>
+            </>
+          ) : null}
+          {check.uses.length > 0 ? (
+            <>
+              <dt className="text-ink-muted">Facts used</dt>
+              <dd className="m-0 text-ink-soft">
+                {check.uses.map((u, i) => {
+                  const isField = (DOSSIER_FIELD_NAMES as readonly string[]).includes(u);
+                  return (
+                    <span key={u}>
+                      {i > 0 ? ", " : ""}
+                      {isField ? (
+                        <button type="button" onClick={() => focusItem("dossier", u)} className="rounded-sm text-maroon underline-offset-4 hover:underline" aria-label={`Go to ${fieldLabel(u)} in the facts`}>
+                          {fieldLabel(u)}
+                        </button>
+                      ) : (
+                        u
+                      )}
+                    </span>
+                  );
+                })}
+              </dd>
+            </>
+          ) : null}
+          {check.last_verified ? (
+            <>
+              <dt className="text-ink-muted">Rule checked</dt>
+              <dd className="m-0 text-ink-soft">{formatCourtDate(check.last_verified)}</dd>
+            </>
+          ) : null}
+        </dl>
       ) : null}
-    </article>
+    </li>
   );
 }
 
-export function RightsTab({ caseId, className }: RightsTabProps): ReactElement {
-  void caseId;
+export function RightsTab(): ReactElement {
+  const ws = useWorkspace();
   const data = useCaseData();
-  const activity = useAgentActivity();
   const rights = data.rights;
-  const focusedId = useFocusItem("rights", Boolean(rights));
+  const focused = useFocusItem("rights", Boolean(rights));
   const changedRights = useEdits().changes.changedRights;
+  const [showRest, setShowRest] = useState(false);
 
-  const state = tabState({
-    tab: "rights", resource: "rights", noun: "Rights Radar", loading: data.loading.rights, error: data.errors.rights, hasData: Boolean(rights),
+  const state = stepState({
+    resource: "rights", noun: "rights checks", loading: data.loading.rights, error: data.errors.rights, hasData: Boolean(rights),
     onRetry: () => void data.refresh(["rights"]),
-    emptyTitle: "The Rights Radar has not run yet",
-    emptyBody: "It runs on the dossier and the List of Dates, and needs the arrest, first remand and sections to compute its checks.",
+    emptyTitle: "The rights checks have not run yet",
+    emptyBody: "They need the arrest date, the first remand and the sections from the facts.",
   });
-  if (state || !rights) return state ?? <></>;
+  const footer = <StepFooter label="Continue to Draft grounds" onClick={() => ws.setStage("BRIEF")} />;
+  if (state || !rights) {
+    return (
+      <StepFrame title="Check rights" intro="Possible rights worked out from the dates in the file." footer={footer}>
+        {state}
+      </StepFrame>
+    );
+  }
 
   const sorted = rights.checks
     .map((c, i) => ({ c, i }))
     .sort((a, b) => RIGHTS_URGENCY[a.c.status] - RIGHTS_URGENCY[b.c.status] || a.i - b.i)
     .map(({ c }) => c);
-  const urgent = sorted.filter((c) => URGENT.has(c.status));
-  const rest = sorted.filter((c) => !URGENT.has(c.status));
-  const working = activity.byAgent.PESHKAR.phase === "working";
+  const lead = sorted.filter((c) => LEAD.has(c.status));
+  const rest = sorted.filter((c) => !LEAD.has(c.status));
+  const restOpen = showRest || rest.some((c) => c.check === focused?.id);
 
   return (
-    <TabShell label="Rights Radar" className={className}>
-      <TabHeader
-        agent="PESHKAR"
-        title="Rights Radar"
-        description={
-          <>
-            Possible entitlements to check, worked out by fixed rules from the dates in the file as of {formatCourtDate(rights.as_of)}.
-            These are prompts for counsel, not advice or a prediction. Unsettled law returns CHECK.
-          </>
-        }
-        signature={<AgentSignature agent="PESHKAR" mode="working" active={working} statusText={working ? activity.byAgent.PESHKAR.text : undefined} />}
-      />
-
-      {urgent.length > 0 ? (
-        <section aria-labelledby="rights-urgent" className="space-y-3">
-          <SectionTitle id="rights-urgent" aside={<span className="text-xs text-ink-soft">{urgent.length} to look at first</span>}>
-            Look at first
-          </SectionTitle>
-          {urgent.map((c) => (
-            <CheckCard key={c.check} check={c} asOf={rights.as_of} focusedId={focusedId} changed={changedRights.includes(c.check)} />
-          ))}
+    <StepFrame
+      title="Check rights"
+      intro={`Possible rights worked out from the dates in the file as of ${formatCourtDate(rights.as_of)}. These are prompts to check, not advice or a prediction.`}
+      footer={footer}
+    >
+      {lead.length > 0 ? (
+        <section aria-labelledby="rights-lead">
+          <SectionTitle id="rights-lead">Worth checking now</SectionTitle>
+          <ul className="mt-2 divide-y divide-line border-y border-line">
+            {lead.map((c) => (
+              <CheckRow key={c.check} check={c} asOf={rights.as_of} focusedId={focused?.id ?? null} changed={changedRights.includes(c.check)} />
+            ))}
+          </ul>
         </section>
       ) : (
-        <p className="rounded-md border border-line bg-parchment px-3 py-2 text-sm text-ink-soft">
-          No check is ELIGIBLE, flagged or approaching a threshold as of {formatCourtDate(rights.as_of)}.
-        </p>
+        <p className="text-ink-soft">Nothing needs your attention. No right is open, flagged or close to a threshold as of {formatCourtDate(rights.as_of)}.</p>
       )}
 
       {rest.length > 0 ? (
-        <section aria-labelledby="rights-others" className="space-y-3">
-          <SectionTitle id="rights-others">{urgent.length > 0 ? "Other checks" : "All checks"}</SectionTitle>
-          {rest.map((c) => (
-            <CheckCard key={c.check} check={c} asOf={rights.as_of} focusedId={focusedId} changed={changedRights.includes(c.check)} />
-          ))}
+        <section aria-labelledby="rights-rest">
+          <h3 id="rights-rest" className="font-sans text-base">
+            <button
+              type="button"
+              aria-expanded={restOpen}
+              aria-controls="rights-rest-list"
+              onClick={() => setShowRest((v) => !v)}
+              className="inline-flex items-center gap-1 rounded-sm font-medium text-ink-soft hover:text-ink"
+            >
+              Other checks <span className="tabular font-normal">({rest.length})</span>
+              <ChevronDown aria-hidden className={cn("size-4 transition-transform duration-fast", restOpen && "rotate-180")} />
+            </button>
+          </h3>
+          {restOpen ? (
+            <ul id="rights-rest-list" className="mt-2 divide-y divide-line border-y border-line">
+              {rest.map((c) => (
+                <CheckRow key={c.check} check={c} asOf={rights.as_of} focusedId={focused?.id ?? null} changed={changedRights.includes(c.check)} />
+              ))}
+            </ul>
+          ) : null}
         </section>
       ) : null}
 
-      <p className="text-xs text-ink-muted">
-        Drafting a default-bail application is outside this version. An opening is flagged here for counsel to act on.
-      </p>
-    </TabShell>
+      <p className="text-sm text-ink-muted">Drafting a default-bail application is outside this version. An opening is flagged here for you to act on.</p>
+    </StepFrame>
   );
 }
 
