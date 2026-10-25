@@ -33,6 +33,12 @@ LADDER_ORDER: list[ParseRoute] = [
 ]
 
 
+# `Switches.munshi_keep_weak_text` (not a named variant): a text layer whose dictionary-word share is between this floor and the
+# 85% bar (court orders full of legal vocabulary and names score 67-84%) is kept as a low-confidence read instead of being thrown
+# away when no OCR or vision rung can read the page. Below the floor the layer is more garbled than unusual, and is not kept.
+WEAK_TEXT_FLOOR = 0.60
+
+
 class RouteOutcome(BaseModel):
     """Result of running a route on a page."""
 
@@ -48,6 +54,27 @@ class RouteOutcome(BaseModel):
     ocr_conf: float | None = None  # mean OCR confidence of the page, kept even when vision gave the final text
     signals: PageSignals | None = None  # the page's signals after routing (badges in the UI)
     kind: InputKind | None = None  # K1-K7, or K9 for a locked or broken file
+    low_confidence: bool = False  # a rejected text layer kept as a read (`munshi_keep_weak_text`); `confidence` is its dictionary-word share
+
+
+def weak_layer_read(signals: PageSignals, th: dict[str, float], text: str, log: list[str]) -> RouteOutcome | None:
+    """The page's rejected text layer as a low-confidence read, or None when it is not a near miss (share below the floor, legacy font, thin layer).
+
+    Args:
+        signals: the page's signals
+        th: thresholds
+        text: the text layer's text
+        log: the route log so far (the reason the layer was rejected is already in it)
+
+    Returns:
+        RouteOutcome (route TEXT_LAYER, confidence = word share, low_confidence True), or None.
+    """
+    rejection = text_layer_rejection(signals, th)
+    share = signals.dict_word_share
+    if not text.strip() or not rejection or not rejection.startswith("word share") or share is None or share < WEAK_TEXT_FLOOR:
+        return None
+    note = f"text_layer: kept as a low-confidence read (word share {share:.0%}); counsel to check it against the original"
+    return RouteOutcome(route=ParseRoute.TEXT_LAYER, text=text, confidence=round(share, 3), low_confidence=True, log=[*log, note])
 
 
 def _rank(route: ParseRoute) -> int:
@@ -200,8 +227,13 @@ def route_page_from(
     thresholds: dict[str, float] | None = None,
     max_route: ParseRoute = ParseRoute.ASK_COUNSEL,
     min_route: ParseRoute | None = None,
+    keep_weak: bool = False,
 ) -> RouteOutcome:
-    """`route_page` that starts no lower than `min_route` (a gap re-read with a stronger route, plan §4.3 step 4)."""
+    """`route_page` that starts no lower than `min_route` (a gap re-read with a stronger route, plan §4.3 step 4).
+
+    `keep_weak` (`munshi_keep_weak_text`): a text layer rejected only for a word share of 60-84% is kept, flagged low-confidence, when the
+    ladder would otherwise end in ask-counsel. Default False: unchanged.
+    """
     th = thresholds if thresholds is not None else load_thresholds()
     try:
         signals = compute_signals(file_path, page)
@@ -232,6 +264,10 @@ def route_page_from(
         if route == ParseRoute.ASK_COUNSEL:
             from vakeel_sahayak.ingestion.routes.ask_counsel import ask_counsel_route
 
+            if keep_weak:
+                weak = weak_layer_read(signals, th, _run(ParseRoute.TEXT_LAYER, file_path, page, signals).text, log)
+                if weak is not None:
+                    return _finish(weak, weak.log, signals, th, ocr_conf)
             out = ask_counsel_route(file_path, page)
             return _finish(out, [*log, *out.log], signals, th, ocr_conf)
         try:

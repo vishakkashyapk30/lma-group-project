@@ -11,7 +11,7 @@ from collections.abc import Callable
 from typing import Any
 
 from vakeel_sahayak.ingestion.filing import Filer
-from vakeel_sahayak.ingestion.ladder import RouteOutcome, acceptable, finish_outcome, plan_routes
+from vakeel_sahayak.ingestion.ladder import RouteOutcome, acceptable, finish_outcome, plan_routes, weak_layer_read
 from vakeel_sahayak.ingestion.signals import text_layer_rejection
 from vakeel_sahayak.schemas.common import SourceRef, TrackedField
 from vakeel_sahayak.schemas.enums import PageStatus, ParseRoute, StoreName
@@ -27,6 +27,7 @@ def route_page_with_tools(
     thresholds: dict[str, float],
     max_route: ParseRoute = ParseRoute.ASK_COUNSEL,
     min_route: ParseRoute | None = None,
+    keep_weak: bool = False,
 ) -> RouteOutcome | ToolError:
     """The routing ladder of `ingestion.ladder.route_page_from`, with every rung run through its tool.
 
@@ -37,6 +38,7 @@ def route_page_with_tools(
         thresholds: dev-tuned values
         max_route: strongest rung allowed (baselines)
         min_route: weakest rung allowed (a gap re-read)
+        keep_weak: keep a near-miss text layer as a low-confidence read before asking counsel (`munshi_keep_weak_text`)
 
     Returns:
         The outcome, or the ToolError of `inspect_page` (no signals: for example the page is past the end of the file).
@@ -54,6 +56,10 @@ def route_page_with_tools(
     ocr_conf: float | None = None
     for route in plan:
         if route == ParseRoute.ASK_COUNSEL:
+            if keep_weak and (layer := _run_rung(call, ParseRoute.TEXT_LAYER, path, page)) is not None:
+                weak = weak_layer_read(signals, thresholds, layer.text, log)
+                if weak is not None:
+                    return finish_outcome(weak, weak.log, signals, thresholds, ocr_conf)
             out = RouteOutcome(route=route, status=PageStatus.UNREADABLE, log=["ask_counsel: no route could read this page"])
             return finish_outcome(out, [*log, *out.log], signals, thresholds, ocr_conf)
         out = _run_rung(call, route, path, page)

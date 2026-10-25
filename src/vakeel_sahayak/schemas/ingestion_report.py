@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from typing import Any
+
+from pydantic import BaseModel, Field, model_serializer
 
 from vakeel_sahayak.schemas.enums import DocumentType, PageStatus
 from vakeel_sahayak.schemas.ids import CaseId
@@ -16,6 +18,15 @@ class PageRoute(BaseModel):
     route: list[str]
     ocr_conf: float | None = None
     status: PageStatus = PageStatus.OK
+    confidence: float | None = None  # set only for a page kept as a low-confidence read (dictionary-word share of its text layer)
+
+    @model_serializer(mode="wrap")
+    def _omit_unset_confidence(self, handler: Any) -> dict[str, Any]:
+        """Leave `confidence` out of the dump when it is None, so reports of a default run are unchanged."""
+        data = handler(self)
+        if data.get("confidence") is None:
+            data.pop("confidence", None)
+        return data
 
 
 class DocumentEntry(BaseModel):

@@ -94,6 +94,7 @@ from vakeel_sahayak.agents.vakeel.prompts import (
     TransferJudgement,
     instructions,
 )
+from vakeel_sahayak.agents.vakeel.stance import ADVERSE, ADVERSE_INSTRUCTION, arrange, stance_of
 from vakeel_sahayak.agents.vakeel.work import AUTHORITY_PROBLEMS, Evidence, SentenceCheck, Work
 from vakeel_sahayak.models.base import ModelUnavailable
 from vakeel_sahayak.orchestration.budgets import BudgetExhausted
@@ -388,7 +389,22 @@ class VakeelAgent(BaseAgent):
                         {"doc_id": key[0], "para": key[1], "text": str(item.get("text") or "")[:PARAGRAPH_LIMIT], "court": item.get("court"), "date": item.get("date"),
                          "transfer": tr.get("flag") if tr else None, "qualification": tr.get("qualification") if tr else None}
                     )  # fmt: skip
+                    if self.switches.authority_stance == "outcome":
+                        out[-1]["outcome"] = item.get("outcome")  # read by stance.arrange (the key is absent in a default run)
+        if self.switches.authority_stance == "outcome":
+            out = self._by_stance(out, pack)
         return out[:MAX_AUTHORITIES], left_out
+
+    def _by_stance(self, cands: list[dict[str, Any]], pack: EvidencePack) -> list[dict[str, Any]]:
+        """Variant authority_stance='outcome': supporting authorities first, adverse ones dropped or marked (see `stance.py`)."""
+        arranged, dropped = arrange(cands, pack.stance.value)
+        adverse_kept = [f"{c['doc_id']}#{c['para']}" for c in arranged if c["stance"] == ADVERSE]
+        if dropped or adverse_kept:
+            self._decision(
+                "authority_stance", f"{pack.factor.value}: {len(dropped)} authority(ies) from orders that refused bail left out of the offer; {len(adverse_kept)} offered as adverse authority to distinguish.",
+                factor=pack.factor.value, left_out=dropped, adverse=adverse_kept, variant="authority_stance",
+            )  # fmt: skip
+        return arranged
 
     def _evidence_for(self, pack: EvidencePack) -> Evidence:
         """The facts, paragraphs and Radar rows a factor's ground may rest on."""
@@ -439,7 +455,8 @@ class VakeelAgent(BaseAgent):
 
     def _ins(self, task: str, **kwargs: str) -> str:
         """The task's instructions; S15 adds the note on the reasoning field."""
-        return instructions(task, **kwargs) + (REASONING_NOTE if self._reasoning_first else "")
+        extra = ADVERSE_INSTRUCTION if self.switches.authority_stance == "outcome" and task in (TASK_DRAFT, TASK_REPLY, TASK_REWORD) else ""
+        return instructions(task, **kwargs) + extra + (REASONING_NOTE if self._reasoning_first else "")
 
     def _keep_reasoning(self, key: str, task: str, out: Any) -> None:
         """S15: store what the model reasoned (a log event and the agent's list). It is never read as an answer, never cited, never checked."""
@@ -895,6 +912,9 @@ class VakeelAgent(BaseAgent):
                 by = info.get("overruled_by")
                 w.sentences.append(note("Warning:", f"{name} has been overruled" + (f" by {by}" if by else "") + "; it must not be relied on without counsel's check", [key]))
                 self._decision("warn", f"{key[0]}#{key[1]} is overruled and is cited only with a warning.", authority=f"{key[0]}#{key[1]}", claim=w.key)
+            if self.switches.authority_stance == "outcome" and stance_of(self._auth_items.get(key) or {}) == ADVERSE and not self._has_note(w, "Warning:", key, "adverse authority"):
+                w.sentences.append(note("Warning:", f"{name} is adverse authority to distinguish: the order refused bail, so it states the State's point and does not support counsel's side", [key]))
+                self._decision("warn", f"{key[0]}#{key[1]} comes from an order that refused bail: marked as adverse authority to distinguish.", authority=f"{key[0]}#{key[1]}", claim=w.key)
             if a.good_law == GoodLawStatus.DISTINGUISHED and not self._has_note(w, "Qualification:", key, "distinguished"):
                 w.sentences.append(note("Qualification:", f"{name} has since been distinguished; its reach is limited", [key]))
                 self._decision("qualify", f"{key[0]}#{key[1]} is distinguished: qualified.", authority=f"{key[0]}#{key[1]}", claim=w.key)

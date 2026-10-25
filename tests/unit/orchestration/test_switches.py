@@ -36,6 +36,7 @@ EV01_DEFAULTS = {
     "draft_mode": "single", "topology": "orchestrated", "plan_cache": False, "urgency_policy": "urgency",
     "output_format": "answer_only", "no_typed_handoff": False, "no_spotlighting": False, "no_guard": False,
     "munshi_image_only": False, "chunking": "structure",
+    "authority_stance": "off", "munshi_keep_weak_text": False,  # RECONCILED: sweep 4 (opt-in, no variant id)
     "prefix_layout": False,  # RECONCILED: sweep 3 added S14d (prefix-friendly prompt layout), a field the plan does not name
 }
 EXTRACTORS = ["finetuned_4b", "base_4b", "prompted_32b"]
@@ -210,10 +211,11 @@ def test_implemented_variants_are_s3_and_the_existing_ablations():
     done = Switches.implemented_variants()
     # RECONCILED: sweep 1 implemented S1 (retrieval_policy='self_critique') and S2 ('adaptive') and S5 (graph_expansion) and S4 (weak_signal)
     # RECONCILED: sweep 2 implemented S8 (repair_mode='self_critique'), S10 (abhiyojak_isolation=False) S9 (critic_mode='sampling'), S11 (critic_mode='three_role'), S11b / S11c (draft_mode) and S15 (output_format='reasoning_first')
+    # RECONCILED: sweep 4 added S18 (authority_stance) and P8 (munshi_keep_weak_text)
     # RECONCILED: sweep 3 implemented S17, S17b, S17c, S17d (the injection-defence flags) and S7 (munshi_gap_policy='hierarchy') and P7 (munshi_image_only) and S14, S14b, S14c, S14d (serving)
     # RECONCILED: sweep 4 implemented S6 / A12 (store_prior='order') and B5 / S6b (store_prior='only')
     # RECONCILED: sweep 4 implemented S16 / S16b (chunking) and S12 (topology='sequential') and S12b ('single_agent')
-    assert done == {"full", "S6", "B5", "S12", "S12b", "S13", "S16", "S16b", "S7", "S14", "S14b", "S14c", "S14d", "S1", "S2", "S3", "S3b", "S4", "S5", "S8", "S9", "S10", "S11", "S11b", "S11c", "S15", "S17", "S17b", "S17c", "S17d", "P5", "P6", "P7", *(f"A{i}" for i in range(1, 11))}
+    assert done == {"full", "S6", "B5", "S12", "S12b", "S13", "S16", "S16b", "S7", "S14", "S14b", "S14c", "S14d", "S1", "S2", "S3", "S3b", "S4", "S5", "S8", "S9", "S10", "S11", "S11b", "S11c", "S15", "S17", "S17b", "S17c", "S17d", "S18", "P5", "P6", "P7", "P8", *(f"A{i}" for i in range(1, 11))}
     # RECONCILED: every defined id is now implemented (S13 as the search harness, `eval/runners/workflow_search.py`)
 
 

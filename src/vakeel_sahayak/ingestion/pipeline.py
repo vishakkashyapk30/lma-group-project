@@ -58,6 +58,7 @@ class PageRead:
             route=log,
             ocr_conf=round(self.outcome.ocr_conf, 2) if self.outcome.ocr_conf is not None else None,
             status=self.outcome.status,
+            confidence=self.outcome.confidence if self.outcome.low_confidence else None,
         )
 
 
@@ -107,9 +108,9 @@ def flag_instruction_lines(text: str) -> list[str]:
 
 
 def read_page(path: str, page: int, thresholds: dict[str, float], max_route: ParseRoute = ParseRoute.ASK_COUNSEL,
-              min_route: ParseRoute | None = None, guard: bool = True) -> PageRead:  # fmt: skip
+              min_route: ParseRoute | None = None, guard: bool = True, keep_weak: bool = False) -> PageRead:  # fmt: skip
     """Route one page and check its text for instruction-like lines (`guard=False`: S17c arm, the lines are only counted as missed)."""
-    outcome = route_page_from(path, page, thresholds, max_route, min_route)
+    outcome = route_page_from(path, page, thresholds, max_route, min_route, keep_weak)
     return page_read(path, page, outcome, guard)
 
 
@@ -126,6 +127,7 @@ def read_file(
     on_page: Callable[[PageRead], None] | None = None,
     min_route: ParseRoute | None = None,
     guard: bool = True,
+    keep_weak: bool = False,
 ) -> FileRead:
     """Survey a file: compute signals for every page and run the cheapest acceptable route (plan §4.3 step 1).
 
@@ -136,6 +138,7 @@ def read_file(
         on_page: called after each page (the agent logs the route to the event log here)
         min_route: weakest rung allowed for every page (P7 image-only passes VISION)
         guard: False for the S17c arm (instruction-like lines are not flagged or dropped)
+        keep_weak: keep a near-miss text layer as a low-confidence read instead of asking counsel (`munshi_keep_weak_text`)
 
     Returns:
         FileRead. A locked or broken file has no pages and an `error` (K9: ask counsel, never guess).
@@ -150,7 +153,7 @@ def read_file(
         return FileRead(path, name, InputKind.K9_LOCKED_OR_BROKEN, error=f"{exc}", error_kind=exc.kind)
     pages: list[PageRead] = []
     for number in range(1, source.page_count + 1):
-        read = read_page(path, number, thresholds, max_route, min_route, guard)
+        read = read_page(path, number, thresholds, max_route, min_route, guard, keep_weak)
         pages.append(read)
         if on_page:
             on_page(read)

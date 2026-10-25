@@ -215,8 +215,8 @@ class MunshiAgent(BaseAgent):
         """Route one page: through the tools when Munshi has a context, else straight through the ladder. P7 (`munshi_image_only`): every page starts at the vision model."""
         min_route = min_route or self._floor()
         if not self.tooled:
-            return read_page(path, page, self.thresholds, self.max_route, min_route=min_route, guard=self.defences().guard)
-        out = route_page_with_tools(self._raw_tool, path, page, self.thresholds, self.max_route, min_route)
+            return read_page(path, page, self.thresholds, self.max_route, min_route=min_route, guard=self.defences().guard, keep_weak=self.switches.munshi_keep_weak_text)
+        out = route_page_with_tools(self._raw_tool, path, page, self.thresholds, self.max_route, min_route, self.switches.munshi_keep_weak_text)
         if isinstance(out, ToolError):
             return out
         return page_read(path, page, out, self.defences().guard)
@@ -382,7 +382,7 @@ class MunshiAgent(BaseAgent):
                     if self.tooled:
                         read = self._read_file_with_tools(path)
                     else:
-                        read = read_file(path, self.thresholds, self.max_route, on_page=self._log_page, guard=self.defences().guard, min_route=self._floor())
+                        read = read_file(path, self.thresholds, self.max_route, on_page=self._log_page, guard=self.defences().guard, min_route=self._floor(), keep_weak=self.switches.munshi_keep_weak_text)
             except ModelUnavailable as exc:
                 read = FileRead(path, Path(path).name, file_kind(path), error=str(exc), error_kind="unavailable")
             if read.error:
@@ -703,6 +703,13 @@ class MunshiAgent(BaseAgent):
                 run.gaps.append(Gap(item=f"file {self._logname(read.name)}", action=f"not read: {read.error}"))
             elif read.error:
                 run.gaps.append(Gap(item=f"file {self._logname(read.name)}", action=f"not opened ({read.error_kind}: {read.error}); asked counsel for an intact copy"))
+        if self.switches.munshi_keep_weak_text:  # flagged to counsel in the intake report: kept pages are read at low confidence
+            for read in run.reads:
+                weak = [p for p in read.pages if p.outcome.low_confidence]
+                if weak:
+                    shares = ", ".join(f"p.{p.page} {p.outcome.confidence:.0%}" for p in weak)
+                    run.gaps.append(Gap(item=f"file {self._logname(read.name)}: {len(weak)} page(s) read from a rejected text layer",
+                                        action=f"kept as a low-confidence read (dictionary-word share {shares}, bar 85%); counsel to check the extracted facts against the original"))
         hierarchy = self.switches.munshi_gap_policy == "hierarchy"
         for item in self._missing():
             if hierarchy and run.gap_records and item not in self._missing():  # S7: stop when the field is filled (an earlier re-read filed it)

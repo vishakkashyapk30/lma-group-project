@@ -51,6 +51,10 @@ makes the evaluation runners fail loudly on the rest. Every default is the curre
 | S17 (A15), S17b, S17c, S17d | `no_typed_handoff`; `no_spotlighting`; `no_guard`; all three | injection defences |
 | P7 | `munshi_image_only=True` | ingestion: page images straight to the vision model |
 
+Two opt-in switches added after the evaluation plan (ids S18 and P8 are given here; docs/literature-to-code-map.md, Sweep 4): `authority_stance='outcome'` (S18) (Vakeel prefers authorities from orders that granted
+bail and marks the ones that refused it as adverse authority to distinguish; Wachsmuth et al., ACL 2018) and `munshi_keep_weak_text=True` (P8: a text layer with
+60-84% dictionary words is kept as a low-confidence read, flagged to counsel, instead of dropping to ask-counsel).
+
 Id numbering: this module and `docs/evaluation-plan.md` use the plan's S-ids. The literature review numbers the same ideas differently
 (its S2 = plan S5 graph retrieval, its R1 = plan S3 stopping, its R2 = plan S4 skew signal); `docs/literature-to-code-map.md` names both.
 """
@@ -111,6 +115,7 @@ ARCHITECTURE: dict[str, dict[str, Any]] = {
     "S17b": {"no_spotlighting": True},
     "S17c": {"no_guard": True},
     "S17d": {"no_typed_handoff": True, "no_spotlighting": True, "no_guard": True},
+    "S18": {"authority_stance": "outcome"},  # sweep 4: not in the evaluation plan; id added here
 }
 # The evaluation plan's ablation and baseline ids for the variants above (the canonical name is the S-id).
 VARIANT_ALIASES: dict[str, str] = {
@@ -119,10 +124,11 @@ VARIANT_ALIASES: dict[str, str] = {
 }
 INGESTION: dict[str, dict[str, Any]] = {
     "P5": {"munshi_no_gap_check": True}, "P6": {"munshi_no_bundle_split": True}, "P7": {"munshi_image_only": True},
+    "P8": {"munshi_keep_weak_text": True},  # sweep 4: not in the evaluation plan; id added here
 }
 BASELINE_SWITCHES: dict[str, dict[str, Any]] = {"B5": {"store_prior": "only"}}  # learned store router, no contracts
 # Ids whose behaviour exists today (S3 and the A1-A10 ablations, P5, P6, full). Everything else is defined but not implemented.
-IMPLEMENTED_VARIANTS: frozenset[str] = frozenset({"full", *ABLATIONS, "S1", "S2", "S3", "S3b", "S4", "S5", "S6", "B5", "S12", "S12b", "S13", "S16", "S16b", "S8", "S9", "S10", "S11", "S11b", "S11c", "S7", "S14", "S14b", "S14c", "S14d", "S15", "S17", "S17b", "S17c", "S17d", "P5", "P6", "P7"})
+IMPLEMENTED_VARIANTS: frozenset[str] = frozenset({"full", *ABLATIONS, "S1", "S2", "S3", "S3b", "S4", "S5", "S6", "B5", "S12", "S12b", "S13", "S16", "S16b", "S8", "S9", "S10", "S11", "S11b", "S11c", "S7", "S14", "S14b", "S14c", "S14d", "S15", "S17", "S17b", "S17c", "S17d", "S18", "P5", "P6", "P7", "P8"})
 VARIANT_DESCRIPTIONS: dict[str, str] = {
     "full": "Munshi -> Peshkar -> Sutradhar, with Vakeel, Abhiyojak and all checks",
     "A1": "no dossier: Sutradhar and Vakeel read the raw facts",
@@ -164,10 +170,12 @@ VARIANT_DESCRIPTIONS: dict[str, str] = {
     "S17b": "injection defence off: no spotlighting",
     "S17c": "injection defence off: no guard",
     "S17d": "all three injection defences off",
+    "S18": "authority stance: Vakeel prefers authorities from orders that granted bail and marks refusals as adverse authority to distinguish",
     "B5": "learned store router alone: no evidence contracts",
     "P5": "Munshi fixed cascade: no gap check, no re-reading, no questions",
     "P6": "Munshi without bundle splitting and document labelling",
     "P7": "image-only ingestion: page images go straight to the vision model, no OCR text",
+    "P8": "Munshi keeps a 60-84% dictionary-word text layer as a low-confidence read instead of asking counsel",
 }
 
 
@@ -208,6 +216,10 @@ class Switches(BaseModel):
     no_spotlighting: bool = False
     no_guard: bool = False
     munshi_image_only: bool = False  # P7
+    # S18 (not in the evaluation plan): Vakeel offers supporting authorities first and marks authorities from orders that refused bail as
+    # adverse authority to distinguish (Wachsmuth et al., ACL 2018, counter-argument retrieval; agents/vakeel/stance.py). 'off' is today's behaviour.
+    authority_stance: Literal["off", "outcome"] = "off"
+    munshi_keep_weak_text: bool = False  # P8 (not in the evaluation plan): Munshi keeps a 67-84% dictionary-word text layer as a low-confidence read (agents/munshi, ingestion/pipeline.py)
     chunking: Literal["structure", "proposition", "late", "fixed", "recursive", "semantic", "page"] = "structure"  # S16 (not named in plan 3.4: the chunker of the retrieval-only runner)
 
     @model_validator(mode="after")
