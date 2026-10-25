@@ -17,6 +17,11 @@ case-insensitively against these aliases; every field except the id and the text
 | FIR | `fir` (`{police_station, number, year, district}`) or `fir_key` |
 | pre-split parts | `parts`: `{facts, defense_submissions, prosecution_submissions, reasoning, operative_order}` (skips the splitter) |
 
+Optional `<interim_dir>/oil_metadata.jsonl` (built by `citation_graph/oil_metadata.py`, schema in its docstring) adds the
+judgments that are not orders of this corpus, chiefly the 37,014 Supreme Court judgments of Open India Law, to the citation
+index: their citations then resolve (by INSC, SCR or case name), become graph nodes with court and date, and are never
+text in a store. Excluded (test and same-FIR) orders are not added from it either. Without the file nothing changes.
+
 Optional `<interim_dir>/citation_edges.jsonl` holds already-resolved `CitationEdge` rows (the output of the citation-graph
 pipeline); they are added to the edges found by resolving the citations in the reasoning paragraphs.
 
@@ -49,6 +54,7 @@ from vakeel_sahayak.schemas.store_rows import CitationEdge, FactSignature, Parag
 from vakeel_sahayak.stores.chunking import chunk_order
 
 ORDERS_FILE = "orders.jsonl"
+OIL_METADATA_FILE = "oil_metadata.jsonl"
 CITATION_EDGES_FILE = "citation_edges.jsonl"
 _ID = ("doc_id", "id", "case_id")
 _TEXT = ("text", "full_text", "judgment", "content")
@@ -207,6 +213,33 @@ def _add_resolved_edges(
     report["edges_from_file"] = n
 
 
+def _external_records(path: Path, order_ids: set[str], excluded: set[str], report: dict[str, Any]) -> list[dict[str, Any]]:
+    """Metadata records of `oil_metadata.jsonl` for judgments that are not orders of this corpus (and not excluded)."""
+    if not path.is_file():
+        return []
+    out = [
+        r for r in read_jsonl(path)
+        if r.get("in_corpus") is not True and str(r.get("doc_id") or "") not in order_ids and str(r.get("doc_id") or "") not in excluded
+    ]  # fmt: skip
+    report["external_metadata_records"] = len(out)
+    return out
+
+
+def _describe_external_nodes(graph: CitationGraph, index: CitationIndex, report: dict[str, Any]) -> None:
+    """Give graph nodes that only the metadata knows (a cited Supreme Court judgment) their court, level and date, so that
+    authority, `as_of` filtering and the SC-root check treat them like any other node."""
+    filled = 0
+    for doc_id, node in graph.nodes.items():
+        meta = index.docs.get(doc_id)
+        if meta and node.court is None and (meta.get("court") or meta.get("date")):
+            node.court = meta.get("court")
+            node.court_level = court_level_of(node.court)
+            node.date = meta.get("date")
+            filled += 1
+    if filled:
+        report["external_nodes_described"] = filled
+
+
 def _build_graph(
     processed: list[ProcessedOrder], index: CitationIndex, labeler: TreatmentLabeler | None, report: dict[str, Any]
 ) -> CitationGraph:
@@ -319,9 +352,12 @@ def process_corpus(
         "orders_without_reasoning": sum(1 for p in processed if not p.parts.get(OrderPart.REASONING, "").strip()),
         "treatment_mode": "agreed_with_labeler" if labeler else "cue_only",
     }  # fmt: skip
-    index = CitationIndex([{**o.raw, "doc_id": o.doc_id, "date": o.date, "court": o.court, "title": o.title,
-                            "citations": o.citations} for o in kept])  # fmt: skip
+    records = [{**o.raw, "doc_id": o.doc_id, "date": o.date, "court": o.court, "title": o.title,
+                "citations": o.citations} for o in kept]  # fmt: skip
+    records += _external_records(Path(interim_dir) / OIL_METADATA_FILE, {o.doc_id for o in orders}, excluded, report)
+    index = CitationIndex(records)
     graph = _build_graph(processed, index, labeler, report)
+    _describe_external_nodes(graph, index, report)
     resolved_edges = Path(interim_dir) / CITATION_EDGES_FILE
     if resolved_edges.is_file():
         _add_resolved_edges(graph, processed, resolved_edges, excluded, report)

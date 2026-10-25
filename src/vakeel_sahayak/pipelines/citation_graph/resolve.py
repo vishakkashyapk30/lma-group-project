@@ -3,7 +3,9 @@
 Metadata format (JSONL, one record per judgment; an `orders.jsonl` of the store builders works as is):
 `doc_id` (required), `title` or `case_name` ('Sanjay Chandra v. Central Bureau of Investigation'), `court`, `date` (or
 `year`), and the judgment's own citations in `neutral_citation` and/or `citations` (a list, or one string such as
-'(2012) 1 SCC 40 : AIR 2012 SC 830'). Missing fields only reduce what can be resolved.
+'(2012) 1 SCC 40 : AIR 2012 SC 830'; '[1979] 3 S.C.R. 453' is read as an SCR key). Missing fields only reduce what can be
+resolved. `data/interim/oil_metadata.jsonl` (built by `citation_graph/oil_metadata.py`, schema in its docstring) is the
+file the pipeline reads: the Supreme Court judgments of `sc_metadata.jsonl` plus the orders' own fields.
 """
 
 from __future__ import annotations
@@ -21,6 +23,15 @@ _STOP = {"ors", "anr", "others", "another", "etc", "alias", "through", "the", "a
 FUZZY_MIN = 0.82
 PARTY_MIN = 0.8
 AMBIGUITY_MARGIN = 0.03
+BLOCKED_ABOVE = 5000  # records: above this `load_index` builds the word-blocked index
+
+
+_DOCKET_PREFIX = re.compile(r"^[^/]{1,40}/\d{1,7}/\d{4}\s+of\s+", re.IGNORECASE)
+
+
+def clean_case_name(title: str | None) -> str:
+    """A title without the docket prefix some High Court portals put before the parties ('BAIL/3506/2025 of X Vs Y' -> 'X Vs Y')."""
+    return _DOCKET_PREFIX.sub("", re.sub(r"\s+", " ", str(title or "")).strip(), count=1)
 
 
 def _party_tokens(party: str) -> list[str]:
@@ -59,6 +70,7 @@ class CitationIndex:
         self._exact: dict[str, set[str]] = defaultdict(set)
         self._names: list[tuple[str, tuple[str, str], int | None, str | None]] = []
         self.docs: dict[str, dict[str, Any]] = {}
+        self._named: set[str] = set()
         for rec in records:
             doc_id = str(rec.get("doc_id") or "")
             if not doc_id:
@@ -75,22 +87,24 @@ class CitationIndex:
         date = normalise_date(rec.get("date"))
         year = int(date[:4]) if date else (int(rec["year"]) if str(rec.get("year") or "").isdigit() else None)
         court = rec.get("court")
-        self.docs[doc_id] = {"court": court, "year": year}
+        known = self.docs.get(doc_id, {})  # a second record of the same judgment fills in what the first one lacks
+        self.docs[doc_id] = {"court": court or known.get("court"), "year": year or known.get("year"), "date": date or known.get("date")}
         cites = rec.get("citations")
         blob = " ; ".join([str(rec.get("neutral_citation") or ""), *(cites if isinstance(cites, list) else [str(cites or "")])])
         for raw in extract_citations(blob):
             parsed = parse_citation(raw)
             if parsed and parsed.kind != "case_name":
                 self._exact[parsed.key].add(doc_id)
-        title = str(rec.get("title") or rec.get("case_name") or "")
+        title = clean_case_name(rec.get("title") or rec.get("case_name"))
         parties = _split_parties(title) if title else None
-        if parties:
+        if parties and doc_id not in self._named:  # a judgment listed by two sources is one candidate, not two rivals
+            self._named.add(doc_id)
             self._names.append((doc_id, parties, year, court))
 
     def resolve(self, citation: str, year: int | None = None, court: str | None = None) -> str | None:
         """Resolve one raw citation to a doc id.
 
-        Neutral, SCC, AIR, SCC OnLine and Cri LJ citations are matched exactly on their normalised key. A case name is
+        Neutral (INSC), SCR, SCC, AIR, SCC OnLine and Cri LJ citations are matched exactly on their normalised key. A case name is
         matched fuzzily on both party names, then filtered by year (within one year) and court when those are known. A tie
         between different judgments is not resolved (None) unless the court level separates them.
 
@@ -137,11 +151,22 @@ _CACHE: dict[tuple[str, float], CitationIndex] = {}
 
 
 def load_index(metadata_path: str) -> CitationIndex:
-    """CitationIndex for a metadata file, cached by path and modification time."""
+    """CitationIndex for a metadata file, cached by path and modification time.
+
+    A file of more than `BLOCKED_ABOVE` records gets the word-blocked, memoised index (`store_builders/fast_index.py`): the plain
+    index scores a cited case name against every title, which is minutes per name on the 150,000 records of `oil_metadata.jsonl`.
+    Smaller files keep the plain index, so results there are unchanged.
+    """
     p = Path(metadata_path)
     key = (str(p.resolve()), p.stat().st_mtime if p.exists() else 0.0)
     if key not in _CACHE:
-        _CACHE[key] = CitationIndex.from_jsonl(p)
+        records = list(read_jsonl(p))
+        if len(records) > BLOCKED_ABOVE:
+            from vakeel_sahayak.pipelines.store_builders.fast_index import FastCitationIndex
+
+            _CACHE[key] = FastCitationIndex(records)
+        else:
+            _CACHE[key] = CitationIndex(records)
     return _CACHE[key]
 
 

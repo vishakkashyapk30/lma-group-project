@@ -70,4 +70,4 @@ finds and 4.8% an offence date, so the same-FIR leakage rule and the BNS-era tes
   the documented fallback is NLLB English to Hindi translation of constructed orders.
 * **Models:** `scripts/download_models.sh` (tiers in `configs/models.yaml`, `make models-dry-run`); T1 helpers go to `models/hf`, listed in `models/MANIFEST.json`.
 * **Stores:** full build log and result in `docs/handoff/data-and-models.md`; `data/stores/MANIFEST.json` is written when it finishes.
-* Wiring the Supreme Court metadata (`raw/open_india_law/sc_metadata.jsonl`) into the citation index is deferred (`pipelines/citation_graph/**` is owned by another change).
+* Supreme Court metadata is wired into the citation index (VI-05, 2026-10-25). `interim/oil_metadata.jsonl` (152,413 records: the 37,014 Supreme Court judgments of `raw/open_india_law/sc_metadata.jsonl` plus the orders' own fields) is built by `python -m vakeel_sahayak.pipelines.citation_graph.oil_metadata`; its schema is in that module's docstring and in `docs/handoff/citation-sc-metadata.md`. Candidate stores built with it live in `stores_candidate/` (see `stores_candidate/SWAP.md`); `stores/` is unchanged until someone swaps.

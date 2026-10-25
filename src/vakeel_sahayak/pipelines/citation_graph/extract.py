@@ -1,4 +1,4 @@
-"""Regex extraction of Indian citations (INSC neutral, SCC, AIR, SCC OnLine, Cri LJ, 'X v. State of Y') from reasoning paragraphs (plan §5.3)."""
+"""Regex extraction of Indian citations (INSC neutral, SCR, SCC, AIR, SCC OnLine, Cri LJ, 'X v. State of Y') from reasoning paragraphs (plan §5.3)."""
 
 from __future__ import annotations
 
@@ -12,6 +12,9 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("scc", re.compile(rf"(?:\(({_YEAR})\)|\b({_YEAR})\s*\()\s*(\d{{1,3}})\)?\s+SCC\s+(\d{{1,5}})\b")),
     ("air", re.compile(rf"\bAIR\s+({_YEAR})\s+([A-Z][A-Za-z]{{1,6}}(?:\s?\([A-Za-z]+\))?)\s+(\d{{1,5}})\b")),
     ("crilj", re.compile(rf"\(?\b({_YEAR})\)?\s+(?:Cri\.?\s?L\.?\s?J\.?|CriLJ|Crl\.?\s?L\.?\s?J\.?)\s+(\d{{1,5}})\b", re.IGNORECASE)),
+    # Supreme Court Reports, the series Open India Law lists for every Supreme Court judgment: '[1979] 3 S.C.R. 453', '[2006] SUPP. 8 S.C.R. 1021', '(1979) 3 SCR 453'.
+    # Appended last so the positions of the patterns above stay as they were.
+    ("scr", re.compile(rf"[\[(]({_YEAR})[\])]\s*(SUPP\.?\s+)?(\d{{1,3}})\s+S\.?\s?C\.?\s?R\.?(?![A-Za-z])\s*(\d{{1,5}})\b", re.IGNORECASE)),
 ]
 _WORD_TOKEN = r"(?:[A-Z]\.|[A-Z][\w&'’-]*)"
 _NAME = rf"{_WORD_TOKEN}(?:\s+(?:of|the|and|&|{_WORD_TOKEN})){{0,6}}"
@@ -26,7 +29,7 @@ _TITLE_WORDS = {"The", "This", "That", "In", "It", "As", "Hon", "Mr", "Mrs", "Sh
 class ParsedCitation:
     """A citation split into its kind and a normalised key (plan §5.3)."""
 
-    kind: str  # neutral | scc | scc_online | air | crilj | case_name
+    kind: str  # neutral | scr | scc | scc_online | air | crilj | case_name
     key: str  # lower-case normalised key; for case names the 'p1 v p2' text
     year: int | None = None
 
@@ -42,7 +45,7 @@ def _clean_name(name: str) -> str:
 def extract_citations(text: str) -> list[str]:
     """Find raw citation strings.
 
-    Recognises neutral citations ('2023 INSC 123'), SCC ('(2014) 8 SCC 273'), AIR ('AIR 1978 SC 597'), SCC OnLine
+    Recognises neutral citations ('2023 INSC 123'), SCR ('[1979] 3 S.C.R. 453'), SCC ('(2014) 8 SCC 273'), AIR ('AIR 1978 SC 597'), SCC OnLine
     ('2022 SCC OnLine Del 1234'), Cri LJ ('2010 Cri LJ 1234') and case names ('X v. State of Y', 'State of Y v. X').
 
     Args:
@@ -90,6 +93,9 @@ def parse_citation(raw: str) -> ParsedCitation | None:
         return ParsedCitation("air", f"air {m.group(1)} {court} {int(m.group(3))}", int(m.group(1)))
     if m := _PATTERNS[4][1].search(s):
         return ParsedCitation("crilj", f"{m.group(1)} crilj {int(m.group(2))}", int(m.group(1)))
+    if m := _PATTERNS[5][1].search(s):
+        supp = "supp " if m.group(2) else ""
+        return ParsedCitation("scr", f"{m.group(1)} {supp}{int(m.group(3))} scr {int(m.group(4))}", int(m.group(1)))
     if m := _CASE_NAME.search(s):
         year = int(m.group(2)) if m.group(2) else None
         return ParsedCitation("case_name", re.sub(r"\s+", " ", _clean_name(m.group(1))).lower(), year)
