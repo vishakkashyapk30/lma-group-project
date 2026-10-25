@@ -11,7 +11,7 @@ Vakeel-Sahayak.ai is an agentic bail-preparation engine for Indian legal-aid law
 
 ## Hard rules (do not break these)
 - **No manual annotation or hand-made datasets.** Ground truth comes from court text, official tables, existing datasets, construction, or non-Qwen labeler agreement. No LLM-judge scores.
-- **No AI attribution anywhere**: no `Co-Authored-By` trailer, no "Generated with ..." line, no AI mention in commits, PRs or documents. Only the four teammates are contributors. Commit as yourself.
+- **No AI attribution anywhere**: no `Co-Authored-By` trailer, no "Generated with ..." line, no AI mention in commits, PRs or documents. Only the four teammates are contributors. Commit as yourself. Run `make hooks` once after cloning (it installs a hook that strips such lines) and `make check-commits` before opening a PR.
 - **Privacy:** raw client files stay on the user's machine. External model services (Sarvam, OpenAI) are OFF by default and gated by `VS_EXTERNAL=off|public|pseudonymised|consented` plus per-case consent; every external payload must pass the pseudonymisation boundary.
 - **API keys only in environment variables** (`SARVAM_API_KEY`, `OPENAI_API_KEY`) or an untracked `.env`. Never commit, print or log a key. OpenAI spend is capped at 5 USD in code (default 4.50); check with `make openai-spend`.
 - **Approvals only from counsel, enforced in code.** Export is impossible before Gate 2. No outcome predictions, no grant rates, no advice to the public.

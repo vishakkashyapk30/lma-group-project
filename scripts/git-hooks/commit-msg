@@ -1,0 +1,4 @@
+#!/bin/sh
+# Team rule: no AI-assistant attribution in commit messages (see AGENTS.md).
+# Strips Co-Authored-By trailers and "Generated with ..." lines that name an AI assistant, then tidies trailing blank lines.
+perl -0pi -e 's/^Co-Authored-By:[^\n]*(Claude|Anthropic|ChatGPT|OpenAI|Copilot|Gemini|Codex|Cursor)[^\n]*\n?//gim; s/^[^\n]*Generated with[^\n]*(Claude|Anthropic|ChatGPT|Copilot|Gemini|Codex|Cursor)[^\n]*\n?//gim; s/\s+\z/\n/' "$1"

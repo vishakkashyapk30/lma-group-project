@@ -1,7 +1,7 @@
 # Skeleton targets; every recipe is a stub until implemented.
 PY ?= .venv/bin/python
 
-.PHONY: models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend
+.PHONY: models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend hooks check-commits
 
 setup:            ## create .venv and install (scripts/setup_dev.sh)
 	@echo "TODO: scripts/setup_dev.sh"; exit 1
@@ -100,3 +100,10 @@ smoke:            ## run the case-0007 fixture end to end offline: prints the Ba
 
 eval-smoke:       ## run 3 T1 dev cases offline through the Full system (needs data/testsets/t1/dev.jsonl from the T1 builder)
 	VS_MODELS=offline VS_LLM_BACKEND=offline $(PY) -m vakeel_sahayak.eval.runners.driver eval-smoke
+
+hooks:        ## install the versioned git hooks (strips AI attribution from commit messages)
+	git config core.hooksPath scripts/git-hooks
+	@echo "hooks installed: core.hooksPath=scripts/git-hooks"
+
+check-commits: ## fail if any commit in origin/main..HEAD names an AI assistant
+	@scripts/check_commits.sh
