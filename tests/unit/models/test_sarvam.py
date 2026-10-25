@@ -746,7 +746,7 @@ def test_agent_role_configured_sarvam_falls_back_while_off(monkeypatch):
 
 
 def test_agent_role_configured_sarvam_is_wrapped_ada_side_and_pseudonymised_only(monkeypatch, calls):
-    _role_cfg(monkeypatch)
+    _role_cfg(monkeypatch, model="sarvam-105b")  # RECONCILED: the Sarvam spend ledger refuses a model with no price, so the role names a priced Sarvam model
     monkeypatch.setenv("VS_SARVAM", "pseudonymised")
     monkeypatch.setenv("SARVAM_API_KEY", KEY)
     use_mock_server(monkeypatch, {"/v1/chat/completions": chat_reply("hi")}, calls)

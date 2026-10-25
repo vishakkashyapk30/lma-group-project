@@ -213,8 +213,12 @@ class SarvamLLMClient(_Base, LLMClient):
         self, messages: list[dict[str, str]], max_tokens: int = 1024, temperature: float = 0.0, json_schema: dict | None = None
     ) -> str:
         """Chat call. The whole message list is policy- and boundary-checked first; a schema asks for structured JSON."""
-        authorize("chat", self._chat_scope(), payload={"messages": messages})
-        res = self.api.chat(messages, model=self.model_id, max_tokens=max_tokens, temperature=temperature, json_schema=json_schema)
+        scope = self._chat_scope()
+        authorize("chat", scope, payload={"messages": messages})
+        res = self.api.chat(
+            messages, model=self.model_id, max_tokens=max_tokens, temperature=temperature, json_schema=json_schema,
+            purpose=scope.purpose or self.role or "chat", case_id=scope.case_id,
+        )  # fmt: skip
         self.record_usage(res.prompt_tokens, res.completion_tokens)
         text = strip_thinking(res.text)
         if not text.strip():

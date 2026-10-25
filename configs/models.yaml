@@ -53,6 +53,21 @@ sarvam:
   text_to_speech: {model: "bulbul:v4-flash", speaker: simran_en_customer, sample_rate: 24000}
   vision: {output_format: md, poll_interval_s: 2.0, timeout_s: 300, use_for_ocr: false}   # use_for_ocr: also serve the OCR rung (confidence = pages succeeded / total)
   use: {ocr: true, vision: true, translation: true, asr: true, llm: true, tts: true, language_id: true}   # per-capability switches (all still gated by the mode)
+  # HARD SPENDING CAP (models/sarvam/spend.py): every chat, translate, transliterate, language-id and TTS call is reserved at its worst case
+  # in a SQLite ledger BEFORE the request; over the cap the call is refused (SarvamBudgetExceeded, a SarvamError, so the local fallback answers).
+  # Cap in INR: env VS_SARVAM_CAP_INR, else configs/eval/runs.yaml budgets.sarvam_cap_inr, else ledger.default_cap_inr. Per-run cap: env VS_SARVAM_RUN_CAP_INR.
+  # `python -m vakeel_sahayak.models.sarvam.spend` prints totals. Speech-to-text and Vision digitise are NOT metered (priced per audio hour / page).
+  ledger: {path: null, cache_path: null, default_cap_inr: 25.0}   # null = <data>/sarvam/ledger.sqlite and cache.sqlite
+  # Price per 1M tokens in INR (input / cached input / output). Source: Sarvam dashboard 2026-10-26, reported by the owner (not verified in code).
+  prices_inr_per_1m:
+    sarvam-105b:         {input: 15,   cached: 5,    output: 60}
+    mimo-v2.6-flash:     {input: 12.5, cached: 0.25, output: 25}
+    mimo-v2.6-pro:       {input: 40,   cached: 0.3,  output: 80}
+    deepseek-v4.1-flash: {input: 25,   cached: 0.5,  output: 105}
+    glm-5.3-flash:       {input: 13.5, cached: 2.5,  output: 45}
+    gemma-4:             {input: 35,   cached: 10,   output: 90}
+  # Price per 10,000 characters in INR. NOT verified against the dashboard (rounded up from public list prices on purpose: a cap errs high).
+  prices_inr_per_10k_chars: {translate: 20, transliterate: 20, language_id: 3.5, text_to_speech: 30}
 # Independent non-Qwen labeler/teacher OPTION (documented, never the default): set llm.eval_labeler.runtime / llm.teacher.runtime
 # to sarvam (model sarvam-105b) or env VS_LABELER=sarvam / VS_TEACHER=sarvam. Public orders only; model_family('sarvam-105b') = 'sarvam'.
 # Agent roles: set llm.agents_14b.runtime: sarvam to use Sarvam-105B for the Ada-side agents (pseudonymised text only; falls back

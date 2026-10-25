@@ -113,6 +113,8 @@ docker-logs:      ## follow the stack's logs
 smoke:            ## run the case-0007 fixture end to end offline: prints the BailBrief grounds and statuses and the SparringRecord verdicts, exits 0
 	VS_MODELS=offline VS_LLM_BACKEND=offline $(PY) -m vakeel_sahayak.eval.runners.driver smoke
 
+sarvam-spend:     ## show Sarvam spend and the cap in INR (models/sarvam/spend.py)
+	$(PY) -m vakeel_sahayak.models.sarvam.spend
 eval-smoke-all:   ## run every implemented variant offline on 1 T1 dev case, about 40 minutes (writes a pass/fail table)
 	VS_MODELS=offline VS_LLM_BACKEND=offline $(PY) -m vakeel_sahayak.eval.runners.driver smoke-all
 eval-plan:        ## print cases, tokens, cost (USD, INR) and hours of every job without running anything

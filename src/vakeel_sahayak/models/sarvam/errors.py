@@ -42,3 +42,27 @@ class SarvamRateLimited(SarvamHttpError):
 
 class SarvamQuotaError(SarvamHttpError):
     """429 `insufficient_quota_error`: the credits are exhausted. Retrying cannot help, so it is not retried."""
+
+
+class SarvamBudgetExceeded(SarvamError):
+    """The Sarvam spending cap (or the run cap) would be exceeded by this call's worst case. Refused BEFORE any HTTP request.
+
+    A `SarvamError`, so the existing fallback path (`FallbackLLM`, `_Fallback`) answers with the local client instead.
+
+    Attributes:
+        spent_micro: micro-INR already spent or reserved
+        needed_micro: the worst-case cost of the refused call
+        cap_micro: the cap that applied (total or per-run)
+        scope: 'total' or 'run'
+    """
+
+    def __init__(self, message: str, spent_micro: int = 0, needed_micro: int = 0, cap_micro: int = 0, scope: str = "total") -> None:
+        """Keep the figures."""
+        super().__init__(message)
+        self.spent_micro = spent_micro
+        self.needed_micro = needed_micro
+        self.cap_micro = cap_micro
+        self.scope = scope
+
+
+BudgetExhausted = SarvamBudgetExceeded

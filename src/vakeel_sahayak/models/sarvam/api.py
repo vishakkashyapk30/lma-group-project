@@ -30,6 +30,7 @@ from typing import Any
 from vakeel_sahayak.models.sarvam.config import sarvam_config
 from vakeel_sahayak.models.sarvam.errors import SarvamError, SarvamHttpError
 from vakeel_sahayak.models.sarvam.http import SarvamHttp
+from vakeel_sahayak.models.sarvam.spend import Meter
 
 TERMINAL = frozenset({"completed", "partially_completed", "failed", "rejected"})
 _TAGS = re.compile(r"<[^>]+>")
@@ -133,11 +134,18 @@ def unpack_digitised(blob: bytes, output_format: str = "md") -> tuple[str, list[
 class SarvamApi:
     """The Sarvam endpoints as typed methods."""
 
-    def __init__(self, http: SarvamHttp | None = None, config: dict[str, Any] | None = None, sleep: Callable[[float], None] = time.sleep) -> None:
-        """Wrap a transport (default: one reading SARVAM_API_KEY) with the settings (default: configs/models.yaml)."""
+    def __init__(
+        self, http: SarvamHttp | None = None, config: dict[str, Any] | None = None, sleep: Callable[[float], None] = time.sleep, meter: Meter | None = None
+    ) -> None:
+        """Wrap a transport (default: one reading SARVAM_API_KEY) with the settings (default: configs/models.yaml).
+
+        `meter` is the spend ledger and response cache (default: the configured files, opened on first use). Chat, translate, transliterate,
+        language-id and text-to-speech calls are reserved against the cap BEFORE the request (`spend` module doc).
+        """
         self.http = http or SarvamHttp()
         self.cfg = config or sarvam_config()
         self._sleep = sleep
+        self.meter = meter or Meter(config=config)
 
     def _ep(self, name: str, **fmt: str) -> str:
         return str(self.cfg["endpoints"][name]).format(**fmt)
@@ -178,19 +186,62 @@ class SarvamApi:
             raise SarvamError("Sarvam chat stopped at the token limit before any answer (thinking used the budget); raise max_tokens or disable reasoning")
         return ChatResult(text, int(usage.get("prompt_tokens", 0)), int(usage.get("completion_tokens", 0)), choice.get("finish_reason"), str(data.get("model") or ""))
 
+    def _chat_model(self, kw: dict[str, Any]) -> str:
+        return str(kw.get("model") or self.cfg["chat"]["model"])
+
+    def _begin_chat(self, messages: list[dict[str, str]], kw: dict[str, Any], meta: dict[str, Any]) -> tuple[Any, Any, Any, str | None]:
+        body = self.chat_body(messages, **kw)
+        return self.meter.begin_chat(
+            str(body["model"]), messages, int(body["max_tokens"]), float(body["temperature"]), kw.get("json_schema"),
+            str(meta.get("purpose") or ""), meta.get("case_id"), {"effort": body.get("reasoning_effort")},
+        )  # fmt: skip
+
+    def _end_chat(self, data: dict[str, Any], res: Any, price: Any, key: str | None, model: str) -> ChatResult:
+        self.meter.finish_chat(res, price, data.get("usage") or {})
+        out = self.parse_chat(data)
+        self.meter.cache_put(key, model, out.text, out.prompt_tokens, out.completion_tokens, out.finish_reason)
+        return out
+
     def chat(self, messages: list[dict[str, str]], **kw: Any) -> ChatResult:
-        """Chat completion. With `json_schema` a `response_format` is sent; when the API rejects it (400/422) the call is
-        repeated once in plain JSON mode, and the caller's validation does the rest."""
+        """Chat completion behind the spend ledger and cache (temperature 0). With `json_schema` a `response_format` is sent; when the API
+        rejects it (400/422) the call is repeated once in plain JSON mode, and the caller's validation does the rest.
+
+        Extra keyword arguments `purpose` and `case_id` label the ledger row.
+
+        Raises:
+            SarvamBudgetExceeded: the call could exceed the cap (nothing was sent).
+        """
+        kw = dict(kw)
+        meta = {k: kw.pop(k) for k in ("purpose", "case_id") if k in kw}
+        cached, price, res, key = self._begin_chat(messages, kw, meta)
+        model = self._chat_model(kw)
+        if cached is not None:
+            return ChatResult(cached[0], cached[1], cached[2], "stop", model)
         path = self._ep("chat")
         try:
-            resp = self.http.request("POST", path, json=self.chat_body(messages, **kw))
-        except SarvamHttpError as exc:
-            if kw.get("json_schema") is None or exc.status not in (400, 422):
-                raise
-            resp = self.http.request("POST", path, json=self.chat_body(messages, **{**kw, "json_mode_only": True}))
-        return self.parse_chat(resp.json())
+            try:
+                resp = self.http.request("POST", path, json=self.chat_body(messages, **kw))
+            except SarvamHttpError as exc:
+                if kw.get("json_schema") is None or exc.status not in (400, 422):
+                    raise
+                resp = self.http.request("POST", path, json=self.chat_body(messages, **{**kw, "json_mode_only": True}))
+        except Exception as exc:
+            self.meter.abort(res, exc)
+            raise
+        return self._end_chat(resp.json(), res, price, key, model)
 
     # ------------------------------------------------------------------ text
+
+    def _metered(self, kind: str, chars: int, model: str, call: Callable[[], Any]) -> Any:
+        """Reserve a character-priced call against the cap, make it, settle (refused with `SarvamBudgetExceeded` before any request)."""
+        res, cost = self.meter.begin_chars(kind, chars, model)
+        try:
+            out = call()
+        except Exception as exc:
+            self.meter.abort(res, exc)
+            raise
+        self.meter.finish_chars(res, chars, cost)
+        return out
 
     def translate_body(self, text: str, src: str | None, tgt: str, model: str | None = None, mode: str | None = None) -> dict[str, Any]:
         """The request body of a translate call ('auto' source when `src` is None)."""
@@ -210,7 +261,8 @@ class SarvamApi:
 
     def translate(self, text: str, src: str | None, tgt: str, model: str | None = None, mode: str | None = None) -> TranslateResult:
         """Translate one text (within the model's character limit)."""
-        d = self.http.request("POST", self._ep("translate"), json=self.translate_body(text, src, tgt, model, mode)).json()
+        body = self.translate_body(text, src, tgt, model, mode)
+        d = self._metered("translate", len(text), str(body["model"]), lambda: self.http.request("POST", self._ep("translate"), json=body)).json()
         return TranslateResult(str(d.get("translated_text", "")), d.get("source_language_code"), d.get("request_id"))
 
     def transliterate(self, text: str, src: str, tgt: str, spoken_form: bool = False) -> str:
@@ -218,11 +270,12 @@ class SarvamApi:
         if len(text) > 1000:
             raise ValueError("transliterate accepts under 1000 characters per call")
         body = {"input": text, "source_language_code": to_bcp47(src), "target_language_code": to_bcp47(tgt), "spoken_form": spoken_form}
-        return str(self.http.request("POST", self._ep("transliterate"), json=body).json().get("transliterated_text", ""))
+        resp = self._metered("transliterate", len(text), "transliterate", lambda: self.http.request("POST", self._ep("transliterate"), json=body))
+        return str(resp.json().get("transliterated_text", ""))
 
     def identify_language(self, text: str) -> LidResult:
         """Language and script of a text (the first 1000 characters are sent)."""
-        d = self.http.request("POST", self._ep("language_id"), json={"input": text[:1000]}).json()
+        d = self._metered("language_id", len(text[:1000]), "text-lid", lambda: self.http.request("POST", self._ep("language_id"), json={"input": text[:1000]})).json()
         return LidResult(d.get("language_code"), d.get("script_code"))
 
     # ------------------------------------------------------------------ speech
@@ -241,7 +294,7 @@ class SarvamApi:
             "text": text, "language_code": to_bcp47(language), "speaker": speaker or t["speaker"], "model": model or t["model"],
             "speech_sample_rate": int(t["sample_rate"]),
         }  # fmt: skip
-        d = self.http.request("POST", self._ep("text_to_speech"), json=body).json()
+        d = self._metered("text_to_speech", len(text), str(body["model"]), lambda: self.http.request("POST", self._ep("text_to_speech"), json=body)).json()
         return TtsResult(base64.b64decode("".join(d.get("audios") or [])), d.get("request_id"))
 
     # ------------------------------------------------------------------ vision (document intelligence)
@@ -299,31 +352,54 @@ class SarvamApi:
 class AsyncSarvamApi:
     """Async chat, translate and language-id (the calls an async caller makes in bulk, such as gold labelling)."""
 
-    def __init__(self, http: SarvamHttp | None = None, config: dict[str, Any] | None = None) -> None:
-        """Wrap a transport and settings, as `SarvamApi`."""
+    def __init__(self, http: SarvamHttp | None = None, config: dict[str, Any] | None = None, meter: Meter | None = None) -> None:
+        """Wrap a transport and settings, as `SarvamApi` (same spend ledger and cache)."""
         self.http = http or SarvamHttp()
-        self._sync = SarvamApi(self.http, config)
+        self._sync = SarvamApi(self.http, config, meter=meter)
 
     async def chat(self, messages: list[dict[str, str]], **kw: Any) -> ChatResult:
         """Async `SarvamApi.chat` (same JSON-mode fallback)."""
-        path = self._sync._ep("chat")
+        s = self._sync
+        kw = dict(kw)
+        meta = {k: kw.pop(k) for k in ("purpose", "case_id") if k in kw}
+        cached, price, res, key = s._begin_chat(messages, kw, meta)
+        model = s._chat_model(kw)
+        if cached is not None:
+            return ChatResult(cached[0], cached[1], cached[2], "stop", model)
+        path = s._ep("chat")
         try:
-            resp = await self.http.arequest("POST", path, json=self._sync.chat_body(messages, **kw))
-        except SarvamHttpError as exc:
-            if kw.get("json_schema") is None or exc.status not in (400, 422):
-                raise
-            resp = await self.http.arequest("POST", path, json=self._sync.chat_body(messages, **{**kw, "json_mode_only": True}))
-        return self._sync.parse_chat(resp.json())
+            try:
+                resp = await self.http.arequest("POST", path, json=s.chat_body(messages, **kw))
+            except SarvamHttpError as exc:
+                if kw.get("json_schema") is None or exc.status not in (400, 422):
+                    raise
+                resp = await self.http.arequest("POST", path, json=s.chat_body(messages, **{**kw, "json_mode_only": True}))
+        except Exception as exc:
+            s.meter.abort(res, exc)
+            raise
+        return s._end_chat(resp.json(), res, price, key, model)
 
     async def translate(self, text: str, src: str | None, tgt: str, model: str | None = None, mode: str | None = None) -> TranslateResult:
         """Async `SarvamApi.translate`."""
         body = self._sync.translate_body(text, src, tgt, model, mode)
-        d = (await self.http.arequest("POST", self._sync._ep("translate"), json=body)).json()
+        res, cost = self._sync.meter.begin_chars("translate", len(text), str(body["model"]))
+        try:
+            d = (await self.http.arequest("POST", self._sync._ep("translate"), json=body)).json()
+        except Exception as exc:
+            self._sync.meter.abort(res, exc)
+            raise
+        self._sync.meter.finish_chars(res, len(text), cost)
         return TranslateResult(str(d.get("translated_text", "")), d.get("source_language_code"), d.get("request_id"))
 
     async def identify_language(self, text: str) -> LidResult:
         """Async `SarvamApi.identify_language`."""
-        d = (await self.http.arequest("POST", self._sync._ep("language_id"), json={"input": text[:1000]})).json()
+        res, cost = self._sync.meter.begin_chars("language_id", len(text[:1000]), "text-lid")
+        try:
+            d = (await self.http.arequest("POST", self._sync._ep("language_id"), json={"input": text[:1000]})).json()
+        except Exception as exc:
+            self._sync.meter.abort(res, exc)
+            raise
+        self._sync.meter.finish_chars(res, len(text[:1000]), cost)
         return LidResult(d.get("language_code"), d.get("script_code"))
 
 

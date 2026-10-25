@@ -40,6 +40,17 @@ DEFAULTS: dict[str, Any] = {
     "speech_to_text": {"model": "saaras:v4", "mode": "codemix", "max_seconds": 30},
     "text_to_speech": {"model": "bulbul:v4-flash", "speaker": "simran_en_customer", "sample_rate": 24000},
     "vision": {"output_format": "md", "poll_interval_s": 2.0, "timeout_s": 300.0, "use_for_ocr": False},
+    # Spend ledger (models/sarvam/spend.py). Prices: Sarvam dashboard 2026-10-26 (owner-reported). Chat: INR per 1M tokens. Characters: INR per 10,000 characters.
+    "ledger": {"path": None, "cache_path": None, "default_cap_inr": 25.0},
+    "prices_inr_per_1m": {
+        "sarvam-105b": {"input": 15, "cached": 5, "output": 60},
+        "mimo-v2.6-flash": {"input": 12.5, "cached": 0.25, "output": 25},
+        "mimo-v2.6-pro": {"input": 40, "cached": 0.3, "output": 80},
+        "deepseek-v4.1-flash": {"input": 25, "cached": 0.5, "output": 105},
+        "glm-5.3-flash": {"input": 13.5, "cached": 2.5, "output": 45},
+        "gemma-4": {"input": 35, "cached": 10, "output": 90},
+    },
+    "prices_inr_per_10k_chars": {"translate": 20, "transliterate": 20, "language_id": 3.5, "text_to_speech": 30},
     "use": {"ocr": True, "vision": True, "translation": True, "asr": True, "llm": True, "tts": True, "language_id": True},
 }
 
