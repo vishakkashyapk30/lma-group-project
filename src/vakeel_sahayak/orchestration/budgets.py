@@ -9,6 +9,13 @@ A budget is *spent* when use reaches the cap: after the 8th store call of a fact
 `BaseAgent.call_tool` refuses the 9th with a `budget_exhausted` ToolError. Token budgets are charged by
 `BaseAgent`'s LLM calls; a call that would start with nothing left raises `BudgetExhausted`.
 
+Two token pools per factor (bug fix of the first hosted pilot): the 12K cap is the *retrieval* pool (Sutradhar's planning and
+query rewording, Peshkar, Munshi), and the drafting stage (Vakeel's draft, check-and-repair and replies, Abhiyojak's objections
+and reply judging) has its own pool `drafting_tokens_per_factor` (16K, measured: the downstream steps of one factor used about
+12K with the hosted model, `data/eval/token_measure.json` and `docs/handoff/pilot-hosted-model.md`). Before, both stages shared 12K,
+so the repair and judge-reply steps were starved after retrieval and drafting had spent it. The case cap still bounds the total.
+A charge without an actor counts as retrieval, as before.
+
 The tracker is thread-safe (factors run in parallel, plan §6.2 step 2) and rebuildable from the event log after a
 resume (`from_events`): every charge made through `BaseAgent` is recorded in its event's outputs under `budget_charge`.
 """
@@ -22,6 +29,7 @@ from vakeel_sahayak.schemas.case import BudgetState
 from vakeel_sahayak.schemas.enums import AgentName, EventKind
 from vakeel_sahayak.schemas.retrieval_plan import BudgetLeft
 
+DRAFTING_ACTORS = frozenset({"VAKEEL", "ABHIYOJAK"})  # their LLM calls are charged to the factor's drafting pool
 CASE_SCOPE = "case"  # key of unscoped (case-level) store calls in BudgetState.store_calls
 
 
@@ -40,6 +48,13 @@ class BudgetExhausted(RuntimeError):
         self.scope, self.factor, self.limit = scope, factor, limit
 
 
+def _actor_name(actor: Any) -> str | None:
+    """Agent enum or string to its name ('VAKEEL'); None stays None."""
+    if actor is None:
+        return None
+    return str(getattr(actor, "value", actor)).upper()
+
+
 def _key(factor: Any) -> str | None:
     """Factor enum or string to its value (None stays None)."""
     if factor is None:
@@ -56,6 +71,7 @@ class BudgetTracker:
         store_calls_per_factor: int = 8,
         tokens_per_factor: int = 12000,
         *,
+        drafting_tokens_per_factor: int = 16000,
         log: Any = None,
         case_id: str | None = None,
         actor: AgentName | str = AgentName.SUTRADHAR,
@@ -65,7 +81,8 @@ class BudgetTracker:
         Args:
             tokens_per_case: token cap for the whole case
             store_calls_per_factor: store-call cap per factor
-            tokens_per_factor: token cap per factor
+            tokens_per_factor: token cap per factor for the retrieval stage (Sutradhar, Peshkar, Munshi)
+            drafting_tokens_per_factor: token cap per factor for the drafting stage (Vakeel, Abhiyojak)
             log: the case's EventLog for BUDGET_HIT events (None: hits are kept in `hits` only)
             case_id: the case (needed to log)
             actor: default actor of BUDGET_HIT events (the agent charging may override it)
@@ -73,10 +90,12 @@ class BudgetTracker:
         self.tokens_per_case = int(tokens_per_case)
         self.store_calls_per_factor = int(store_calls_per_factor)
         self.tokens_per_factor = int(tokens_per_factor)
+        self.drafting_tokens_per_factor = int(drafting_tokens_per_factor)
         self.log, self.case_id, self.actor = log, case_id, actor
         self._lock = threading.RLock()
         self._case_tokens = 0
-        self._factor_tokens: dict[str, int] = {}
+        self._factor_tokens: dict[str, int] = {}  # retrieval pool
+        self._draft_tokens: dict[str, int] = {}  # drafting pool
         self._store_calls: dict[str, int] = {}
         self._limits: dict[str, tuple[int, int]] = {}  # factor -> (store_calls, tokens)
         self._hit_keys: set[tuple[str, str | None, str]] = set()
@@ -102,7 +121,7 @@ class BudgetTracker:
 
             config = load_config()
         b = getattr(config, "budgets", config)
-        return cls(b.tokens_per_case, b.store_calls_per_factor, b.tokens_per_factor, log=log, case_id=case_id, actor=actor)
+        return cls(b.tokens_per_case, b.store_calls_per_factor, b.tokens_per_factor, drafting_tokens_per_factor=getattr(b, "drafting_tokens_per_factor", 16000), log=log, case_id=case_id, actor=actor)
 
     @classmethod
     def from_events(cls, events: list[Any], config: Any = None, *, log: Any = None, case_id: str | None = None) -> BudgetTracker:
@@ -121,7 +140,7 @@ class BudgetTracker:
         for ev in events:
             charge = (getattr(ev, "outputs", None) or {}).get("budget_charge")
             if isinstance(charge, dict):
-                tracker.charge(charge.get("factor"), int(charge.get("tokens", 0)), int(charge.get("store_calls", 0)))
+                tracker.charge(charge.get("factor"), int(charge.get("tokens", 0)), int(charge.get("store_calls", 0)), actor=getattr(ev, "actor", None))
             if getattr(ev, "kind", None) == EventKind.BUDGET_HIT:
                 inputs = getattr(ev, "inputs", {}) or {}
                 tracker._hit_keys.add((str(inputs.get("scope")), inputs.get("factor"), str(inputs.get("limit"))))
@@ -160,7 +179,8 @@ class BudgetTracker:
         with self._lock:
             self._case_tokens += int(tokens)
             if key is not None:
-                self._factor_tokens[key] = self._factor_tokens.get(key, 0) + int(tokens)
+                pool = self._draft_tokens if _actor_name(actor) in DRAFTING_ACTORS else self._factor_tokens
+                pool[key] = pool.get(key, 0) + int(tokens)
             if store_calls:
                 slot = key or CASE_SCOPE
                 self._store_calls[slot] = self._store_calls.get(slot, 0) + int(store_calls)
@@ -172,7 +192,7 @@ class BudgetTracker:
         with self._lock:
             if key is None:
                 return self._case_tokens, sum(self._store_calls.values())
-            return self._factor_tokens.get(key, 0), self._store_calls.get(key, 0)
+            return self._factor_tokens.get(key, 0) + self._draft_tokens.get(key, 0), self._store_calls.get(key, 0)
 
     def left(self, factor: str | None = None) -> BudgetLeft:
         """Remaining budget (for RetrievalPlan.budget_left).
@@ -205,6 +225,8 @@ class BudgetTracker:
                 out.append(("factor", key, "store_calls", self._store_calls.get(key, 0), sc_cap))
             if self._factor_tokens.get(key, 0) >= tk_cap:
                 out.append(("factor", key, "tokens", self._factor_tokens.get(key, 0), tk_cap))
+            if self._draft_tokens.get(key, 0) >= self.drafting_tokens_per_factor:
+                out.append(("factor", key, "drafting_tokens", self._draft_tokens.get(key, 0), self.drafting_tokens_per_factor))
         return out
 
     def exhausted(self, factor: str | None = None, *, actor: AgentName | str | None = None) -> bool:
@@ -231,11 +253,17 @@ class BudgetTracker:
         self._check_hits(key, None)
         return bool(spent)
 
-    def tokens_exhausted(self, factor: str | None) -> bool:
-        """True when the factor's or the case's token budget is spent: the next LLM call must be refused."""
+    def tokens_exhausted(self, factor: str | None, actor: AgentName | str | None = None) -> bool:
+        """True when the token budget the next LLM call draws on is spent, so the call must be refused.
+
+        Args:
+            factor: the factor (None: the case budget only)
+            actor: who is about to call; Vakeel and Abhiyojak draw on the factor's drafting pool, everyone else on its retrieval pool
+        """
         key = _key(factor)
+        want = "drafting_tokens" if _actor_name(actor) in DRAFTING_ACTORS else "tokens"
         with self._lock:
-            spent = [s for s in self._spent_budgets(key) if s[2] == "tokens"]
+            spent = [s for s in self._spent_budgets(key) if s[2] == want or (s[0] == "case" and s[2] == "tokens")]
         self._check_hits(key, None)
         return bool(spent)
 
@@ -280,8 +308,8 @@ class BudgetTracker:
         with self._lock:
             return {
                 "limits": {"tokens_per_case": self.tokens_per_case, "store_calls_per_factor": self.store_calls_per_factor,
-                           "tokens_per_factor": self.tokens_per_factor, "factors": {k: list(v) for k, v in self._limits.items()}},
-                "case_tokens": self._case_tokens, "factor_tokens": dict(self._factor_tokens),
+                           "tokens_per_factor": self.tokens_per_factor, "drafting_tokens_per_factor": self.drafting_tokens_per_factor, "factors": {k: list(v) for k, v in self._limits.items()}},
+                "case_tokens": self._case_tokens, "factor_tokens": dict(self._factor_tokens), "draft_tokens": dict(self._draft_tokens),
                 "store_calls": dict(self._store_calls), "hits": [list(k) for k in sorted(self._hit_keys, key=str)],
             }  # fmt: skip
 
@@ -289,10 +317,11 @@ class BudgetTracker:
     def from_dict(cls, data: dict[str, Any], *, log: Any = None, case_id: str | None = None) -> BudgetTracker:
         """Restore a tracker saved with `to_dict`."""
         lim = data.get("limits", {})
-        tracker = cls(lim.get("tokens_per_case", 150000), lim.get("store_calls_per_factor", 8), lim.get("tokens_per_factor", 12000), log=log, case_id=case_id)
+        tracker = cls(lim.get("tokens_per_case", 150000), lim.get("store_calls_per_factor", 8), lim.get("tokens_per_factor", 12000), drafting_tokens_per_factor=lim.get("drafting_tokens_per_factor", 16000), log=log, case_id=case_id)
         tracker._limits = {k: (int(v[0]), int(v[1])) for k, v in (lim.get("factors") or {}).items()}
         tracker._case_tokens = int(data.get("case_tokens", 0))
         tracker._factor_tokens = {k: int(v) for k, v in (data.get("factor_tokens") or {}).items()}
+        tracker._draft_tokens = {k: int(v) for k, v in (data.get("draft_tokens") or {}).items()}
         tracker._store_calls = {k: int(v) for k, v in (data.get("store_calls") or {}).items()}
         tracker._hit_keys = {(str(h[0]), h[1], str(h[2])) for h in data.get("hits", [])}
         return tracker

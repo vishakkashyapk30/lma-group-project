@@ -1,6 +1,7 @@
 # Budgets (plan §6.2, §8.1, §9, §4.3).
 case: {tokens: 150000}
-factor: {store_calls: 8, tokens: 12000}
+factor: {store_calls: 8, tokens: 12000}   # tokens: the retrieval pool (Sutradhar, Peshkar, Munshi)
+drafting: {tokens: 16000}   # per-factor pool of Vakeel and Abhiyojak calls (measured ~12K with the hosted model)
 questions_per_round: 3        # shared by Munshi and Peshkar
 repair_rounds: 2              # Vakeel check-and-repair
 sparring: {rounds: 2, objections_per_ground: 2}

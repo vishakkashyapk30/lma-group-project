@@ -33,6 +33,7 @@ class BudgetConfig(BaseModel):
     tokens_per_case: int = 150000
     store_calls_per_factor: int = 8
     tokens_per_factor: int = 12000
+    drafting_tokens_per_factor: int = 16000  # Vakeel and Abhiyojak calls of a factor (retrieval keeps tokens_per_factor)
     questions_per_round: int = 3  # shared by Munshi and Peshkar (plan §4.3)
     repair_rounds: int = 2
     sparring_rounds: int = 2
@@ -148,6 +149,7 @@ def _build_budgets(raw: dict[str, Any], env: dict[str, str]) -> BudgetConfig:
         "tokens_per_case": (raw.get("case") or {}).get("tokens"),
         "store_calls_per_factor": factor.get("store_calls"),
         "tokens_per_factor": factor.get("tokens"),
+        "drafting_tokens_per_factor": (raw.get("drafting") or {}).get("tokens"),
         "questions_per_round": raw.get("questions_per_round"),
         "repair_rounds": raw.get("repair_rounds"),
         "sparring_rounds": sparring.get("rounds"),

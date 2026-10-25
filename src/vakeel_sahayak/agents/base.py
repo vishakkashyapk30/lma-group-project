@@ -107,9 +107,16 @@ def _walk_strings(value: Any, path: str = "") -> Iterator[tuple[str, str]]:
             yield from _walk_strings(v, f"{path}[{i}]")
 
 
-def _spent(budgets: Any, specific: str, factor: str | None) -> bool:
-    """The tracker's narrow check (`store_calls_exhausted` / `tokens_exhausted`), else the general `exhausted(factor)` of a minimal budget."""
+def _spent(budgets: Any, specific: str, factor: str | None, actor: Any = None) -> bool:
+    """The tracker's narrow check (`store_calls_exhausted` / `tokens_exhausted`), else the general `exhausted(factor)` of a minimal budget.
+
+    The actor is passed only to a check that takes one (the real tracker picks the retrieval or the drafting token pool by it).
+    """
+    import inspect
+
     check = getattr(budgets, specific, None) or budgets.exhausted
+    if actor is not None and "actor" in inspect.signature(check).parameters:
+        return bool(check(factor, actor=actor))
     return bool(check(factor))
 
 
@@ -757,7 +764,7 @@ class BaseAgent(ABC):
         instructions = self._handoff(instructions, case, extra)
         self.guard_outbound({"system": self.system_prompt(), "instructions": instructions, "case": case, "extra": extra}, public=corpus)
         budgets = getattr(self, "budgets", None)
-        if budgets is not None and _spent(budgets, 'tokens_exhausted', fkey):
+        if budgets is not None and _spent(budgets, 'tokens_exhausted', fkey, self.NAME):
             raise BudgetExhausted(f"token budget of {fkey or 'the case'} is spent", "factor" if fkey else "case", fkey, "tokens")
         prompt = self.build_prompt(task, instructions, case=case, corpus=corpus, schema=schema, extra=extra)
         shared = self._prefix_meter().observe(task, prompt)  # S14d signal: tokens shared with an earlier prompt of this task (in memory; an event only under the variant)
@@ -814,7 +821,7 @@ class BaseAgent(ABC):
         fkey = fkey or _FACTOR.get()
         self.guard_outbound({"prompt": prompt})
         budgets = getattr(self, "budgets", None)
-        if budgets is not None and _spent(budgets, 'tokens_exhausted', fkey):
+        if budgets is not None and _spent(budgets, 'tokens_exhausted', fkey, self.NAME):
             raise BudgetExhausted(f"token budget of {fkey or 'the case'} is spent", "factor" if fkey else "case", fkey, "tokens")
         done = self.llm.complete(prompt, max_tokens=max_tokens, temperature=temperature)
         self._log_llm(task, fkey, prompt, done.prompt_tokens, done.completion_tokens, 1, ok=True, value=done.text)

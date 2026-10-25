@@ -19,6 +19,8 @@ def test_the_default_switches_are_the_full_system():
 
 
 def test_default_run_matches_the_golden_digests():
+    # RECONCILED: the per-factor token budget got a separate drafting pool (bug fix, orchestration/budgets.py): the run now logs 1 BUDGET_HIT
+    # (drafting pool) where it logged 3 (retrieval pool shared with drafting). Brief, sparring record, card and budget digests are unchanged.
     golden = json.loads(vh.GOLDEN.read_text(encoding="utf-8"))
     assert vh.digests(vh.canonical_run(vh.build())) == golden
 

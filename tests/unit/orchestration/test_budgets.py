@@ -187,3 +187,60 @@ def test_property_left_and_exhausted_match_plain_sums(ops):
         assert t.exhausted(factor) == (calls >= 8 or tok >= 12000 or case_tokens >= 150000)
     assert t.left().tokens == max(0, 150000 - case_tokens)
     assert t.exhausted() == (case_tokens >= 150000)
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# two token pools per factor (hosted pilot: repair and judge-reply starved by retrieval spend)
+# ---------------------------------------------------------------------------------------------------------------------
+def test_drafting_tokens_do_not_use_the_retrieval_pool():
+    """Vakeel and Abhiyojak charges go to the drafting pool: spent retrieval tokens do not refuse a repair or judge-reply call."""
+    t = BudgetTracker()
+    t.charge(F, tokens=12000, actor="SUTRADHAR")
+    assert t.tokens_exhausted(F) is True  # retrieval pool spent (no actor: the old behaviour)
+    assert t.tokens_exhausted(F, actor="SUTRADHAR") is True
+    assert t.tokens_exhausted(F, actor="VAKEEL") is False
+    assert t.tokens_exhausted(F, actor="ABHIYOJAK") is False
+
+
+def test_retrieval_tokens_are_not_starved_by_drafting():
+    """The reverse: a factor that drafted 16K tokens can still plan or re-retrieve under its own cap."""
+    t = BudgetTracker()
+    t.charge(F, tokens=9000, actor="VAKEEL")
+    t.charge(F, tokens=7000, actor="ABHIYOJAK")
+    assert t.tokens_exhausted(F, actor="VAKEEL") is True
+    assert t.tokens_exhausted(F, actor="SUTRADHAR") is False
+    assert t.left(F).tokens == 12000
+    assert t.spent(F)[0] == 16000
+
+
+def test_drafting_pool_is_a_cap_and_the_case_cap_still_binds():
+    """The drafting pool refuses past its cap (BUDGET_HIT limit drafting_tokens); the case cap refuses every actor."""
+    t = BudgetTracker(tokens_per_case=20000, drafting_tokens_per_factor=5000)
+    t.charge(F, tokens=5000, actor="VAKEEL")
+    assert t.tokens_exhausted(F, actor="VAKEEL") is True
+    assert any(h["limit"] == "drafting_tokens" for h in t.hits)
+    t.charge(G, tokens=15000, actor="SUTRADHAR")
+    assert t.tokens_exhausted(G, actor="ABHIYOJAK") is True  # case cap (20000) is spent
+
+
+def test_store_call_cap_unchanged_and_pools_round_trip():
+    """8 store calls remain a cap; both pools survive to_dict/from_dict and a rebuild from events."""
+    t = BudgetTracker()
+    for _ in range(8):
+        t.charge(F, store_calls=1)
+    assert t.store_calls_exhausted(F) is True
+    t.charge(F, tokens=100, actor="VAKEEL")
+    t.charge(F, tokens=50, actor="SUTRADHAR")
+    r = BudgetTracker.from_dict(t.to_dict())
+    assert r.spent(F) == (150, 8)
+    assert r.tokens_exhausted(F, actor="VAKEEL") is False
+
+
+def test_base_agent_passes_its_name_to_the_token_check():
+    """BaseAgent.ask refuses a Sutradhar call when the retrieval pool is spent but lets Vakeel's repair through."""
+    from vakeel_sahayak.agents.base import _spent
+
+    t = BudgetTracker()
+    t.charge(F, tokens=12000, actor="SUTRADHAR")
+    assert _spent(t, "tokens_exhausted", F, "SUTRADHAR") is True
+    assert _spent(t, "tokens_exhausted", F, "VAKEEL") is False
