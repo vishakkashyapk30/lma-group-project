@@ -78,7 +78,10 @@ _CUES: dict[DocumentType, list[tuple[re.Pattern[str], float]]] = {
     ],
 }
 # Court-style titles that open an order but do not say which kind it is.
-COURT_HEADING = _c(r"in\s+the\s+(?:hon'?ble\s+)?(?:court|high\s+court|supreme\s+court)|न्यायालय")
+COURT_HEADING = _c(
+    r"in\s*the\s*(?:hon'?ble\s*)?(?:court|high\s*court|supreme\s*court)|\bhigh\s+court\s+of\b"
+    r"|hon'?ble\s+(?:(?:mr|ms|mrs|dr|sri|shri|smt)\.?\s+)*justice|न्यायालय"
+)  # `\s*` because some PDFs lose the spaces ('INTHEHIGHCOURTOFDELHI')
 
 
 def score_document(text: str, first_page_text: str | None = None) -> dict[DocumentType, float]:
@@ -148,27 +151,58 @@ _TITLES: dict[DocumentType, re.Pattern[str]] = {
     DocumentType.BAIL_ORDER: _c(r"bail\s+application|application\s+for[^.\n]{0,30}bail|bail\s+order|order\s+on\s+bail|जमानत\s+(?:आवेदन|प्रार्थना)"),
     DocumentType.ORDER_SHEET: _c(r"order[\s-]*sheet|daily\s+order|zimni|आदेश\s+पत्रिका"),
     DocumentType.CHARGE_SHEET_COVER: _c(r"charge[\s-]*sheet|final\s+report|आरोप\s*पत्र"),
-    DocumentType.CUSTODY_CERTIFICATE: _c(r"custody\s+certificate|certificate\s+of\s+custody|nominal\s+roll"),
-    DocumentType.MEDICAL_RECORD: _c(r"medico[\s-]*legal|medical\s+(?:examination|certificate|report)|discharge\s+summary"),
+    DocumentType.CUSTODY_CERTIFICATE: _c(r"custody\s+certificate|certificate\s+of\s+custody|nominal\s+roll|अभिरक्षा\s+प्रमाण|पेशी\s+वारंट"),
+    DocumentType.MEDICAL_RECORD: _c(r"medico[\s-]*legal|medical\s+(?:examination|certificate|report)|discharge\s+summary|चिकित्सा\s+(?:प्रमाण|रिपोर्ट)"),
     DocumentType.AFFIDAVIT: _c(r"^\W*affidavit\b|शपथ\s*पत्र|हलफ़?नामा"),
 }
+
+
+# Docket prefixes and caption lines that open a High Court bail order but sit below the court's name, the judge's list
+# number and the digital-signature stamp (Calcutta 'CRM (A) 2154 of 2025', Karnataka 'CRL.P No. 103671 of 2024').
+_BAIL_ORDER_CAPTION = _c(
+    r"\bin\s+re\s*[:\-]*\s*(?:an?\s+)?application\s+(?:for|u/s|under)[^.\n]{0,60}bail|\bCRM\s*\(\s*[A-Z]{1,3}\s*\)|\bCRL\.?\s*P\b|"
+    r"\bbail\s+(?:appln\.?|application)\s+no\b|\bB\.?A\.?\s+No\b|\bSLP\s*\(\s*(?:Crl|Cr)"
+)
+_CAPTION_LINES = 14  # how far down a page the caption is looked for when the opening lines hold no title
 
 
 def page_type_hint(text: str) -> tuple[DocumentType | None, float, bool]:
     """A single page's type from the title in its opening lines alone, for bundle splitting.
 
+    The title is read from the first lines. When several types match, the one whose title comes first wins ('Remand
+    order' on line 2 beats 'First Information Report No.' quoted on line 3 of a Hindi remand order). A page with no
+    title in its first lines may still open with a High Court bail-order caption (docket prefix, 'In Re: An application
+    for ... Bail') further down; that is a bail order.
+
     Returns:
         (type or None, confidence, has_court_heading). The type is the title that matches; None when the page has no
-        title. Confidence is 0.9 for a single title and lower when several types match.
+        title. Confidence is 0.9 for a single title, 0.8 when the winner is on a line before every other match and
+        lower when several types match on the same line.
     """
     header = normalise_for_extraction(opening_lines(text))
     first = next((ln for ln in text.split("\n") if ln.strip()), "")
     title = normalise_for_extraction(first)
-    # the document's own title line wins over words in the lines under it ('ORDER SHEET' then 'charge sheet filed')
-    hits = [t for t, pattern in _TITLES.items() if pattern.search(title)] or [
-        t for t, pattern in _TITLES.items() if pattern.search(header)
-    ]
     heading = bool(COURT_HEADING.search(header))
+    # the document's own title line wins over words in the lines under it ('ORDER SHEET' then 'charge sheet filed')
+    hits = [t for t, pattern in _TITLES.items() if pattern.search(title)]
+    if not hits:
+        lines = header.split("\n")
+        first_line: dict[DocumentType, int] = {}
+        for t, pattern in _TITLES.items():
+            for idx, line in enumerate(lines):
+                if pattern.search(line):
+                    first_line[t] = idx
+                    break
+            else:
+                if pattern.search(header):  # a title that wraps over two lines
+                    first_line[t] = len(lines)
+        if first_line:
+            best = min(first_line.values())
+            hits = [t for t, idx in first_line.items() if idx == best]
+            if len(hits) == 1:
+                return hits[0], 0.9 if len(first_line) == 1 else 0.8, heading
+        elif _BAIL_ORDER_CAPTION.search(normalise_for_extraction(opening_lines(text, _CAPTION_LINES, 1400))):
+            return DocumentType.BAIL_ORDER, 0.8, heading
     if not hits:
         return None, 0.0, heading
     return hits[0], round(0.9 / len(hits), 2), heading

@@ -23,6 +23,8 @@ class LocalVisionClient(VisionClient):
         self.quant_4bit = quant_4bit
         self._loaded: tuple | None = None
 
+    _load_failures: dict[str, str] = {}  # model id -> why it could not load (so a bundle does not retry per page)
+
     @staticmethod
     def available() -> bool:
         """True when transformers and torch are installed."""
@@ -39,18 +41,25 @@ class LocalVisionClient(VisionClient):
         if self._loaded is None:
             if not self.available():
                 raise ModelUnavailable("transformers and torch are not installed, so the vision model cannot run", "vision")
-            from transformers import AutoModelForImageTextToText, AutoProcessor
-
-            kwargs: dict = {"device_map": "auto", "torch_dtype": "auto"}
-            if self.quant_4bit:
-                try:
-                    from transformers import BitsAndBytesConfig
-
-                    kwargs["quantization_config"] = BitsAndBytesConfig(load_in_4bit=True)
-                except ImportError:
-                    pass
             model_id = self._model_id()
-            self._loaded = (AutoProcessor.from_pretrained(model_id), AutoModelForImageTextToText.from_pretrained(model_id, **kwargs))
+            if model_id in self._load_failures:
+                raise ModelUnavailable(self._load_failures[model_id], "vision")
+            try:
+                from transformers import AutoModelForImageTextToText, AutoProcessor
+
+                kwargs: dict = {"device_map": "auto", "torch_dtype": "auto"}
+                if self.quant_4bit:
+                    try:
+                        from transformers import BitsAndBytesConfig
+
+                        kwargs["quantization_config"] = BitsAndBytesConfig(load_in_4bit=True)
+                    except ImportError:
+                        pass
+                self._loaded = (AutoProcessor.from_pretrained(model_id), AutoModelForImageTextToText.from_pretrained(model_id, **kwargs))
+            except Exception as exc:  # noqa: BLE001 - a missing dependency (torchvision), missing weights or no network all mean "no vision model"
+                reason = f"the vision model {model_id} could not be loaded ({type(exc).__name__}: {str(exc).strip().splitlines()[0] if str(exc).strip() else 'no detail'})"
+                self._load_failures[model_id] = reason
+                raise ModelUnavailable(reason, "vision") from exc
         return self._loaded
 
     def transcribe_page(self, image: bytes, lang_hint: str | None = None) -> str:

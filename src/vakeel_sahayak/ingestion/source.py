@@ -269,9 +269,30 @@ class PdfSource(PageSource):
         return float(rect.width * rect.height) or A4_AREA
 
     def text_coverage(self, page: int) -> float:
-        """Area of the text blocks over the page area."""
-        covered = sum(max(0.0, b[2] - b[0]) * max(0.0, b[3] - b[1]) for b in self._blocks(page))
-        return min(1.0, covered / self.page_area(page))
+        """How much of what the page shows is also in its text layer, 0 to 1.
+
+        A born-digital page with a short body still has a complete layer, so the text-block area over the whole page
+        (a few percent for a one-paragraph order) is the wrong measure. The layer is thin when images cover far more
+        of the page than the text blocks do: a scan with a sparse or partial OCR layer. Without images the layer is
+        complete (1.0 when there is any text).
+        """
+        pg = self._page(page)
+        area = self.page_area(page)
+        text_area = sum(max(0.0, b[2] - b[0]) * max(0.0, b[3] - b[1]) for b in self._blocks(page))
+        if text_area <= 0.0:
+            return 0.0
+        image_area = 0.0
+        try:
+            for info in pg.get_image_info():
+                x0, y0, x1, y1 = info["bbox"]
+                w = max(0.0, min(x1, pg.rect.x1) - max(x0, pg.rect.x0))
+                h = max(0.0, min(y1, pg.rect.y1) - max(y0, pg.rect.y0))
+                image_area += w * h
+        except Exception:  # noqa: BLE001 - image listing is best effort; fall back to the text-only reading
+            image_area = 0.0
+        if image_area < 0.25 * area:  # logos, stamps and signatures do not make a page a scan
+            return 1.0
+        return min(1.0, text_area / image_area)
 
     def render(self, page: int, dpi: int = 200) -> bytes | None:
         """The page as PNG bytes."""
