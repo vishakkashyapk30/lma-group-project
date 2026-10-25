@@ -1,7 +1,7 @@
 # Skeleton targets; every recipe is a stub until implemented.
 PY ?= .venv/bin/python
 
-.PHONY: models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend hooks check-commits
+.PHONY: models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend hooks check-commits live-smoke
 
 setup:            ## create .venv and install (scripts/setup_dev.sh)
 	@echo "TODO: scripts/setup_dev.sh"; exit 1
@@ -107,3 +107,6 @@ hooks:        ## install the versioned git hooks (strips AI attribution from com
 
 check-commits: ## fail if any commit in origin/main..HEAD names an AI assistant
 	@scripts/check_commits.sh
+
+live-smoke:   ## one tiny live call per hosted capability with public text only (keys from .env or the environment)
+	.venv/bin/python scripts/live_smoke.py all
