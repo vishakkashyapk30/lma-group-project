@@ -82,6 +82,13 @@ def _norm(value: str | None) -> str | None:
     return value.strip().lower() if value else None
 
 
+BM25_PRUNE_MIN_ROWS = 20_000
+BM25_COMMON_SHARE = 0.15
+_DF_CACHE: dict[tuple[Any, str], int] = {}
+_ROWS: dict[tuple[str, int, int], int] = {}
+_MATRICES: dict[tuple[str, int, int], tuple[Any, Any]] = {}  # per-process cache of the dense matrices of file-backed indexes
+
+
 class HybridIndex:
     """BM25 + dense index in one SQLite file (or in memory), see the module docstring."""
 
@@ -113,6 +120,7 @@ class HybridIndex:
         self._dense_backend = dense_backend
         self._lance_dir = Path(lance_dir) if lance_dir else (self.path.with_suffix(".lance") if self.path else None)
         self._lance_table = None
+        self._matrix: tuple[Any, Any] | None = None  # (ids, vectors) of every row, loaded on the first dense search (see `_dense`)
         self._embedder = self._resolve_embedder(embedder)
 
     # setup ---------------------------------------------------------------------------------------------------------
@@ -155,6 +163,7 @@ class HybridIndex:
             Number of documents added.
         """
         added = 0
+        self._matrix = None  # the cached vectors no longer cover every row
         batch: list[IndexRow] = []
         for row in rows:
             batch.append(row)
@@ -285,11 +294,48 @@ class HybridIndex:
         terms = list(dict.fromkeys(t.lower() for t in _TERM.findall(query)))[:MAX_QUERY_TERMS]
         if not terms:
             return []
+        terms = self._informative_terms(terms)
         match = " OR ".join(f'"{t}"' for t in terms)
         sql = "SELECT i.id FROM fts JOIN items i ON i.id = fts.rowid WHERE fts MATCH ?"
         sql += f" AND {where}" if where else ""
         sql += " ORDER BY bm25(fts), i.id LIMIT ?"
         return [r[0] for r in self._conn.execute(sql, [match, *params, limit])]
+
+    def _informative_terms(self, terms: list[str]) -> list[str]:
+        """On a large store, drop the query terms that occur in more than `BM25_COMMON_SHARE` of the rows (at least the 2 rarest stay).
+
+        FTS5 scores every row a term matches, so a query holding 'of', 'is' or 'bail' (in 90% of 161,000 bail paragraphs) ranked the whole store:
+        about 150 seconds per search. Such terms carry almost no BM25 weight, and the dense ranking in the fusion still sees the whole query.
+        Stores under `BM25_PRUNE_MIN_ROWS` rows (every test fixture) and `VS_BM25_PRUNE=0` keep every term. The document counts come from
+        a doclist-only `count(*)` per term, cached per store file."""
+        import os
+
+        if len(terms) < 3 or os.environ.get("VS_BM25_PRUNE", "1") == "0":
+            return terms
+        total = self._row_count()
+        if total < BM25_PRUNE_MIN_ROWS:
+            return terms
+        key = self._file_key() or ("memory", id(self), 0)
+        df: dict[str, int] = {}
+        for t in terms:
+            if (key, t) not in _DF_CACHE:
+                _DF_CACHE[(key, t)] = int(self._conn.execute("SELECT count(*) FROM fts WHERE fts MATCH ?", (f'"{t}"',)).fetchone()[0])
+            df[t] = _DF_CACHE[(key, t)]
+        keep = [t for t in terms if df[t] <= BM25_COMMON_SHARE * total]
+        if len(keep) < 2:
+            keep = sorted(terms, key=lambda t: (df[t], terms.index(t)))[:2]
+            keep.sort(key=terms.index)
+        return keep
+
+    def _row_count(self) -> int:
+        """Rows in the index (cached for a file-backed index, whose rows do not change while it is searched)."""
+        key = self._file_key()
+        if key is not None and key in _ROWS:
+            return _ROWS[key]
+        n = self.count()
+        if key is not None:
+            _ROWS[key] = n
+        return n
 
     def _dense(self, query: str, where: str, params: list[Any], limit: int) -> list[int]:
         """Item ids ranked by cosine similarity among the filtered rows."""
@@ -300,10 +346,64 @@ class HybridIndex:
             return []
         if self._dense_backend == "lancedb":
             return self._lance_search(qvec, where, params, limit)
+        matrix = self._load_matrix()
+        if matrix is not None:
+            return self._dense_cached(matrix, qvec, where, params, limit)
         sql = "SELECT i.id, i.vec FROM items i" + (f" WHERE {where}" if where else "")
         rows = self._conn.execute(sql, params).fetchall()
         scored = _cosine_rank([(r[0], r[1]) for r in rows if r[1]], qvec)
         return [item_id for item_id, sim in scored[:limit] if sim > 0]
+
+    def _load_matrix(self) -> tuple[Any, Any] | None:
+        """Every row's id and vector as numpy arrays, read once per open index (None without numpy or when no row has a vector).
+
+        A file-backed store of 100,000+ rows otherwise re-reads all its vector blobs (hundreds of MB, interleaved with the payload
+        text) on every search, which took tens of seconds per call; the cache makes later searches a filtered matrix product.
+        The ranking is the same (cosine, ties by id); `add` drops the cache."""
+        if self._matrix is not None:
+            return self._matrix or None  # type: ignore[return-value]
+        try:
+            import numpy as np
+        except ImportError:
+            return None
+        key = self._file_key()
+        if key is not None and key in _MATRICES:  # the tools open and close a store per call: the cache outlives the instance, per process
+            self._matrix = _MATRICES[key]
+            return self._matrix
+        ids, blobs = [], []
+        for item_id, blob in self._conn.execute("SELECT id, vec FROM items WHERE vec IS NOT NULL ORDER BY id"):
+            ids.append(item_id)
+            blobs.append(blob)
+        if not ids:
+            self._matrix = ()  # type: ignore[assignment]
+            return None
+        mat = np.frombuffer(b"".join(blobs), dtype=np.float32).reshape(len(ids), -1)
+        self._matrix = (np.asarray(ids, dtype=np.int64), mat)
+        if key is not None:
+            _MATRICES[key] = self._matrix
+        return self._matrix
+
+    def _file_key(self) -> tuple[str, int, int] | None:
+        """(path, mtime, size) of a file-backed index, so a rebuilt store never reuses stale vectors; None in memory."""
+        if self.path is None:
+            return None
+        st = self.path.stat()
+        return (str(self.path.resolve()), st.st_mtime_ns, st.st_size)
+
+    def _dense_cached(self, matrix: tuple[Any, Any], qvec: list[float], where: str, params: list[Any], limit: int) -> list[int]:
+        """Cosine ranking over the cached matrix, restricted to the rows the SQL filter allows."""
+        import numpy as np
+
+        ids, mat = matrix
+        if where:
+            allowed = np.fromiter((r[0] for r in self._conn.execute("SELECT i.id FROM items i WHERE " + where, params)), dtype=np.int64)
+            keep = np.isin(ids, allowed, assume_unique=True)
+            ids, mat = ids[keep], mat[keep]
+        if not len(ids):
+            return []
+        sims = mat @ np.asarray(qvec, dtype=np.float32)
+        order = np.argsort(-sims, kind="stable")[:limit]
+        return [int(ids[i]) for i in order if sims[i] > 0]
 
     def _fetch(self, ids: list[int]) -> dict[int, tuple[str, dict[str, Any], float]]:
         """key, payload and authority of the given item ids."""

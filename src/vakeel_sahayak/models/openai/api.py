@@ -14,6 +14,8 @@ are dropped and the call repeated (a rejected request is not billed). The caller
 from __future__ import annotations
 
 import copy
+import os
+import threading
 from dataclasses import dataclass
 from typing import Any
 
@@ -89,20 +91,25 @@ class OpenAIApi:
         self.http = http or OpenAIHttp()
         self._ledger = ledger
         self._cache = cache
+        self._init_lock = threading.Lock()  # the lazy ledger and cache are created once when threads call at the same time (the ledger itself is transactional)
         self._dropped: set[str] = set()  # parameters this account/model rejected before
 
     @property
     def ledger(self) -> Ledger:
         """The spend ledger (opened on first use)."""
         if self._ledger is None:
-            self._ledger = Ledger()
+            with self._init_lock:
+                if self._ledger is None:
+                    self._ledger = Ledger()
         return self._ledger
 
     @property
     def cache(self) -> ResponseCache:
         """The response cache (opened on first use)."""
         if self._cache is None:
-            self._cache = ResponseCache()
+            with self._init_lock:
+                if self._cache is None:
+                    self._cache = ResponseCache()
         return self._cache
 
     def _ep(self) -> str:
@@ -176,7 +183,7 @@ class OpenAIApi:
             raise OpenAIUnavailable(f"no price for model {model!r} in configs/models.yaml openai.prices; refusing to call a model whose cost cannot be capped")
         key = None
         c = self.cfg["chat"]
-        if temperature == 0:
+        if temperature == 0 and os.environ.get("VS_OPENAI_NO_CACHE", "").strip() not in ("1", "true", "yes"):  # measurement runs: every call is real and billed
             key = cache_key(model, messages, json_schema, temperature, {"effort": c.get("reasoning_effort")})
             hit = self.cache.get(key)
             if hit is not None:

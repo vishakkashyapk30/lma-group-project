@@ -23,6 +23,25 @@ from datetime import date
 
 from vakeel_sahayak.models.base import ModelUnavailable, NliClient, NliVerdict
 
+_STATUS: dict[str, str | None] = {"backend": None, "fallback_reason": None}
+
+
+def local_checkpoint(model_id: str) -> str | None:
+    """The downloaded copy of a Hub checkpoint (`models/hf/<org>--<name>`, see scripts/download_models.sh), or None."""
+    import os
+    from pathlib import Path
+
+    root = Path(os.environ.get("VS_MODELS_DIR") or Path(__file__).resolve().parents[3] / "models" / "hf")
+    path = root / model_id.replace("/", "--")
+    return str(path) if (path / "config.json").is_file() else None
+
+
+def nli_status() -> dict[str, str | None]:
+    """Which NLI backend the process ended up with: `backend` ('deberta-v3-nli', 'offline-lexical-nli' or None before the first client) and
+    `fallback_reason` (set only when `auto` mode fell back to the offline stand-in, never silently: the driver records it in the manifest and the event log)."""
+    return dict(_STATUS)
+
+
 DEFAULT_DEBERTA = "MoritzLaurer/DeBERTa-v3-large-mnli-fever-anli-ling-wanli"
 THRESHOLD_KINDS = ("fact_support", "authority_support", "span_check")
 
@@ -132,6 +151,11 @@ class DebertaNliClient(NliClient):
         first = raw.split()[0] if raw else ""
         return first if "/" in first and "TODO" not in first and first != "microsoft/deberta-v3-large-mnli" else DEFAULT_DEBERTA
 
+    def _source(self) -> str:
+        """Where to load the checkpoint from: the downloaded copy under `$VS_MODELS_DIR` (default models/hf) when it exists, else the Hub id."""
+        name = self._model_name()
+        return local_checkpoint(name) or name
+
     def _load(self) -> tuple:
         key = (self._model_name(), self.device)
         with self._LOCK:
@@ -142,8 +166,9 @@ class DebertaNliClient(NliClient):
                 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
                 try:
-                    tok = AutoTokenizer.from_pretrained(key[0])
-                    model = AutoModelForSequenceClassification.from_pretrained(key[0])
+                    source = self._source()
+                    tok = AutoTokenizer.from_pretrained(source)
+                    model = AutoModelForSequenceClassification.from_pretrained(source)
                 except OSError as exc:
                     raise ModelUnavailable(f"the NLI checkpoint {key[0]!r} could not be loaded: {exc}", "models") from exc
                 device = self.device or ("cuda" if torch.cuda.is_available() else "cpu")
@@ -381,3 +406,67 @@ class OfflineNliClient(NliClient):
     def entails(self, premise: str, hypothesis: str) -> float:
         """Entailment score in [0, 1]."""
         return self.judge(premise, hypothesis).score
+
+
+# --------------------------------------------------------------------------------------------- auto mode: real model, soft fallback
+
+
+class AutoNliClient(NliClient):
+    """`VS_MODELS=auto`: the DeBERTa checker when it can run, else the offline lexical checker, and never silently.
+
+    Only NLI falls back (a missing `torch`/`transformers`, a missing or unreadable checkpoint); the reason is kept in `fallback_reason`,
+    in `nli_status()` and logged as a warning, and the driver writes it into the run manifest and the case's event log. After a fallback
+    the offline client answers for the rest of the process (`is_offline` and `default_threshold` follow the active client)."""
+
+    def __init__(self, real: NliClient | None = None, offline: NliClient | None = None) -> None:
+        """Pick the real client when its dependencies are installed (the model itself loads on the first call)."""
+        self._offline = offline or OfflineNliClient()
+        self._real: NliClient | None = real if real is not None else (DebertaNliClient() if DebertaNliClient.available() else None)
+        self.fallback_reason: str | None = None if self._real is not None else "transformers or torch is not installed"
+        self._publish()
+
+    def _publish(self) -> None:
+        import logging
+
+        _STATUS["backend"], _STATUS["fallback_reason"] = self._active().name, self.fallback_reason
+        if self.fallback_reason:
+            logging.getLogger(__name__).warning("nli: offline stand-in (%s)", self.fallback_reason)
+
+    def _active(self) -> NliClient:
+        return self._real if self._real is not None else self._offline
+
+    @property
+    def name(self) -> str:  # type: ignore[override]
+        """The active client's name."""
+        return self._active().name
+
+    @property
+    def is_offline(self) -> bool:  # type: ignore[override]
+        """True once the offline stand-in answers."""
+        return self._active().is_offline
+
+    @property
+    def default_threshold(self) -> float:  # type: ignore[override]
+        """The active client's untuned threshold."""
+        return self._active().default_threshold
+
+    def _call(self, method: str, *args, **kwargs):  # noqa: ANN002, ANN003, ANN202
+        if self._real is not None:
+            try:
+                return getattr(self._real, method)(*args, **kwargs)
+            except (ModelUnavailable, ImportError, OSError) as exc:
+                self._real, self.fallback_reason = None, f"{type(exc).__name__}: {str(exc)[:200]}"
+                self._publish()
+        return getattr(self._offline, method)(*args, **kwargs)
+
+    def entails(self, premise: str, hypothesis: str) -> float:
+        """Entailment probability from the active client."""
+        return self._call("entails", premise, hypothesis)
+
+    def entails_batch(self, pairs: list[tuple[str, str]]) -> list[float]:
+        """Batched entailment probabilities from the active client."""
+        return self._call("entails_batch", pairs)
+
+    def judge(self, premise: str, hypothesis: str, threshold: float | None = None) -> NliVerdict:
+        """The active client's verdict."""
+        return self._call("judge", premise, hypothesis, threshold)

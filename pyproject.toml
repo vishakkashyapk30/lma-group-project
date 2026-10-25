@@ -37,10 +37,14 @@ translation = ["transformers>=4.45", "torch>=2.3", "IndicTransToolkit"]
 speech = ["faster-whisper>=1", "torchaudio>=2", "transformers>=4.45"]
 # Model clients: vLLM on Ada, local 4B, embeddings, NLI, privacy (plan §12)
 models = ["vllm>=0.6", "transformers>=4.45", "sentence-transformers>=3", "FlagEmbedding>=1.2", "presidio-analyzer>=2", "presidio-anonymizer>=2", "bitsandbytes>=0.43"]
+# The real NLI claim checker (DeBERTa-v3) on CPU for hosted-model runs: pip install torch --index-url https://download.pytorch.org/whl/cpu, then this extra (weights: make models)
+nli = ["torch>=2.3", "transformers>=4.45", "sentencepiece>=0.2", "protobuf>=4"]
 # QLoRA fine-tuning (plan §12)
 train = ["torch>=2.3", "transformers>=4.45", "peft>=0.12", "trl>=0.10", "bitsandbytes>=0.43", "datasets>=3", "accelerate>=0.34"]
 # Test-set construction and evaluation (plan §15)
 eval = ["augraphy>=8", "faker>=25", "reportlab>=4", "jiwer>=3", "scipy>=1.11", "numpy>=1.26", "pandas>=2", "minicheck", "rapidfuzz>=3"]
+# Test-set builders T2 to T9 (PDF rendering, degradation, synthetic names). PyMuPDF is AGPL-3.0: keep it out of any network-facing deployment (see NOTICE)
+testsets = ["pymupdf>=1.24,<2", "pillow>=10", "numpy>=1.26", "faker>=25"]
 dev = ["ruff>=0.5", "mypy>=1.10", "pytest>=8", "pytest-asyncio>=0.23", "hypothesis>=6", "pre-commit>=3"]
 
 [tool.setuptools.packages.find]

@@ -49,12 +49,15 @@ _PATTERNS: list[tuple[re.Pattern[str], str | None]] = [  # most specific role fi
     (re.compile(rf"(?<![\u0900-\u097F])({_HI_NAME2})(?=['\u2019]s\b)"), None),
     (re.compile(r"(?<![\w'])(?!(?:The|This|That|State|Hon|Honourable|Learned)\b)((?:(?:Mohd|Md)\.\s*)?[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})(?=['\u2019]s\b)"), None),
     (re.compile(rf"\b{_TITLE}\s+({_NAME})"), None),
+    (re.compile(rf"\b(?i:justice)\s+({_NAME})"), None),  # 'Justice Rajesh Kumar' (title-case judge)
+    # 'JUSTICE RATNAKER BHENGRA' in capitals, also when a line break was lost and the name is glued to the next heading word ('SHARANORAL')
+    (re.compile(r"\bJUSTICE[ \t]+(?!ORAL|ORDER|JUDGMENT|CAV)([A-Z]{2,}?(?:[ .]+[A-Z]{2,}?){0,3}?)(?=ORAL|CAV|JUDGMENT|ORDER|[ \t]*(?:[\n,]|$))", re.MULTILINE), None),
     (re.compile(rf"(?:श्री|श्रीमती|सुश्री|कुमारी|आरोपी|अभियुक्त|शिकायतकर्ता|गवाह|(?i:accused|complainant|witness|surety))[ \t,:-]+({_HI_NAME3})"), None),
 ]
 _PII = [
     (re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+"), "[EMAIL]"),
     (re.compile(r"(?<!\d)(?:\+91[\s-]?)?[6-9]\d{9}(?!\d)"), "[PHONE]"),
-    (re.compile(r"(?<!\d)\d{4}\s?\d{4}\s?\d{4}(?!\d)"), "[ID-NUMBER]"),
+    (re.compile(r"(?<!\d)(?<![A-Z]{4})\d{4}\s?\d{4}\s?\d{4}(?!\d)"), "[ID-NUMBER]"),  # not the 12 digits of a court-order id such as HPHC010225332022
     (re.compile(r"\b[A-Z]{5}\d{4}[A-Z]\b"), "[ID-NUMBER]"),
 ]
 _ROLE_CONTEXT = 80  # characters either side of a name searched for a role word
@@ -208,6 +211,11 @@ def _role_near(text: str, start: int, end: int) -> str:
     return best[1] if best else "person"
 
 
+_NOT_A_PERSON = re.compile(
+    r"(?i)^(?:the\s+)?state(?:\s+of\b.*)?$|^(?:union\s+of\s+india|vs?\.?|versus|against|for\s+(?:the\s+)?(?:petitioners?|appellants?|respondents?|applicants?|state|accused))$"
+)  # 'The State' (a party of every bail order), a bare 'Vs', 'For Petitioner' are not people
+
+
 def detect_names(text: str) -> list[NameSpan]:
     """Rule-based name spans (titles, police ranks, relations, role words) plus any registered detectors' spans."""
     spans: list[NameSpan] = []
@@ -215,7 +223,7 @@ def detect_names(text: str) -> list[NameSpan]:
     for pattern, fixed_role in _PATTERNS:
         for m in pattern.finditer(text):
             s, e = m.span(1)
-            if (s, e) not in seen:
+            if (s, e) not in seen and not _NOT_A_PERSON.match(" ".join(text[s:e].split())):
                 seen.add((s, e))
                 spans.append(NameSpan(s, e, fixed_role or _role_near(text, s, e)))
     for detector in _DETECTORS:
@@ -235,8 +243,12 @@ def pseudonymise_text(text: str, case_id: str, mapping: PseudonymMap | None = No
         Pseudonymised text and the (local-only) map.
     """
     mapping = mapping if mapping is not None else PseudonymMap()
-    for span in sorted(detect_names(text), key=lambda s: s.start):
+    spans = sorted(detect_names(text), key=lambda s: s.start)
+    for span in spans:
         mapping.alias_for(span.text_of(text), span.role)
+    for span in reversed(spans):  # a name glued to the next word ('SHARANORAL') gets a space so the whole-word replacement can find it
+        if span.end < len(text) and text[span.end].isalnum() and text[span.end - 1].isalnum():
+            text = text[: span.end] + " " + text[span.end :]
     out = mapping.apply(text)
     for pattern, token in _PII:
         out = pattern.sub(token, out)

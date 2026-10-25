@@ -101,6 +101,7 @@ class FallbackLLM(LLMClient):
         self._local_factory = local
         self._local: LLMClient | None = None
         self.last_engine: LLMClient = primary
+        self.fallbacks: list[dict[str, str]] = []  # one entry per call the primary did not answer: {"error": class name, "reason": message}
         self.where = where
         self.model_id = primary.model_id
 
@@ -132,6 +133,7 @@ class FallbackLLM(LLMClient):
             self.last_engine = self.primary
         except self._errors as exc:
             log.info("%s llm not used (%s); using the local engine", getattr(self.primary, "name", "external"), type(exc).__name__)
+            self.fallbacks.append({"error": type(exc).__name__, "reason": str(exc)[:240]})
             self.last_engine = self.local
             out = getattr(self.local, method)(*args, **kw)
         last = getattr(self.last_engine._accounting()[1], "last", None)

@@ -80,3 +80,16 @@ def test_payload_passes_once_the_image_is_removed():
         assert_pseudonymised(payload)
     del payload["page_image"]
     assert_pseudonymised(payload)
+
+
+def test_corpus_document_ids_are_not_mistaken_for_id_numbers():
+    """A court-order id such as JHHC010343052023 holds 12 digits but is an identifier (in an id field or in running text); 12 bare digits are still refused."""
+    import pytest
+
+    from vakeel_sahayak.privacy.boundary import PrivacyBoundaryError, assert_pseudonymised
+
+    assert_pseudonymised({"tool": "get_orders", "args": {"doc_ids": ["JHHC010343052023", "DLHC-2022-1187"]}})
+    assert_pseudonymised({"text": "See HPHC010225332022 para 6."})
+    for payload in ({"args": {"note": "010343052023"}}, {"args": {"doc_ids": ["010343052023"]}}, {"text": "Aadhaar 1234 5678 9012"}):
+        with pytest.raises(PrivacyBoundaryError):
+            assert_pseudonymised(payload)

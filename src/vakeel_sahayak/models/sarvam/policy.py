@@ -251,7 +251,7 @@ def authorize(
     opened = False
     try:
         if scope.data is DataClass.CLIENT_TEXT:
-            from vakeel_sahayak.privacy.boundary import assert_pseudonymised
+            from vakeel_sahayak.privacy.boundary import assert_pseudonymised, assert_public_text, split_public_corpus
 
             body = payload if payload is not None else {"text": text or ""}
             if nbytes:
@@ -264,7 +264,10 @@ def authorize(
                     mapping = load_map(scope.case_id)
                 except (OSError, ValueError, KeyError):
                     mapping = None
-            assert_pseudonymised(body, mapping=mapping)
+            case_side, corpus = split_public_corpus(body)  # a prompt's public `corpus` is checked like the agents' own guard does (names of this case, PII), the rest in full
+            assert_pseudonymised(case_side, mapping=mapping)
+            for part in corpus:
+                assert_public_text(part, mapping=mapping)
         if scope.data is DataClass.CLIENT_RAW:
             if not scope.case_id:
                 raise err("raw client data needs a case id so counsel's consent can be checked; nothing was sent")

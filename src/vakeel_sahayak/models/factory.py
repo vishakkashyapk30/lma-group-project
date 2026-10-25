@@ -474,7 +474,7 @@ def _pick(kind: str, offline: type) -> object:
     """Override, else the installed heavy backend, else the offline fallback (VS_MODELS=offline forces the fallback)."""
     if kind in _OVERRIDES:
         return _OVERRIDES[kind]
-    if os.environ.get("VS_MODELS", "auto") != "offline":
+    if os.environ.get("VS_MODELS", "auto") != "offline" and os.environ.get("VS_HEAVY_CLIENTS", "").strip().lower() != "offline":  # the second gate: vision/OCR/ASR/translation only (tests)
         heavy = _heavy(kind)
         if heavy is not None:
             return heavy
@@ -588,16 +588,18 @@ def get_langid() -> object | None:
 
 
 @cache
-def _nli_cached(mode: str) -> NliClient:
-    from vakeel_sahayak.models.nli import DebertaNliClient, OfflineNliClient
+def _nli_cached(mode: str, nli_env: str = "") -> NliClient:
+    from vakeel_sahayak.models.nli import _STATUS, AutoNliClient, DebertaNliClient, OfflineNliClient
 
-    if mode == "offline":
+    if mode == "offline" or nli_env == "offline":  # VS_NLI=offline: tests, and runs that must not load DeBERTa
+        _STATUS.update(backend=OfflineNliClient.name, fallback_reason=None)
         return OfflineNliClient()
-    if DebertaNliClient.available():
-        return DebertaNliClient()
     if mode == "real":
-        raise ModelUnavailable("VS_MODELS=real but transformers/torch are missing, so DeBERTa NLI cannot run", "models")
-    return OfflineNliClient()
+        if not DebertaNliClient.available():
+            raise ModelUnavailable("VS_MODELS=real but transformers/torch are missing, so DeBERTa NLI cannot run", "models")
+        _STATUS.update(backend=DebertaNliClient.name, fallback_reason=None)
+        return DebertaNliClient()
+    return AutoNliClient()  # auto: DeBERTa when it can run, else the offline checker with the reason recorded (nli_status())
 
 
 def get_nli() -> NliClient:
@@ -608,7 +610,7 @@ def get_nli() -> NliClient:
     """
     if "nli" in _OVERRIDES:
         return _OVERRIDES["nli"]  # type: ignore[return-value]
-    return _nli_cached(models_mode())
+    return _nli_cached(models_mode(), os.environ.get("VS_NLI", "").strip().lower())
 
 
 def get_embedder() -> EmbeddingClient:

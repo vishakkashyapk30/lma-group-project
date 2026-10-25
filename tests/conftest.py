@@ -66,6 +66,8 @@ def _isolated_data_dir(tmp_path_factory, monkeypatch):
     from vakeel_sahayak.tools.runtime import set_runtime
 
     monkeypatch.setenv("VS_DATA_DIR", str(tmp_path_factory.mktemp("vsdata")))
+    monkeypatch.setenv("VS_HEAVY_CLIENTS", "offline")  # vision, OCR, ASR and translation stay on the stand-ins when torch and transformers are installed
+    monkeypatch.setenv("VS_NLI", "offline")  # unit tests use the lexical checker even where torch and the DeBERTa weights are installed
     set_runtime(None)
     yield
     set_runtime(None)

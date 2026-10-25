@@ -15,6 +15,13 @@ Sequence for one case: Munshi (only when a bundle is given) -> Peshkar -> Gate 1
 * **Output layout** (README C6): `data/eval/runs/<run_id>/manifest.json` and `.../outputs/<system>/<case_id>.json`; see `run_dir_for`.
 * **Blind slice**: `testsets.blind.assert_may_score_blind` refuses to score blind ids without the freeze tag; the driver only RUNS cases.
 
+* **Hosted models** (`VS_LLM_BACKEND=openai|sarvam`, `VS_MODELS=auto`): run with `VS_EXTERNAL=pseudonymised`, not `public`. `_case_scope` puts a case in a public
+  scope, but every agent role declares client text, and the role's own declaration wins. So a text-only case is pseudonymised exactly as the production
+  intake does (`file_facts`: Munshi's `Filer`, the same alias map saved on the laptop so `assert_pseudonymised` knows the real names, plus the court-order
+  caption rule `learn_caption_names`); only the pseudonymised text is filed on the case shelf and passed on as `state.facts_text`. The boundary stays on.
+* **NLI** in `auto` mode is the real DeBERTa checker when `torch` and `transformers` are installed (`pip install .[nli]`), else the offline lexical checker
+  with the reason recorded (`models.nli.nli_status()`): in the run manifest, in every case's `meta.nli`, and as an `nli_backend` event in the case log.
+
 Smoke: `python -m vakeel_sahayak.eval.runners.driver smoke` (`make smoke`) runs the case-0007 fixture end to end on the offline
 stand-ins; `... eval-smoke` (`make eval-smoke`) runs three T1 dev cases offline.
 """
@@ -26,6 +33,7 @@ import functools
 import hashlib
 import json
 import random
+import re
 import subprocess
 import sys
 import time
@@ -175,11 +183,12 @@ def run_agents(case: dict[str, Any], ctx: AgentContext, counsel: ScriptedCounsel
 
     if files:
         step("munshi", lambda s: agent(AgentName.MUNSHI).run(s))
-    elif not ctx.tools and case_facts(case):  # a text-only case on the real tools: its facts go onto the case shelf where Peshkar reads them
+    elif case_facts(case):  # a text-only case: pseudonymise like Munshi's Filer, then (on the real tools) shelve the facts for Peshkar
         try:
-            file_facts(ctx, case)
-        except Exception as exc:  # noqa: BLE001
+            state = state.model_copy(update={"facts_text": file_facts(ctx, case, shelve=not ctx.tools)})
+        except Exception as exc:  # noqa: BLE001 - never fall back to the raw text: the boundary would refuse it, and the raw names must not travel
             errors.append(f"file_facts: {type(exc).__name__}: {str(exc)[:200]}")
+            state = state.model_copy(update={"facts_text": None})
     step("peshkar", lambda s: agent(AgentName.PESHKAR).run(s))
     gate1 = counsel.decide(guard, ctx.log, case_id, GateId.GATE_1_DOSSIER)
     result: dict[str, Any] = {"case_id": case_id, "gate1_approved": gate1, "gate2_approved": False, "export": {"attempted": False}}
@@ -252,14 +261,74 @@ def collect_sweep3_signals(ctx: AgentContext, agents: dict[str, Any]) -> dict[st
     return out
 
 
-def file_facts(ctx: AgentContext, case: dict[str, Any]) -> int:
-    """File a text-only case's facts as one `case.docs` document (page 1) so Peshkar can read them; returns the chunks filed."""
+_CAPTION_ROLE = r"(?P<role>Petitioner|Appellant|Applicant|Accused|Respondent|Opposite\s+Party|Complainant|Informant)"
+_CAPTION_PATTERNS = (  # (pattern on one line, role): party names of a court-order caption, which the intake's name rules do not catch
+    (re.compile(rf"^\s*(?:\d+\s*\.\s*)?(?P<n>[^\n.\u2026:]{{3,70}}?)\s*(?:\.{{2,}}|\u2026|\s{{3,}}).*?\b{_CAPTION_ROLE}", re.IGNORECASE | re.MULTILINE), None),
+    (re.compile(r"In\s+the\s+matter\s+of\s*:\s*(?P<n>[^\n.\u2026]{3,70})", re.IGNORECASE), "accused"),
+    (re.compile(r"^\s*(?:\d+\s*\.\s*)?(?P<n>[A-Z][A-Za-z ]{3,60}?)\s+(?:S/O|D/O|W/O)\b", re.MULTILINE), "person"),
+    # the father's, husband's or guardian's name after the relation word, often in capitals: 'S/O LATE RAMESHWAR SINGH R/O ...'
+    (re.compile(r"\b(?:S/O|D/O|W/O|son\s+of|daughter\s+of|wife\s+of)\s+(?:late\s+|smt\.?\s+|shri\s+|sri\s+)?(?P<n>[A-Za-z][A-Za-z.' ]{2,50}?)\s*(?=R/O|,|\n|\.\.|\bP\.?\s?S\b|\bDISTT?\b|\bvillage\b|\bresident\b|\bage\b|$)", re.IGNORECASE | re.MULTILINE), "person"),
+    # counsel and judges: 'Mr.Rama Kant Singh, Adv.', 'For the State : Mr. S.K. Srivastava, APP', 'JUSTICE RATNAKER BHENGRA'
+    (re.compile(r"\b(?:Mr|Ms|Mrs|Shri|Smt|Dr)\.?\s*(?P<n>[A-Za-z][A-Za-z. ]{2,40}?)\s*,\s*(?:Adv|Advocate|APP|Spl|Sr|Senior|Addl|AAG|A\.G|P\.P|PP|Counsel)", re.IGNORECASE), "person"),
+    (re.compile(r"\bJUSTICE\s+(?P<n>[A-Z][A-Z.' ]{2,40}?)(?=\s*(?:\n|,|\.|$|ORAL|CAV|JUDGMENT))", re.MULTILINE), "person"),
+)
+_NOT_A_PARTY = re.compile(r"\b(state|union|court|versus|vs|india|police|station|government|directorate|bureau|cbi|ncb|petition|appeal|matter)\b", re.IGNORECASE)
+
+
+def learn_caption_names(text: str, mapping: Any) -> list[str]:
+    """Register the party names of a court-order caption (`X ... Petitioner`, `In the matter of: X`, `X S/O Y`) in the alias map.
+
+    The production intake reads a client's documents, where names follow role words; a court order lists parties before the role word, so the
+    intake's rules miss them. Evaluation cases are such orders, and the boundary only knows names the map holds, so they are learned here
+    (the T1 orders are public, but real names still must not reach a hosted model). Returns the names registered ('A @ B' gives both)."""
+    found: list[str] = []
+    for pattern, fixed in _CAPTION_PATTERNS:
+        for m in pattern.finditer(text):
+            role = fixed or ("complainant" if re.match(r"respondent|opposite|complainant|informant", m.group("role"), re.IGNORECASE) else "accused")
+            for part in re.split(r"\s*@\s*|\s+alias\s+|\s+and\s+(?:(?:Mr|Ms|Mrs|Shri|Smt|Dr)\.?\s*)?", re.sub(r"^(?:Mr|Ms|Mrs|Shri|Smt|Dr)\.?\s*", "", m.group("n").strip(" ,;-"))):
+                part = " ".join(part.split())
+                if len(part) >= 4 and not _NOT_A_PARTY.search(part) and re.fullmatch(r"[A-Za-z][A-Za-z .']+", part) and not re.search(r"\b(?:r/o|adv|advocate)\b", part, re.IGNORECASE) and part not in found:
+                    mapping.alias_for(part, role)
+                    found.append(part)
+    return found
+
+
+_EVAL_CASE_ID = re.compile(r"^t\d+[a-z]*-")  # t1dev-000, t2-..., the ids of the evaluation test sets (production ids look like case-0007)
+
+
+def _fresh_shelf(ctx: AgentContext, case_id: str) -> None:
+    """Delete an evaluation case's folder on the laptop (shelf stores, alias map) left by an earlier run.
+
+    The shelf has no delete and chunk ids repeat, so a rerun would otherwise read the earlier run's text (the first hosted pilot left raw names there that
+    a later, pseudonymised run then found). Only ids of the evaluation test sets are touched, never a production case."""
+    import shutil
+
+    from vakeel_sahayak.privacy.pseudonymise import _map_path
+
+    if _EVAL_CASE_ID.match(case_id):
+        shutil.rmtree(_map_path(case_id, ctx.cases_dir).parent, ignore_errors=True)
+
+
+def file_facts(ctx: AgentContext, case: dict[str, Any], *, shelve: bool = True) -> str:
+    """Pseudonymise a text-only case's facts as Munshi's Filer does, and return the pseudonymised text.
+
+    The names are learned (the intake's rules plus the caption rule above), the case's alias map is saved on the laptop so the privacy
+    boundary (`assert_pseudonymised`) knows the real names, and, when `shelve` is true (the real tools), the pseudonymised facts are filed
+    as one `case.docs` document (page 1) where Peshkar reads them. Only the returned text may travel onward (`state.facts_text`)."""
     from vakeel_sahayak.ingestion.filing import Filer
     from vakeel_sahayak.schemas.enums import DocumentType
 
+    if shelve:
+        _fresh_shelf(ctx, case["case_id"])
     filer = Filer(case["case_id"], ctx.log, cases_dir=ctx.cases_dir, actor=AgentName.MUNSHI)
     try:
-        return filer.file_chunks("d1", DocumentType.OTHER, [{"page": 1, "text": case_facts(case), "lang": "en", "route": "text_layer", "confidence": 1.0}])
+        raw = case_facts(case)
+        learn_caption_names(raw, filer.mapping)
+        clean = filer.pseudonymise_batch([raw])[0]
+        filer.save_map()
+        if shelve:
+            filer.file_chunks("d1", DocumentType.OTHER, [{"page": 1, "text": clean, "lang": "en", "route": "text_layer", "confidence": 1.0}])
+        return clean
     finally:
         filer.close()
 
@@ -294,8 +363,10 @@ def run_metadata(ctx: AgentContext, seed: int, system: str, elapsed_s: float | N
         tokens, store_calls = ctx.budgets.spent(None)
     except Exception:  # noqa: BLE001 - minimal budgets of tests
         pass
+    from vakeel_sahayak.models.nli import nli_status
+
     meta = {"system": system, "seed": seed, "tokens": int(tokens), "store_calls": int(store_calls),
-            "switches": ctx.switches.model_dump(), "variant": ctx.switches.variant(), "models": models_stamp()}
+            "switches": ctx.switches.model_dump(), "variant": ctx.switches.variant(), "models": models_stamp(), "nli": nli_status()}
     if elapsed_s is not None:
         meta["seconds"] = round(elapsed_s, 3)
     return meta
@@ -348,6 +419,33 @@ def save_json(path: Path, obj: Any) -> None:
     tmp.replace(path)
 
 
+def _case_scope(case: dict[str, Any], system: str) -> Any:
+    """The privacy scope for one evaluation case: the T1 and constructed sets are public or synthetic data, so hosted model
+    backends may be used (when `VS_EXTERNAL` allows it); a case marked `data_class: client` gets no public scope and stays local."""
+    import contextlib
+
+    if str(case.get("data_class", "public")).lower() == "client":
+        return contextlib.nullcontext()
+    from vakeel_sahayak.models.sarvam.policy import public_scope
+
+    return public_scope(f"eval-{system}")
+
+
+def _log_nli_fallback(ctx: AgentContext) -> None:
+    """When `auto` mode fell back to the offline NLI, say so in the case's event log (never silently)."""
+    from vakeel_sahayak.models.nli import nli_status
+    from vakeel_sahayak.schemas.enums import EventKind
+
+    st = nli_status()
+    if not st["fallback_reason"]:
+        return
+    try:
+        ctx.log.append(Event(event_id="", ts="", case_id=ctx.case_id, kind=EventKind.AGENT_MESSAGE, actor="driver",
+                             outputs={"type": "nli_backend", "text": f"nli: offline stand-in ({st['fallback_reason']})", **st}))
+    except Exception:  # noqa: BLE001 - a fake context's log may not take it
+        pass
+
+
 def run_cases(cases_path: str, out_dir: str, system: str, runner: Any, switches: Any = None, *, shard: int = 0, n_shards: int = 1,
               seed: int = 0, tools: dict[str, Any] | None = None, llm: Any = None, budgets: dict[str, int] | None = None,
               deadline: float | None = None, limit: int | None = None, scenario: dict[str, Any] | None = None) -> int:
@@ -392,7 +490,8 @@ def run_cases(cases_path: str, out_dir: str, system: str, runner: Any, switches:
         t0 = time.monotonic()
         error = None
         try:
-            produced = runner(case, ctx)
+            with _case_scope(case, system):
+                produced = runner(case, ctx)
         except Exception as exc:  # noqa: BLE001 - a crashed case is saved as an error record so the shard goes on
             produced, error = BailBrief(case_id=case["case_id"]), f"{type(exc).__name__}: {str(exc)[:300]}"
         record = produced if isinstance(produced, dict) else {"brief": produced.model_dump(mode="json")}
@@ -401,6 +500,7 @@ def run_cases(cases_path: str, out_dir: str, system: str, runner: Any, switches:
         record.update(case_id=case["case_id"], system=system, meta=run_metadata(ctx, seed + i, system, time.monotonic() - t0))
         if error:
             record["error"] = error
+        _log_nli_fallback(ctx)
         try:
             dump_events(ctx, out / "_events" / f"{case['case_id']}.jsonl")
         except Exception:  # noqa: BLE001 - the log of a fake context may not be readable
@@ -452,6 +552,21 @@ def file_hash(path: str | Path) -> str | None:
     return hashlib.sha256(p.read_bytes()).hexdigest()[:16] if p.is_file() else None
 
 
+def _nli_manifest() -> dict[str, Any]:
+    """The NLI backend of the run for the manifest: the real model, or 'offline stand-in (reason)'. Resolving it here makes `auto` choose (and a failure to load show) before the first case."""
+    from vakeel_sahayak.models.factory import get_nli
+    from vakeel_sahayak.models.nli import nli_status
+
+    try:
+        client = get_nli()
+        if getattr(client, "fallback_reason", None) is None and not getattr(client, "is_offline", False):
+            client.entails("warm up", "warm up")  # loads the weights now, so a missing checkpoint is a recorded fallback and not a mid-case surprise
+    except Exception as exc:  # noqa: BLE001
+        return {"backend": None, "fallback_reason": f"{type(exc).__name__}: {str(exc)[:200]}"}
+    st = nli_status()
+    return {**st, "label": f"nli: offline stand-in ({st['fallback_reason']})" if st["fallback_reason"] else f"nli: {st['backend']}"}
+
+
 def write_run_manifest(out_dir: Path, *, system: str, switches: Any, seed: int, budgets: dict[str, int] | None = None,
                        cases_path: str | None = None, shard: int = 0, n_shards: int = 1, extra: dict[str, Any] | None = None) -> dict[str, Any]:
     """Write `MANIFEST.json`: code version, config hash, model/version/date stamp, seed, switches, budgets, the case-file hash."""
@@ -461,7 +576,7 @@ def write_run_manifest(out_dir: Path, *, system: str, switches: Any, seed: int, 
         "system": system, "variant": switches.variant(), "switches": switches.model_dump(), "seed": seed,
         "budgets": {"tokens_per_case": b.tokens_per_case, "store_calls_per_factor": b.store_calls_per_factor,
                     "tokens_per_factor": b.tokens_per_factor, **(budgets or {})},
-        "code_version": code_version(), "config_hash": config_hash(), "models": models_stamp(),
+        "code_version": code_version(), "config_hash": config_hash(), "models": models_stamp(), "nli": _nli_manifest(),
         "cases_file": cases_path, "cases_hash": file_hash(cases_path) if cases_path else None,
         "shard": shard, "n_shards": n_shards, **(extra or {}),
     }
