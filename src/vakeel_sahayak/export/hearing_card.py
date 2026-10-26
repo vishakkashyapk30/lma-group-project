@@ -21,12 +21,18 @@ from vakeel_sahayak.schemas.sparring import SparringRecord
 MAX_CONCERNS = 6
 
 
-def recorded_packs(case_id: str) -> list[EvidencePack]:
-    """The latest evidence packs Sutradhar wrote to this case's event log (empty before retrieval ran)."""
+def recorded_packs(case_id: str, log: Any = None) -> list[EvidencePack]:
+    """The latest evidence packs Sutradhar wrote to this case's event log (empty before retrieval ran).
+
+    Args:
+        case_id: the case
+        log: the event log to read; default the case's log in the tool runtime
+    """
     from vakeel_sahayak.record import views
     from vakeel_sahayak.tools.runtime import get_runtime
 
-    raw = views._latest(get_runtime().event_log(case_id).read(case_id), "evidence_packs") or []
+    log = log if log is not None else get_runtime().event_log(case_id)
+    raw = views._latest(log.read(case_id), "evidence_packs") or []
     packs = []
     for item in raw if isinstance(raw, list) else []:
         try:
@@ -59,8 +65,13 @@ def build_hearing_card(brief: BailBrief, sparring: SparringRecord, case_id: str)
         Card content: case_id, label, bench_concerns ({factor, concern, answer, ground, authority, source}), lead_with
         (ground ids), lead_points, conditions (texts), condition_sources, open_issues (texts).
     """
+    return card_from(brief, sparring, recorded_packs(case_id))
+
+
+def card_from(brief: BailBrief, sparring: SparringRecord | None, packs: list[EvidencePack]) -> dict[str, Any]:
+    """The exported card from given evidence packs (the F6 evaluation passes the packs of its own run)."""
     citations = {(a.doc_id, a.para): a.citation for g in brief.grounds for a in g.authorities if a.citation}
-    card = build_card(brief, recorded_packs(case_id), sparring, citations)
+    card = build_card(brief, packs, sparring, citations)
     concerns = []
     for c in card["bench_concerns"]:
         pointer = _pointer(c.get("authority"), str(c.get("ground")), brief) if c.get("ground") else None

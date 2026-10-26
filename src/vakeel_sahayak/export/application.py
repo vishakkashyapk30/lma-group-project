@@ -23,6 +23,18 @@ from vakeel_sahayak.schemas.ingestion_report import DocumentEntry
 from vakeel_sahayak.schemas.store_rows import TimelineEvent
 
 HEADING = "Application under Section 483 BNSS for grant of regular bail"
+SECTION_HEADINGS = {  # the heading line of each section after the cause title and the s.483 heading (order: export/sections.py)
+    "synopsis": "SYNOPSIS",
+    "list_of_dates_and_events": "LIST OF DATES AND EVENTS",
+    "brief_facts": "BRIEF FACTS",
+    "earlier_bail_applications": "EARLIER BAIL APPLICATIONS",
+    "grounds": "GROUNDS",
+    "statutory_position": "STATUTORY POSITION",
+    "prayer": "PRAYER",
+    "verification_and_affidavit": "VERIFICATION AND AFFIDAVIT",
+    "annexure_index": "INDEX OF ANNEXURES",
+}
+SHOWETH = "MOST RESPECTFULLY SHOWETH:"
 ON_RECORD = (FieldStatus.VERIFIED, FieldStatus.COMPUTED, FieldStatus.USER_EDITED)
 LANGUAGES = {"en": "English", "hi": "Hindi", "mixed": "Hindi and English"}
 _MARKER = re.compile(r"\[\s*(F|A)\s*:\s*([^\]]+?)\s*\]")
@@ -201,22 +213,22 @@ def assemble_application_docx(
     heading(doc, HEADING, size=13)
     paragraph(doc, brief.label, italic=True, align="center")
 
-    heading(doc, "SYNOPSIS")
+    heading(doc, SECTION_HEADINGS["synopsis"])
     paragraph(doc, " ".join(_synopsis(dossier)))
 
-    heading(doc, "LIST OF DATES AND EVENTS")
+    heading(doc, SECTION_HEADINGS["list_of_dates_and_events"])
     add_list_of_dates(doc, build_list_of_dates(timeline))
 
-    heading(doc, "BRIEF FACTS")
-    paragraph(doc, "MOST RESPECTFULLY SHOWETH:", bold=True, justify=False)
+    heading(doc, SECTION_HEADINGS["brief_facts"])
+    paragraph(doc, SHOWETH, bold=True, justify=False)
     for n, text in enumerate(_brief_facts(dossier, timeline), 1):
         paragraph(doc, f"{n}. {text}", indent_cm=0.8, hanging_cm=0.8)
 
-    heading(doc, "EARLIER BAIL APPLICATIONS")
+    heading(doc, SECTION_HEADINGS["earlier_bail_applications"])
     for text in _earlier_applications(dossier):
         paragraph(doc, text)
 
-    heading(doc, "GROUNDS")
+    heading(doc, SECTION_HEADINGS["grounds"])
     if brief.grounds:
         for n, g in enumerate(brief.grounds, 1):
             flags = _ground_flags(g)
@@ -224,17 +236,17 @@ def assemble_application_docx(
     else:
         paragraph(doc, "[NO GROUND HAS BEEN DRAFTED: COUNSEL TO ADD THE GROUNDS]")
 
-    heading(doc, "STATUTORY POSITION")
+    heading(doc, SECTION_HEADINGS["statutory_position"])
     for text in _statutory_position(brief, dossier):
         paragraph(doc, text)
 
-    heading(doc, "PRAYER")
+    heading(doc, SECTION_HEADINGS["prayer"])
     paragraph(doc, "In view of the facts and grounds stated above, it is most respectfully prayed that this Hon'ble Court may be pleased to:")
     paragraph(doc, f"(a) release the applicant on regular bail in {_fir(dossier)}, on such terms and conditions as this Hon'ble Court may deem fit; and", indent_cm=0.8)
     paragraph(doc, "(b) pass any other order that this Hon'ble Court may deem fit and proper in the facts and circumstances of the case.", indent_cm=0.8)
     paragraph(doc, "Filed by: [COUNSEL NAME], Advocate for the Applicant, [ENROLMENT NUMBER]. Place: [PLACE]. Date: [DATE].", justify=False)
 
-    heading(doc, "VERIFICATION AND AFFIDAVIT")
+    heading(doc, SECTION_HEADINGS["verification_and_affidavit"])
     paragraph(doc, "Verification. Verified at [PLACE] on [DATE] that the contents of this application are true and correct to the "
                    "knowledge of the deponent, derived from the records of the case, and that nothing material has been concealed.")
     paragraph(doc, "[DEPONENT NAME]", align="right")
@@ -243,7 +255,7 @@ def assemble_application_docx(
                    "that they are true and correct to my knowledge and belief, and that no part of it is false.")
     paragraph(doc, "[DEPONENT SIGNATURE]", align="right")
 
-    heading(doc, "INDEX OF ANNEXURES")
+    heading(doc, SECTION_HEADINGS["annexure_index"])
     rows = _annexure_rows(uploaded_docs)
     if rows:
         table(doc, ["No.", "Document", "Language", "Pages"], rows, widths_cm=[1.8, 8.0, 3.2, 3.0])

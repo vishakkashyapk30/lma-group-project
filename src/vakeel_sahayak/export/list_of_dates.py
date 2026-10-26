@@ -14,6 +14,7 @@ from vakeel_sahayak.schemas.common import SourceRef
 from vakeel_sahayak.schemas.store_rows import TimelineEvent
 
 _ISO_IN_TEXT = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
+NO_EVENTS = "No dated events are on record."
 
 
 def source_text(source: SourceRef | None) -> str:
@@ -75,7 +76,7 @@ def add_list_of_dates(doc: Any, rows: list[dict[str, str]]) -> None:
     if rows:
         table(doc, ["Date", "Event", "Source"], table_rows(rows), widths_cm=[3.0, 8.5, 4.5])
     else:
-        paragraph(doc, "No dated events are on record.", italic=True)
+        paragraph(doc, NO_EVENTS, italic=True)
 
 
 def write_list_of_dates_docx(timeline: list[TimelineEvent], case_id: str, out_path: str) -> str:
