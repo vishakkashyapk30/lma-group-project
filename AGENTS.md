@@ -5,7 +5,8 @@ Vakeel-Sahayak.ai is an agentic bail-preparation engine for Indian legal-aid law
 ## First day (copy these, in order)
 ```bash
 make setup         # creates .venv and installs the package; then run `make hooks` once
-make data          # data/ in place? skip. Else installs the team bundle (needs HF_TOKEN in .env or hf auth login), else tells you how to rebuild
+make data          # data/ in place? skip. Else installs the team bundle (needs HF_TOKEN in .env or hf auth login), else tells you how to rebuild.
+                   # The bundle holds the raw source data too (Open India Law shards, IPC2BNS-Verify, Kathbath audio; about 1.8 GB): never refetch it from the web. RAW=0 skips it to save disk
 make models        # the T1 helper models (BGE-M3, DeBERTa NLI, MiniCheck, Whisper small; about 5.5 GB); `make models-dry-run` lists sizes first
 make data-check    # table of present/missing items (interim, stores, testsets, gaps, hindi_native, kathbath, models); non-zero if required items are missing
 ```
@@ -55,7 +56,7 @@ Handoff notes (what is done, not done, next steps) are in `docs/handoff/*.md`; d
 Never wait for someone to hand you data. Check, then install the bundle or build what is missing, in this order, and never commit any of it (it is gitignored):
 0. **First try the team bundle** (a private Hugging Face dataset, the owner grants read access): `hf auth login` (or `HF_TOKEN` in the untracked `.env`), then
    `make data-install SRC=hf:Vakeel-Sahayak/vakeel-sahayak-data` (or `SRC=<folder or URL the owner shares>`; `FORCE=1` to overwrite). It verifies checksums, unpacks
-   `interim`, `stores`, `testsets`, `gaps`, `eval` and checks row counts. Models are not in it (`make models`). Only if you have no bundle, rebuild with steps 1 to 4:
+   `interim`, `stores`, `testsets`, `gaps`, `eval` and, in a second archive, the raw source data (`data/raw`: Open India Law shards, IPC2BNS-Verify, Kathbath audio; `RAW=0` or `--no-raw` skips it to save about 1.8 GB), and checks row counts. Models are not in it (`make models`). Only if you have no bundle, rebuild with steps 1 to 4:
 1. Check what exists: `ls data/raw data/interim data/stores models`, `df -h .` (you need about 10 GB free for the data and stores, more for model weights), and `cat data/raw/MANIFEST.json`.
 2. Public datasets: `make datasets` (resumable; Open India Law bail shards, IPC2BNS-Verify, Kathbath). Then `make interim` and `make stores` (quick check first: `SAMPLE=2000 EMBEDDER=hashed-ngram make stores`; the full build took about 35 minutes). Helper models if a task needs them: `make models-dry-run`, then `make models`.
 3. Items that need a person (HLDC on Hugging Face, the CrPC and NDPS statutes from India Code, API keys): do not guess or invent them. Record what is blocked in your handoff note under `docs/handoff/` and carry on with offline stand-ins and the small fixtures under `tests/fixtures`.

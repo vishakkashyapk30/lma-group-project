@@ -14,22 +14,36 @@ Rule: raw client files never leave the laptop. Only pseudonymised text may be co
 
 ## Get the data from the team bundle (fastest)
 
-The owner shares a compressed, checksummed copy of everything that is slow to rebuild (`interim`, `stores`, `testsets`, `gaps`, `eval`, `raw/MANIFEST.json`;
-about 1.5 to 2 GB; also `interim/hindi_native.jsonl`, the Kathbath transcripts and audio index, and `bundle_manifest.json`). It is a PRIVATE Hugging Face dataset, `Vakeel-Sahayak/vakeel-sahayak-data`
-(https://huggingface.co/datasets/Vakeel-Sahayak/vakeel-sahayak-data); the owner (an admin of the Hugging Face organisation `Vakeel-Sahayak`) adds you as a member, **write** for teammates and **read** for the evaluator. Then make a fine-grained token at https://huggingface.co/settings/tokens with read access to the organisation's repos (tick the org under Org permissions and save), and log in once with `hf auth login` or put
+The owner shares a checksummed copy of every dataset the project uses, so nobody has to refetch from the web. It is a PRIVATE Hugging Face dataset, `Vakeel-Sahayak/vakeel-sahayak-data`
+(https://huggingface.co/datasets/Vakeel-Sahayak/vakeel-sahayak-data), in two archive families (tar parts of at most 4 GB):
+
+| Archive | Holds | Size |
+|---|---|---|
+| `data.tar.gz.part-*` (gzip) | `interim` (with `hindi_native.jsonl`), `stores`, `testsets`, `gaps`, `eval`, `raw/MANIFEST.json`, the Kathbath transcripts and audio index, `bundle_manifest.json` | about 1.1 GB |
+| `raw.tar.part-*` (plain tar: parquet and m4a are already compressed) | `raw/open_india_law` (judgment shards, legislation, `sc_metadata.jsonl`, `SHA256SUMS.json`, fetch logs), `raw/ipc2bns_verify`, the full `raw/kathbath` (with the audio), `raw/MANIFEST.json` | about 1.8 GB |
+
+The owner (an admin of the Hugging Face organisation `Vakeel-Sahayak`) adds you as a member, **write** for teammates and **read** for the evaluator. Then make a fine-grained token at https://huggingface.co/settings/tokens with read access to the organisation's repos (tick the org under Org permissions and save), and log in once with `hf auth login` or put
 `HF_TOKEN=...` in the untracked `.env`, and from the repository root:
 
 ```bash
 make data                                                       # all in one: skip if `make data-check` passes, else install with an HF token, else explain
-make data-check                                                 # present/missing table; non-zero when required items are missing (REQUIRE_MODELS=1 also requires the T1 models)
-make data-install SRC=hf:Vakeel-Sahayak/vakeel-sahayak-data     # or SRC=<a folder or URL the owner gave you>
+make data-check                                                 # present/missing table; non-zero when required items are missing (REQUIRE_MODELS=1 also requires the T1 models, REQUIRE_RAW=1 the raw source data)
+make data-install SRC=hf:Vakeel-Sahayak/vakeel-sahayak-data     # both archives; or SRC=<a folder or URL the owner gave you>
+RAW=0 make data-install SRC=hf:Vakeel-Sahayak/vakeel-sahayak-data   # skip the raw archive (about 1.8 GB of disk); `--no-raw` does the same for scripts/data_install.sh
+scripts/data_install.sh --only-raw hf:Vakeel-Sahayak/vakeel-sahayak-data   # add only the raw archive to a data/ you already have
 make data-install SRC=~/vakeel-data-bundle FORCE=1             # FORCE=1 overwrites what is already in data/
 ```
 
-It verifies `SHA256SUMS`, refuses to overwrite `data/` without `FORCE=1`, unpacks, and checks row and file counts against `bundle_manifest.json`.
-Kathbath audio (3.6 GB) is not bundled: refetch with `python -m vakeel_sahayak.pipelines.kathbath_fetch --out data/raw/kathbath --limit 3130` (or `make datasets`). Not in the bundle: model weights (`MODELS.txt` lists names and sizes; `make models`), `data/cases` (private client files), `data/openai`, `data/raw` (except
-`MANIFEST.json` and the Kathbath transcripts) and HLDC. Owner side: `make data-bundle` (writes `~/vakeel-data-bundle`, no upload) and `make data-publish` (uploads it with `hf upload`; token
-from the environment or `.env`, never printed). If you have no access, rebuild with the commands below.
+It verifies `SHA256SUMS` for the archives it unpacks, refuses to overwrite `data/` without `FORCE=1`, checks the free disk before the raw part (it stops with a hint to use `RAW=0`),
+unpacks, and checks row and file counts against `bundle_manifest.json`. A download from Hugging Face lands in a scratch folder under `TMPDIR` first (as large as the archives you install; set `TMPDIR` to a roomy disk).
+The derived data alone (`RAW=0`) is enough to run the pipelines and tests; the raw data is needed only to rebuild `interim` from the shards (`make interim`).
+`make data-check` lists the raw items as optional (`REQUIRE_RAW=1` makes them required).
+
+Not in the bundle, on purpose: `data/cases` (private client files; they stay on the lawyer's machine), `data/openai` (spend ledger and cache), `.env` and anything named like a key, token or secret,
+`data/stores_prev`, `data/stores_candidate`, the `*_sample` folders, HLDC (gated, non-commercial licence: request access to Exploration-Lab/IL-TUR), and model weights (public on their own repos:
+`make models-dry-run` lists sizes, `make models` fetches them; `MODELS.txt` in the bundle lists names and sizes). Owner side: `make data-bundle` (writes `~/vakeel-data-bundle`, no upload; it is resumable: an archive whose
+parts exist and whose source list is unchanged is kept; `FORCE=1` rebuilds, `RAW=0` builds only the data archive, `PART_SIZE=` changes the 4G part size) and `make data-publish` (uploads it with `hf upload`; only new or changed
+files are sent; `ONLY=raw` or `ONLY=data` limits it to one family; token from the environment or `.env`, never printed). If you have no access, rebuild with the commands below.
 
 ## Reproduce the data (week 0)
 

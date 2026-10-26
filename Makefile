@@ -15,13 +15,13 @@ interim:          ## convert data/raw into data/interim: orders.jsonl, statutes.
 data:             ## make sure data/ is in place: skip if data-check passes, else install the team bundle (HF token) or explain how (scripts/data_ensure.sh)
 	@scripts/data_ensure.sh
 
-data-check:       ## table of what is present or missing in data/ (interim, stores, testsets, gaps, hindi_native, kathbath, models); non-zero if required items are missing (REQUIRE_MODELS=1 to require models)
+data-check:       ## table of what is present or missing in data/ (interim, stores, testsets, gaps, hindi_native, kathbath, models); non-zero if required items are missing (REQUIRE_MODELS=1 to require models, REQUIRE_RAW=1 the raw data)
 	@$(PY) scripts/_data_check.py $(if $(REQUIRE_MODELS),--require-models,)
 
-data-bundle:      ## compress and checksum the data a teammate cannot rebuild cheaply into ~/vakeel-data-bundle (scripts/data_bundle.sh; no upload)
+data-bundle:      ## compress and checksum the data and raw source archives into ~/vakeel-data-bundle (scripts/data_bundle.sh; no upload)
 	@scripts/data_bundle.sh $(BUNDLE)
 
-data-install:     ## install a data bundle into data/: make data-install SRC=<dir | URL | hf:repo> [FORCE=1] (scripts/data_install.sh)
+data-install:     ## install a data bundle into data/: make data-install SRC=<dir | URL | hf:repo> [FORCE=1] [RAW=0 skips the raw archive] (scripts/data_install.sh)
 	@scripts/data_install.sh $(if $(FORCE),--force,) $(SRC)
 
 data-publish:     ## owner only: upload the bundle folder to the private Hugging Face dataset (scripts/data_publish.sh)

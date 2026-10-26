@@ -5,7 +5,8 @@
 Prints a table (area, item, present or MISSING, detail). The exit code is 1 when a REQUIRED item is missing (interim files, the seven stores, the
 test sets T1 to T6, T8 and T9, the gap statutes) or when a file or row count is below `data/bundle_manifest.json` (installed from the bundle; a count
 above it only prints a note, because a local rebuild adds files). Optional items: `hindi_native`, the Hindi test set `t2_hindi_native`, Kathbath and the
-T1 models (required with `--require-models`; `make models` fetches them). The data folder defaults to `$VS_DATA_DIR` or `data`, the models folder to
+T1 models (required with `--require-models`; `make models` fetches them). The raw source data (`raw/open_india_law`, `raw/ipc2bns_verify`, the Kathbath audio; in the
+`raw.tar.part-*` archive of the bundle) is optional and reported, and required only with `--require-raw` or `REQUIRE_RAW=1`. The data folder defaults to `$VS_DATA_DIR` or `data`, the models folder to
 `$VS_MODELS_DIR` or `models`.
 """
 
@@ -67,7 +68,9 @@ def model_ids(config: Path) -> list[str]:
     return [m["id"] for m in (tiers.get("T1") or {}).get("models", [])]
 
 
-def check_all(data: Path, models: Path, config: Path, require_models: bool = False) -> tuple[list[dict], list[str]]:
+def check_all(
+    data: Path, models: Path, config: Path, require_models: bool = False, require_raw: bool = False
+) -> tuple[list[dict], list[str]]:
     """The table rows and the notes on counts against the bundle manifest."""
     rows = [_file("interim", data, f"interim/{n}", count_rows=n.endswith(".jsonl")) for n in INTERIM]
     rows.append(_file("hindi_native", data, "interim/hindi_native.jsonl", required=False, count_rows=True))
@@ -81,11 +84,37 @@ def check_all(data: Path, models: Path, config: Path, require_models: bool = Fal
     n_audio = sum(1 for _ in audio.glob("*.m4a")) if audio.is_dir() else 0
     rows.append(
         {
-            "area": "kathbath",
+            "area": "raw",
             "item": f"{KATHBATH}/audio",
             "present": n_audio > 0,
-            "required": False,
-            "detail": f"{n_audio} files (not in the bundle: python -m vakeel_sahayak.pipelines.kathbath_fetch --out data/raw/kathbath --limit 3130)",
+            "required": require_raw,
+            "detail": f"{n_audio} files"
+            if n_audio
+            else "in the raw archive of the bundle (RAW=1 make data-install ...), or: python -m vakeel_sahayak.pipelines.kathbath_fetch --out data/raw/kathbath --limit 3130",
+        }
+    )
+    oil = data / "raw" / "open_india_law"
+    n_shards = sum(1 for _ in (oil / "judgments").rglob("*")) if (oil / "judgments").is_dir() else 0
+    rows.append(
+        {
+            "area": "raw",
+            "item": "raw/open_india_law/judgments",
+            "present": n_shards > 0,
+            "required": require_raw,
+            "detail": f"{n_shards} files" if n_shards else "in the raw archive of the bundle, or: make datasets",
+        }
+    )
+    for rel in ("legislation/in_central_legislation.parquet", "sc_metadata.jsonl", "SHA256SUMS.json"):
+        rows.append(_file("raw", data, f"raw/open_india_law/{rel}", required=require_raw))
+    ipc = data / "raw" / "ipc2bns_verify"
+    have_ipc = ipc.is_dir() and any(ipc.rglob("*"))
+    rows.append(
+        {
+            "area": "raw",
+            "item": "raw/ipc2bns_verify",
+            "present": have_ipc,
+            "required": require_raw,
+            "detail": "" if have_ipc else "in the raw archive of the bundle, or: make datasets",
         }
     )
     for mid in model_ids(config) if config.is_file() else []:
@@ -157,9 +186,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--models", default=os.environ.get("VS_MODELS_DIR", str(ROOT / "models")))
     ap.add_argument("--config", default=str(ROOT / "configs" / "models.yaml"))
     ap.add_argument("--require-models", action="store_true", default=os.environ.get("REQUIRE_MODELS") == "1")
+    ap.add_argument("--require-raw", action="store_true", default=os.environ.get("REQUIRE_RAW") == "1")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
-    rows, notes = check_all(Path(a.data), Path(a.models), Path(a.config), a.require_models)
+    rows, notes = check_all(Path(a.data), Path(a.models), Path(a.config), a.require_models, a.require_raw)
     missing = [r for r in rows if r["required"] and not r["present"]]
     if a.json:
         print(json.dumps({"ok": not missing, "rows": rows, "notes": notes}, indent=1))
