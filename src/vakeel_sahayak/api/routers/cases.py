@@ -10,6 +10,7 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 
 from vakeel_sahayak.api import service
@@ -117,15 +118,18 @@ async def start_draft(case_id: str, log: Annotated[EventLog, Depends(get_event_l
     from vakeel_sahayak.orchestration.state import CaseGraphState
     from vakeel_sahayak.schemas.enums import AgentName
 
-    cs = service.case_state(log, case_id)
-    state = CaseGraphState(case_id=case_id, log_path=log.db_path, dossier=cs.dossier(), rights=cs.rights_report())
-    ctx = AgentContext(case_id=case_id, log=log)
-    sutradhar = create_agent(AgentName.SUTRADHAR, ctx)
-    try:
-        state = sutradhar.run(state)
-        state = sutradhar.delegate(state, list(state.evidence_packs))
-    finally:
-        sutradhar.close()
+    def draft() -> CaseGraphState:
+        cs = service.case_state(log, case_id)
+        state = CaseGraphState(case_id=case_id, log_path=log.db_path, dossier=cs.dossier(), rights=cs.rights_report())
+        sutradhar = create_agent(AgentName.SUTRADHAR, AgentContext(case_id=case_id, log=log))
+        try:
+            state = sutradhar.run(state)
+            return sutradhar.delegate(state, list(state.evidence_packs))
+        finally:
+            sutradhar.close()
+
+    # A worker thread, so the API (and the event stream that shows the drafting live) keeps answering meanwhile.
+    state = await run_in_threadpool(draft)
     grounds = len(state.brief.grounds) if state.brief else 0
     return {"status": "drafted", "grounds": grounds}
 

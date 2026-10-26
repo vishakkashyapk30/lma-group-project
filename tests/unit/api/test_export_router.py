@@ -80,3 +80,20 @@ def test_format_defaults_to_docx(tmp_path, monkeypatch, spy):
     paths = client.post(f"/api/cases/{CASE}/export", json={}).json()
     assert not any(p.endswith(".pdf") for p in paths)
     assert "pdf" not in spy.calls
+
+
+def test_exported_files_can_be_downloaded_after_gate_2(tmp_path, monkeypatch, spy):
+    """GET .../export/files/{name} serves an exported file of this case (the frontend's download links)."""
+    _, client = clean_case(tmp_path, monkeypatch, approve_gate2=True)
+    paths = client.post(f"/api/cases/{CASE}/export", json={"format": "DOCX"}).json()
+    name = Path(paths[0]).name
+    res = client.get(f"/api/cases/{CASE}/export/files/{name}")
+    assert res.status_code == 200 and res.content == Path(paths[0]).read_bytes()
+
+
+def test_download_is_refused_before_gate_2_and_outside_the_export_folder(tmp_path, monkeypatch, spy):
+    sc, client = clean_case(tmp_path, monkeypatch, approve_gate2=False)
+    assert client.get(f"/api/cases/{CASE}/export/files/application.docx").status_code == EXPORT_REFUSED
+    sc.approve(G2)
+    assert client.get(f"/api/cases/{CASE}/export/files/..%2F..%2Frecord.sqlite").status_code == 404
+    assert client.get(f"/api/cases/{CASE}/export/files/nothing.docx").status_code == 404

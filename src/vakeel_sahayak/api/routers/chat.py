@@ -8,6 +8,7 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from fastapi.concurrency import run_in_threadpool
 
 from vakeel_sahayak.api import service
 from vakeel_sahayak.api.deps import get_event_log
@@ -39,11 +40,14 @@ async def post_chat(case_id: str, body: ChatRequest, log: Annotated[EventLog, De
     question = ChatMessage(message_id=uuid.uuid4().hex, case_id=case_id, role="counsel", text=body.text)
     _persist(log, case_id, question, EventKind.USER_ACTION, COUNSEL)
 
-    sutradhar = create_agent(AgentName.SUTRADHAR, service.agent_context(log, case_id))
-    try:
-        answer = sutradhar.answer_chat(state, body.text)
-    finally:
-        sutradhar.close()
+    def answer_in_thread() -> ChatMessage:
+        sutradhar = create_agent(AgentName.SUTRADHAR, service.agent_context(log, case_id))
+        try:
+            return sutradhar.answer_chat(state, body.text)
+        finally:
+            sutradhar.close()
+
+    answer = await run_in_threadpool(answer_in_thread)  # never block the event loop with agent work
     answer = answer.model_copy(update={"case_id": case_id})
     _persist(log, case_id, answer, EventKind.AGENT_MESSAGE, AgentName.SUTRADHAR)
     return answer

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 
 from vakeel_sahayak.api.deps import _data_dir, get_event_log
 from vakeel_sahayak.api.models import UploadResponse
@@ -60,13 +61,15 @@ async def upload_files(case_id: str, files: list[UploadFile], log: Annotated[Eve
             questions.append(f"{name} could not be opened. Please upload an unlocked or intact copy.")
     log.append(Event(event_id="", case_id=case_id, ts="", kind=EventKind.USER_ACTION, actor=COUNSEL,
                      inputs={"action": "upload", "files": accepted}))  # names only, never page text (plan §16)
-    questions += _run_intake(log, case_id, [str(case_dir / name) for name in accepted])
+    # The agents run in a worker thread: inside this async handler they would freeze every other request (and the event stream).
+    questions += await run_in_threadpool(_run_intake, log, case_id, [str(case_dir / name) for name in accepted])
     return UploadResponse(case_id=case_id, accepted=accepted, questions=questions)
 
 
 def _run_intake(log: EventLog, case_id: str, paths: list[str]) -> list[str]:
-    """Run Munshi over the just-uploaded files (plan §13.6 flow 1); returns any questions it raised. A failed intake is
-    swallowed so the upload response still returns (the error is recorded in the log by the agent)."""
+    """Run Munshi over the just-uploaded files, then Peshkar (dossier, List of Dates, Rights Radar), as the graph's intake and
+    dossier nodes do (plan §13.6 flow 1); returns any questions Munshi raised. A failed intake is swallowed so the upload
+    response still returns (the error is recorded in the log by the agent)."""
     if not paths:
         return []
     from vakeel_sahayak.agents.registry import create_agent
@@ -82,7 +85,13 @@ def _run_intake(log: EventLog, case_id: str, paths: list[str]) -> list[str]:
         finally:
             munshi.close()
         report = state.ingestion
-        return list(report.questions) if report is not None else []
+        questions = list(report.questions) if report is not None else []
+        peshkar = create_agent(AgentName.PESHKAR, service.agent_context(log, case_id))
+        try:
+            peshkar.run(state)
+        finally:
+            peshkar.close()
+        return questions
     except Exception:  # noqa: BLE001 - intake failure must not fail the upload; the agent logs the error
         return []
 

@@ -85,6 +85,23 @@ def test_gate_2_is_approved_after_counsel_resolves_every_item(tmp_path, monkeypa
     assert res.status_code == 200 and res.json()["open"] is False
 
 
+def test_resolutions_sent_with_the_approval_are_recorded_as_counsels(tmp_path, monkeypatch):
+    """The workspace sends what counsel resolved as NEEDS_REVIEW:<ground> / UNANSWERED:<objection> in acknowledged_fields; the route
+    records each as counsel's resolve event, and the gate opens in the same request."""
+    sc, client = with_open_gate_2(tmp_path, monkeypatch)
+    res = client.post(gate_url(G2) + "/approve", json={"acknowledged_fields": ["NEEDS_REVIEW:G2", "UNANSWERED:O2", "NEEDS_REVIEW:issue-0"]})
+    assert res.status_code == 200 and res.json()["open"] is False
+    resolves = [e for e in sc.events(EventKind.USER_ACTION) if e.inputs.get("action") == "resolve"]
+    assert sorted(e.inputs["item"] for e in resolves) == ["G2", "O2"]
+    assert all(str(getattr(e.actor, "value", e.actor)) == "counsel" for e in resolves)
+
+
+def test_a_partial_set_of_resolutions_still_leaves_the_gate_closed(tmp_path, monkeypatch):
+    sc, client = with_open_gate_2(tmp_path, monkeypatch)
+    assert client.post(gate_url(G2) + "/approve", json={"acknowledged_fields": ["NEEDS_REVIEW:G2"]}).status_code == CHECKLIST_OPEN
+    assert client.get(gate_url(G2)).json()["unresolved_unanswered"] == ["O2"]
+
+
 def test_approving_gate_2_of_one_case_does_not_approve_another(tmp_path, monkeypatch):
     """No bulk approval (plan §16): the approval is recorded for the case in the URL only."""
     sc = scenario(tmp_path, monkeypatch)
