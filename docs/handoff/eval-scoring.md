@@ -1,6 +1,6 @@
 # Eval scoring: driver outputs to tables (handoff)
 
-Date 2026-10-26. Nothing committed. Code: `src/vakeel_sahayak/eval/scoring/` (`loader`, `case_metrics`, `engine`, `pipeline`, `render`, `stats_extra`, `cli`),
+Date 2026-10-26. Nothing committed. Update 2026-10-27 (`eval-complete.md`, `sweep-dev.md`): M5 and the citation and abstention metrics are now built (rows marked below); run manifests carry `git_sha`, `git_dirty` and `code_tree_hash` and the loader refuses to score runs from different commits (`--allow-mixed-code` overrides; tests `test_scoring_pipeline.py`, `test_manifest_code_stamp.py`); the agreed gold now has G2 merged (14 test cases changed, 0 dev; dev has 0 resolved citations, so M10 stays `n/a (n=0)` on dev). Code: `src/vakeel_sahayak/eval/scoring/` (`loader`, `case_metrics`, `engine`, `pipeline`, `render`, `stats_extra`, `cli`),
 tests `tests/unit/eval/test_scoring_{math,pipeline,render}.py` (+ `scoring_fixtures.py`), Makefile targets `eval-score` and `eval-report`.
 
 ## Commands
@@ -33,7 +33,9 @@ T4 Rights Radar records (`{rule, predicted, designed}` written by `eval/features
 | Rights Radar | T4 records (above); G7 on T1 has 1 labelled order and the run record carries no rights report | T4 works; G7 agreement is not computed |
 | pass^k, flip share, run SD | `eval/metrics/agentic.pass_hat_k`; pass = factor recall >= `--pass-bar` (0.5) and no error | works; the bar is provisional (the preregistration leaves it `<definition>`) |
 | Coverage (M33, x-axis) | share of grounds emitted without NEEDS_REVIEW and not the "no supported argument" placeholder; a baseline (no gate fields) cannot decline: 1.0 | works |
-| Coverage-risk curve, risk side and AURC (M33), M35, citation precision (M16), M9, M15 | need per-claim MiniCheck scores or citation checks | **not built** (no column); the per-claim scorer would have to return a list, `unsupported_fact_rate` returns one number |
+| Coverage-risk curve, risk side and AURC (M33), M35, citation precision and recall (M16), M9, M13, M15, M18 | `eval/metrics/citations.py` + `eval/scoring/citation_scores.py`; tables `table_citations`, `table_abstention` | **built 2026-10-27** (superseded: was "not built"). Caveats: M16, M33, M35 carry the "offline stand-in" NLI label unless MiniCheck or the DeBERTa NLI is installed (the table names the checker); M33 risk is 0 at tau = the M6 cut by construction; M15 on the dev run is 0 violations with known-treatment share 0 (cited paragraphs carry no treatment labels); M18 is event-based and the stopped-too-early replay to the 16-call budget is NOT computed; a metric whose resource is absent is `pending` (`--strict` raises) |
+| Label-source sensitivity (M5) | `eval/label_sensitivity.py`, flag `--second-labeler data/interim/gold_candidate`; tables `table_label_sensitivity`, `table_label_kappa` | **built 2026-10-27**: four sources (rules only, one labeler, agreed, optional second labeler: Sarvam, 80 orders, G1 only), system ranking per source, Cohen kappa per factor with a bootstrap interval |
+| Citation faithfulness by removal (M17) | computation `removal_change`; arm `eval/runners/m17_removal.py` | built; smoked offline on one dev case; lower bound only; needs a real drafter for a result |
 | Tokens, store calls, seconds, USD per case, USD per passed case | record `meta`; USD is 0 offline, priced on OpenAI from `configs/eval/runs.yaml` `estimate`, None on Ada/Sarvam | works |
 
 Definitions fixed in code and to be frozen in the preregistration: argued factor (non-placeholder ground, stance not `not_applicable`), answerable rule, pass bar, coverage. Captions say `Preliminary dev result` for the dev slice, name offline stand-in models, and print the label source; a system scored on fewer than 20 orders gets a "too few for a claim" note (plan 5.5).
@@ -48,7 +50,7 @@ Definitions fixed in code and to be frozen in the preregistration: argued factor
 `driver run` of full (2 runs), b0, b1 on 3 dev cases (the first 3, none has an agreed answerable factor: every M1 cell is n/a) and on 6 dev cases chosen because G1 meets the answerable set (`t1dev-003, 009, 011, 025, 033, 039`), scored with `--gold-source both`, plus 40 T4 scenarios (`f3_rights_radar`). The numbers describe the offline template model only.
 
 ## Not done / next
-- Per-claim support scores for the coverage-risk curve and M35; citation metrics M9, M15, M16, M17.
+- (Done 2026-10-27, see the table: per-claim support scores for M33 and M35, and M9, M13, M15, M16, M17, M18.) Still open: M16, M33 and M35 on a real NLI (MiniCheck or DeBERTa) rather than the stand-in; M18 stopped-too-early replay; M17 on a real drafter.
 - The driver does not save the evidence packs (only a pack count), so recall@10 reads Sutradhar's tool results from `_events/`; saving `retrieved` in the record would make it exact.
 - Table 2 (retrieval-only), 3, 4 layout per variant, 5 to 8 (ingestion, features, safety, slices) and figures 1, 3, 4 to 10 are not rendered; figures 2 (cost-quality) and the per-factor bars are, as CSV and, with matplotlib, PDF and PNG (the matplotlib branch is only tested against a stub here).
 - Contamination (pre and post Qwen3) and per-court slices are not cut; `case_means` rows carry no court field yet (add it from the gold row).

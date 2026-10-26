@@ -1,6 +1,6 @@
 # VI-07: ingestion pipelines P1-P6 and feature evaluations F1-F4, F7, F8 (handoff)
 
-Date 2026-10-26. Nothing committed. All numbers below are OFFLINE STAND-IN results (offline models, small samples where stated): they check the harness, they are not findings. Raw outputs are in `data/eval/vi07/` (gitignored).
+Date 2026-10-26. Nothing committed. Update 2026-10-27: F4's scheduling comparison is also available as the study `eval/studies/s14.py` (S14b, S14c; `eval-complete.md`: fifo misses 66 of 100 planted deadlines, urgency 0 on the 300 T5 cases in that simulation, stage lengths constructed from a hash of the case id); the F4 numbers below are the earlier offline run and are not replaced. All numbers below are OFFLINE STAND-IN results (offline models, small samples where stated): they check the harness, they are not findings. Raw outputs are in `data/eval/vi07/` (gitignored).
 
 ## Files
 - New: `eval/ingestion/{common,munshi_family,rq2}.py`, `eval/feature_common.py`.

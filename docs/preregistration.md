@@ -19,8 +19,9 @@ tags exist, the blind scoring entry point refuses to run (`testsets/blind.py`). 
 | Dev ids | `data/testsets/t1/manifest_dev.json` (identical in `t1_rule_only`), file hash `<hash>` |
 | Test-set manifests and hashes (T1 to T9) | `<name: hash>` |
 | Seeds | `<seed 1, seed 2, seed 3>`; the same seeds for every system, run r of every system shares seed r (plan 5.1) |
+| Code stamp | every run manifest records `git_sha`, `git_dirty` and `code_tree_hash`; the scoring loader refuses to mix runs from different commits (`--allow-mixed-code` overrides, for exploration only); frozen runs must come from a clean worktree of the tag (a `-dirty` sha is not admissible) |
 | Models and versions | `<the `models` block of the run manifests: name, version, date stamp>`; hosted models name the provider and the date; labeler and teacher are non-Qwen |
-| Budgets | tokens per case `<n>`, store calls and tokens per factor `<n>` (`configs/budgets.yaml`), hosted caps `<USD>` and `<INR>` (`configs/eval/runs.yaml` `budgets:`) |
+| Budgets | tokens per case `<n>`, store calls and tokens per factor `<n>` (`configs/budgets.yaml`), hosted caps `<USD>` and `<INR>` (`configs/eval/runs.yaml` `budgets:`; at 2026-10-27 the OpenAI ledger ceiling is 4.90 USD, the owner's Sarvam key INR 30 in total, and the large Sarvam block runs on Satvik's own key, `docs/handoff/sweep-satvik.md`) |
 
 ## 1. Claims and hypotheses
 
@@ -93,7 +94,7 @@ Thresholds (defaults of evaluation plan 1.1; fixed on dev, then frozen):
 | C41 | No hidden collapse in a slice | pooled mean | per-court, per-script, per-input-kind, BNS vs IPC era slices | T1, T2 | in any slice with n >= 20 the Full-minus-B0 difference on C1 is below 0 (weak slice, exploratory) | exploratory, not corrected | `<>` |
 | C42 | The brief reduces what counsel must check | B1, B4 | sources to open per supported claim; share with a verbatim span | T1 | not lower than B1's, or fewer than 95% of SUPPORTED claims carry a verifiable span | own | `<>` |
 
-Claims that will not be run (decide at the freeze; the report names each as "not run"): `<list>`. Arms that are declared and not built: S15b (`configs/eval/runs.yaml` `exclusions`).
+Claims that will not be run (decide at the freeze; the report names each as "not run"): `<list>`. Arms that are declared and not built: none (S15b was built on 2026-10-27, `output_format='free_then_parse'`, and `exclusions` in `configs/eval/runs.yaml` is empty). Arms that are built but only offline-smoked: S13 (model-backed search is planned), S15b (needs a real model), M17 removal; S6 and B5 are a no-op until a store prior is trained (event `store_prior_untrained`); S14b, S14c, S16, S16b, S4/S5 retrieval are studies (`eval/studies/`), not per-case arms.
 
 ## 2. Systems and switches
 
@@ -120,7 +121,7 @@ Definitions are those of evaluation plan section 4; the following are fixed here
 | MiniCheck threshold | `<value>` (dev-fixed) |
 | pass^3 quality bar | `<definition>` |
 | Coverage for each table | `<definition per table>` |
-| Label sources for G1 to G7 | PRIMARY = agreed (rules and a non-Qwen labeler, span-grounded; `data/testsets/t1`); SECONDARY = rule-only (`data/testsets/t1_rule_only`), pre-declared; coverage (n of orders with a label) reported beside every G-based number. Hash of each gold: `details.gold.gold_sha256` in `data/testsets/<t1|t1_rule_only>/manifest.json` (`<hash agreed>`, `<hash rule>`) |
+| Label sources for G1 to G7 | PRIMARY = agreed (rules and a non-Qwen labeler, span-grounded; `data/testsets/t1`); SECONDARY = rule-only (`data/testsets/t1_rule_only`), pre-declared; coverage (n of orders with a label) reported beside every G-based number. Hash of each gold: `details.gold.gold_sha256` in `data/testsets/<t1|t1_rule_only>/manifest.json` (`<hash agreed>`, `<hash rule>`). Since the G2 merge of 2026-10-27 (`docs/handoff/dev-baselines.md`) the agreed gold carries the candidate G2 built with the SC-metadata citation index: 14 of 200 test cases changed, 0 of 50 dev; dev has 0 orders with a resolved court citation, so M10 is n/a on dev and shows only on the test slice. Hashes after the merge: agreed `gold_sha256` 5583690e...05be, rule-only 4cde3451...8ab0 (full values in `dev-baselines.md`; re-read from the manifests at the freeze) |
 | Gold-source sensitivity | one rescoring sweep of the gold-dependent metrics against the other gold (job `gold_source_sweep`, no model call, cost 0); a single declared sensitivity analysis, not a new test family: Holm applies to the registered primary family on the primary gold only. Coverage: G1 169 of 250 orders with an agreed label, G3 249, G4 88, G5 155, G6 133 of 152 grants, G7 1 (C30 rests on T4). Claims by gold: C1, C3, C10, M46 on G1 (G5 for lenient precision); C7, C8, C28 on G4; C33 on G5 and G6; C32 and C25 on G3; C5, C14 on G2; C30 on T4. See evaluation plan 5.9 |
 | Null-agent audit | the five degenerate agents of plan 5.7 score near the floor before any run: result `<pass/fail>` |
 
@@ -160,7 +161,7 @@ if they differ the blind numbers are the headline. Opened on `<date>` at `<SHA>`
 
 Multiple comparisons: Holm-Bonferroni within each family named in section 1.1 (alpha `<0.05>`), on the primary (agreed) gold; families are not pooled; exploratory slices are labelled and not corrected. The rescoring against the rule-only gold (section 0, Gold-source sensitivity) is one declared sensitivity analysis: it adds no test to any family, is not corrected, and a claim is called robust to the label source when its sign and Holm decision hold on both golds.
 Averaging: runs within a case first, then paired tests across cases (case-level is the unit). Ties and empty cases: `<rule>`. Differences smaller than the interval half-width are "not resolved",
-not "no difference". Code status: `eval/stats/{bootstrap,wilcoxon,holm}.py` are stubs owned by a teammate; McNemar and the cluster bootstrap are to be added.
+not "no difference". Code status: exact McNemar and the cluster bootstrap exist in `eval/scoring/stats_extra.py` (written there because `eval/stats` has neither); `eval/stats/{bootstrap,wilcoxon,holm}.py` are owned by a teammate (check their state before the freeze).
 
 ## 7. Reporting rules
 

@@ -16,14 +16,14 @@ Day 1 is the day all four of you have finished the history sync (Wave 0). Effort
 |---|---|
 | Six agents, stores, Rights Radar, privacy, event log | Built, tested offline |
 | Hosted LLM clients | OpenAI (hard 5 USD cap, ledger) and Sarvam (INR spend ledger, cap from `VS_SARVAM_CAP_INR`) both pass live smoke tests; the driver has run Full on 3 dev cases with `gpt-6-luna` (about 0.0078 USD per case) |
-| Eval infrastructure | Driver with one entry for every variant (`run --system`, `plan`, `smoke-all`), runs.yaml jobs with costs, preregistration template, gold-source sweep job registered; scoring waits for metrics and statistics |
-| Literature variants | S1 to S18, P5 to P8, B5 built and switch-gated (S15b not built); plan v6 applies the 25 edits and the citations are verified |
+| Eval infrastructure | Driver with one entry for every variant (`run --system`, `plan`, `smoke-all`), runs.yaml jobs with costs, preregistration template, gold-source sweep job registered; scoring is built (`eval/scoring`, with M5 and the citation and abstention metrics, 2026-10-27); manifests carry `git_sha`, `git_dirty`, `code_tree_hash` and scoring refuses mixed code; the dev-set sweep plan and runner are in `docs/handoff/sweep-dev.md` |
+| Literature variants | S1 to S18, P5 to P8, B5 built and switch-gated (S15b built 2026-10-27, so the registry equals the full table; S6 and B5 need a trained store prior; S14b, S14c, S16, S16b are studies, not per-case arms); plan v6 applies the 25 edits and the citations are verified |
 | Test sets and gold | T1 to T9 built (T7 safety, driver case rows for T2, T5, T7, native Hindi High Court set for T2); gold G1 to G7 by agreement (primary) with the rule-only gold as a declared secondary |
 | Features and ingestion | F1 to F4, F7, F8 and P1 to P6 arms run offline; F5, F6 need the export modules; P3, P4 need Docling and a vision model |
 | Graph and API | LangGraph flow and the API routes with Swagger built by Shravani (graph unit tests pass; her API tests pass except 2 traced to a Sutradhar bug) |
 | Frontend | Redesigned (shell, landing, guided workspace); old tests fail on purpose; real-API mode not done |
 | Data | Stores rebuilt with the current T1 splits, SC metadata and SCC links; statutes (CrPC, NDPS, First Schedule flags) from official PDFs; Kathbath complete; HLDC and indictrans2 access pending; team copy is the private organisation dataset `Vakeel-Sahayak/vakeel-sahayak-data` (`make data`) |
-| **Not built** | DOCX export and hearing card, real-API frontend mode, metrics and statistics (Harshita), real-model result numbers, S15b, the rescoring loop of the gold sweep |
+| **Not built** | DOCX export and hearing card, real-API frontend mode, metrics and statistics (Harshita), real-model result numbers, a trained store prior (S6, B5), the model-backed S13 arm, the M18 stopped-too-early replay, the Rights rule verification by Harshita (`last_verified`, PR-46); the rescoring loop of the gold sweep is part of `scoring score --gold-source both` |
 
 ## 2. Streams and owners
 

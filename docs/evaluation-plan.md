@@ -222,7 +222,7 @@ All RQ1 systems use the same Qwen3-14B, the same 12-factor checklist and the sam
 | ID | System | Evaluated object (L12) | What it isolates | Module | Status |
 |---|---|---|---|---|---|
 | B0 | Single pass: facts and checklist to brief in one call | (b) model + prompt | No retrieval, no agents | `eval/baselines/b0_single_pass.py` | stub |
-| B0L | **New.** B0 with prompted Qwen3-32B (AWQ) | (b) | A bigger model with no system around it: does the system beat scale? | same module, `model='teacher'` | to add |
+| B0L | **New.** B0 with prompted Qwen3-32B (AWQ) | (b) | A bigger model with no system around it: does the system beat scale? | same module, `model='teacher'` | built; a hosted stand-in on gpt-6-luna turned out to be a duplicate of B0 (same model and prompt, `dev-baselines.md`), so the real B0L runs on Sarvam-105B (the Qwen3-32B Ada plan is dropped) |
 | B0S | **New, optional.** B0 with untuned Qwen3-4B | (b) | The small model alone (the course's "base small model") | same module, `model='munshi_4b'` | to add |
 | B1 | One store holding statutes, precedents and submissions; top-10 with the facts as query; one drafting call | (c) | One store vs many | `b1_single_rag.py` | stub |
 | B2 | Whole-order embeddings (BGE-M3, 8K truncation); top-3 orders passed in full | (c) | Retrieval granularity | `b2_whole_doc.py` | stub |
@@ -316,7 +316,7 @@ Every metric is deterministic or comes from a validated-by-publication checker; 
 | M2 | Factor precision, strict and lenient | Strict: `|P ∩ G1 ∩ Ans| / |P ∩ Ans|`. Lenient (headline): the same with G1 replaced by G1 ∪ G5 (factors the defense argued or the court discussed) | T1 | Set comparison | Validity: a valid ground the defense did not argue is not an error (L12) | 3 | same |
 | M3 | Factor F1 and "argue-all" reference | Harmonic mean of M1 and lenient M2; the F1 of the argue-all-twelve rule is printed in every table as a floor | T1 | Set comparison | Null-agent audit (Section 5.7) | 3 | same |
 | M4 | Court-discussed factor recall (G5), objection recall and precision (G4), condition-type recall (G6) | As M1 against G5, G4, G6 (factors, factors, about ten condition types) | T1 | Set comparison | Same | 3 | `features/f1_sparring.py`, `f6_hearing_card.py` (stubs) |
-| M5 | Label-source sensitivity | M1-M4 recomputed with (a) keyword rules only, (b) Llama-3.1-8B only, (c) agreed only; kappa between labelers per factor | T1 | Re-scoring | Reliability; "agreement reported" (L12) | 3 | `label_sensitivity.py` (stub) |
+| M5 | Label-source sensitivity | M1-M4 recomputed with (a) keyword rules only, (b) Llama-3.1-8B only, (c) agreed only; kappa between labelers per factor | T1 | Re-scoring | Reliability; "agreement reported" (L12) | 3 | `label_sensitivity.py` (built 2026-10-27: four label sources incl. an optional second labeler, kappa per factor; tables `table_label_sensitivity`, `table_label_kappa`; the second labeler is Sarvam on 80 orders, G1 only, and the labeler is gpt-6-luna rather than Llama-3.1-8B) |
 
 ### 4.2 Hallucination, split into its four kinds (L12, "Hallucination: failures and their reference points")
 
@@ -920,6 +920,8 @@ Risk statement: with 180 usable node-hours the Tier A floor (about 229) does not
 
 ## 8. What exists vs what to build
 
+Update 2026-10-27 (`docs/handoff/eval-complete.md`, `product-complete.md`): the stub inventory in 8.2 and 8.3 below is the state of the day the plan was written and is stale. Built since: `label_sensitivity.py` (M5), the citation and abstention metrics M9, M13, M15, M16, M17, M18, M33, M35 (`eval/metrics/citations.py`, `eval/scoring/citation_scores.py`), the studies S14b, S14c, S16, S16b, S4, S5 and M17 (`eval/studies/`), S15b (`orchestration/structured_output.py`), the S13 offline smoke, the order-splitter rescue (`rescue_with_non_qwen`, opt-in) and the `assemble_application` tool; `IMPLEMENTED_VARIANTS` equals the full variant table of 3.3. Caveats: M16, M33 and M35 are labelled "offline stand-in" unless MiniCheck or the DeBERTa NLI is installed; M33 risk is 0 at tau = cut by construction; M18 stopped-too-early (replay to the 16-call budget) is not computed; the S13 model-backed arm is planned; S6 and B5 need a trained store prior. The `NotImplementedError` of the order-splitter rescue named in 8.1 is gone.
+
 Method: each file under `src/vakeel_sahayak/eval/`, `testsets/` and `finetune/` was opened, and `raise NotImplementedError` was searched across the repository. In `eval/`, 56 of 64 Python files are stubs (the other 8 are empty `__init__.py` files); in `testsets/` 13 of 14; in `finetune/` 6 of 7. The tests are written but were not run for this plan (the team rule is not to run tests while modules are stubs). Per `progress.md` 5c, `tests/unit/eval` (about 148 test functions in 9 files) and `tests/unit/finetune` (about 77 test functions in 6 files, plus helpers) fail until the code exists; `tests/unit/testsets` has about 108 test functions in 10 files.
 
 ### 8.1 What already exists and the evaluation can use
@@ -942,7 +944,7 @@ Method: each file under `src/vakeel_sahayak/eval/`, `testsets/` and `finetune/` 
 | Privacy boundary, injection guard, leak check | `privacy/*` | T7, S17 |
 | Week-0 data: Open India Law sample, statutes, concordance, splits, feasibility report | `data/interim/*` | T1 inputs, coverage numbers |
 
-Known gaps in what exists: the model-assisted order-splitter rescue raises `NotImplementedError` (needs the labeler client); only a 2,000-order store build has been run; model weights are not downloaded; HLDC is blocked; the CrPC, NDPS s.37 and bailable/cognisable tables are missing; PyMuPDF is not installed (16 ingestion tests skip). These affect T1, T2 and the retrieval-only analysis directly.
+Known gaps in what exists: the model-assisted order-splitter rescue raised `NotImplementedError` when this was written (it is now built, opt-in, tested only with a fake client); only a 2,000-order store build has been run; model weights are not downloaded; HLDC is blocked; the CrPC, NDPS s.37 and bailable/cognisable tables are missing; PyMuPDF is not installed (16 ingestion tests skip). These affect T1, T2 and the retrieval-only analysis directly.
 
 ### 8.2 What is a stub, and the test that expects it
 
@@ -954,13 +956,13 @@ Known gaps in what exists: the model-assisted order-splitter rescue raises `NotI
 | Ablations | `eval/ablations/a1_...py` to `a10_...py` | stub | `test_ablation_runs.py` (10), `test_registries.py` (17) |
 | Ingestion pipelines | `eval/ingestion/p1_...py` to `p6_...py`, `munshi_full.py` | stub | `test_ingestion_pipelines.py` (17) |
 | Features | `eval/features/f1_...py` to `f8_...py` | stub | `test_features.py` (18) |
-| Cross-cutting | `eval/retrieval_only.py`, `failure_analysis.py` (the `ErrorType` enum is done, the functions are stubs), `contamination.py`, `label_sensitivity.py`, `bias.py` | stub | `test_registries.py`, `test_features.py` |
+| Cross-cutting | `eval/retrieval_only.py`, `failure_analysis.py` (the `ErrorType` enum is done, the functions are stubs), `contamination.py`, `label_sensitivity.py` (built 2026-10-27), `bias.py` | stub (except `label_sensitivity.py`) | `test_registries.py`, `test_features.py` |
 | Runners | `eval/runners/shard_runner.py`, `run_rq1.py`, `run_rq2.py`, `run_ablations.py`, `run_features.py`, `run_safety.py`, `run_tool_calling.py` | stub | `test_runners.py` (19) |
 | Test-set builders | `testsets/t1_...py` to `t9_...py`, `common.py`, `companions.py`, `degrade.py`, `rendering.py` | stub | `tests/unit/testsets/test_t1...` to `test_t9...`, `test_common.py` |
 | Fine-tuning | `finetune/teacher_dossiers.py`, `span_filter.py`, `noise_augment.py`, `build_dataset.py`, `train_qlora.py`, `merge_adapter.py` | stub | `tests/unit/finetune/*` |
 | Run registry | `configs/eval/runs.yaml`, `hypotheses.yaml` | exists; `hypotheses.yaml` has `margin_vs_p4: null` to fix on dev | `test_registries.py` |
 | Ada scripts | `scripts/ada/run_*.sh`, `sbatch_qlora.sbatch` | exist | `test_runners.py` |
-| Orchestration and export that the full-system runs need | `orchestration/graph.py`, `fallback_state_machine.py`, `export/*`, `api/*`, `tools/drafting/application.py` | stub | `tests/unit/orchestration`, `tests/unit/export`, `tests/system` |
+| Orchestration and export that the full-system runs need | `orchestration/graph.py`, `fallback_state_machine.py`, `export/*`, `api/*`, `tools/drafting/application.py` | stub (`application.py` now calls the real DOCX assembler and writes a draft under `draft/`, never `export/`) | `tests/unit/orchestration`, `tests/unit/export`, `tests/system` |
 
 ### 8.3 What to build for this plan, and the tests to write
 

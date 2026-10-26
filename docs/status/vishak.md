@@ -1,6 +1,6 @@
 # Status: Vishak
 
-Tasks from `split.md` (stream C and shared files). Updated 2026-10-26. Details are in the handoff notes under `docs/handoff/`.
+Tasks from `split.md` (stream C and shared files). Updated 2026-10-27. Details are in the handoff notes under `docs/handoff/`.
 
 | Task | State | Note |
 |---|---|---|
@@ -14,7 +14,10 @@ Tasks from `split.md` (stream C and shared files). Updated 2026-10-26. Details a
 | VI-08 hosted-model pilot | done | `pilot-hosted-model.md` |
 | VI-10 hook, PR template | done | |
 | Gold-source sweep (agreed primary, rule-only secondary) | set up | `gold-source-sweep.md`; rescoring loop not written |
-| VI-09 freeze and real runs | blocked | needs Harshita's metrics and statistics, rescoring loop, preregistration hashes |
+| Eval completion (M5, M9 to M18, M33, M35, S15b, S13 smoke, studies S14b/c, S16/b, S4/S5, Ada wrappers) | done offline | `eval-complete.md`; stand-in NLI labelled; M18 replay and S13 model arm open |
+| Product completion and variant-effect audit (splitter rescue, drafting tool, Rights `verification`) | done offline | `product-complete.md`; Harshita to verify the 7 rule texts |
+| Dev-set sweep | on hold | `sweep-dev.md`: waits for tag `dev-sweep-v1`, then reruns baselines and sweep from a worktree of the tag; Sarvam block with Satvik (`sweep-satvik.md`) |
+| VI-09 freeze and real runs | blocked | scoring and the rescoring loop now exist; waits for the pinned tag, real runs, Harshita's checks and preregistration hashes |
 | VI-11 fine-tuning | stretch | only if the freeze lands early |
 
-Budgets: OpenAI 5 USD hard cap (about 0.3 used); Sarvam INR cap from `VS_SARVAM_CAP_INR` (default 25, ceiling 500). Data: private organisation dataset `Vakeel-Sahayak/vakeel-sahayak-data`.
+Budgets (2026-10-27): OpenAI ledger ceiling 4.90 USD (1.51 spent at the checkpoint); the owner's Sarvam key INR 30 in total; the large Sarvam block runs on Satvik's key. Data: private organisation dataset `Vakeel-Sahayak/vakeel-sahayak-data`.
