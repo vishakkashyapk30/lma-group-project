@@ -199,6 +199,8 @@ def main(argv: list[str] | None = None) -> int:
             print("note:", n)
         optional = [r for r in rows if not r["required"] and not r["present"]]
         print(f"\nrequired missing: {len(missing)}; optional missing: {len(optional)}")
+        if missing and all(not r["present"] for r in rows if r["required"]):
+            print("nothing is installed yet (a fresh clone holds only the .gitkeep placeholders): run `make data`.")
         if missing:
             print(
                 "fix: make data (needs access to the team bundle), or rebuild: make datasets interim stores (see data/README.md)"

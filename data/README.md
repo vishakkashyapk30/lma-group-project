@@ -34,8 +34,10 @@ scripts/data_install.sh --only-raw hf:Vakeel-Sahayak/vakeel-sahayak-data   # add
 make data-install SRC=~/vakeel-data-bundle FORCE=1             # FORCE=1 overwrites what is already in data/
 ```
 
-It verifies `SHA256SUMS` for the archives it unpacks, refuses to overwrite `data/` without `FORCE=1`, checks the free disk before the raw part (it stops with a hint to use `RAW=0`),
-unpacks, and checks row and file counts against `bundle_manifest.json`. A download from Hugging Face lands in a scratch folder under `TMPDIR` first (as large as the archives you install; set `TMPDIR` to a roomy disk).
+It verifies `SHA256SUMS` for the archives it unpacks, refuses to overwrite `data/` without `FORCE=1` (the `.gitkeep` and `README` placeholders of a fresh clone are not data, so a fresh clone needs no `FORCE=1`), checks the free disk before the raw part (it stops with a hint to use `RAW=0`),
+unpacks, and checks row and file counts against `bundle_manifest.json`. A download from Hugging Face lands in a scratch folder under `TMPDIR` first (as large as the archives you install; on a tight disk run `TMPDIR=/bigger/disk make data`, or `VS_DOWNLOAD_DIR=<folder>` to keep the download between runs so a failed run resumes).
+Before the big download it runs `hf auth whoami` and fetches the tiny `SHA256SUMS`, so a missing token, a non-member or a token without the organisation read scope fails in seconds with the exact fix (401, 403 and 404 all get the same three-step hint). The download then retries three times
+(`HF_TRIES`; `hf` resumes finished files), uses two workers (`HF_MAX_WORKERS`), timeouts of 60 s and 30 s (`HF_HUB_DOWNLOAD_TIMEOUT`, `HF_HUB_ETAG_TIMEOUT`; set them higher on a very slow link) and shows its progress. `make setup` installs the `hf` command.
 The derived data alone (`RAW=0`) is enough to run the pipelines and tests; the raw data is needed only to rebuild `interim` from the shards (`make interim`).
 `make data-check` lists the raw items as optional (`REQUIRE_RAW=1` makes them required).
 

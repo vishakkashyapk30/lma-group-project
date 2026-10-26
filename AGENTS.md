@@ -4,8 +4,11 @@ Vakeel-Sahayak.ai is an agentic bail-preparation engine for Indian legal-aid law
 
 ## First day (copy these, in order)
 ```bash
-make setup         # creates .venv and installs the package; then run `make hooks` once
-make data          # data/ in place? skip. Else installs the team bundle (needs HF_TOKEN in .env or hf auth login), else tells you how to rebuild.
+make setup         # needs Python 3.10+; creates .venv, upgrades pip, installs `.[dev,data,testsets]` (no torch, no GPU libraries), copies .env.example to .env, installs the git hooks. Safe to re-run.
+                   # `make setup-full` (or EXTRAS=dev,data,eval make setup) adds the heavy extras (torch, docling, ...; several GB). `make help` lists every target
+make test-collect  # optional check: collection must be clean (about 4,700 tests); `.venv/bin/pytest tests/unit/scripts -q` checks the data scripts offline
+make data          # data/ in place? skip. Else installs the team bundle (needs HF_TOKEN in .env or hf auth login, and membership of the Hugging Face organisation Vakeel-Sahayak), else tells you how to rebuild.
+                   # It checks the token before the 1 GB download, retries 3 times, shows progress; tight disk: TMPDIR=/bigger/disk make data. A fresh clone needs no FORCE=1
                    # The bundle holds the raw source data too (Open India Law shards, IPC2BNS-Verify, Kathbath audio; about 1.8 GB): never refetch it from the web. RAW=0 skips it to save disk
 make models        # the T1 helper models (BGE-M3, DeBERTa NLI, MiniCheck, Whisper small; about 5.5 GB); `make models-dry-run` lists sizes first
 make data-check    # table of present/missing items (interim, stores, testsets, gaps, hindi_native, kathbath, models); non-zero if required items are missing
@@ -42,7 +45,7 @@ Handoff notes (what is done, not done, next steps) are in `docs/handoff/*.md`; d
 ## Run it
 - Python: `make setup` (creates `.venv`), then use `.venv/bin/python` and `.venv/bin/pytest`. Offline stand-in models are the default (`VS_MODELS=offline`, `VS_LLM_BACKEND=offline`), so nothing needs a GPU or a key.
 - One command for the whole stack: `docker compose up` (UI http://localhost:3000, API http://localhost:8000). The API routes are still stubs (the container answers `/healthz` and returns 503 on `/api/*`), so the UI runs on sample data of case-0007. Ports: `FRONTEND_PORT`, `BACKEND_PORT`. Details in `DOCKER.md`.
-- Without Docker: `cd frontend && npm install && npm run build && NEXT_PUBLIC_API_BASE=http://localhost:8000 npx next start -p 3000`, and `.venv/bin/python -m uvicorn vakeel_sahayak.api.asgi:app --port 8000`.
+- Without Docker (Node 20): `cd frontend && npm ci && npm run build && NEXT_PUBLIC_API_BASE=http://localhost:8000 npx next start -p 3000`, and `.venv/bin/python -m uvicorn vakeel_sahayak.api.asgi:app --port 8000`.
 - Hosted model (OpenAI or Sarvam) for the evaluation driver: load the keys from the untracked `.env` only (`set -a; . ./.env; set +a`), then `VS_MODELS=auto VS_LLM_BACKEND=openai VS_EXTERNAL=pseudonymised VS_OPENAI_RUN_CAP_USD=0.30 .venv/bin/python -m vakeel_sahayak.eval.runners.driver eval-smoke --n 1 --out <dir>`. Use `pseudonymised`, not `public`: every agent role declares client text, and the driver pseudonymises each case's facts like the production intake (details in `docs/handoff/pilot-hosted-model.md`). For the real DeBERTa claim checker on CPU, install torch and `.[nli]`; without them `auto` falls back to the offline NLI and records it in the manifest.
 - End to end offline: `make smoke` (case-0007 through the agents, Gate 1 approved, Gate 2 left closed, export blocked) and `make eval-smoke`.
 

@@ -62,16 +62,15 @@ The lawyer approves the dossier and the final draft; nothing is exported without
     └── course/                    Course project brief
 ```
 
-## Getting started (skeleton)
+## Getting started
 
-The repository is a skeleton: every module has typed signatures and docstrings, and every body raises `NotImplementedError`. Nothing runs end to end yet.
+Python 3.10 or newer, git, bash, perl (for the commit hook); Node 20 only for the frontend. Full walk-through for new teammates: the "First day" block of `AGENTS.md`.
 
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install pydantic pyyaml fastapi httpx python-multipart   # light deps only
-.venv/bin/pip install -e . --no-deps                                   # or `pip install -e ".[dev]"` for everything
-.venv/bin/python -c "import vakeel_sahayak"                            # every submodule imports cleanly
-cd frontend && npm install                                             # optional; then `npm run dev`
+make setup         # .venv + `pip install -e '.[dev,data,testsets]'` + .env from .env.example + git hooks (make setup-full for the heavy extras)
+make test-collect  # sanity check; `make smoke` runs the case-0007 fixture end to end offline (no data, no GPU, no key needed)
+make data          # the team data bundle (needs HF_TOKEN in .env and membership of the Hugging Face organisation Vakeel-Sahayak); `make data-check` shows what is there
+cd frontend && npm ci && npm run dev                                   # optional; Node 20
 ```
 
 Heavy ML dependencies (vLLM, torch, Docling, Surya) are in optional extras and are imported lazily. Read `docs/architecture/skeleton.md` before adding code.

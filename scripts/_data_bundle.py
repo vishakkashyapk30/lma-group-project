@@ -76,6 +76,11 @@ def bundled(root: Path) -> list[Path]:
     )
 
 
+def real(root: Path) -> list[Path]:
+    """`bundled(root)` without the placeholders a git clone carries (.gitkeep): they are not data."""
+    return [p for p in bundled(root) if p.name != ".gitkeep"]
+
+
 def lines(path: Path) -> int:
     """Number of lines of a text file."""
     with path.open("rb") as fh:
@@ -93,7 +98,7 @@ def manifest(data: Path) -> dict:
         out["stores_manifest"] = json.loads(store_manifest.read_text(encoding="utf-8"))
     for folder in ("interim", "stores", "testsets", "gaps", "eval"):
         root = data / folder
-        files = bundled(root)
+        files = real(root)
         out["folders"][folder] = {"files": len(files), "bytes": sum(p.stat().st_size for p in files)}
     raw_files = family_files(data, "raw")
     out["raw"] = {
@@ -124,8 +129,9 @@ def check(data: Path, expected: dict, raw: bool = False) -> list[str]:
             problems.append(f"{rel}: {got} rows, bundle manifest says {n}")
     for folder, info in (expected.get("folders") or {}).items():
         root = data / folder
-        got = len(bundled(root))
-        if got != info["files"]:
+        got = len(real(root))
+        # older manifests also counted a .gitkeep of the owner's clone: either count may match, a fresh clone's placeholders never fail the check
+        if info["files"] not in (got, len(bundled(root))):
             problems.append(f"{folder}/: {got} files, bundle manifest says {info['files']}")
     if not (data / "raw" / "MANIFEST.json").is_file():
         problems.append("raw/MANIFEST.json is missing")

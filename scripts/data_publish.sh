@@ -19,9 +19,10 @@ ls "$bundle"/data.tar.gz.part-* >/dev/null 2>&1 || { echo "no data parts in $bun
 ls "$bundle"/raw.tar.part-* >/dev/null 2>&1 || echo "note: no raw.tar.part-* in $bundle: the raw source data will not be on the dataset (make data-bundle builds it)" >&2
 grep -qi "not in it" "$bundle/README.md" || { echo "the dataset card lacks the list of what is excluded and why: rebuild it with make data-bundle" >&2; exit 1; }
 grep -q "Open India Law corpus by Vaquill AI" "$bundle/README.md" || { echo "the dataset card lacks the Open India Law attribution" >&2; exit 1; }
-if [ -z "${HF_TOKEN:-}" ] && [ -f .env ]; then HF_TOKEN="$(sed -n 's/^HF_TOKEN=//p' .env | head -1 | tr -d "\"' ")"; export HF_TOKEN; fi
+. scripts/_hf_lib.sh
+hf_load_token .env
 [ -n "${HF_TOKEN:-}" ] || { echo "HF_TOKEN is not set (environment or untracked .env); hf auth login also works" >&2; }
-command -v hf >/dev/null 2>&1 || { echo "the hf command is not installed (pip install -U huggingface_hub)" >&2; exit 1; }
+hf_find_bin || exit 1
 (cd "$bundle" && sha256sum -c --quiet SHA256SUMS) || { echo "checksum verification failed: not uploading" >&2; exit 1; }
 echo "uploading $bundle to dataset $repo (private) ..."
 inc=()
@@ -29,5 +30,5 @@ case "${ONLY:-}" in
   raw) inc=(--include "raw.tar.part-*" --include README.md --include SHA256SUMS --include bundle_manifest.json --include MODELS.txt);;
   data) inc=(--include "data.tar.gz.part-*" --include README.md --include SHA256SUMS --include bundle_manifest.json --include MODELS.txt);;
 esac
-hf upload "$repo" "$bundle" . --repo-type dataset --private --exclude ".state-*" "${inc[@]}" --commit-message "Data bundle $(date +%Y-%m-%d)" >/dev/null
+"$HF" upload "$repo" "$bundle" . --repo-type dataset --private --exclude ".state-*" ${inc[@]+"${inc[@]}"} --commit-message "Data bundle $(date +%Y-%m-%d)" >/dev/null
 echo "done: https://huggingface.co/datasets/$repo"
