@@ -42,6 +42,11 @@ jobs:
   s13_workflow_search: {where: ada, systems: ["S13:stopping=llm"], cases: 50, testset: T1, node_hours: 36, runner: workflow_search}  # plan job 33 (tier C): dev only; the grid point is the smoke arm
   s18_authority_stance: {where: ada, systems: [S18], cases: 100, testset: T1}                      # not in the plan (sweep 4)
   p_munshi_variants:  {where: ada, systems: [P5, P6, P7, P8], cases: 100, testset: T2, node_hours: 7.5}  # Munshi switches on bundles (P5, P6 as switches; P1-P4 are the rq2 pipelines); needs T2 bundles as case rows
+  # --- Gold-source sensitivity (owner decision 2026-10-26): PRIMARY gold = agreed (rules + non-Qwen labeler, span-grounded; data/testsets/t1), SECONDARY = rule-only (data/testsets/t1_rule_only).
+  # One declared sensitivity analysis, not a new test family: the gold-dependent metrics of every system output that exists are rescored against the other gold. No model call, cost 0.
+  # The scoring modules (eval/metrics/*) are Harshita's; while they are stubs the job raises NotImplementedError naming eval/metrics.
+  gold_source_sweep:  {where: laptop, rescoring: true, model_calls: 0, testset: T1, gold_sources: [agreed, rule], systems_from: existing_outputs, node_hours: 0,
+                       metrics: [M1, M2, M3, M4, M22, M36, M40, M46], claims: [C1, C2, C3, C7, C8, C10, C25, C28, C32, C33]}   # G1, G3, G4, G5, G6; G2 is not gold-source dependent; G7 is empty on T1 (C30 rests on T4)
 laptop_jobs:
   embeddings: 20h
   eval_labels_llama: 30h
@@ -164,7 +169,10 @@ job_meta:
   s11_review_debate: {tier: C, status: deferred, backend: ada}
   s13_workflow_search: {tier: C, status: deferred, backend: ada, note: "dev cases only; the search harness is eval/runners/workflow_search.py (no model-backed evaluator yet)"}
   s18_authority_stance: {tier: X, status: deferred, backend: ada, note: "added in sweep 4, not in the evaluation plan"}
+  gold_source_sweep: {tier: A, backend: laptop, note: "rescoring only (no model call, cost 0): gold-dependent metrics of the existing outputs against the agreed gold (primary) and the rule-only gold (secondary); one declared sensitivity analysis, not a new Holm family. Needs eval/metrics (Harshita)"}
   p_munshi_variants: {tier: B, status: deferred, backend: ada, note: "P5, P6, P7, P8 are Munshi switches; they change a run only when a bundle is given"}
+
+# (gold_source_sweep, below s13_workflow_search in `job_meta`, is rescoring only.)
 
 # Variant ids that are declared in `Switches` but have no job, with the reason. The validator fails when a declared id is neither implemented-with-a-job nor listed here.
 exclusions:

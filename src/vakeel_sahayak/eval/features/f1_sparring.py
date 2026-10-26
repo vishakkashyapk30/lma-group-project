@@ -61,7 +61,7 @@ def one_call_payload(case: dict[str, Any], gold: list[str]) -> dict[str, Any]:
 
 def pick_cases(n: int | None) -> list[dict[str, Any]]:
     """T1 cases with a non-empty G4 gold (the first `n`; default 3)."""
-    path = os.environ.get("VS_FEATURE_CASES") or str(fc.testsets_dir() / "t1" / "dev.jsonl")
+    path = os.environ.get("VS_FEATURE_CASES") or str(fc.t1_dir() / "dev.jsonl")
     rows = [r for r in fc.read_jsonl(path) if (r.get("gold", {}).get("G4") or {}).get("labels")]
     return rows[: n or 3]
 

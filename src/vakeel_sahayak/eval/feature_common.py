@@ -21,6 +21,13 @@ from pathlib import Path
 from typing import Any
 
 
+def t1_dir() -> Path:
+    """The T1 directory of the gold source in force (`agreed` default, `VS_GOLD_SOURCE=rule` for the rule-only gold)."""
+    from vakeel_sahayak.testsets.gold_source import t1_dir as _t1_dir
+
+    return _t1_dir()
+
+
 def testsets_dir() -> Path:
     """`data/testsets` (read-only for the evaluation)."""
     from vakeel_sahayak.config import load_config

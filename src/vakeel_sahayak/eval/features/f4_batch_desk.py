@@ -82,7 +82,7 @@ def stage2_sample(rows: list[dict[str, Any]], n: int, out_dir: str) -> dict[str,
     from vakeel_sahayak.eval.runners import driver
     from vakeel_sahayak.eval.runners.systems import system_runner
 
-    t1 = {r["case_id"]: r for r in fc.read_jsonl(fc.testsets_dir() / "t1" / "cases.jsonl")}
+    t1 = {r["case_id"]: r for r in fc.read_jsonl(fc.t1_dir() / "cases.jsonl")}
     runner, switches = system_runner("full")
     cache = RetrievalCache()
     picks = [r for r in rows if r["source"] == "T1" and r["case_id"] in t1][:n]

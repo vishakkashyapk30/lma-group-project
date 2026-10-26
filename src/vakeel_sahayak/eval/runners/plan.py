@@ -115,6 +115,7 @@ def estimate_job(name: str, cfg: dict[str, Any] | None = None) -> dict[str, Any]
         tout += k * per_case_out * r
         seconds += k * per_case_s * r
     modelled = bool(systems) and n is not None
+    rescoring = bool(job.get("rescoring")) and int(job.get("model_calls", 0)) == 0  # rescoring only: no model call, cost 0
     cap = float(est.get("openai_cap_usd", 0.0))
     out = {
         "job": name, "where": job.get("where"), "testset": job.get("testset"), "tier": meta.get("tier"), "backend": meta.get("backend"),
@@ -126,7 +127,10 @@ def estimate_job(name: str, cfg: dict[str, Any] | None = None) -> dict[str, Any]
         "fits_openai_cap": (usd <= cap) if modelled else None,
         "note": meta.get("note"),
     }
-    if not systems:
+    if rescoring:
+        out.update(usd_if_openai=0.0, inr_if_sarvam=0.0, hours_if_serial=0.0, fits_openai_cap=True, kind="rescoring only: no model call, cost 0 "
+                   f"(gold sources {', '.join(job.get('gold_sources') or [])}; systems: {job.get('systems_from', 'existing outputs')})")
+    elif not systems:
         out["kind"] = "not a systems job: sized by its own keys (" + ", ".join(k for k in job if k not in {"where"}) + ")"
     return out
 

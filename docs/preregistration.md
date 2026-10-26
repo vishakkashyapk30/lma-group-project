@@ -16,7 +16,7 @@ tags exist, the blind scoring entry point refuses to run (`testsets/blind.py`). 
 | Config hash (`driver.config_hash()`) | `<16-hex>` |
 | Blind-slice set hash (`python scripts/prereg_hash.py`) | `<64-hex>` (the T1 builder's value today is in `data/testsets/t1/manifest_blind.json`; it is recomputed, not copied) |
 | Blind slice: size, BNS-era count, post-release count | `<80>`, `<n>`, `<n>` (from `manifest.json`, counts only) |
-| Dev ids | `data/testsets/t1/manifest_dev.json`, file hash `<hash>` |
+| Dev ids | `data/testsets/t1/manifest_dev.json` (identical in `t1_rule_only`), file hash `<hash>` |
 | Test-set manifests and hashes (T1 to T9) | `<name: hash>` |
 | Seeds | `<seed 1, seed 2, seed 3>`; the same seeds for every system, run r of every system shares seed r (plan 5.1) |
 | Models and versions | `<the `models` block of the run manifests: name, version, date stamp>`; hosted models name the provider and the date; labeler and teacher are non-Qwen |
@@ -120,7 +120,8 @@ Definitions are those of evaluation plan section 4; the following are fixed here
 | MiniCheck threshold | `<value>` (dev-fixed) |
 | pass^3 quality bar | `<definition>` |
 | Coverage for each table | `<definition per table>` |
-| Label sources for G1 to G7 | `<rule-only / agreed with a non-Qwen labeler>`; coverage reported beside every G-based number |
+| Label sources for G1 to G7 | PRIMARY = agreed (rules and a non-Qwen labeler, span-grounded; `data/testsets/t1`); SECONDARY = rule-only (`data/testsets/t1_rule_only`), pre-declared; coverage (n of orders with a label) reported beside every G-based number. Hash of each gold: `details.gold.gold_sha256` in `data/testsets/<t1|t1_rule_only>/manifest.json` (`<hash agreed>`, `<hash rule>`) |
+| Gold-source sensitivity | one rescoring sweep of the gold-dependent metrics against the other gold (job `gold_source_sweep`, no model call, cost 0); a single declared sensitivity analysis, not a new test family: Holm applies to the registered primary family on the primary gold only. Coverage: G1 169 of 250 orders with an agreed label, G3 249, G4 88, G5 155, G6 133 of 152 grants, G7 1 (C30 rests on T4). Claims by gold: C1, C3, C10, M46 on G1 (G5 for lenient precision); C7, C8, C28 on G4; C33 on G5 and G6; C32 and C25 on G3; C5, C14 on G2; C30 on T4. See evaluation plan 5.9 |
 | Null-agent audit | the five degenerate agents of plan 5.7 score near the floor before any run: result `<pass/fail>` |
 
 ## 4. Sets
@@ -157,7 +158,7 @@ if they differ the blind numbers are the headline. Opened on `<date>` at `<SHA>`
 | Unpaired proportions | Wilson interval; counts that must be zero report the upper bound (rule of three) |
 | Equivalence | non-inferiority: the lower end of the 95% interval of (system minus comparator) above -epsilon |
 
-Multiple comparisons: Holm-Bonferroni within each family named in section 1.1 (alpha `<0.05>`); families are not pooled; exploratory slices are labelled and not corrected.
+Multiple comparisons: Holm-Bonferroni within each family named in section 1.1 (alpha `<0.05>`), on the primary (agreed) gold; families are not pooled; exploratory slices are labelled and not corrected. The rescoring against the rule-only gold (section 0, Gold-source sensitivity) is one declared sensitivity analysis: it adds no test to any family, is not corrected, and a claim is called robust to the label source when its sign and Holm decision hold on both golds.
 Averaging: runs within a case first, then paired tests across cases (case-level is the unit). Ties and empty cases: `<rule>`. Differences smaller than the interval half-width are "not resolved",
 not "no difference". Code status: `eval/stats/{bootstrap,wilcoxon,holm}.py` are stubs owned by a teammate; McNemar and the cluster bootstrap are to be added.
 

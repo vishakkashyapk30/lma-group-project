@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from vakeel_sahayak.eval.runners import shard_runner
 
-JOBS = ['openai_sparring_block', 'rq1_secondary_sarvam', 's8_self_critique', 's9_sampling_critic', 's10_no_isolation', 's1_critique_retrieval', 's3_stopping', 's7_gap_reread', 's15_output_format', 's17_defences', 's2_adaptive_depth', 's6_b5_router', 's12_topology', 's14_batch', 's14_scheduling', 's16_chunking', 's4_s5_retrieval', 's11_review_debate', 's13_workflow_search', 's18_authority_stance', 'p_munshi_variants']
+JOBS = ['openai_sparring_block', 'rq1_secondary_sarvam', 's8_self_critique', 's9_sampling_critic', 's10_no_isolation', 's1_critique_retrieval', 's3_stopping', 's7_gap_reread', 's15_output_format', 's17_defences', 's2_adaptive_depth', 's6_b5_router', 's12_topology', 's14_batch', 's14_scheduling', 's16_chunking', 's4_s5_retrieval', 's11_review_debate', 's13_workflow_search', 's18_authority_stance', 'p_munshi_variants', 'gold_source_sweep']
 
 
 def main(argv: list[str] | None = None) -> int:

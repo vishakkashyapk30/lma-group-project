@@ -607,6 +607,15 @@ def shared_cache_for(switches: Any) -> Any:
     return None
 
 
+def _gold_manifest(cases_path: str | None) -> dict[str, Any]:
+    """`gold_source` (agreed | rule) and `gold_sha256` of the T1 gold the cases carry (None for the other test sets); see testsets/gold_source.py."""
+    if cases_path and Path(cases_path).parent.name[:2] in {f"t{k}" for k in range(2, 10)}:
+        return {"gold_source": None, "gold_sha256": None}
+    from vakeel_sahayak.testsets.gold_source import gold_info_for_cases
+
+    return gold_info_for_cases(cases_path)
+
+
 def write_run_manifest(out_dir: Path, *, system: str, switches: Any, seed: int, budgets: dict[str, int] | None = None,
                        cases_path: str | None = None, shard: int = 0, n_shards: int = 1, extra: dict[str, Any] | None = None) -> dict[str, Any]:
     """Write `MANIFEST.json`: code version, config hash, model/version/date stamp, seed, switches, budgets, the case-file hash."""
@@ -618,7 +627,7 @@ def write_run_manifest(out_dir: Path, *, system: str, switches: Any, seed: int, 
         "budgets": {"tokens_per_case": b.tokens_per_case, "store_calls_per_factor": b.store_calls_per_factor,
                     "tokens_per_factor": b.tokens_per_factor, "drafting_tokens_per_factor": b.drafting_tokens_per_factor, **(budgets or {})},
         "code_version": code_version(), "config_hash": config_hash(), "models": models_stamp(), "nli": _nli_manifest(),
-        "cases_file": cases_path, "cases_hash": file_hash(cases_path) if cases_path else None,
+        "cases_file": cases_path, "cases_hash": file_hash(cases_path) if cases_path else None, **_gold_manifest(cases_path),
         "shard": shard, "n_shards": n_shards, **(extra or {}),
     }
     save_json(out_dir / "MANIFEST.json", manifest)
@@ -716,6 +725,7 @@ def run_system(argv: list[str] | None = None) -> int:
     ap.add_argument("--shard", type=int, default=0)
     ap.add_argument("--n-shards", type=int, default=1)
     ap.add_argument("--seed", type=int, default=None)
+    ap.add_argument("--gold-source", choices=["agreed", "rule"], default=None, help="T1 gold for the default case file: agreed (primary, default) or rule (secondary); env VS_GOLD_SOURCE")
     args = ap.parse_args(argv)
     try:
         system = canonical_system(args.system)
@@ -726,7 +736,12 @@ def run_system(argv: list[str] | None = None) -> int:
     except ValueError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
-    cases = args.cases or str(REPO / "data" / "testsets" / "t1" / "cases.jsonl")
+    if args.cases:
+        cases = args.cases
+    else:
+        from vakeel_sahayak.eval.runners.jobs import t1_cases_path
+
+        cases = str(t1_cases_path(args.gold_source))
     if not Path(cases).is_file():
         print(f"ERROR: no case file at {cases}: build T1 first (python -m vakeel_sahayak.testsets.t1_court_grounded)", file=sys.stderr)
         return 2

@@ -73,11 +73,12 @@ def _run_system_suite(job: str, cfg: dict[str, Any], shard: int, n_shards: int, 
     return done_total
 
 
-def t1_cases_path() -> Path:
-    """`<testsets>/t1/cases.jsonl` (the 200 T1 cases, in the fixed run order)."""
-    from vakeel_sahayak.config import load_config
+def t1_cases_path(gold_source: str | None = None) -> Path:
+    """`<testsets>/t1/cases.jsonl` (the 200 T1 cases, in the fixed run order) of the requested gold: `agreed` (default, primary) or `rule` (`t1_rule_only/`);
+    `VS_GOLD_SOURCE` sets the default (`testsets/gold_source.py`)."""
+    from vakeel_sahayak.testsets.gold_source import t1_dir
 
-    return Path(load_config().paths.testsets_dir) / "t1" / "cases.jsonl"
+    return t1_dir(gold_source) / "cases.jsonl"
 
 
 def testset_cases_path(testset: str) -> Path:
@@ -87,6 +88,8 @@ def testset_cases_path(testset: str) -> Path:
 
     key = str(testset or "T1").lower()
     root = Path(load_config().paths.testsets_dir) / key
+    if key == "t1":
+        root = t1_cases_path().parent  # the gold source in force (VS_GOLD_SOURCE)
     path = root / ("cases.jsonl" if key == "t1" else "driver_cases.jsonl")
     if not path.is_file():
         raise NotImplementedError(f"test set {testset} has no driver case rows at {path}: build the set, or write its rows (case_id, facts, before, bundle) there")
@@ -129,6 +132,8 @@ def run_job(job: str, cfg: dict[str, Any], shard: int, n_shards: int, out_dir: s
                 dest.mkdir(parents=True, exist_ok=True)
                 (dest / "NOT_RUN.txt").write_text(str(exc), encoding="utf-8")
         return 0
+    if job == "gold_source_sweep":
+        return run_gold_source_sweep(cfg, out_dir)
     if cfg.get("runner") == "workflow_search":
         raise NotImplementedError(f"job {job!r}: S13 runs through eval/runners/workflow_search.search on dev cases with a model-backed evaluator; none is wired to a hosted or local model yet")
     if cfg.get("systems") and job not in NEEDS:  # a VI-03 job: systems of `systems.system_runner` on the rows of its test set
@@ -136,6 +141,21 @@ def run_job(job: str, cfg: dict[str, Any], shard: int, n_shards: int, out_dir: s
     if job in NEEDS:
         raise NotImplementedError(f"job {job!r} needs {NEEDS[job]}")
     raise NotImplementedError(f"job {job!r}: no arm is wired for it yet")
+
+
+def run_gold_source_sweep(cfg: dict[str, Any], out_dir: str) -> int:
+    """`gold_source_sweep`: rescore the existing outputs against the agreed gold (primary) and the rule-only gold (secondary); no model call, cost 0.
+
+    The scoring modules (`eval/metrics/*`, Harshita's) must exist: a stub raises NotImplementedError naming them. Nothing is written until they do."""
+    from vakeel_sahayak.eval.metrics.factor_scores import factor_recall_precision
+
+    try:
+        factor_recall_precision([], [], [])
+    except NotImplementedError as exc:
+        raise NotImplementedError("job 'gold_source_sweep' rescoring needs the scoring modules in vakeel_sahayak/eval/metrics (factor_scores, unsupported_fact, ...; owner Harshita): "
+                                  "they are still stubs, so no metric can be recomputed against the other gold") from exc
+    raise NotImplementedError("job 'gold_source_sweep': the metrics exist but the rescoring loop (read every <out>/runs/*/outputs/<system>, score against "
+                              "testsets.gold_source.load_t1('test', source) for source in cfg['gold_sources'], write <out>/runs/gold_source_sweep/scores_<source>.json) is not written yet")
 
 
 def _run_systems(job: str, cfg: dict[str, Any], shard: int, n_shards: int, out_dir: str, deadline: float) -> int:

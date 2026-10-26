@@ -495,7 +495,7 @@ Holm-Bonferroni (`eval/stats/holm.py`) is applied within each family below, with
 | F-features | One family per feature (F1-F8) |
 | F-safety | C36-C39 (safety counts are not tested, only bounded) |
 
-Separate families are not pooled into one correction, because they answer separate questions; the report says so. Exploratory slice results are labelled exploratory and are not corrected.
+Separate families are not pooled into one correction, because they answer separate questions; the report says so. The gold-source sweep (5.9) is one declared sensitivity analysis and is not a family of its own. Exploratory slice results are labelled exploratory and are not corrected.
 
 ### 5.4 Effect sizes and what we can resolve
 
@@ -546,6 +546,15 @@ Also run: a case with every store removed (abstention must be 100%), and a run t
 ### 5.9 Label-source sensitivity
 
 For each G-based metric we report three numbers: (a) rule-only labels, (b) Llama-3.1-8B-only labels, (c) agreed labels (headline). We report the agreement kappa and the coverage of each (how many factors or fields have a label at all). A conclusion is "robust" only if its sign and significance survive in (a) and (b). Optionally, the Sarvam model (documented in `progress.md` as an independent labeler for public data) is a fourth label source for the same re-scoring; it is used only on public text.
+
+#### Gold-source sensitivity (owner decision, 2026-10-26)
+
+- **Primary gold = the agreed gold**: a label is in G1 and G3 to G7 only when the rules and a non-Qwen labeler (OpenAI gpt-6-luna on public court text, independent of the rule candidates) both give it and the labeler's verbatim span is found in the order (`pipelines/gold/agreement.py`; handoff `docs/handoff/gold-labeler.md`). It sits in `data/testsets/t1/` (its `manifest.json` records `details.gold.source = agreed` and the gold hash).
+- **Secondary gold = rule-only**, pre-declared here before any result: the same orders with the rule labels alone (`data/testsets/t1_rule_only/`, source `rule`). The case ids, the dev, open and blind id sets and the blind-set hash are identical in both; only the labels differ. `scripts/swap_gold.sh --primary agreed|rule` chooses what `t1/` holds; `VS_GOLD_SOURCE=agreed|rule` (or the `gold_source` argument) chooses what the loaders and the driver read; every run manifest records `gold_source` and `gold_sha256`.
+- **One rescoring sweep, zero model cost.** The job `gold_source_sweep` (`configs/eval/runs.yaml`) rescores the gold-dependent metrics (M1 to M4, M22, M36, M40, M46: claims C1 to C3, C7, C8, C10, C25, C28, C32, C33) of every output that exists against the other gold; no system is rerun. It is a single declared **sensitivity analysis**, not a new test family: Holm correction (5.3) applies to the registered primary family on the primary gold, the sweep adds no test to any family, and its numbers are reported beside the headline with the sign and the interval on each gold. A conclusion is called robust to the label source when its sign and its Holm decision hold on both golds; where they differ the report says so and keeps the primary as the headline. Retrieval claims on G2 (C5, C14) do not depend on this choice. The scoring modules are `eval/metrics` (Harshita's); until they exist the job raises `NotImplementedError` naming them.
+- **Coverage differences** (orders with at least one agreed label, over the 250 labelled orders = 200 test + 50 dev; the T1 test-only share is in `manifest.json` `gold_nonempty_share`): G1 169 of 250 (rule-only 192); G3 249 of 250; G4 88 (prosecution part short or labeler and rules disagree); G5 155; G6 133 of the 152 grants (not applicable elsewhere); **G7 1 of 250**, so G7 cannot support C30 on T1 and C30 rests on T4 (500 designed scenarios). Pooled kappa rule against labeler: G1 0.598, G3 0.839, G4 0.569, G5 0.628, G6 0.654. Report n of orders with a label beside every G-based number (M1 and M4 are undefined on an order with no agreed factor).
+- **Which claims use which gold**: C1, C3 (strict and lenient), C10 and the frontier M46: G1 (and G5 for the lenient precision); C7, C8, C28: G4, restricted to the orders with an agreed objection (n at most 88 of 250); C33: G5 and G6; C32: G3 dates; C25: G3 fields on T1 plus T2 construction truth; C5, C14: G2 (unchanged); C30: T4 by construction, not T1. B6 stays unscored against G3 (it would share the rules, section 3.1).
+- Second labeler: Sarvam-105B agreed with gpt-6-luna on G1 (kappa 0.784 on a sample of 80); on G3 it returned too few valid answers to quote, and none was run for G4 to G7. The third label source of this section (labeler-only) is available in every record (`llm_labels`) and may be reported as an extra column; it is not part of the declared sweep.
 
 ### 5.10 Failure-mode-first discovery (L12, "Start from failure modes")
 

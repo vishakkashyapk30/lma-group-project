@@ -93,7 +93,7 @@ def run(out_dir: str, shard: int = 0, n_shards: int = 1) -> None:
                                               "distractor": bool(row["distractor"]), "string": row["string"], "arm": arm})
     n = int(os.environ.get("VS_F7_BRIEFS_N", "0") or 0)
     if n and shard == 0:
-        dev = fc.read_jsonl(fc.testsets_dir() / "t1" / "dev.jsonl")[:n]
+        dev = fc.read_jsonl(fc.t1_dir() / "dev.jsonl")[:n]
         for system in BRIEF_SYSTEMS:
             brief_rows(system, dev, out_dir)
 
