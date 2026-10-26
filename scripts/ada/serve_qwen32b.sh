@@ -11,7 +11,11 @@ set -uo pipefail
 W=/scratch/$USER/vs; M=$W/models/Qwen3-32B-AWQ; R=Qwen/Qwen3-32B-AWQ
 mkdir -p "$W" "$M"; trap 'echo cleanup; rm -rf "$W"' EXIT
 echo "node=$(hostname) start=$(date +%T)"; nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
-python3 -m venv "$W/venv" && "$W/venv/bin/pip" -q install -U pip && "$W/venv/bin/pip" -q install "vllm==${VLLM_VERSION:-0.10.2}" || { echo "vllm install failed"; exit 1; }
+# PyPI is slow from the compute nodes (about 5 MB/s; the 888 MB torch wheel did not finish in 150 s) while download.pytorch.org gives about 20 MB/s, so torch and the CUDA
+# libraries come from the PyTorch index (its +cu128 builds win the version comparison) and everything else from PyPI.
+python3 -m venv "$W/venv" && "$W/venv/bin/pip" -q install -U pip && \
+  "$W/venv/bin/pip" install --progress-bar off --index-url https://download.pytorch.org/whl/cu128 --extra-index-url https://pypi.org/simple "vllm==${VLLM_VERSION:-0.10.2}" 2>&1 | grep -E "^(Collecting torch|Successfully|ERROR)|error" | cut -c1-160 || { echo "vllm install failed"; exit 1; }
+"$W/venv/bin/python" -c "import vllm, torch; print('vllm', vllm.__version__, 'torch', torch.__version__)" || { echo "vllm import failed"; exit 1; }
 echo "vllm installed $(date +%T)"
 curl -s -m 60 "https://huggingface.co/api/models/$R/tree/main" > "$M/.tree.json"
 python3 - "$M" <<'PY' > "$M/.files.txt"
