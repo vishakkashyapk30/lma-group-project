@@ -87,6 +87,29 @@ def discover_runs(root: str | Path) -> list[RunSet]:
     return sorted(out, key=lambda r: (r.system.lower(), r.run))
 
 
+def code_versions(runs: list[RunSet]) -> dict[str, list[str]]:
+    """Which runs were produced by which code: `{"<git_sha>[+dirty]": ["system/run<k>", ...]}`; manifests without `git_sha` (older runs) go under `unknown`."""
+    out: dict[str, list[str]] = {}
+    for r in runs:
+        sha = r.manifest.get("git_sha")
+        key = "unknown" if not sha else f"{sha}{'+dirty' if r.manifest.get('git_dirty') else ''}:{str(r.manifest.get('code_tree_hash') or '')[:12]}"
+        out.setdefault(key, []).append(f"{r.system}/run{r.run}")
+    return out
+
+
+def check_code_uniformity(runs: list[RunSet], allow_mixed: bool = False) -> dict[str, list[str]]:
+    """Refuse a comparison whose runs come from different code: two or more distinct recorded (git_sha, code tree) pairs raise ValueError naming them, unless `allow_mixed`.
+
+    Runs whose manifest has no `git_sha` (made before the field existed) are reported under `unknown` but do not trigger the refusal on their own.
+    """
+    versions = code_versions(runs)
+    known = [k for k in versions if k != "unknown"]
+    if len(known) > 1 and not allow_mixed:
+        detail = "; ".join(f"{k}: {', '.join(v)}" for k, v in sorted(versions.items()))
+        raise ValueError(f"runs come from different code versions ({detail}): rerun them from one commit, or pass --allow-mixed-code to compare them anyway")
+    return versions
+
+
 def discover_rights(root: str | Path) -> dict[str, list[dict[str, Any]]]:
     """T4 Rights Radar scenario records under `root`, by arm name: directories without a manifest whose JSON files carry `rule`, `predicted` and `designed`."""
     found: dict[str, list[dict[str, Any]]] = {}

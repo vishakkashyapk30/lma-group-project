@@ -228,3 +228,46 @@ def format_table(rows: list[dict[str, Any]]) -> str:
     spend, warnings = spend_summary(rows)
     out.append(f"planned on openai: {spend['openai_usd']:.2f} USD; planned on sarvam: INR {spend['sarvam_inr']:.2f}")
     return "\n".join(out + warnings)
+
+
+# ---------------------------------------------------------------------------------------------------------------- dev-set sweep (configs/eval/sweep_dev.yaml)
+def sweep_config() -> dict[str, Any]:
+    """configs/eval/sweep_dev.yaml: every arm of the pre-freeze dev sweep with backend, cases, runs, tier and phase."""
+    from pathlib import Path
+
+    import yaml
+
+    return yaml.safe_load((Path(__file__).resolve().parents[4] / "configs" / "eval" / "sweep_dev.yaml").read_text(encoding="utf-8"))
+
+
+def sweep_rows(cfg: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    """One row per arm of the sweep with its estimated spend still to pay (0 for arms already run): USD on OpenAI, INR on Sarvam, 0 offline and on Ada."""
+    cfg = cfg or runs_config()
+    sweep = sweep_config()
+    per_usd = float((cfg.get("estimate") or {}).get("usd_per_case", 0.0078))
+    per_inr = sarvam_inr_per_case(cfg)
+    rows = []
+    for arm in sweep["arms"]:
+        k = int(arm["n"]) * int(arm.get("runs", 1))
+        ratio = float(arm.get("ratio", 1.0))
+        done = arm.get("status") == "done"
+        usd = 0.0 if done or arm["backend"] != "openai" else k * per_usd * ratio
+        inr = 0.0 if done or arm["backend"] != "sarvam" else k * per_inr * ratio
+        rows.append({**arm, "case_runs": k, "est_usd": round(usd, 3), "est_inr": round(inr, 1)})
+    return rows
+
+
+def format_sweep(rows: list[dict[str, Any]] | None = None) -> str:
+    """The sweep table (`driver plan --sweep`): phase, backend, arm, tier, cases x runs, estimated spend still to pay, with totals per backend against the caps."""
+    sweep = sweep_config()
+    rows = rows if rows is not None else sweep_rows()
+    head = f"{'ph':<3}{'backend':<9}{'arm':<9}{'tier':<9}{'testset':<8}{'n':>5}{'runs':>5}{'est USD':>9}{'est INR':>9}  status   claims"
+    out = [head, "-" * len(head)]
+    for r in rows:
+        out.append(f"{r['phase']:<3}{r['backend']:<9}{r['id']:<9}{r['tier']:<9}{r.get('testset', 'T1'):<8}{r['n']:>5}{r.get('runs', 1):>5}{r['est_usd']:>9.2f}{r['est_inr']:>9.1f}  {r['status']:<8} {','.join(r.get('claims') or [])}")
+    usd, inr = sum(r["est_usd"] for r in rows), sum(r["est_inr"] for r in rows)
+    caps = sweep["caps"]
+    cap_oai, cap_owner = caps["openai_ledger_usd"], caps["sarvam_inr_owner_key"]
+    out.append(f"still to pay: OpenAI {usd:.2f} USD (ledger total must stay <= {cap_oai} USD; check `make openai-spend`), "
+               f"Sarvam block INR {inr:.0f} (Satvik runs it with his own key and cap; the owner key may spend INR {cap_owner})")
+    return "\n".join(out)

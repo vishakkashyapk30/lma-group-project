@@ -28,6 +28,7 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--open-blind", action="store_true", help="explicit flag to open the blind slice once (also needs the freeze tag and no lock)")
     s.add_argument("--pass-bar", type=float, default=0.5, help="factor recall a case needs to pass (pass^k; provisional)")
     s.add_argument("--stances", default="favourable,adverse", help="ground stances that count as arguing a factor")
+    s.add_argument("--allow-mixed-code", action="store_true", help="compare runs whose manifests record different git commits (refused by default)")
     s.add_argument("--strict", action="store_true", help="raise NotImplementedError naming a stub scorer instead of marking its column pending")
     r = sub.add_parser("report", help="write Markdown, LaTeX and CSV tables and figures from the scores")
     r.add_argument("--scores", required=True, help="the directory `score` wrote")
@@ -51,7 +52,7 @@ def main(argv: list[str] | None = None) -> int:
 
     cfg = cm.ScoreConfig(stances=tuple(x.strip() for x in a.stances.split(",") if x.strip()), pass_bar=a.pass_bar, strict=a.strict, cost_per_token_usd=_openai_price())
     try:
-        res = score_command(a.runs, a.out, gold_source=a.gold_source, slice_name=a.slice_name, reference=a.reference, testsets_dir=a.testsets, open_blind=a.open_blind, cfg=cfg)
+        res = score_command(a.runs, a.out, gold_source=a.gold_source, slice_name=a.slice_name, reference=a.reference, testsets_dir=a.testsets, open_blind=a.open_blind, cfg=cfg, allow_mixed_code=a.allow_mixed_code)
     except BlindSliceError as exc:
         print(f"REFUSED: {exc}", file=sys.stderr)
         return 2

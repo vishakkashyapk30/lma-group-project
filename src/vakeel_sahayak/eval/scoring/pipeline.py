@@ -18,6 +18,7 @@ from vakeel_sahayak.eval.scoring import engine
 from vakeel_sahayak.eval.scoring.loader import (
     SLICES,
     RunSet,
+    check_code_uniformity,
     discover_rights,
     discover_runs,
     gold_provenance,
@@ -72,7 +73,7 @@ def write_per_case(path_base: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def score_command(runs_dir: str, out: str, *, gold_source: str = "agreed", slice_name: str = "dev", reference: str = "full", testsets_dir: str | None = None,
-                  open_blind: bool = False, cfg: cm.ScoreConfig | None = None, lock: Path | None = None, check_tag: bool = True) -> dict[str, Any]:
+                  open_blind: bool = False, cfg: cm.ScoreConfig | None = None, lock: Path | None = None, check_tag: bool = True, allow_mixed_code: bool = False) -> dict[str, Any]:
     """Score `runs_dir` against one gold source (`agreed`, `rule`) or both (`both`: the sweep). Returns the result dict(s) after writing the files.
 
     Raises `BlindSliceError` for the blind slice unless the flag, the freeze tag and an absent lock file allow it (the check happens after the runs are
@@ -84,6 +85,7 @@ def score_command(runs_dir: str, out: str, *, gold_source: str = "agreed", slice
     runs = discover_runs(runs_dir)
     if not runs:
         raise FileNotFoundError(f"no run (a directory with MANIFEST.json and case files) found under {runs_dir}")
+    versions = check_code_uniformity(runs, allow_mixed_code)  # ValueError when the runs come from different commits
     rights = discover_rights(runs_dir)
     sources = ["agreed", "rule"] if gold_source == "both" else [gold_source]
     ids = resolve_slice_ids(slice_name, sources[0], testsets_dir, open_blind=open_blind, lock=lock, check_tag=check_tag)
@@ -93,6 +95,7 @@ def score_command(runs_dir: str, out: str, *, gold_source: str = "agreed", slice
     for src in sources:
         cases = gold_rows(slice_name, ids, src, testsets_dir)
         res = score_once(runs, cases, src, slice_name, reference, cfg, rights, testsets_dir)
+        res["meta"]["code_versions"] = versions
         results[src] = res
         (outd / f"score_{src}.json").write_text(json.dumps(res, indent=1, default=_json_default), encoding="utf-8")
         write_per_case(outd / f"per_case_{src}", res["per_case"])

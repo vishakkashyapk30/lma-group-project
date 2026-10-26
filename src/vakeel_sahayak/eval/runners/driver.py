@@ -540,6 +540,37 @@ def code_version() -> str:
         return "unknown"
 
 
+def _git(*args: str) -> str:
+    try:
+        return subprocess.run(["git", *args], cwd=REPO, capture_output=True, text=True, timeout=30).stdout
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+@functools.lru_cache(maxsize=1)
+def git_sha() -> str:
+    """Full SHA of HEAD of the code that runs, 'unknown' outside a git checkout."""
+    return _git("rev-parse", "HEAD").strip() or "unknown"
+
+
+@functools.lru_cache(maxsize=1)
+def git_dirty() -> bool:
+    """True when `src/` or `configs/` has uncommitted changes (`git status --porcelain`)."""
+    return bool(_git("status", "--porcelain", "--", "src", "configs").strip())
+
+
+@functools.lru_cache(maxsize=1)
+def code_tree_hash() -> str:
+    """SHA-256 (hex) over the path and content hash of every tracked `src/**/*.py` and `configs/**` file as it is on disk now (an edit changes it even without a commit)."""
+    h = hashlib.sha256()
+    for rel in sorted(_git("ls-files", "-z", "--", "src", "configs").split("\0")):
+        p = REPO / rel
+        if rel and p.is_file() and (rel.startswith("configs/") or rel.endswith(".py")):
+            h.update(rel.encode())
+            h.update(hashlib.sha256(p.read_bytes()).digest())
+    return h.hexdigest()
+
+
 @functools.lru_cache(maxsize=1)
 def config_hash() -> str:
     """SHA-256 (first 16 hex) over every configs/**/*.yaml, in sorted order."""
@@ -626,7 +657,7 @@ def write_run_manifest(out_dir: Path, *, system: str, switches: Any, seed: int, 
         "prompt_hash": prompt_hash(), "switches": switches.model_dump(), "seed": seed,
         "budgets": {"tokens_per_case": b.tokens_per_case, "store_calls_per_factor": b.store_calls_per_factor,
                     "tokens_per_factor": b.tokens_per_factor, "drafting_tokens_per_factor": b.drafting_tokens_per_factor, **(budgets or {})},
-        "code_version": code_version(), "config_hash": config_hash(), "models": models_stamp(), "nli": _nli_manifest(),
+        "code_version": code_version(), "git_sha": git_sha(), "git_dirty": git_dirty(), "code_tree_hash": code_tree_hash(), "config_hash": config_hash(), "models": models_stamp(), "nli": _nli_manifest(),
         "cases_file": cases_path, "cases_hash": file_hash(cases_path) if cases_path else None, **_gold_manifest(cases_path),
         "shard": shard, "n_shards": n_shards, **(extra or {}),
     }
@@ -760,10 +791,14 @@ def plan_command(argv: list[str] | None = None) -> int:
     ap.add_argument("--job", default=None)
     ap.add_argument("--all", action="store_true", help="one line per job in priority order, with the running OpenAI spend")
     ap.add_argument("--sarvam-full", action="store_true", help="price every generative job on Sarvam-105B: the credits needed to run everything there (cap: VS_SARVAM_CAP_INR or budgets.sarvam_cap_inr)")
+    ap.add_argument("--sweep", action="store_true", help="the pre-freeze dev-set sweep of configs/eval/sweep_dev.yaml: every arm with backend, cases, runs and the spend still to pay")
     ap.add_argument("--json", action="store_true")
     args = ap.parse_args(argv)
     try:
-        if args.sarvam_full:
+        if args.sweep:
+            rows = plan.sweep_rows()
+            print(json.dumps(rows, indent=1) if args.json else plan.format_sweep(rows))
+        elif args.sarvam_full:
             print(plan.sarvam_full_view())
         elif args.all or not args.job:
             rows = plan.plan_all()

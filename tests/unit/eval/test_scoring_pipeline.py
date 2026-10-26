@@ -222,3 +222,42 @@ def test_paired_comparisons_on_synthetic_runs(testsets, runs, tmp_path):
 def test_reference_missing_gives_no_pairs(testsets, runs, tmp_path):
     res = score_command(str(runs), str(tmp_path / "o"), testsets_dir=str(testsets), reference="nope")["agreed"]
     assert res["paired"] == []
+
+
+# ---------------------------------------------------------------------------------------------------------------- code version of the runs
+def _stamp(run_dir, sha, dirty=False, tree="t"):
+    mp = run_dir / "MANIFEST.json"
+    m = json.loads(mp.read_text(encoding="utf-8"))
+    m.update(git_sha=sha, git_dirty=dirty, code_tree_hash=tree)
+    mp.write_text(json.dumps(m), encoding="utf-8")
+
+
+def test_runs_from_different_commits_are_refused_unless_allowed(testsets, tmp_path):
+    root = tmp_path / "mixed"
+    _stamp(write_run(root, "full", 1, [record(c, ["custody_period"]) for c in DEV]), "aaa111")
+    _stamp(write_run(root, "b0", 1, [record(c, ["custody_period"], gates=False) for c in DEV]), "bbb222")
+    with pytest.raises(ValueError, match="different code versions"):
+        score_command(str(root), str(tmp_path / "o1"), testsets_dir=str(testsets))
+    res = score_command(str(root), str(tmp_path / "o2"), testsets_dir=str(testsets), allow_mixed_code=True)["agreed"]
+    assert len(res["meta"]["code_versions"]) == 2
+
+
+def test_same_commit_scores_and_is_recorded(testsets, tmp_path):
+    root = tmp_path / "same"
+    _stamp(write_run(root, "full", 1, [record(c, ["custody_period"]) for c in DEV]), "aaa111", tree="x")
+    _stamp(write_run(root, "b0", 1, [record(c, ["custody_period"], gates=False) for c in DEV]), "aaa111", tree="x")
+    res = score_command(str(root), str(tmp_path / "o"), testsets_dir=str(testsets))["agreed"]
+    assert list(res["meta"]["code_versions"]) == ["aaa111:x"] and len(res["meta"]["code_versions"]["aaa111:x"]) == 2
+
+
+def test_same_sha_with_edited_tree_counts_as_different(testsets, tmp_path):
+    root = tmp_path / "tree"
+    _stamp(write_run(root, "full", 1, [record(c, ["custody_period"]) for c in DEV]), "aaa111", dirty=True, tree="one")
+    _stamp(write_run(root, "b0", 1, [record(c, ["custody_period"], gates=False) for c in DEV]), "aaa111", dirty=True, tree="two")
+    with pytest.raises(ValueError, match="different code versions"):
+        score_command(str(root), str(tmp_path / "o"), testsets_dir=str(testsets))
+
+
+def test_legacy_manifests_without_git_sha_do_not_block(testsets, runs, tmp_path):
+    res = score_command(str(runs), str(tmp_path / "o"), testsets_dir=str(testsets))["agreed"]
+    assert list(res["meta"]["code_versions"]) == ["unknown"]
