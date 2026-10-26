@@ -259,3 +259,73 @@ def test_labeler_refuses_qwen_and_system_use():
 
     with pytest.raises(ValueError):
         EvalLabeler(model="Qwen/Qwen3-32B", backend="sarvam").client()
+
+
+# ---- G4 to G7 (EV-05) ---------------------------------------------------------------------------------------------------
+PROSECUTION = "The learned APP opposed bail and submitted that the offence is grave and the applicant is likely to abscond and tamper with witnesses."
+REASONING = "Nothing shows that the period of 90 days under Section 187(3) BNSS has expired. The offence is serious and the applicant has a criminal history."
+OPERATIVE = ("Bail is granted on furnishing a personal bond of Rs.50,000 with one surety. The applicant shall surrender his passport and shall not "
+             "contact or influence any witness. He shall mark his attendance before the SHO every Monday.")
+PARTS_ALL = {OrderPart.FACTS: "Crime No.11 of 2025.", OrderPart.DEFENSE: DEFENSE, OrderPart.PROSECUTION: PROSECUTION, OrderPart.REASONING: REASONING, OrderPart.OPERATIVE: OPERATIVE}
+
+
+def test_label_g4_and_g5_use_their_own_part_and_factor_ids():
+    seen = []
+
+    def reply(prompt, schema):
+        seen.append(prompt)
+        return {"factors": [{"factor": "flight_risk", "span": "is likely to abscond"}, {"factor": "witness_tampering", "span": "was never said anywhere"}]}
+
+    g4 = sl.label_g4(Fake(reply), PROSECUTION)
+    assert g4.labels == ["flight_risk"] and g4.rejected[0]["reason"] == "span_not_in_text"
+    assert "prosecution" in seen[0].split("TEXT:")[0].lower() and PROSECUTION in seen[0]
+    g5 = sl.label_g5(Fake(lambda p, s: {"factors": [{"factor": "gravity_and_punishment", "span": "The offence is serious"}]}), REASONING)
+    assert g5.labels == ["gravity_and_punishment"] and sl.label_g4(Fake(reply), " ").error == "no_input"
+
+
+def test_label_g6_and_g7_validate_enum_and_span():
+    g6 = sl.label_g6(Fake(lambda p, s: {"conditions": [
+        {"condition": "passport", "span": "shall surrender his passport"}, {"condition": "surety", "span": "with one surety"},
+        {"condition": "curfew", "span": "shall stay at home after dark"}, {"condition": "reporting", "span": "mark his attendance before the SHO every Tuesday"}]}), OPERATIVE)
+    assert g6.labels == ["passport", "surety"] and {r["reason"] for r in g6.rejected} == {"unknown_label", "span_not_in_text"}
+    g7 = sl.label_g7(Fake(lambda p, s: {"rights": [{"right": "default_bail", "span": "the period of 90 days under Section 187(3) BNSS"}]}), REASONING)
+    assert g7.labels == ["default_bail"] and sl.label_g7(Fake(lambda p, s: "x"), REASONING).error == "reply is not a JSON object"
+
+
+def test_rule_labelers_of_g4_to_g7_and_g6_only_labels_grants():
+    assert "flight_risk" in ag.rule_g4(PARTS_ALL) and "antecedents" in ag.rule_g5(PARTS_ALL)
+    assert {"personal_bond", "surety", "passport", "no_contact_witnesses"} <= set(ag.rule_g6(PARTS_ALL))
+    assert ag.rule_g7(PARTS_ALL) == ["default_bail"]
+    refused = {**PARTS_ALL, OrderPart.OPERATIVE: "The bail application is dismissed. Rejected."}
+    assert ag.rule_g6(refused) == [] and not ag.is_grant(refused)
+    assert set(ag.task_orders("g6", {"a": PARTS_ALL, "b": refused})) == {"a"} and set(ag.task_orders("g4", {"a": PARTS_ALL, "b": refused})) == {"a", "b"}
+
+
+def test_no_input_is_its_own_status_and_not_a_failure():
+    r = ag.agree_item("G4", "d1", [], sl.LabelerOutput(error="no_input"))
+    assert r["status"] == "no_input" and r["labels"] == []
+    cov = ag.coverage([r, ag.agree_item("G4", "d2", ["flight_risk"], sl.LabelerOutput(error="boom")), ag.agree_item("G4", "d3", ["flight_risk"], sl.LabelerOutput([sl.Proposal("flight_risk", "span span span")]))])
+    assert (cov["no_input"], cov["labeler_failed"], cov["labeler_answered"], cov["with_agreed_label"]) == (1, 1, 1, 1)
+
+
+def test_run_report_and_apply_for_g4_to_g7(tmp_path):
+    orders = {"d1": PARTS_ALL}
+    client = Fake(lambda p, s: {"factors": [{"factor": "flight_risk", "span": "is likely to abscond"}]} if "factors" in json.dumps(s) else
+                  {"conditions": [{"condition": "passport", "span": "shall surrender his passport"}]} if "conditions" in json.dumps(s) else
+                  {"rights": [{"right": "default_bail", "span": "the period of 90 days under Section 187(3) BNSS"}]})
+    out = tmp_path / "cand"
+    for t in ("g4", "g6", "g7"):
+        res = ag.run_labeler(t, ag.task_orders(t, orders), client, ag.raw_path(out, "x", t), workers=1, log=lambda m: None)
+        recs = ag.build_records(t, ag.task_orders(t, orders), res)
+        rep = ag.gold_report(t, recs, n_boot=20)
+        assert rep["coverage"]["labeler_answered"] == 1 and rep["gold"] == t.upper()
+        ag.write_jsonl(out / f"{t}.jsonl", recs)
+    assert "flight_risk" in json.loads((out / "g4.jsonl").read_text().splitlines()[0])["labels"]
+    assert json.loads((out / "g7.jsonl").read_text().splitlines()[0])["labels"] == ["default_bail"]
+    ts = tmp_path / "t1"
+    ts.mkdir()
+    (ts / "cases.jsonl").write_text(json.dumps({"case_id": "c0", "doc_id": "d1", "gold": {"G4": {"labels": ["x"], "status": "rule_only"}}}) + "\n", encoding="utf-8")
+    (ts / "dev.jsonl").write_text("", encoding="utf-8")
+    stats = ag.apply_to_testset(out, ts, tmp_path / "dest", "openai-x")
+    assert stats["replaced_g4"] == 1 and stats["replaced_g6"] == 1 and stats["replaced_g7"] == 1
+    assert "per_label" not in ag.render_markdown({"G4": rep}) and "label:" in ag.render_markdown({"G4": rep})

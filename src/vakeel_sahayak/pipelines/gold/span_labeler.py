@@ -1,4 +1,4 @@
-"""The non-Qwen, span-grounded LLM labeler for gold G1 and G3 (VI-04; plan 15.1, 15.9; evaluation plan 5.9).
+"""The non-Qwen, span-grounded LLM labeler for gold G1 and G3 to G7 (VI-04, EV-05; plan 15.1, 15.9; evaluation plan 5.9).
 
 The rule extractors (`g1_defense_factors`, `g3_dossier_fields`) are labeler (i). This module is labeler (ii): a hosted non-Qwen
 model (default OpenAI gpt-6-luna; Sarvam open-weight models as an optional second one) that reads PUBLIC court text only and
@@ -14,6 +14,9 @@ G1: which of the 12 bail factors the defense argued, from the defense-submission
 G3: dossier fields and dated events from the whole order: offence sections, arrest date, charge-sheet status, earlier bail
 refusals, co-accused bail outcome, trial stage and every date. `custody_days` is arithmetic on stated dates and is not
 labelled by the model (the agreement reports it as rule-derived only).
+G4: which of the 12 factors the prosecution (State, complainant) raised, from the prosecution-submissions part. G5: which factors the court
+itself discussed, from the reasoning. G6: which of the ten condition types the court imposed, from the operative part of an order that
+grants bail (only grants are labelled). G7: which rights computations (default bail, undertrial limit) the court's reasoning relies on.
 
 No function here calls a model unless given a client; tests inject a fake client.
 """
@@ -149,6 +152,91 @@ def g3_messages(text: str) -> list[dict[str, str]]:
     return [{"role": "system", "content": G1_SYSTEM}, {"role": "user", "content": user}]
 
 
+CONDITION_GLOSS = {
+    "personal_bond": "the accused must furnish a personal bond or bail bond (with an amount)",
+    "surety": "the accused must furnish one or more sureties",
+    "passport": "the accused must surrender or deposit the passport",
+    "travel_restriction": "the accused must not leave the country, city, state or jurisdiction without the court's permission",
+    "reporting": "the accused must report or mark attendance at the police station or before the investigating officer",
+    "cooperate_investigation": "the accused must cooperate with or join the investigation, or remain available for interrogation",
+    "appear_in_court": "the accused must attend every hearing or date before the trial court",
+    "no_contact_witnesses": "the accused must not contact, influence, threaten or approach witnesses, the complainant or the victim",
+    "no_tamper_evidence": "the accused must not tamper with evidence",
+    "no_further_offence": "the accused must not commit any similar or other offence while on bail",
+}
+CONDITION_IDS = list(CONDITION_GLOSS)
+RIGHT_GLOSS = {
+    "default_bail": "default (statutory) bail: the investigation was not completed within 60 or 90 days (section 167(2) CrPC or 187(3) BNSS), the indefeasible right to bail",
+    "undertrial_limit": "release of an undertrial who has served half or one third of the maximum sentence (section 436A CrPC or 479 BNSS)",
+}
+RIGHT_IDS = list(RIGHT_GLOSS)
+
+
+def _items_schema(key: str, field_name: str, values: list[str]) -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {key: {"type": "array", "items": {
+            "type": "object", "properties": {field_name: {"type": "string", "enum": values}, "span": {"type": "string"}},
+            "required": [field_name, "span"], "additionalProperties": False}}},
+        "required": [key], "additionalProperties": False,
+    }
+
+
+G6_SCHEMA: dict[str, Any] = _items_schema("conditions", "condition", CONDITION_IDS)
+G7_SCHEMA: dict[str, Any] = _items_schema("rights", "right", RIGHT_IDS)
+
+
+def _factor_messages(text: str, intro: str) -> list[dict[str, str]]:
+    gloss = "\n".join(f"- {k}: {v}" for k, v in FACTOR_GLOSS.items())
+    user = (
+        f"{intro}\nList each bail factor that the text shows, with one verbatim span showing it. At most one entry per factor.\n\nFactors (the topic of each):\n"
+        f"{gloss}\n\nAnswer as {{\"factors\": [{{\"factor\": <one of the ids>, \"span\": <exact quotation>}}]}}; "
+        "an empty list when none applies.\n\nTEXT:\n" + text[:MAX_INPUT_CHARS]
+    )
+    return [{"role": "system", "content": G1_SYSTEM}, {"role": "user", "content": user}]
+
+
+def g4_messages(prosecution_text: str) -> list[dict[str, str]]:
+    """The G4 request: the 12 factors, the prosecution-submissions text, the JSON shape."""
+    return _factor_messages(prosecution_text, (
+        "Below is the part of a bail order that records what the prosecution (the State, the public prosecutor, the investigating officer or the "
+        "complainant) submitted. A factor counts when the prosecution RAISED it as a reason to refuse or oppose bail (for example the gravity of the "
+        "offence, a risk of flight, a risk of tampering with witnesses, the accused's criminal history). A factor that only the accused's side raises is not a label."))
+
+
+def g5_messages(reasoning_text: str) -> list[dict[str, str]]:
+    """The G5 request: the 12 factors, the court's reasoning, the JSON shape."""
+    return _factor_messages(reasoning_text, (
+        "Below is the reasoning of the court in a bail order. A factor counts when the COURT itself discussed it or relied on it in reaching its "
+        "decision, whether for or against bail. A factor that is only quoted from a party's submission and not taken up by the court is not a label."))
+
+
+def g6_messages(operative_text: str) -> list[dict[str, str]]:
+    """The G6 request: the ten condition types, the operative part of a grant, the JSON shape."""
+    gloss = "\n".join(f"- {k}: {v}" for k, v in CONDITION_GLOSS.items())
+    user = (
+        "Below is the operative part of a bail order that grants bail. List each type of condition that the court IMPOSED on the accused, with one "
+        "verbatim span showing it. A condition that is only mentioned as something the prosecution asked for, or that the court declines to impose, "
+        f"is not a label. At most one entry per type.\n\nCondition types:\n{gloss}\n\n"
+        "Answer as {\"conditions\": [{\"condition\": <one of the ids>, \"span\": <exact quotation>}]}; an empty list when none applies.\n\nTEXT:\n"
+        + operative_text[:MAX_INPUT_CHARS]
+    )
+    return [{"role": "system", "content": G1_SYSTEM}, {"role": "user", "content": user}]
+
+
+def g7_messages(reasoning_text: str) -> list[dict[str, str]]:
+    """The G7 request: the two rights computations, the court's reasoning, the JSON shape."""
+    gloss = "\n".join(f"- {k}: {v}" for k, v in RIGHT_GLOSS.items())
+    user = (
+        "Below is the reasoning of the court in a bail order. List each right below that the COURT ITSELF discusses or computes (for example it counts "
+        "the days of custody against the 60 or 90 day limit, or it considers whether the accused has served the part of the sentence that gives a right "
+        "to release), with one verbatim span showing it. A bare mention of a section in a list of provisions is not a label. At most one entry per right."
+        f"\n\nRights:\n{gloss}\n\nAnswer as {{\"rights\": [{{\"right\": <one of the ids>, \"span\": <exact quotation>}}]}}; an empty list when "
+        "none applies.\n\nTEXT:\n" + reasoning_text[:MAX_INPUT_CHARS]
+    )
+    return [{"role": "system", "content": G1_SYSTEM}, {"role": "user", "content": user}]
+
+
 # ------------------------------------------------------------------------------------------------ span validation
 
 
@@ -256,17 +344,17 @@ def _ask(client: ChatClient, messages: list[dict[str, str]], schema: dict[str, A
 # ------------------------------------------------------------------------------------------------ the two tasks
 
 
-def label_g1(client: ChatClient, defense_text: str, *, max_tokens: int = 1200) -> LabelerOutput:
-    """G1 labels of one order's defense part: factor ids whose verbatim span is in the text. At most one per factor."""
+def _label_factors(client: ChatClient, text: str, messages: list[dict[str, str]], *, max_tokens: int) -> LabelerOutput:
+    """Factor labels of one part (G1, G4, G5): factor ids whose verbatim span is in `text`. At most one per factor."""
     out = LabelerOutput()
-    if not defense_text.strip():
+    if not text.strip():
         out.error = "no_input"
         return out
-    obj, err = _ask(client, g1_messages(defense_text), G1_SCHEMA, max_tokens)
+    obj, err = _ask(client, messages, G1_SCHEMA, max_tokens)
     if obj is None:
         out.error = err
         return out
-    sq = squash(defense_text)
+    sq = squash(text)
     for item in obj.get("factors") or []:
         if not isinstance(item, dict):
             continue
@@ -280,6 +368,57 @@ def label_g1(client: ChatClient, defense_text: str, *, max_tokens: int = 1200) -
         else:
             out.accepted.append(Proposal(factor, span.strip()))
     return out
+
+
+def label_g1(client: ChatClient, defense_text: str, *, max_tokens: int = 1200) -> LabelerOutput:
+    """G1 labels of one order's defense part: factor ids whose verbatim span is in the text. At most one per factor."""
+    return _label_factors(client, defense_text, g1_messages(defense_text), max_tokens=max_tokens)
+
+
+def label_g4(client: ChatClient, prosecution_text: str, *, max_tokens: int = 1200) -> LabelerOutput:
+    """G4 labels of one order's prosecution part: factors the State or complainant raised against bail."""
+    return _label_factors(client, prosecution_text, g4_messages(prosecution_text), max_tokens=max_tokens)
+
+
+def label_g5(client: ChatClient, reasoning_text: str, *, max_tokens: int = 1200) -> LabelerOutput:
+    """G5 labels of one order's reasoning: factors the court itself discussed or relied on."""
+    return _label_factors(client, reasoning_text, g5_messages(reasoning_text), max_tokens=max_tokens)
+
+
+def _label_enum(client: ChatClient, text: str, messages: list[dict[str, str]], schema: dict[str, Any], key: str, field_name: str, allowed: list[str], max_tokens: int) -> LabelerOutput:
+    """Labels from an enum field of a list of {field, span} items (G6, G7), with the same span rules as the factors."""
+    out = LabelerOutput()
+    if not text.strip():
+        out.error = "no_input"
+        return out
+    obj, err = _ask(client, messages, schema, max_tokens)
+    if obj is None:
+        out.error = err
+        return out
+    sq = squash(text)
+    for item in obj.get(key) or []:
+        if not isinstance(item, dict):
+            continue
+        label, span = str(item.get(field_name, "")), str(item.get("span", ""))
+        if label not in allowed:
+            out.rejected.append({"label": label, "span": span[:120], "reason": "unknown_label"})
+        elif label in {p.label for p in out.accepted}:
+            continue
+        elif (why := validate_span(sq, span)) is not None:
+            out.rejected.append({"label": label, "span": span[:120], "reason": why})
+        else:
+            out.accepted.append(Proposal(label, span.strip()))
+    return out
+
+
+def label_g6(client: ChatClient, operative_text: str, *, max_tokens: int = 1200) -> LabelerOutput:
+    """G6 labels of the operative part of a grant: condition types whose verbatim span is in the text."""
+    return _label_enum(client, operative_text, g6_messages(operative_text), G6_SCHEMA, "conditions", "condition", CONDITION_IDS, max_tokens)
+
+
+def label_g7(client: ChatClient, reasoning_text: str, *, max_tokens: int = 800) -> LabelerOutput:
+    """G7 labels of the reasoning: the rights computations (Rights Radar check names) the court relies on."""
+    return _label_enum(client, reasoning_text, g7_messages(reasoning_text), G7_SCHEMA, "rights", "right", RIGHT_IDS, max_tokens)
 
 
 _STATUS_FIELDS = {

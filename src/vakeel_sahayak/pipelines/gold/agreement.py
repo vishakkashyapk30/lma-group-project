@@ -1,4 +1,4 @@
-"""Agreement machinery for gold G1 and G3 (VI-04): rule labeler x span-grounded non-Qwen LLM labeler, kappa, coverage, rule-only comparison.
+"""Agreement machinery for gold G1 and G3 to G7 (VI-04, EV-05): rule labeler x span-grounded non-Qwen LLM labeler, kappa, coverage, rule-only comparison.
 
 Per order and per gold type the record holds: the rule labels, the labeler's span-validated labels, the AGREED labels (the
 intersection, the plan's rule: agreed labels only), the rule-only and labeler-only labels, and a disagreement flag. Over the
@@ -34,13 +34,17 @@ from vakeel_sahayak.pipelines.factor_tagger import tag_factors
 from vakeel_sahayak.pipelines.gold import span_labeler as sl
 from vakeel_sahayak.pipelines.gold.common import agreed_labels, cohen_kappa, part_text
 from vakeel_sahayak.pipelines.gold.g3_dossier_fields import flatten
+from vakeel_sahayak.pipelines.gold.g6_conditions import _COMPILED as _CONDITION_RE
+from vakeel_sahayak.pipelines.gold.g6_conditions import CONDITION_TYPES
+from vakeel_sahayak.pipelines.gold.g7_rights_computations import _COMPILED as _RIGHTS_RE
+from vakeel_sahayak.pipelines.gold.g7_rights_computations import RIGHTS_KEYWORDS
 from vakeel_sahayak.pipelines.order_facts import dossier_fields, extract_dates
-from vakeel_sahayak.pipelines.order_splitter import PART_ORDER
+from vakeel_sahayak.pipelines.order_splitter import PART_ORDER, infer_outcome
 from vakeel_sahayak.pipelines.text_utils import read_jsonl, write_jsonl
 from vakeel_sahayak.schemas.enums import OrderPart
 
 DERIVED_PREFIXES = ("custody_days=",)  # arithmetic on stated dates: kept as rule-derived, not offered to the labeler
-TASKS = ("g1", "g3")
+TASKS = ("g1", "g3", "g4", "g5", "g6", "g7")
 DEFAULT_OUT = "data/interim/gold_candidate"
 
 
@@ -60,6 +64,50 @@ def rule_g3(parts: dict[OrderPart, str]) -> tuple[list[str], list[str]]:
     return [x for x in labels if x not in derived], derived
 
 
+def rule_g4(parts: dict[OrderPart, str]) -> list[str]:
+    """The rule labeler's G4 labels: factors the keyword rules find in the prosecution submissions."""
+    return [f.value for f in tag_factors(parts.get(OrderPart.PROSECUTION, ""))]
+
+
+def rule_g5(parts: dict[OrderPart, str]) -> list[str]:
+    """The rule labeler's G5 labels: factors the keyword rules find in the court's reasoning."""
+    return [f.value for f in tag_factors(parts.get(OrderPart.REASONING, ""))]
+
+
+def is_grant(parts: dict[OrderPart, str]) -> bool:
+    """True when the operative part grants bail (the only orders that carry conditions, G6)."""
+    return infer_outcome(parts.get(OrderPart.OPERATIVE, "")) == "granted"
+
+
+def rule_g6(parts: dict[OrderPart, str]) -> list[str]:
+    """The rule labeler's G6 labels: condition types the regexes find in the operative part of a grant (nothing for other orders)."""
+    operative = parts.get(OrderPart.OPERATIVE, "")
+    return [k for k in CONDITION_TYPES if _CONDITION_RE[k].search(operative)] if is_grant(parts) else []
+
+
+def rule_g7(parts: dict[OrderPart, str]) -> list[str]:
+    """The rule labeler's G7 labels: rights computations whose keywords the court's reasoning uses."""
+    reasoning = parts.get(OrderPart.REASONING, "")
+    return [c.value for c in RIGHTS_KEYWORDS if _RIGHTS_RE[c].search(reasoning)]
+
+
+# the part each task reads, the rule labeler, and the labeler call (G3 reads the whole order)
+TASK_PART: dict[str, OrderPart | None] = {"g1": OrderPart.DEFENSE, "g3": None, "g4": OrderPart.PROSECUTION, "g5": OrderPart.REASONING, "g6": OrderPart.OPERATIVE, "g7": OrderPart.REASONING}
+TASK_LABELER: dict[str, Callable[..., sl.LabelerOutput]] = {"g1": sl.label_g1, "g3": sl.label_g3, "g4": sl.label_g4, "g5": sl.label_g5, "g6": sl.label_g6, "g7": sl.label_g7}
+TASK_RULE: dict[str, Callable[[dict[OrderPart, str]], list[str]]] = {"g1": rule_g1, "g4": rule_g4, "g5": rule_g5, "g6": rule_g6, "g7": rule_g7}
+
+
+def task_orders(task: str, orders: dict[str, dict[OrderPart, str]]) -> dict[str, dict[OrderPart, str]]:
+    """The orders a task labels: all of them, except G6 which labels only orders whose operative part grants bail."""
+    return {d: p for d, p in orders.items() if is_grant(p)} if task == "g6" else orders
+
+
+def task_text(task: str, parts: dict[OrderPart, str]) -> str:
+    """The text a task's labeler reads."""
+    part = TASK_PART[task]
+    return part_text(parts, *PART_ORDER) if part is None else parts.get(part, "")
+
+
 # ------------------------------------------------------------------------------------------------ per-item agreement
 
 
@@ -75,7 +123,8 @@ def agree_item(gold: str, doc_id: str, rule: list[str], out: sl.LabelerOutput | 
     llm_only = [x for x in (llm or []) if x not in rule]
     rec: dict[str, Any] = {
         "doc_id": doc_id, "gold": gold.upper(), "rule_labels": list(dict.fromkeys(rule)), "llm_labels": llm,
-        "labels": agreed if llm is not None else list(dict.fromkeys(rule)), "status": "agreed" if ok else "rule_only",
+        "labels": agreed if llm is not None else list(dict.fromkeys(rule)),
+        "status": "agreed" if ok else ("no_input" if out is not None and out.error == "no_input" else "rule_only"),
         "rule_only_labels": rule_only, "llm_only_labels": llm_only, "disagreement": bool(rule_only or llm_only) if llm is not None else None,
         "llm_spans": {p.label: p.span for p in out.accepted} if out is not None else {},
         "rejected": out.rejected if out is not None else [], "error": out.error if out is not None else "not_run",
@@ -151,8 +200,8 @@ def per_label_kappa(a: list[list[str]], b: list[list[str]], labels: Iterable[str
 
 
 def label_type(gold: str, label: str) -> str:
-    """The group a label is reported under: the factor for G1, the field name ('sections', 'event', ...) for G3."""
-    return label if gold.upper() == "G1" else label.split("=", 1)[0]
+    """The group a label is reported under: the label itself (a factor, a condition type, a right), or the field name ('sections', 'event', ...) for G3."""
+    return label.split("=", 1)[0] if gold.upper() == "G3" else label
 
 
 # ------------------------------------------------------------------------------------------------ report
@@ -168,7 +217,8 @@ def coverage(records: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "orders": len(records),
         "labeler_answered": len(ok),
-        "labeler_failed": len(records) - len(ok),
+        "no_input": sum(1 for r in records if r["status"] == "no_input"),
+        "labeler_failed": sum(1 for r in records if r["status"] == "rule_only"),
         "with_agreed_label": sum(1 for r in ok if r["labels"]),
         "both_find_nothing": sum(1 for r in ok if not r["rule_labels"] and not r["llm_labels"]),
         "fully_concordant": sum(1 for r in ok if not r["disagreement"]),
@@ -176,7 +226,7 @@ def coverage(records: list[dict[str, Any]]) -> dict[str, Any]:
         "mean_rule_labels": _mean([len(r["rule_labels"]) for r in ok]),
         "mean_llm_labels": _mean([len(r["llm_labels"]) for r in ok]),
         "mean_agreed_labels": _mean([len(r["labels"]) for r in ok]),
-        "rule_only_provisional": len(records) - len(ok),
+        "rule_only_provisional": sum(1 for r in records if r["status"] == "rule_only"),
     }
 
 
@@ -227,7 +277,7 @@ def gold_report(gold: str, records: list[dict[str, Any]], *, n_boot: int = 1000)
     for t in types:
         ta = [[x for x in lst if label_type(gold, x) == t] for lst in a]
         tb = [[x for x in lst if label_type(gold, x) == t] for lst in b]
-        if gold.upper() == "G1":
+        if gold.upper() != "G3":
             by_type[t] = per_label_kappa(ta, tb, [t], n_boot=min(n_boot, 500))[t] | {"dice": dice(ta, tb)}
         else:
             by_type[t] = kappa_with_ci(ta, tb, n_boot=min(n_boot, 500))
@@ -284,9 +334,9 @@ def render_markdown(reports: dict[str, dict[str, Any]], inter: dict[str, dict[st
             f"{r['orders_with_label_rule_only']} / {r['orders_with_label_labeler_only']} / {r['orders_with_label_agreed']} |"
         )
     for g, rep in reports.items():
-        lines += ["", f"{g} by {'factor' if g == 'G1' else 'field'}:", "", "| group | n rule | n labeler | both | kappa | 95% CI | Dice |", "|---|---|---|---|---|---|---|"]
+        lines += ["", f"{g} by {'field' if g == 'G3' else 'label'}:", "", "| group | n rule | n labeler | both | kappa | 95% CI | Dice |", "|---|---|---|---|---|---|---|"]
         for t, v in rep["kappa_by_type"].items():
-            if g == "G1":
+            if g != "G3":
                 lines.append(f"| {t} | {v['n_a']} | {v['n_b']} | {v['both']} | {_f(v['kappa'])} | {_ci(v['ci95'])} | {_f(v['dice'])} |")
             else:
                 both = round((v["dice"] or 0) * (v["n_labels_a"] + v["n_labels_b"]) / 2)
@@ -350,7 +400,7 @@ def run_labeler(
     """Label every order not yet done (a done order is one with no error in `raw_file`), appending each result as it arrives.
 
     Args:
-        task: 'g1' or 'g3'
+        task: 'g1' or 'g3' to 'g7'
         orders: doc_id -> parts
         client: anything with `chat(messages, max_tokens=, temperature=, json_schema=)`
         raw_file: JSONL of results (resumable)
@@ -371,9 +421,7 @@ def run_labeler(
         if ctx is not None:
             ctx.__enter__()
         try:
-            if task == "g1":
-                return doc_id, sl.label_g1(client, parts.get(OrderPart.DEFENSE, ""))
-            return doc_id, sl.label_g3(client, part_text(parts, *PART_ORDER))
+            return doc_id, TASK_LABELER[task](client, task_text(task, parts))
         finally:
             if ctx is not None:
                 ctx.__exit__(None, None, None)
@@ -407,11 +455,11 @@ def build_records(gold: str, orders: dict[str, dict[OrderPart, str]], outputs: d
     for doc_id, parts in orders.items():
         if doc_id not in outputs:
             continue
-        if gold.upper() == "G1":
-            recs.append(agree_item("G1", doc_id, rule_g1(parts), outputs[doc_id]))
-        else:
+        if gold.upper() == "G3":
             rule, derived = rule_g3(parts)
             recs.append(agree_item("G3", doc_id, rule, outputs[doc_id], derived))
+        else:
+            recs.append(agree_item(gold, doc_id, TASK_RULE[gold.lower()](parts), outputs[doc_id]))
     return recs
 
 
@@ -454,7 +502,7 @@ def apply_to_testset(out_dir: str | Path, testset: str | Path, dest: str | Path,
                 old = dict((row.get("gold") or {}).get(t.upper()) or {})
                 keep = {k: v for k, v in rec.items() if k not in ("doc_id", "gold", "error")}
                 row.setdefault("gold", {})[t.upper()] = {**old, **keep, "gold_source": f"rules+{slug} (span-grounded, agreed only)"}
-                stats[f"replaced_{t}"] += 1
+                stats[f"replaced_{t}"] = stats.get(f"replaced_{t}", 0) + 1
             rows.append(row)
         write_jsonl(Path(dest) / name, rows)
     return stats
@@ -482,8 +530,9 @@ def cmd_run(args: argparse.Namespace) -> int:
     client = make_client(args.labeler, args.model)
     slug = labeler_slug(args.labeler, args.model)
     for task in args.task.split(","):
-        outputs = run_labeler(task, orders, client, raw_path(out, slug, task), workers=args.workers, scope=lambda t=task: public_scope(f"gold-{t}"))
-        recs = build_records(task, orders, outputs)
+        sub = task_orders(task, orders)
+        outputs = run_labeler(task, sub, client, raw_path(out, slug, task), workers=args.workers, scope=lambda t=task: public_scope(f"gold-{t}"))
+        recs = build_records(task, sub, outputs)
         print(f"{task}: {len(recs)} records, failed {sum(1 for r in recs if r['status'] != 'agreed')} (saved in {raw_path(out, slug, task).name}; `report` builds the gold files)")
     _spend_line(args.labeler)
     return 0
@@ -515,13 +564,13 @@ def cmd_report(args: argparse.Namespace) -> int:
     inter: dict[str, dict[str, Any]] = {}
     for task in args.task.split(","):
         raw = load_raw(raw_path(out, slug, task))
-        sub = {d: p for d, p in orders.items() if d in raw}
+        sub = {d: p for d, p in task_orders(task, orders).items() if d in raw}
         recs = build_records(task, sub, raw)
         reports[task.upper()] = gold_report(task, recs, n_boot=args.boot)
         write_jsonl(out / f"{task}.jsonl", recs)
         if args.second:
             raw2 = load_raw(raw_path(out, args.second, task))
-            sub2 = {d: p for d, p in orders.items() if d in raw2}
+            sub2 = {d: p for d, p in task_orders(task, orders).items() if d in raw2}
             recs2 = build_records(task, sub2, raw2)
             inter[task.upper()] = inter_labeler(task, {r["doc_id"]: r for r in recs}, {r["doc_id"]: r for r in recs}, {r["doc_id"]: r for r in recs2}, n_boot=args.boot)
     payload = {"primary_labeler": slug, "second_labeler": args.second, "reports": reports, "inter_labeler": inter}

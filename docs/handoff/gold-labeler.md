@@ -1,4 +1,4 @@
-# VI-04: non-Qwen gold labeler (G1, G3) and the Sarvam spend ledger (handoff)
+# VI-04: non-Qwen gold labeler (G1, G3; G4 to G7 added in EV-05) and the Sarvam spend ledger (handoff)
 
 Date 2026-10-26. Nothing committed. Task A (Sarvam ledger) was the prerequisite; Task B is VI-04.
 
@@ -73,8 +73,29 @@ Also swap `data/interim/t1_work/gold/g1.jsonl` and `g3.jsonl` for `data/interim/
 ## Caveats and not done
 - Agreement is between two labelers that can share blind spots; the rules are not independent of the factor tagger that builds paragraph metadata. Results should still be re-run with each label source alone (evaluation plan 5.9): all three label sets (`rule_labels`, `llm_labels`, `labels`) are in every record.
 - G1 agreed gold is conservative: 81 of 250 orders have no agreed factor, `weak_prima_facie` and `gravity_and_punishment` have low kappa. Counsel-style judgement of what "argued" means is not independently verified. Consider whether to merge confusable factors (plan risk table "Labelers disagree").
-- The label sets of G4 to G7 (prosecution, court, conditions, rights) are not covered; the machinery (`run_labeler`, `agree_item`, `gold_report`) is task-agnostic but needs a prompt and schema per gold.
+- G4 to G7 are now covered (section below).
 - Sarvam G3 second labeler not usable (see above); `mimo-v2.6-flash` and the other priced third-party models are not reachable on this key, so only `sarvam-105b` can be a second labeler.
 - Character prices of Sarvam non-chat endpoints are unverified guesses; STT and Vision are unmetered.
 - The `EvalLabeler.label()` path (Llama or confirm-the-candidates) is unchanged and still returns `NotImplementedError`-style provisional records when no client is available; `gold/*.build_gold` still use it. The new `agreement` module is the independent path.
 - Pre-existing ruff findings remain in `tests/unit/models/test_openai.py`, `test_prefix.py`, `tests/unit/pipelines/gold/test_common.py`, `test_gold_modules.py` (not touched).
+
+## EV-05: G4 to G7 (2026-10-26)
+The plan gives all four a court-text source with rules plus a labeler, agreed only (none is from a construction or official table), so all four use the same machinery.
+Code: `pipelines/gold/span_labeler.py` (prompts `g4_messages` to `g7_messages`, schemas `G6_SCHEMA`, `G7_SCHEMA`, `label_g4` to `label_g7`; `label_g1` is now a thin wrapper of the shared `_label_factors`, output unchanged), `pipelines/gold/agreement.py` (`TASKS`, `rule_g4` to `rule_g7` reuse the existing tagger, condition regexes and rights keywords, `TASK_PART`, `task_orders`, `is_grant`; a `no_input` status for an order whose part is empty, which is neither agreed nor a failure), tests: 5 new in `tests/unit/pipelines/gold/test_agreement.py` (74 pass in the folder).
+- **G4**: factors the prosecution raised, read from the prosecution-submissions part. **G5**: factors the court discussed, from the reasoning. **G6**: the ten condition types, from the operative part, only for orders the splitter's `infer_outcome` calls a grant (152 of 250; the rest keep their `not_applicable` record). **G7**: `default_bail` and `undertrial_limit`, from the reasoning. Same rules as G1: verbatim span required (8 to 600 characters, found in the text), no rule candidate shown, agreed = intersection.
+- Run: 250 orders (200 T1 + 50 dev), gpt-6-luna, public text, cache on, run cap 0.40, no call failed. OpenAI spend of this task: G4 0.0254, G5 0.0314, G6 0.0240, G7 0.0167 USD, plus a 6-order pilot 0.003: about 0.10 USD (ledger total 0.300 of 4.50).
+
+| gold | orders | labeler answered | with agreed label | fully concordant | pooled kappa [95% CI] | Dice | rule / labeler / agreed labels | share of rule labels kept |
+|---|---|---|---|---|---|---|---|---|
+| G4 | 250 | 250 | 88 | 138 | 0.569 [0.501, 0.633] | 0.599 | 193 / 228 / 126 | 0.65 |
+| G5 | 250 | 250 | 155 | 107 | 0.628 [0.587, 0.670] | 0.676 | 350 / 437 / 266 | 0.76 |
+| G6 | 152 grants | 152 | 133 | 47 | 0.654 [0.611, 0.696] | 0.764 | 394 / 627 / 390 | 0.99 |
+| G7 | 250 | 250 | 1 | 248 | not defined (1 / 3 labels) | | 1 / 3 / 1 | 1.00 |
+
+- G4: kappa is best for antecedents 0.81, witness_tampering 0.76, flight_risk 0.69, statutory_bar 0.70; worst for weak_prima_facie 0.19, trial_delay 0.20, parity_with_co_accused 0.38 (the rule fires on any co-accused mention, 20 rule-only), charge_sheet_filed 0.47 (17 rule-only). The labeler adds `gravity_and_punishment` 50 times (rule 49, both 47). Only 88 of 250 orders have an agreed objection: the prosecution part is often short or the rules and the model disagree, so objection recall (C7, C8, C28) rests on 88 orders at most; report n beside it, as the plan says.
+- G5: antecedents 0.83, witness_tampering 0.82, gravity 0.70, flight_risk 0.66, charge_sheet 0.66; weak_prima_facie 0.21 (the model finds it 52 times, the rules 10).
+- G6: surety 0.75, travel_restriction 0.89, passport 1.00, no_tamper_evidence 0.77; low where the model reads a general direction as a condition: no_contact_witnesses 0.16 (66 vs 11), reporting 0.25 (50 vs 10), appear_in_court 0.33 (62 vs 18). The rules find almost nothing the model misses (4 rule-only labels in all), so agreed G6 is close to the rule set (0.99 kept): it is high precision, and recall of the harder types is low in gold, not in the system. Rejected spans: 3 for G4, 5 for G5, 3 for G6, 0 for G7 (all `span_not_in_text`).
+- **G7 is empty on T1**: the court's reasoning states a default-bail or 436A/479 computation in only 1 of 250 orders (4 mention default bail anywhere in the whole order, 1 mentions 436A/479). It cannot support C30 ("agreement with G7 on real orders"); C30 rests on T4 (500 designed scenarios). The column is kept in the candidate files (all `agreed`, no label) so nothing downstream breaks, but report it as "not evaluable on T1".
+- Second labeler: not run for G4 to G7 (Sarvam-105B; INR 5 run cap is spent on G1 and G3). Inter-labeler kappa for G4 to G7 is therefore n/a.
+- Files: `data/interim/gold_candidate/{g4,g5,g6,g7}.jsonl`, `raw_openai-gpt-6-luna_{g4,g5,g6,g7}.jsonl`, `agreement_report.{json,md}` (now all six); `data/testsets/t1_gold_candidate/{cases,dev}.jsonl` rewritten with G1, G3 to G7 agreed records (original `data/testsets/t1` untouched, md5 of `cases.jsonl` unchanged). The earlier report for G1 and G3 only was kept in the scratchpad; the G1 and G3 numbers are reproduced unchanged.
+- Commands: the `run` command above with `--task g4,g5,g6,g7` (run id `gold-labeler-g4g7`); `report --task g1,g3,g4,g5,g6,g7 --primary-slug openai-gpt-6-luna --second sarvam-sarvam-105b`; `apply` as above. The swap command and caveats above apply to all six.
