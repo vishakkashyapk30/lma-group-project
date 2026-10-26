@@ -30,14 +30,18 @@ test("flow 6: zip upload -> triage board sorted by urgency -> open a case; no 'E
   const order = await cards.evaluateAll((els) => els.map((e) => e.getAttribute("data-case-id")));
   expect(order).toEqual(sorted.map((c) => c.case_id));
 
-  // Each card: reasons, flags, missing docs, next step, and "needs its own approval".
+  // RECONCILED: the redesign states the one-approval-per-case rule once for the whole desk (page description and the note under the
+  // board) instead of on every card; the rule itself is still on screen.
+  await expect(page.getByText(TEXT.needsOwnApproval).first()).toBeVisible();
+  await expect(page.getByText(/no bulk export/i)).toBeVisible();
+
+  // Each card: reasons, flags, missing docs and next step.
   for (const c of sorted) {
     const card = page.locator(`[data-testid=triage-card][data-case-id="${c.case_id}"]`);
     for (const r of c.reasons) await expect(card.getByTestId(TID.triageReason).filter({ hasText: r })).toHaveCount(1);
     for (const f of c.flags) await expect(card.getByTestId(TID.triageFlag).filter({ hasText: f })).toHaveCount(1);
     for (const d of c.missing_docs) await expect(card.getByTestId(TID.triageMissing).filter({ hasText: d })).toHaveCount(1);
     await expect(card.getByTestId(TID.triageNextStep)).toContainText(c.next_step!);
-    await expect(card).toContainText(TEXT.needsOwnApproval);
   }
   // A card without missing documents shows none.
   await expect(page.locator('[data-testid=triage-card][data-case-id="case-0101"]').getByTestId(TID.triageMissing)).toHaveCount(0);
@@ -51,7 +55,8 @@ test("flow 6: zip upload -> triage board sorted by urgency -> open a case; no 'E
   // Opening the top case goes to its workspace.
   await cards.first().getByRole("link").first().click();
   await expect(page).toHaveURL(/\/case\/case-0101$/);
-  await expect(page.getByTestId(TID.paneCaseFile)).toBeVisible();
+  // RECONCILED: the workspace opens on its stepper (the case file is a popover now, docs/handoff/workspace-redesign.md).
+  await expect(page.getByTestId(TID.stageRail)).toBeVisible();
   await expectNoUnmatched(mock);
 });
 
