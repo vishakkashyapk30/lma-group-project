@@ -125,7 +125,10 @@ class EvalLabeler:
         assert_not_system_use()
         if self._llm is not None:
             return self._llm
+        if model_family(self.model_id) == "qwen":  # refused before anything else, offline or not (plan §15.1: no Qwen gold)
+            raise ValueError("the evaluation labeler must not be a Qwen model (plan §15.1: no Qwen gold)")
         from vakeel_sahayak.models.factory import models_mode
+
         if models_mode() == "offline":
             raise LabelerUnavailable("VS_MODELS=offline: the Llama evaluation labeler is not run; gold stays rule-only")
         if self._use_openai():

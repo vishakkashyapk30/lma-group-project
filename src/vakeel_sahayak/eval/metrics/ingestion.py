@@ -79,3 +79,38 @@ def field_accuracy(dossier: CaseDossier, gold: dict[str, Any]) -> float:
             ok = actual == want
         correct += int(ok)
     return correct / len(gold)
+
+
+def by_kind(scores: list[tuple[str, float]]) -> dict[str, float]:
+    """Mean score per input kind (K1-K6); a kind with no bundles does not appear (plan §15.5).
+
+    Args:
+        scores: (kind, score) pairs, one per bundle
+
+    Returns:
+        Kind -> mean score.
+    """
+    grouped: dict[str, list[float]] = {}
+    for kind, score in scores:
+        grouped.setdefault(kind, []).append(score)
+    return {kind: sum(vals) / len(vals) for kind, vals in grouped.items()}
+
+
+def escalation_rate(report: Any) -> float:
+    """Share of pages whose route reached the vision model (a route step starting with "vision"; plan §15.8).
+
+    Args:
+        report: an IngestionReport
+
+    Returns:
+        Escalated pages / all routed pages (0.0 when no page was routed).
+    """
+    routes = [pr for doc in report.documents for pr in doc.page_routes]
+    if not routes:
+        return 0.0
+    return sum(any(step.startswith("vision") for step in pr.route) for pr in routes) / len(routes)
+
+
+def questions_asked(report: Any) -> int:
+    """Number of clarifying questions the intake put to the lawyer (plan §15.8)."""
+    return len(report.questions)

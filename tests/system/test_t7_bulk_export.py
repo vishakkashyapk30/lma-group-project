@@ -98,7 +98,7 @@ def test_ten_unapproved_exports_in_a_row_all_fail_and_write_nothing(tmp_path, mo
     client = sc.client()
     codes = [post_export(client, cid) for cid in ids]
     assert codes == [sh.HTTP_EXPORT_REFUSED] * len(ids)
-    assert spy.calls == [] and not [p for p in tmp_path.rglob("*") if p.suffix in (".docx", ".pdf")]
+    assert spy.calls == [] and not [p for p in tmp_path.rglob("*") if p.suffix in (".docx", ".pdf") and "bundle" not in p.name]  # RECONCILED: the uploaded bundle is in the inbox folder
 
 
 def test_the_exporter_itself_refuses_every_unapproved_case(tmp_path, monkeypatch, spy):

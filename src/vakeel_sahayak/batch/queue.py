@@ -60,6 +60,13 @@ CREATE TABLE IF NOT EXISTS jobs (
 """
 
 
+def default_queue_path() -> str:
+    """The desk's queue file: `batch/queue.sqlite` under the configured data directory, so a restarted session finds the same queue."""
+    from vakeel_sahayak.config import load_config
+
+    return os.path.join(load_config().paths.data_dir, "batch", "queue.sqlite")
+
+
 class TriageQueue:
     """Queue of files and full-run jobs; each case's output saved as soon as it is done so sessions resume (plan §11, §17)."""
 
@@ -74,12 +81,13 @@ class TriageQueue:
         """Open or create the queue.
 
         Args:
-            db_path: SQLite file holding queued and finished cases, so a session that ends resumes (plan §11, §17); None keeps it in memory
+            db_path: SQLite file holding queued and finished cases, so a session that ends resumes (plan §11, §17); None opens the desk's own
+                file, `batch/queue.sqlite` under the data directory (`VS_DATA_DIR`); ":memory:" keeps it in memory
             max_attempts: claims allowed per job before it is marked failed
             lease_seconds: how long a claim holds before another worker may take the job
             clock: seconds since the epoch (replaced in tests)
         """
-        self.db_path = db_path or ":memory:"
+        self.db_path = db_path or default_queue_path()
         self.max_attempts = max_attempts
         self.lease_seconds = lease_seconds
         self._clock = clock
@@ -341,6 +349,14 @@ class TriageQueue:
                 (status, error[:2000], self._clock(), case_id, phase),
             )
             return status
+
+    def decline(self, case_id: str, reason: str) -> None:
+        """Take a case out of the batch for good (a sensitive matter, plan §16): both of its jobs become skipped, so it gets no card and no full run."""
+        with self._tx() as c:
+            c.execute(
+                "UPDATE jobs SET status = 'skipped', error = ?, lease_until = NULL, owner = NULL, updated = ? WHERE case_id = ? AND status != 'done'",
+                (reason[:2000], self._clock(), case_id),
+            )
 
     def release(self, case_id: str, phase: str = STAGE2) -> None:
         """Hand a claimed job back without costing an attempt (the worker was interrupted cleanly)."""

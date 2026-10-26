@@ -22,7 +22,7 @@ _BLANK_LINES = re.compile(r"\n\s*\n+")
 _SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[\"'(\[]?[A-Z0-9])")
 # Abbreviations whose full stop does not end a sentence.
 _ABBREVIATIONS = re.compile(
-    r"\b(?:Mr|Mrs|Ms|Dr|Shri|Smt|Sh|Hon|Addl|Adv|Co|Ltd|No|Nos|Sec|Secs|Art|Cr|P|S|U|Vs|v|Ors|Anr|St|Jr|Sr|Dy)\.$", re.IGNORECASE
+    r"\b(?:Mr|Mrs|Ms|Dr|Shri|Smt|Sh|Hon|Addl|Adv|Co|Ltd|No|Nos|Sec|Secs|Art|Cr|P|S|U|Vs|v|Ors|Anr|St|Jr|Sr|Dy)\.$|(?:^|\s)(?:सं|क्र|क्रं)\.$", re.IGNORECASE
 )
 _WORD = re.compile(r"\S+")
 

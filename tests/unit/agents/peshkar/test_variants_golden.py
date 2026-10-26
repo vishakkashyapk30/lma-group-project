@@ -1,5 +1,9 @@
 """The default Peshkar run is byte-identical to the run captured BEFORE the Sweep-3 injection-defence arms (S17) were added.
 
+RECONCILED 2026-10-26: the golden was re-captured after fixes to the offline reader: the FIR date is read only when it sits right after the FIR
+number (it used to take the arrest date out of the same window), and a Hindi FIR number split across a sentence break is read; an empty reply from counsel leaves the question open; the dossier and the
+events differ, the prompts the model saw do not. Variants must still leave this run unchanged.
+
 `golden_default_run.json` holds one digest per part of the offline run over the three-chunk shelf with a planted instruction (dossier, List of Dates, the
 events in order with ids and times removed, every prompt the model saw). All three defence flags default to False (defences ON), which is the current behaviour.
 """

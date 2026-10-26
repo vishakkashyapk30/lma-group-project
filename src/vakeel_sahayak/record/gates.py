@@ -35,8 +35,11 @@ def gate_status(log: EventLog, case_id: str, gate: GateId) -> GateStatus:
     """
     state = CaseState(case_id, log)
     dossier = state.dossier()
+    approved = [e for e in state.events() if e.kind == EventKind.GATE_APPROVED and e.inputs.get("gate") == gate.value]
+    acknowledged = set(approved[-1].inputs.get("acknowledged") or []) if approved else set()  # counsel's acknowledgement stands once approved
     unsupported = [
-        n for n in type(dossier.fields).model_fields if getattr(dossier.fields, n).status == FieldStatus.UNSUPPORTED
+        n for n in type(dossier.fields).model_fields
+        if getattr(dossier.fields, n).status == FieldStatus.UNSUPPORTED and n not in acknowledged
     ]
     brief = state.brief()
     resolved = {
@@ -87,6 +90,12 @@ def approve_gate(log: EventLog, case_id: str, gate: GateId, acknowledged: list[s
     Returns:
         The GATE_APPROVED event (actor 'counsel').
     """
+    if gate == GateId.GATE_2_EXPORT:  # Gate 2 covers the brief and the sparring record: it exists only once Gate 1 is approved and Vakeel has opened it
+        events = log.read(case_id)
+        if not views.gate_is_approved(events, GateId.GATE_1_DOSSIER):
+            raise GateNotApproved("Gate 2 cannot be approved before counsel has approved Gate 1 (plan §3.1)")
+        if views.gate_event(events, GateId.GATE_2_EXPORT) is None:
+            raise GateNotApproved("Gate 2 has not been opened: there is no brief to approve yet (plan §3.1)")
     status = gate_status(log, case_id, gate)
     ack = set(acknowledged or [])
     blocking = [f"UNSUPPORTED:{f}" for f in status.unresolved_unsupported if f not in ack]

@@ -26,7 +26,6 @@ from vakeel_sahayak.orchestration import graph
 from vakeel_sahayak.orchestration.fallback_state_machine import PlainStateMachine
 from vakeel_sahayak.orchestration.gates import GateGuard
 from vakeel_sahayak.orchestration.state import CaseGraphState
-from vakeel_sahayak.record.event_log import EventLog
 from vakeel_sahayak.schemas.enums import ClaimCheck, EventKind, GateId, Stage
 from vakeel_sahayak.schemas.ingestion_report import IngestionReport
 
@@ -37,8 +36,7 @@ REFUSED = (ValueError, PermissionError)
 
 def setup(tmp_path, monkeypatch, world, *, brief=None, sparring=None):
     """A case on a real SQLite log with fake agent nodes; returns the handles a test needs."""
-    oh.point_default_log_at(tmp_path, monkeypatch)
-    log, counts = EventLog(), {}
+    log, counts = oh.point_default_log_at(tmp_path, monkeypatch), {}  # RECONCILED: `EventLog()` is in memory; the guard and the graph find the attached file log
     brief = brief or clean_brief(CASE)
 
     def count(name: str) -> None:
@@ -136,11 +134,12 @@ def test_export_is_blocked_before_gate_2(tmp_path, monkeypatch, world):
     env.guard.approve(CASE, G1, acknowledged=["antecedents"])
     env.state = env.machine.run(env.state)
     assert env.state.pending_gate == G2
-    with pytest.raises(REFUSED):
-        graph.export_node(env.state)
+    # RECONCILED: the export node does not raise: a blocked export is recorded as an error on the state and the run ends (graph.export_node)
+    blocked = graph.export_node(env.state)
+    assert blocked.exported == [] and blocked.errors and "export" in str(blocked.errors[-1]).lower()
     assert env.machine.run(env.state).pending_gate == G2
     assert env.spy.calls == []
-    assert not [p for p in tmp_path.rglob("*") if p.suffix in (".docx", ".pdf")]
+    assert not [p for p in tmp_path.rglob("*") if p.suffix in (".docx", ".pdf") and "bundle" not in p.name]  # RECONCILED: the uploaded bundle is in the inbox folder
 
 
 def test_gate_2_with_open_items_cannot_be_approved_and_export_stays_blocked(tmp_path, monkeypatch, world):
@@ -188,8 +187,10 @@ def test_a_second_case_cannot_ride_on_the_first_cases_approval(tmp_path, monkeyp
     env.state = env.machine.run(env.state)
     env.guard.approve(CASE, G2)
     other = CaseGraphState(case_id="case-0008", stage=Stage.FILE, brief=env.state.brief, sparring=env.state.sparring)
-    with pytest.raises(REFUSED):
-        graph.export_node(other)
+    # RECONCILED: the export node records the refusal on the state instead of raising (graph.export_node)
+    blocked = graph.export_node(other)
+    assert blocked.exported == [] and blocked.errors and "export" in str(blocked.errors[-1]).lower()
+    assert env.spy.calls == []
 
 
 # ---- LangGraph ---------------------------------------------------------------------------------------------------

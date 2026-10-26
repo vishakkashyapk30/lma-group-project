@@ -58,10 +58,11 @@ class ChangeToolbox(h.ScenarioToolbox):
         return compute_change_set(self.approved_dossier, current, self.approved_rights, self.t_rights_check(case_id))
 
 
-def ground(gid: str, factor: Factor, text: str, dossier, rights, authority: tuple[str, int] | None = None, **depends) -> Ground:
+# RECONCILED: the fifth parameter was called `rights`, which collided with the `rights=[...]` dependency a caller passes by keyword (TypeError)
+def ground(gid: str, factor: Factor, text: str, dossier, rights_report, authority: tuple[str, int] | None = None, **depends) -> Ground:
     auths = [Authority(doc_id=authority[0], para=authority[1])] if authority else []
     g = Ground(id=gid, factor=factor, stance=FactorStance.FAVOURABLE, argument=text, authorities=auths, check=ClaimCheck.SUPPORTED,
-               state=ClaimState.CURRENT, depends_on=collect_dependencies(text, dossier, rights, auths))
+               state=ClaimState.CURRENT, depends_on=collect_dependencies(text, dossier, rights_report, auths))
     for key, value in depends.items():
         setattr(g.depends_on, key, value)
     return g

@@ -251,7 +251,7 @@ _ANTONYMS = [
     ({"convicted"}, {"acquitted"}),
     ({"first", "first_time"}, {"repeat", "habitual"}),
 ]
-_ALIAS = re.compile(r"\b(?:Co-accused|Accused|Complainant|IO|Witness|Person)-\d+\b")
+_ALIAS = re.compile(r"\b(?:Co-accused|Accused|Complainant|IO|Witness|Person)-\d+\b", re.IGNORECASE)
 _TOKEN = re.compile(r"[A-Za-z][A-Za-z_'-]*|\d+(?:[./]\d+)*|[ऀ-ॿ]+")
 
 

@@ -51,6 +51,8 @@ async def upload_folder(file: UploadFile, log: Annotated[EventLog, Depends(get_e
         ids.append(case_id)
     else:
         raise HTTPException(status_code=415, detail="desk upload takes a zip of PDFs or a single PDF")
+    if not ids:
+        raise HTTPException(status_code=422, detail="the zip holds no PDF")
     return ids
 
 

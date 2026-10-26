@@ -1,5 +1,9 @@
 """The default Munshi run is byte-identical to the run captured BEFORE the Sweep-3 Munshi variants (S17 guard and spotlighting, S7, P7) were added.
 
+RECONCILED 2026-10-26: the golden was re-captured after four default-behaviour fixes in the ingestion code (a closing date after a sentence
+("... is rejected. 30.09.2024") belongs to that sentence, "सं." no longer ends a sentence, Devanagari statute abbreviations such as "बी.एन.एस."
+read as BNS, tool-call events keep their parent id and source, and filed chunks now carry their route, language and confidence); the run has more tool calls and events than before. Variants must still leave this run unchanged.
+
 `golden_default_run.json`: digests of the ingestion report, the events in order (ids and times removed) and the tool calls in order, over the 14-page bundle.
 """
 

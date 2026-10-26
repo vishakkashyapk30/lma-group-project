@@ -1,5 +1,7 @@
 """The default Pairokar batch run is byte-identical to the run captured BEFORE the Sweep-3 serving variants (S14, S14b, S14c, S14d) were added.
 
+RECONCILED 2026-10-27: re-captured after the default-bail reason text became "opens in 3 days" (plan §11) instead of "day(s)".
+
 `golden_default_run.json`: digests of the cards in order (rank and next step), the cases run under a GPU budget, and the events, for six constructed files
 on stub runners.
 """

@@ -111,8 +111,14 @@ async def upload_audio(case_id: str, file: UploadFile, log: Annotated[EventLog, 
         if not keep:
             audio_path.unlink(missing_ok=True)
 
-    # Dictated facts are USER_STATED, never VERIFIED without a court record (plan §4.5).
+    # Dictated facts are USER_STATED, never VERIFIED without a court record (plan §4.5). The log holds pseudonymised text only (plan §16): the
+    # names in the transcript get the case's aliases (learned here too, so a name first heard in dictation is replaced everywhere later).
+    from vakeel_sahayak.privacy.pseudonymise import load_map, pseudonymise_text, save_map
+
+    mapping = load_map(case_id)
+    stated, _ = pseudonymise_text(transcript, case_id, mapping)
+    save_map(case_id, mapping)
     log.append(Event(event_id="", case_id=case_id, ts="", kind=EventKind.USER_ACTION, actor=COUNSEL,
-                     inputs={"action": "state_field", "field": "personal", "value": [transcript], "chat": "dictation"}))
+                     inputs={"action": "state_field", "field": "personal", "value": [stated], "chat": "dictation"}))
     question = f"I heard: {transcript} Please confirm these dates and sections before I rely on them."
     return UploadResponse(case_id=case_id, accepted=[Path(file.filename or "dictation.wav").name], questions=[question])

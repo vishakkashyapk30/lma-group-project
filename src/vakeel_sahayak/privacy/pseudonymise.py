@@ -216,6 +216,9 @@ _NOT_A_PERSON = re.compile(
 )  # 'The State' (a party of every bail order), a bare 'Vs', 'For Petitioner' are not people
 
 
+_ALIAS_AT = re.compile(r"(?:Co-accused|Accused|Complainant|IO|Witness|Person)-\d+\b", re.IGNORECASE)  # text that is already an alias is not a name
+
+
 def detect_names(text: str) -> list[NameSpan]:
     """Rule-based name spans (titles, police ranks, relations, role words) plus any registered detectors' spans."""
     spans: list[NameSpan] = []
@@ -223,7 +226,7 @@ def detect_names(text: str) -> list[NameSpan]:
     for pattern, fixed_role in _PATTERNS:
         for m in pattern.finditer(text):
             s, e = m.span(1)
-            if (s, e) not in seen and not _NOT_A_PERSON.match(" ".join(text[s:e].split())):
+            if (s, e) not in seen and not _NOT_A_PERSON.match(" ".join(text[s:e].split())) and not _ALIAS_AT.match(text, s):
                 seen.add((s, e))
                 spans.append(NameSpan(s, e, fixed_role or _role_near(text, s, e)))
     for detector in _DETECTORS:

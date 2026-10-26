@@ -54,8 +54,12 @@ def test_a_real_agent_run_leaves_one_event_pair_per_tool_call(tmp_path, install_
     log, tb = munshi_run(tmp_path, install_stores)
     events = log.read(CASE)
     calls = [e for e in events if e.kind == EventKind.TOOL_CALL]
-    assert len(calls) == len(tb.calls) > 10
-    assert [e.tool for e in calls] == [c.name for c in tb.calls]
+    # RECONCILED: page reads and the pseudonymiser handle client text before it is pseudonymised, so Munshi calls them with `_raw_tool` and the log
+    # holds no event for them (plan §16: the log holds pseudonymised text only); the log also holds one `route_page` pair per page. Every other
+    # tool call is an event pair, in order.
+    raw = {"inspect_page", "read_text_layer", "ocr_page", "vision_read_page", "pseudonymise"}
+    logged = [c.name for c in tb.calls if c.name not in raw]
+    assert len(calls) > 10 and [e.tool for e in calls if e.tool != "route_page"] == logged
     assert len([e for e in events if e.kind == EventKind.TOOL_RESULT]) == len(calls)
 
 

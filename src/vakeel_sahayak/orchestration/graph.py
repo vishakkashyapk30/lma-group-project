@@ -339,5 +339,13 @@ def build_graph(config: AppConfig) -> Any:
     builder.add_edge("change_detection", "redraft")
     builder.add_edge("redraft", "gate1")
 
-    checkpointer = open_graph_checkpointer(path=":memory:", config=config)
+    # One checkpoint file under the cases folder holds every case's thread (thread id = case id), so a graph built in a new process finds the gate a
+    # case was waiting at (plan §3.3). `load_config()` rebases the folder on $VS_DATA_DIR; the config handed in may be the bare defaults.
+    from pathlib import Path
+
+    from vakeel_sahayak.config import load_config
+
+    path = Path(load_config().paths.cases_dir) / "graph.sqlite"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    checkpointer = open_graph_checkpointer(path=str(path), config=config)
     return builder.compile(checkpointer=checkpointer)

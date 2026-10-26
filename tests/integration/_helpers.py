@@ -125,6 +125,12 @@ class Dispatch:
 
     def __call__(self, prompt: str, schema: dict | None) -> Any:
         title = (schema or {}).get("title")
+        if "### TASK: peshkar.extract_field" in prompt and "peshkar_extract" not in self.handlers:
+            # Peshkar reads each dossier field through the model task `peshkar.extract_field`, not the fake `extract_dossier` tool:
+            # answer it with the offline stand-in's rule-based reader, as the production offline mode does.
+            from vakeel_sahayak.models.offline_llm import OfflineLLM
+
+            return OfflineLLM(where="laptop").generate(prompt, json_schema=schema)
         kind = logical_kind(title, prompt)
         handler = self.handlers.get(kind)
         if handler is None:
@@ -174,8 +180,12 @@ def fat(items: list[dict], *keys: str) -> dict[str, Any]:
 
 
 def ids_in(prompt: str, ids: list[str]) -> list[str]:
-    """Which of `ids` occur in the prompt, in the order of `ids`."""
-    return [i for i in ids if re.search(rf"\b{re.escape(i)}\b", prompt)]
+    """Which of `ids` occur in the prompt, in the order of `ids`.
+
+    The scripted objections are found by their wording first: Abhiyojak numbers the objections it keeps in order (O1, O2, ...), so the id a
+    kept objection has in the prompt is not the id it has in the script (a discarded one leaves its number to the next)."""
+    by_text = [i for i in ids if any(o["id"] == i and o["objection"] in prompt for o in OBJECTIONS)]
+    return by_text or [i for i in ids if re.search(rf"\b{re.escape(i)}\b", prompt)]
 
 
 # =====================================================================================================================
@@ -481,7 +491,7 @@ def seed_state(file: str = "bundle_1.pdf", case_id: str = CASE_ID):
     (the graph state has no other field for it)."""
     from vakeel_sahayak.orchestration.state import CaseGraphState
 
-    return CaseGraphState(case_id=case_id, ingestion=IngestionReport(case_id=case_id, file=file))
+    return CaseGraphState(case_id=case_id, as_of=AS_OF, ingestion=IngestionReport(case_id=case_id, file=file))
 
 
 # =====================================================================================================================
@@ -546,7 +556,11 @@ def contract_steps(
 
 
 def detect_factor(prompt: str, default: Factor = Factor.PARITY_WITH_CO_ACCUSED) -> Factor:
-    """The factor a planning prompt is about: the only factor stem in the prompt, else the last one mentioned."""
+    """The factor a planning prompt is about: the one the instruction names ("... for the bail factor 'x'" / "ground 'x'") or the INPUT's `factor`,
+    else the only factor stem in the prompt, else the last one mentioned."""
+    named = re.search(r"(?:bail factor|ground|factor) '(\w+)'", prompt) or re.search(r'"factor": "(\w+)"', prompt)
+    if named and named.group(1) in {f.value for f in Factor}:
+        return Factor(named.group(1))
     hits = sorted(((prompt.rfind(f.value), f) for f in Factor if f.value in prompt), key=lambda t: t[0])
     return hits[-1][1] if hits else default
 
@@ -735,6 +749,8 @@ def patch_nodes(monkeypatch: Any, **nodes: Any) -> None:
 
     for name, fn in nodes.items():
         monkeypatch.setattr(graph, name, fn)
+        if name.removesuffix("_node") in getattr(graph, "NODES", {}):  # `build_graph` takes its nodes from this table, built at import
+            monkeypatch.setitem(graph.NODES, name.removesuffix("_node"), fn)
         for mod_name, mod in list(sys.modules.items()):
             if mod_name.startswith("vakeel_sahayak") and mod is not None and mod is not graph and hasattr(mod, name):
                 monkeypatch.setattr(mod, name, fn)

@@ -271,7 +271,7 @@ class MunshiAgent(BaseAgent):
 
         Args:
             kind: see behaviour
-            payload: keys `tool`, `inputs`, `outputs` and `sources` are used; the log holds pseudonymised text only
+            payload: keys `tool`, `inputs`, `outputs`, `sources` and `parent_id` are used; the log holds pseudonymised text only
 
         Returns:
             The event.
@@ -288,6 +288,7 @@ class MunshiAgent(BaseAgent):
                 inputs=payload.get("inputs", {}),
                 outputs=payload.get("outputs", {}),
                 sources=payload.get("sources", []),
+                parent_id=payload.get("parent_id"),
             )
         )
 
@@ -514,7 +515,7 @@ class MunshiAgent(BaseAgent):
         declined, reason = is_declined_matter(sections, [*(d.doc_type.value for d in self._run.docs), *cues])
         if declined:
             self._run.declined = reason
-            self.emit(EventKind.AGENT_MESSAGE, {"tool": "sensitive_matters", "outputs": {"declined": True, "reason": reason}})
+            self.emit(EventKind.AGENT_MESSAGE, {"tool": "sensitive_matters", "outputs": {"declined": True, "reason": reason, "excluded_from_evaluation": True}})
 
     def file_items(self, state: CaseGraphState) -> FiledCounts:
         """Write items to the case shelf with sources; pseudonymise first (step 3).

@@ -58,14 +58,15 @@ _END_CUE = _c(r"(?:till|until|upto|up\s+to|next\s+date(?:\s+of\s+hearing)?|furth
 _COURT = _c(r"sessions?\s+(?:court|judge)|additional\s+sessions|high\s+court|supreme\s+court|(?:chief\s+judicial\s+|metropolitan\s+|judicial\s+)?magistrate|special\s+court|सत्र\s+न्यायालय|उच्च\s+न्यायालय")
 _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("first_remand", _c(r"first\s+remand|initial\s+remand|remanded\s+(?:for\s+the\s+first\s+time|first)")),
-    ("fir_date", _c(r"\bF\.?I\.?R\.?\b[^;]{0,80}?\b(?:registered|lodged|dated|came\s+to\s+be\s+registered)|(?:registered|lodged)[^.]{0,60}?\bF\.?I\.?R|प्राथमिकी[^.।]{0,80}दर्ज|एफ\.?आई\.?आर[^.।]{0,60}दर्ज")),
+    ("fir_date", _c(r"\bF\.?I\.?R\.?\b[^;]{0,80}?\b(?:registered|lodged|dated|came\s+to\s+be\s+registered)|information\s+report[^;]{0,60}?\b(?:registered|lodged|dated)|प्रथम\s+सूचना\s+रिपोर्ट[^;।]{0,40}?दिनांक|(?:registered|lodged)[^.]{0,60}?\bF\.?I\.?R|प्राथमिकी[^.।]{0,80}दर्ज|एफ\.?आई\.?आर[^.।]{0,60}दर्ज")),
     ("charge_sheet_date", _c(r"charge[\s-]?sheet[^.]{0,60}?\b(?:filed|submitted|laid|presented)|(?:filed|submitted|laid)[^.]{0,40}?charge[\s-]?sheet|final\s+report[^.]{0,40}?(?:filed|submitted)")),
-    ("offence_date", _c(r"(?:date\s+of\s+(?:the\s+)?(?:incident|occurrence|offence|alleged\s+offence))|(?:incident|offence|occurrence)[^.]{0,40}?(?:occurred|took\s+place|happened|committed)|alleged\s+to\s+have\s+(?:been\s+)?committed|घटना\s+(?:दिनांक|घटित)")),
+    ("offence_date", _c(r"(?:date\s+of\s+(?:the\s+)?(?:incident|occurrence|offence|alleged\s+offence))|(?:incident|offence|occurrence)[^.]{0,40}?(?:occurred|took\s+place|happened|committed)|alleged\s+to\s+have\s+(?:been\s+)?committed|घटना\s+(?:दिनांक|घटित|dated)")),
     ("arrest_date", _c(r"\barrest(?:ed)?\b|गिरफ्?तार")),
     ("remand", _c(r"remand(?:ed)?\b|रिमांड")),
     ("bail_outcome", _c(r"bail[^.]{0,60}?(?:rejected|dismissed|granted|allowed|declined|refused|denied)|(?:rejected|dismissed|allowed|granted)[^.]{0,40}?bail|जमानत[^.।]{0,40}(?:खारिज|मंजूर|स्वीकार)")),
 ]
 _REJECT = _c(r"reject|dismiss|declin|refus|den(?:y|ied)|खारिज")
+_ONLY_DATE = re.compile(rf"\W*(?:{DATE_RE.pattern})\W*", re.IGNORECASE)
 _DOC_DATE = _c(rf"(?:dated?|दिनांक|announced|pronounced|signed)\s*(?:on|:|-|this)?\s*[:\-]?\s*(?P<d>{DATE_RE.pattern})")
 
 
@@ -159,7 +160,13 @@ def _segments(text: str) -> list[str]:
             current = ""
     if current:
         parts.append(current)
-    return [sent for part in parts for sent in split_sentences(part)]
+    sentences: list[str] = []
+    for sent in (sent for part in parts for sent in split_sentences(part)):
+        if sentences and _ONLY_DATE.fullmatch(sent.strip()):  # "... is rejected. 30.09.2024": a closing date belongs to the sentence before it
+            sentences[-1] = f"{sentences[-1]} {sent.strip()}"
+        else:
+            sentences.append(sent)
+    return sentences
 
 
 def _sentence_with_date(text: str, iso: str) -> str:

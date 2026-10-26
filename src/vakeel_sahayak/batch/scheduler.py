@@ -50,6 +50,10 @@ EventSink = Callable[[str, str, str, dict[str, Any]], None]  # (case_id, tool, t
 _BATCH: contextvars.ContextVar[bool] = contextvars.ContextVar("vs_batch_mode", default=False)
 
 
+class MatterDeclined(Exception):  # noqa: N818 - not an error of the run: the matter is left out on purpose
+    """Raised by a stage-1 runner when the file is a sensitive matter (sexual offence, POCSO, juvenile; plan §16): no card, no full run."""
+
+
 class BulkExportError(PermissionError):
     """Raised on any attempt to export from the batch path: every case needs its own approval (plan §11)."""
 
@@ -199,6 +203,10 @@ class Scheduler:
             except (KeyboardInterrupt, SystemExit):
                 queue.release(cid, STAGE1)
                 raise
+            except MatterDeclined as exc:
+                queue.decline(cid, str(exc))
+                self._emit(cid, "stage1_declined", "Declined at intake: a sensitive matter is left out of the batch.", reason=str(exc))
+                continue
             except Exception as exc:  # noqa: BLE001 - one unreadable file must not stop the shard
                 status = queue.fail(cid, f"{type(exc).__name__}: {exc}", STAGE1)
                 self._emit(cid, "stage1_failed", f"Stage 1 failed ({status}).", error=type(exc).__name__, status=status)

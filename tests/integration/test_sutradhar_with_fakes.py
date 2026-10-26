@@ -59,7 +59,8 @@ def allowed(step, contract: dict) -> bool:
     if slot is None:
         return False
     spec = tool_specs()[step.tool]
-    return set(map(str, spec.stores)) <= set(slot.get("stores", [])) if spec.stores else step.tool in slot.get("tools", [])
+    # RECONCILED: compare store values ('case.docs'); `str()` of a str-mixin Enum member is 'StoreName.CASE_DOCS' on Python 3.11+
+    return {getattr(s, "value", s) for s in spec.stores} <= set(slot.get("stores", [])) if spec.stores else step.tool in slot.get("tools", [])
 
 
 # ---- plan --------------------------------------------------------------------------------------------------------
@@ -168,11 +169,18 @@ def test_forbidden_orders_never_reach_an_evidence_pack(install_stores):
     assert seen and not seen & h.FORBIDDEN_DOC_IDS
 
 
+def run_and_delegate(env):
+    """RECONCILED: `SutradharAgent.run` leaves one evidence pack per factor and stops (its docstring); handing the packs to Vakeel and Abhiyojak is
+    `delegate`, which the graph's draft and spar nodes call. The whole job in one go is the two calls."""
+    state = env.agent.run(env.state)
+    return env.agent.delegate(state, list(state.evidence_packs))
+
+
 # ---- the whole run: budget stop, missing slots as open issues ------------------------------------------------------
 def test_full_run_produces_a_brief_with_grounds_within_budget(install_stores):
     """`run` plans every applicable factor, delegates to Vakeel and Abhiyojak, and stays within 8 store calls per factor."""
     env = build(install_stores)
-    out = env.agent.run(env.state)
+    out = run_and_delegate(env)
     assert out.brief is not None and out.brief.grounds
     assert out.sparring is not None
     assert all(v <= 8 for v in env.budgets.snapshot().store_calls.values())
@@ -182,7 +190,7 @@ def test_full_run_produces_a_brief_with_grounds_within_budget(install_stores):
 def test_authorities_in_the_brief_are_court_reasoning_paragraphs_that_were_retrieved(install_stores):
     """Plan §5.2, §8.1: authorities come from `reasoning` paragraphs only (never the argument bank) and from nowhere else."""
     env = build(install_stores)
-    out = env.agent.run(env.state)
+    out = run_and_delegate(env)
     reasoning = {(r.doc_id, r.para) for r in env.world.stores[StoreName.CASELAW_REASONING].rows}
     cited = {(a.doc_id, a.para) for g in out.brief.grounds for a in g.authorities}
     assert cited and cited <= reasoning
@@ -192,7 +200,7 @@ def test_authorities_in_the_brief_are_court_reasoning_paragraphs_that_were_retri
 def test_missing_authority_becomes_an_open_issue_in_the_brief(install_stores):
     """Plan §6.2 step 2.5: with no parity authority anywhere, the slot stays MISSING and the brief says so (MISSING_EVIDENCE)."""
     env = build(install_stores, world=h.case_0007_world(excluded=set(ALL_PARAGRAPH_DOCS)))
-    out = env.agent.run(env.state)
+    out = run_and_delegate(env)
     issues = [i for i in out.brief.open_issues if i.type == OpenIssueType.MISSING_EVIDENCE]
     assert any("parity" in i.item.lower() and "authority" in i.item.lower() for i in issues), out.brief.open_issues
     assert env.budgets.snapshot().store_calls[PARITY.value] <= 8
@@ -204,7 +212,7 @@ def test_case_token_budget_stops_the_run_and_is_logged(install_stores):
                      ground=h.ground_responder(), objections=h.objections_responder(), reply=h.reply_responder(),
                      judge=h.judge_responder(), free="ok")
     env = build(install_stores, llm=llm)
-    out = env.agent.run(env.state)
+    out = run_and_delegate(env)
     assert [e for e in env.ctx.log.events if e.kind == EventKind.BUDGET_HIT]
     assert len(llm.calls) <= 6  # ASSUMPTION: the 150K cap (60K per call) is reached after 3 calls; a little overshoot is tolerated
     assert out.brief is not None and out.brief.open_issues  # what could not be done is reported, not dropped

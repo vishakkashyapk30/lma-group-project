@@ -39,12 +39,17 @@ SOON_CODES = (CODE_DEFAULT_BAIL_SOON, CODE_S479_SOON)
 S479_TIE = 0.5  # on the same day a default-bail window goes before an s.479 threshold (the stronger right; plan section 11)
 _NO_DEADLINE = 3
 
-_TEXT_OPEN = "Default-bail window open for {days} day(s) (BNSS s.187(3))"
-_TEXT_SOON = "Default-bail window opens in {days} day(s) (BNSS s.187(3))"
-_TEXT_CLOSED = "Default-bail window closed: charge sheet {days} day(s) past the limit (BNSS s.187(3))"
+_TEXT_OPEN = "Default-bail window open for {days} (BNSS s.187(3))"
+_TEXT_SOON = "Default-bail window opens in {days} (BNSS s.187(3))"  # "3 days" (plan §11); the number comes from `_n_days`
+_TEXT_CLOSED = "Default-bail window closed: charge sheet {days} past the limit (BNSS s.187(3))"
 _TEXT_479_SOON = "s.479 threshold reached in {days} day(s) (BNSS s.479)"
 _TEXT_479 = "s.479 threshold crossed {days} day(s) ago (BNSS s.479)"
 _TEXT_CUSTODY = "In custody {days} days"
+def _n_days(n: int) -> str:
+    """'3 days' (the card text of plan §11 reads 'opens in 3 days'; always plural, so a reader and a regex see one form)."""
+    return f"{n} days"
+
+
 _PARSE = {
     CODE_DEFAULT_BAIL_OPEN: re.compile(r"Default-bail window open for (\d+) day"),
     CODE_DEFAULT_BAIL_SOON: re.compile(r"Default-bail window opens in (\d+) day"),
@@ -180,7 +185,7 @@ def assess(rights: RightsReport | None, custody_days: int | None, missing_docs: 
     if db is not None:
         kind, days = db
         code, text = {"open": (CODE_DEFAULT_BAIL_OPEN, _TEXT_OPEN), "soon": (CODE_DEFAULT_BAIL_SOON, _TEXT_SOON), "closed": (CODE_DEFAULT_BAIL_CLOSED, _TEXT_CLOSED)}[kind]
-        reasons.append(UrgencyReason(code, days, text.format(days=days), "BNSS s.187(3)"))
+        reasons.append(UrgencyReason(code, days, text.format(days=_n_days(days)), "BNSS s.187(3)"))
         if kind != "closed":  # a closed window is a threshold passed (criterion 2), no longer a deadline
             sub = SUB_ORDER[code]
         left, past = (days, 0) if kind == "soon" else (0, days)

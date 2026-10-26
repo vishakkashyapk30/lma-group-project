@@ -37,13 +37,19 @@ async def post_chat(case_id: str, body: ChatRequest, log: Annotated[EventLog, De
 
     cs = service.case_state(log, case_id)
     state = CaseGraphState(case_id=case_id, log_path=log.db_path, dossier=cs.dossier(), rights=cs.rights_report())
-    question = ChatMessage(message_id=uuid.uuid4().hex, case_id=case_id, role="counsel", text=body.text)
+    # Counsel may type a name: the log and the agents see the case's alias instead (plan §16); the alias map stays on the laptop.
+    from vakeel_sahayak.privacy.pseudonymise import load_map, pseudonymise_text, save_map
+
+    mapping = load_map(case_id)
+    text, _ = pseudonymise_text(body.text, case_id, mapping)
+    save_map(case_id, mapping)
+    question = ChatMessage(message_id=uuid.uuid4().hex, case_id=case_id, role="counsel", text=text)
     _persist(log, case_id, question, EventKind.USER_ACTION, COUNSEL)
 
     def answer_in_thread() -> ChatMessage:
         sutradhar = create_agent(AgentName.SUTRADHAR, service.agent_context(log, case_id))
         try:
-            return sutradhar.answer_chat(state, body.text)
+            return sutradhar.answer_chat(state, text)
         finally:
             sutradhar.close()
 

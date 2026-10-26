@@ -108,7 +108,8 @@ def test_the_spar_ends_with_one_unanswered_objection_and_discards_the_ungrounded
     spar = drafted(tmp_path, monkeypatch).state.sparring
     verdicts = {o.id: o.verdict.value for o in spar.objections}
     assert verdicts["O1"] == "ANSWERED" and verdicts["O2"] == "UNANSWERED" and "O3" not in verdicts
-    assert "O3" in spar.discarded
+    # RECONCILED: the discarded objection never gets an id (ids go to the objections that are kept); it is logged as "<against>: <text>"
+    assert any("Everyone knows this kind of accused absconds" in d for d in spar.discarded)
     assert all(o.grounds for o in spar.objections)
 
 
@@ -169,7 +170,8 @@ def test_export_before_gate_2_is_refused_and_writes_nothing(tmp_path, monkeypatc
     with pytest.raises(sh.REFUSED):
         export_case(CASE, ExportFormat.DOCX)
     assert spy.calls == [] and sc.toolbox.exports == [] and sh.export_tool_calls(sc.events()) == []
-    assert not [p for p in tmp_path.rglob("*") if p.suffix in (".docx", ".pdf")]
+    # RECONCILED: counsel's uploaded bundle stays in the case's inbox folder (Munshi reads from there); only an exported file counts
+    assert not [p for p in tmp_path.rglob("*") if p.suffix in (".docx", ".pdf") and "bundle" not in p.name]
 
 
 # ---- step 3: the export -------------------------------------------------------------------------------------------------

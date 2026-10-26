@@ -771,10 +771,14 @@ class PeshkarAgent(BaseAgent):
                 self._decision("ask_user", asked=[a.text for a in to_ask], answered=len(answers), deferred=[a.text for a in deferred])
         elif deferred:
             self._decision("ask_user", asked=[], deferred=[a.text for a in deferred], reason="the round's questions are used up")
+        blank: list[str] = []
         for ask, answer in zip(to_ask, answers, strict=False):
-            ask.apply(answer)
+            if answer.strip():
+                ask.apply(answer)
+            else:  # an empty reply is no answer: the question stays open for counsel
+                blank.append(ask.text)
         unanswered = [a.text for a in to_ask[len(answers) :]]
-        return list(dict.fromkeys(stale_open + unanswered + [a.text for a in deferred]))
+        return list(dict.fromkeys(stale_open + unanswered + blank + [a.text for a in deferred]))
 
     # ------------------------------------------------------------------ List of Dates (plan §7.2)
 
@@ -855,7 +859,7 @@ class PeshkarAgent(BaseAgent):
         """
         state = self._state(state)
         base = changes.baseline(self.log.read(self.case_id), self.case_id)
-        previous = base.rights if base is not None and base.rights is not None else self.case_state().rights_report()
+        previous = base.rights if base is not None and base.rights is not None else (self.case_state().rights_report() or state.rights)
         diff = self._tool("diff_case_state", case_id=self.case_id, since_hash=base.dossier_hash if base else None)
         if isinstance(diff, ToolError):
             self.error("diff_failed", diff.message, tool="diff_case_state", tool_error=diff.kind)

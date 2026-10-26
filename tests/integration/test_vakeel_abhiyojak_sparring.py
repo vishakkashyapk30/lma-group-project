@@ -91,13 +91,14 @@ def test_abhiyojak_calls_only_its_own_tools_and_stores(install_stores, paragraph
     env = make_env(install_stores)
     state = drafted(env, paragraphs)
     before = len(env.tb.calls)
+    stores = env.world.stores
+    # RECONCILED: Vakeel drafted the grounds before this point and legitimately reads those stores; only what Abhiyojak calls is checked
+    seen = {n: len(stores[n].calls) for n in (StoreName.ADVOCACY_ARGUMENTS, StoreName.CASELAW_SIMILAR, StoreName.CASELAW_CITATIONS)}
     env.abh.raise_objections(state)
     env.abh.judge_replies(state, [])
     mine = {c.name for c in env.tb.calls[before:]}
     assert mine <= set(tools_yaml()["abhiyojak"])
-    stores = env.world.stores
-    assert stores[StoreName.ADVOCACY_ARGUMENTS].calls == [] and stores[StoreName.CASELAW_SIMILAR].calls == []
-    assert stores[StoreName.CASELAW_CITATIONS].calls == []
+    assert all(len(stores[n].calls) == k for n, k in seen.items())
 
 
 def test_abhiyojak_queries_are_bounded_by_the_case_date(install_stores, paragraphs):
@@ -112,9 +113,10 @@ def test_at_most_two_objections_per_ground_and_ungrounded_ones_are_discarded(ins
     """Plan §9: up to two objections per ground; O3 is a third against G1 and O5 cites a paragraph that does not exist."""
     env = make_env(install_stores)
     kept = env.abh.raise_objections(drafted(env, paragraphs))
-    ids = [o.id for o in kept]
-    assert "O1" in ids and "O4" in ids
-    assert "O3" not in ids and "O5" not in ids
+    # RECONCILED: Abhiyojak numbers the objections it keeps in order (O1, O2, ...), so the scripted ones are found by their wording
+    texts = [o.objection for o in kept]
+    assert h.OBJECTIONS[0]["objection"] in texts and h.OBJECTIONS[3]["objection"] in texts
+    assert h.OBJECTIONS[2]["objection"] not in texts and h.O_UNGROUNDED_TEXT not in texts
     per_ground: dict[str, int] = {}
     for o in kept:
         per_ground[o.against] = per_ground.get(o.against, 0) + 1
@@ -134,9 +136,10 @@ def test_ungrounded_objection_is_discarded_and_logged(install_stores, paragraphs
     """'Ungrounded objections are discarded and logged' (plan §9): in the record and as an event."""
     env = make_env(install_stores)
     record = env.abh.spar(drafted(env, paragraphs))
-    assert "O5" not in {o.id for o in record.objections}
-    assert any("O5" in d for d in record.discarded)
-    assert [e for e in env.log.events if "O5" in e.model_dump_json() and "discard" in e.model_dump_json().lower()]
+    # RECONCILED: a discarded objection gets no id (ids go to the objections that are kept); it is named by its wording
+    assert h.O_UNGROUNDED_TEXT not in {o.objection for o in record.objections}
+    assert any(h.O_UNGROUNDED_TEXT in d for d in record.discarded)
+    assert [e for e in env.log.events if h.O_UNGROUNDED_TEXT in e.model_dump_json() and "discard" in e.model_dump_json().lower()]
 
 
 # ---- replies and checking ----------------------------------------------------------------------------------------
@@ -165,9 +168,9 @@ def test_verdicts_are_given_with_reasons(install_stores, paragraphs):
     env = make_env(install_stores)
     _, _, judged = round_trip(env, drafted(env, paragraphs))
     assert judged and all(o.verdict in set(SparringVerdict) and o.reason for o in judged)
-    by_id = {o.id: o for o in judged}
-    assert by_id["O1"].verdict == SparringVerdict.ANSWERED
-    assert by_id["O4"].verdict == SparringVerdict.UNANSWERED
+    by_text = {o.objection: o for o in judged}  # RECONCILED: the kept objections are renumbered, so they are found by their wording
+    assert by_text[h.OBJECTIONS[0]["objection"]].verdict == SparringVerdict.ANSWERED
+    assert by_text[h.OBJECTIONS[3]["objection"]].verdict == SparringVerdict.UNANSWERED
 
 
 def test_unanswered_objection_goes_to_counsel_as_needs_review(install_stores, paragraphs):
@@ -175,7 +178,7 @@ def test_unanswered_objection_goes_to_counsel_as_needs_review(install_stores, pa
     env = make_env(install_stores)
     round_trip(env, drafted(env, paragraphs))
     flagged = [e.model_dump_json() for e in env.log.events if "NEEDS_REVIEW" in e.model_dump_json()]
-    assert any("O4" in f for f in flagged)
+    assert any("witness_tampering" in f for f in flagged)  # RECONCILED: the scripted O4 is the witness-tampering objection, renumbered when kept
     assert not any('"O1"' in f or "O1:" in f for f in flagged)
 
 

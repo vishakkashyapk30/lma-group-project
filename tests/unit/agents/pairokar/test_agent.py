@@ -11,6 +11,7 @@ from tests.fakes.toolbox import FakeToolbox
 from tests.unit.agents._helpers import build_agent, models_yaml, tool_specs, tools_yaml
 from vakeel_sahayak.agents.base import BaseAgent
 from vakeel_sahayak.agents.pairokar.agent import PairokarAgent
+from vakeel_sahayak.batch.queue import TriageQueue
 from vakeel_sahayak.schemas.enums import AgentName, EventKind
 from vakeel_sahayak.schemas.triage import TriageCard
 
@@ -103,6 +104,7 @@ def queued_cards(n: int) -> list[TriageCard]:
 
 def run_stage2(cards, budget_hours, toolbox=None):
     agent, ctx, toolbox = build_agent(PairokarAgent, toolbox=toolbox or FakeToolbox(build_world(), gate2_approved=True))
+    agent.queue = TriageQueue(":memory:")  # RECONCILED: the default queue is now the durable file under the data directory; each run here starts empty
     done = agent.stage2(cards, budget_hours)
     return done, ctx, toolbox
 

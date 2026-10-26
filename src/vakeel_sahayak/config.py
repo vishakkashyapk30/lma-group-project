@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import os
 from pathlib import Path
 from typing import Any
@@ -103,15 +104,22 @@ def _environment(config_dir: Path) -> dict[str, str]:
     return merged
 
 
+_YAML_CACHE: dict[tuple[str, int, int], Any] = {}
+
+
 def _read_yaml(config_dir: Path, name: str, default: Any) -> Any:
     """Read configs/<name>.yaml, returning `default` when the file is absent or empty."""
     path = config_dir / f"{name}.yaml"
     if not path.is_file():
         return default
-    try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except yaml.YAMLError as exc:
-        raise ValueError(f"invalid YAML in {path}: {exc}") from exc
+    stat = path.stat()
+    key = (str(path), stat.st_mtime_ns, stat.st_size)
+    if key not in _YAML_CACHE:  # parsing is slow in pure Python and load_config runs on every model-role lookup; a changed file is re-read
+        try:
+            _YAML_CACHE[key] = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except yaml.YAMLError as exc:
+            raise ValueError(f"invalid YAML in {path}: {exc}") from exc
+    data = copy.deepcopy(_YAML_CACHE[key])  # callers may edit what they get
     return default if data is None else data
 
 

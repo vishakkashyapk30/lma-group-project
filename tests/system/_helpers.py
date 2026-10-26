@@ -33,10 +33,11 @@ import json
 import re
 import sys
 import zipfile
+from collections.abc import Callable
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from tests.fakes.context import make_context
 from tests.fakes.data import CaseWorld, build_world
@@ -74,6 +75,7 @@ from vakeel_sahayak.schemas.ingestion_report import DocumentEntry, IngestionRepo
 from vakeel_sahayak.schemas.retrieval_plan import BudgetLeft, PlanStep, RetrievalPlan
 from vakeel_sahayak.schemas.rights_report import RightsCheckResult, RightsReport
 from vakeel_sahayak.schemas.sparring import Objection, ObjectionGround, Reply, SparringRecord
+from vakeel_sahayak.schemas.store_rows import TimelineEvent
 
 CASE_ID = "case-0007"
 AS_OF = "2025-02-03"
@@ -137,6 +139,10 @@ def messy_bundle_pages() -> list[BundlePage]:
     remand_1 = [page(pdfgen.REMAND_PAGE, DocumentType.REMAND_ORDER, new_doc=(i == 0)) for i in range(3)]
     remand_2 = [page(REMAND_PAGE_2, DocumentType.REMAND_ORDER, new_doc=(i == 0)) for i in range(3)]
     bail = [page(pdfgen.BAIL_ORDER_PAGE, DocumentType.BAIL_ORDER, new_doc=(i == 0)) for i in range(3)]
+    # the facts case-0007's dossier holds beyond the pdfgen pages (parity and the sole-earner plea) are stated in the bundle, so Peshkar can read them
+    bail[1] = page(pdfgen.BAIL_ORDER_PAGE.replace(
+        "Heard counsel.", "Heard counsel. The co-accused is admitted to bail on 05.12.2024. The applicant is the sole earning member of his family."),
+        DocumentType.BAIL_ORDER)
     bail.append(page(pdfgen.ORDER_SHEET_PAGE, DocumentType.BAIL_ORDER))
     pages = fir + remand_1 + remand_2 + bail
     assert len(pages) == 14
@@ -182,6 +188,18 @@ class SystemToolbox(FakeToolbox):
 
     def t_diff_case_state(self, case_id: str, since_hash: str | None = None) -> ChangeSet:
         return self.pending_change or ChangeSet(case_id=case_id, trigger="new_document")
+
+    def t_rights_check(self, case_id: str, as_of: str | None = None):
+        """The case's radar report; once a change set is pending, the checks it says changed show the status they moved to
+        (Peshkar re-runs the radar after a change and reports the statuses that differ from the approved report)."""
+        report = super().t_rights_check(case_id, as_of)
+        moved = set(self.pending_change.rights_changed) if self.pending_change is not None else set()
+        if not moved:
+            return report
+        flip = {RightsStatus.WINDOW_CLOSED: RightsStatus.CHECK}
+        checks = [c.model_copy(update={"status": flip.get(c.status, RightsStatus.WINDOW_CLOSED)}) if c.check.value in moved else c
+                  for c in report.checks]
+        return report.model_copy(update={"checks": checks})
 
     def t_pseudonymise(self, text: str, case_id: str) -> str:
         if self.pseudonymiser is not None:
@@ -266,7 +284,7 @@ def build_batch(n: int = 120, planted_indexes: tuple[int, ...] = PLANTED_INDEXES
     a missing custody certificate. No unplanted case has a legal deadline within 7 days."""
     base_dossier = build_world().dossier
     cases: list[BatchCase] = []
-    planted_map = dict(zip(planted_indexes, planted_days_left))
+    planted_map = dict(zip(planted_indexes, planted_days_left, strict=False))
     for i in range(1, n + 1):
         cid = f"case-{i:04d}"
         planted = i in planted_map
@@ -306,11 +324,17 @@ def build_batch(n: int = 120, planted_indexes: tuple[int, ...] = PLANTED_INDEXES
         dossier = base_dossier.model_copy(deep=True, update={"case_id": cid})
         dossier.fields.custody_days = TrackedField[int](value=custody, source=SourceRef(tool="date_calc"),
                                                         status=FieldStatus.COMPUTED)
+        # The file holds what Munshi's checklist asks for (FIR, remand order with the arrest, an earlier bail order, the custody
+        # certificate), so the only gap is the one planted in `missing`.
         pages = [page(f"FIR No. {i}/2024 PS-{i % 9} under Section 318(4) BNS", DocumentType.FIR, new_doc=True),
-                 page(pdfgen.REMAND_PAGE, DocumentType.REMAND_ORDER, new_doc=True)]
+                 page(pdfgen.REMAND_PAGE, DocumentType.REMAND_ORDER, new_doc=True),
+                 page(pdfgen.BAIL_ORDER_PAGE, DocumentType.BAIL_ORDER, new_doc=True)]
+        if not missing:
+            pages.append(page("CUSTODY CERTIFICATE\nThe accused Accused-1 is in judicial custody since 21.08.2024.",
+                              DocumentType.CUSTODY_CERTIFICATE, new_doc=True))
         cases.append(BatchCase(cid, f"batch/{cid}.pdf", planted, days_left, custody, missing, _rights(cid, db, custody),
                                dossier, pages))
-    assert sum(c.planted for c in cases) == len(planted_indexes)
+    assert sum(c.planted for c in cases) == len([i for i in planted_indexes if i <= n])
     return cases
 
 
@@ -355,6 +379,7 @@ GROUNDS = {
 }
 
 
+
 def plan(factor: Factor, tool: str, args: dict[str, Any], slot: str = "authority") -> RetrievalPlan:
     return RetrievalPlan(factor=factor, round=1, budget_left=BudgetLeft(store_calls=6, tokens=9000),
                          steps=[PlanStep(slot=slot, tool=tool, args=args)])
@@ -377,28 +402,103 @@ O2_JUDGED = O2_RAISED.model_copy(update={"reply": None, "verdict": SparringVerdi
                                          "reason": "No reply was drafted."})
 
 
+_FACTOR_IN_PROMPT = re.compile(r"(?:ground|factor) '(\w+)'")
+
+
+def by_factor(table: dict[str, Any]) -> Callable[[str, dict | None], Any]:
+    """A scripted responder keyed by the factor the prompt names ("Draft the ground 'x'", "plan ... factor 'x'"); a factor with no entry is
+    left to the offline model (the client falls back when a responder raises AssertionError)."""
+    def respond(prompt: str, schema: dict | None) -> Any:
+        m = _FACTOR_IN_PROMPT.search(prompt)
+        if m is None or m.group(1) not in table:
+            raise AssertionError(f"no script for factor {m.group(1) if m else None!r}")
+        hit = table[m.group(1)]
+        return hit.next() if isinstance(hit, Seq) else hit
+
+    return respond
+
+
 def ada_client(*, grounds: tuple[str, ...] = ("G1", "G2"), redraft: Ground | None = None,
                chat: list[tuple[str, Any]] | None = None, extra_grounds: list[Ground] | None = None) -> ScriptedLLM:
     """The Ada-side client: retrieval plans per factor, drafted grounds (then `redraft` for an incremental re-draft), the
-    objections of sparring (raise, judge) and the scripted chat answers. Never strict: unscripted free text is ''."""
+    objections of sparring (raise, judge) and the scripted chat answers. Never strict: what is not scripted is answered by the offline model.
+
+    The drafts are keyed by the factor of each scripted ground; `scripted_factors` lists them in ground order, and `Scenario.through_draft`
+    keeps exactly those factors, in that order, so the ids G1, G2, ... Vakeel gives are the scripted ones."""
     drafted: list[Ground] = [GROUNDS[g] for g in grounds] + list(extra_grounds or [])
-    if redraft is not None:
-        drafted.append(redraft)
-    plans = [plan(Factor.PARITY_WITH_CO_ACCUSED, "search_reasoning",
-                  {"factor": "parity_with_co_accused", "section_family": ["BNS 318(4)", "IPC 420"], "before": AS_OF,
-                   "outcome": "granted", "k": 10}),
-             plan(Factor.CHARGE_SHEET_FILED, "search_reasoning",
-                  {"factor": "charge_sheet_filed", "section_family": ["BNS 318(4)", "IPC 420"], "before": AS_OF, "k": 10})]
-    return ScriptedLLM(
-        by_schema={"RetrievalPlan": Seq(*plans), "Ground": Seq(*drafted),
-                   "Objection": Seq(O1_RAISED, O2_RAISED, O3_UNGROUNDED, O1_JUDGED, O2_JUDGED),
+    plans = {
+        Factor.PARITY_WITH_CO_ACCUSED.value: plan(Factor.PARITY_WITH_CO_ACCUSED, "search_reasoning",
+                                                  {"factor": "parity_with_co_accused", "section_family": ["BNS 318(4)", "IPC 420"], "before": AS_OF,
+                                                   "outcome": "granted", "k": 10}),
+        Factor.CHARGE_SHEET_FILED.value: plan(Factor.CHARGE_SHEET_FILED, "search_reasoning",
+                                              {"factor": "charge_sheet_filed", "section_family": ["BNS 318(4)", "IPC 420"], "before": AS_OF, "k": 10}),
+    }
+    # The model-side schemas of the real agents (agents/*/prompts.py): the model writes the sentences and the authority ids of a ground
+    # (Vakeel adds id, factor and stance), the list of objections, the reply and the verdict on a reply.
+    def text_of(g: Ground) -> dict[str, Any]:
+        return {"argument": g.argument, "authorities": [{"doc_id": a.doc_id, "para": a.para} for a in g.authorities]}
+
+    texts = {g.factor.value: text_of(g) for g in drafted}
+    if redraft is not None:  # an incremental re-draft of the same factor gives the new text on its next draft call
+        texts[redraft.factor.value] = Seq(texts[redraft.factor.value], text_of(redraft))
+
+    def raised(o: Objection) -> dict[str, Any]:
+        return {"against": o.against, "factor": o.factor, "objection": o.objection,
+                "grounds": [g.model_dump(exclude_none=True) for g in o.grounds]}
+
+    def judged(o: Objection) -> dict[str, Any]:
+        return {"verdict": o.verdict.value, "reason": o.reason}
+
+    llm = OfflineBackedLLM(
+        "ada",
+        by_schema={"RetrievalPlan": by_factor({k: v for k, v in plans.items()}), "Ground": by_factor(texts),
+                   "RaisedObjections": {"objections": [raised(O1_RAISED), raised(O2_RAISED), raised(O3_UNGROUNDED)]},
+                   "JudgedReply": Seq(judged(O1_JUDGED), judged(O2_JUDGED)),
                    "Reply": O1_JUDGED.reply},
-        by_prompt=list(chat or []), strict=False, default="", where="ada")
+        by_prompt=list(chat or []))
+    llm.scripted_factors = [g.factor for g in drafted]  # type: ignore[attr-defined]
+    return llm
+
+
+class OfflineBackedLLM(ScriptedLLM):
+    """Scripted client whose unscripted calls go to the offline stand-in model.
+
+    The real agents ask the model for things the scripts of the first harness did not know (Peshkar reads each dossier field through the task
+    `peshkar.extract_field`; Sutradhar rewords a query with `Reworded`). A call no script matches is answered by `OfflineLLM` (its rule-based
+    handler for the task) and recorded like any other call; scripted calls are unchanged.
+    """
+
+    def __init__(self, where: str, **kw: Any) -> None:
+        super().__init__(strict=True, default=None, where=where, **kw)
+
+    # What the model writes for a ground is `DraftedGround` in the agents; the scripts and the tests call it `Ground` (`calls_for("Ground")`).
+    TITLE_ALIASES = {"DraftedGround": "Ground", "DraftedGroundReasoned": "Ground"}
+
+    def generate(self, prompt: str, max_tokens: int = 1024, temperature: float = 0.0, json_schema: dict | None = None) -> str:
+        scripted_schema = json_schema
+        if json_schema is not None and json_schema.get("title") in self.TITLE_ALIASES:
+            scripted_schema = {**json_schema, "title": self.TITLE_ALIASES[json_schema["title"]]}
+        try:
+            return super().generate(prompt, max_tokens, temperature, scripted_schema)
+        except AssertionError:
+            from tests.fakes.models import LLMCall
+            from vakeel_sahayak.models.offline_llm import OfflineLLM
+
+            completion = OfflineLLM(where=self.where).generate(prompt, max_tokens, temperature, json_schema)
+            self.calls.append(LLMCall(prompt, (scripted_schema or {}).get("title"), json_schema, max_tokens, completion))
+            return completion
+
+
+class LaptopLLM(OfflineBackedLLM):
+    """The laptop client (Munshi, Peshkar)."""
+
+    def __init__(self, **kw: Any) -> None:
+        super().__init__("laptop", **kw)
 
 
 def laptop_client() -> ScriptedLLM:
-    """The laptop client (Munshi, Peshkar). Tool outputs carry the data; unscripted free text is ''."""
-    return ScriptedLLM(strict=False, default="", where="laptop")
+    """The laptop client (Munshi, Peshkar). Tool outputs carry the data; unscripted calls get the offline model's answer."""
+    return LaptopLLM()
 
 
 def prompt_must_contain(answer: str, *required: str) -> Callable[[str, dict | None], str]:
@@ -457,9 +557,9 @@ def export_tool_calls(events: list[Event]) -> list[Event]:
 
 
 def instruction_flags(events: list[Event]) -> list[Event]:
-    """Audit notes left when `detect_instruction_like` fired. ASSUMPTION: an event whose outputs carry
-    `instruction_like: true` (Munshi's AGENT_MESSAGE for the page)."""
-    return [e for e in events if e.outputs.get("instruction_like") is True]
+    """Audit notes left when `detect_instruction_like` fired: Munshi's AGENT_MESSAGE of the page (tool `injection_guard`) whose outputs carry
+    `instruction_like_lines` (how many lines were kept as data and never acted on)."""
+    return [e for e in events if e.outputs.get("instruction_like") is True or (e.outputs.get("instruction_like_lines") or 0) > 0]
 
 
 def declined_events(events: list[Event]) -> list[Event]:
@@ -569,9 +669,11 @@ class Scenario:
         self.ada: Any = ada or ada_client()
         self.laptop: Any = laptop or laptop_client()
         self.tools: dict[str, Callable[..., Any]] = self.toolbox.tools
+        self._log_file_item()
         if real_models:
             self._use_real_models()
         install_fake_stores(monkeypatch, self.world.stores)
+        self._register_name_detector()
         self._patch_wiring()
         if memory_log:
             self.log: Any = InMemoryEventLog()
@@ -580,9 +682,41 @@ class Scenario:
 
             self.log = deps.get_event_log(case_id)
         self.guard = GateGuard(self.log)
-        self.state = CaseGraphState(case_id=case_id)
+        self.state = CaseGraphState(case_id=case_id, as_of=AS_OF)
 
     # -- wiring -----------------------------------------------------------------------------------------------
+    def _register_name_detector(self) -> None:
+        """The stand-in for the name-recognition model (Presidio / InLegalNER in production): it finds the planted names, Latin and Devanagari, so the
+        real pseudonymiser (used by Munshi's filing, the chat route and the dictation route) replaces them with the case's aliases."""
+        from tests.fakes.data import PLANTED_NAMES, PLANTED_NAMES_HI
+        from vakeel_sahayak.privacy import pseudonymise as pz
+
+        names = sorted([*PLANTED_NAMES, *PLANTED_NAMES_HI], key=len, reverse=True)
+
+        def detect(text: str) -> list[Any]:
+            spans = []
+            for name in names:
+                for m in re.finditer(re.escape(name), text):
+                    spans.append(pz.NameSpan(m.start(), m.end(), "person"))
+            return spans
+
+        self.mp.setattr(pz, "_DETECTORS", [*pz._DETECTORS, detect])  # undone with the monkeypatch
+
+    def _log_file_item(self) -> None:
+        """The real `file_item` tool files through a Filer that appends a STORE_WRITE event; the fake only fills the store, so do the same here
+        (the List of Dates and the dossier view are folded from those events)."""
+        fake = self.tools["file_item"]
+
+        def file_item(store: Any, item: dict[str, Any], source: Any) -> Any:
+            res = fake(store, item, source)
+            if StoreName(store) == StoreName.CASE_TIMELINE:
+                row = TimelineEvent(event_id=str(item["event_id"]), date=item["date"], label=item["label"], source=source)
+                self.log.append(make_event(self.case_id, EventKind.STORE_WRITE, "MUNSHI", tool="file_item",
+                                           inputs={"store": StoreName.CASE_TIMELINE.value}, outputs={"event": row.model_dump(mode="json")}))
+            return res
+
+        self.tools = {**self.tools, "file_item": file_item}
+
     def _use_real_models(self) -> None:
         from vakeel_sahayak.models.factory import get_llm
         from vakeel_sahayak.tools.registry import discover_tools, get_tool
@@ -636,6 +770,10 @@ class Scenario:
 
     def run(self, name: AgentName) -> CaseGraphState:
         self.state = self.agent(name).run(self.state)
+        if name == AgentName.PESHKAR and not (self.guard.is_open(self.case_id, G1) or self.guard.is_approved(self.case_id, G1)):
+            self.guard.open(self.case_id, G1)  # the graph's gate node opens Gate 1 once Peshkar has built the dossier (orchestration/graph.py)
+        if name == AgentName.PESHKAR and self.state.stage == Stage.INTAKE:
+            self.state = self.state.model_copy(update={"stage": Stage.DOSSIER})  # dossier_node advances the stage
         return self.state
 
     def chat(self, question: str):
@@ -660,6 +798,9 @@ class Scenario:
                     approve_gate1: bool = True) -> None:
         """Write a case record the way the agents would (field writes, timeline, views, gates) without running them."""
         cid = case_id or self.case_id
+        from vakeel_sahayak.tools.runtime import get_runtime
+
+        get_runtime().attach_log(cid, self.log)  # a bare `GateGuard()` finds this case's record through the tool runtime
         dossier = dossier or self.world.dossier
         for fname in type(dossier.fields).model_fields:
             self.log.append(make_event(cid, EventKind.STORE_WRITE, "PESHKAR", tool="extract_dossier",
@@ -720,6 +861,11 @@ class Scenario:
         self.add_upload("bundle_1.pdf")
         self.run(AgentName.MUNSHI)
         self.run(AgentName.PESHKAR)
+        # what counsel said in chat turn 3 (case-0007's dictated fact): the court papers do not state it, so it is counsel's word (USER_STATED)
+        peshkar = self.agent(AgentName.PESHKAR)
+        peshkar.write_field("personal", TrackedField[list[str]](value=["sole earning member; two dependent children"], source=SourceRef(chat="turn 3"),
+                                                                status=FieldStatus.USER_STATED))
+        self.state = self.state.model_copy(update={"dossier": peshkar.case_state().dossier()})
         self.clear_and_approve(G1)
         return self.state
 
@@ -727,7 +873,13 @@ class Scenario:
         """Sutradhar plans, Vakeel drafts, Abhiyojak spars (plan §6.2 step 3)."""
         sutradhar = self.agent(AgentName.SUTRADHAR)
         self.state = sutradhar.run(self.state)
+        keep = getattr(self.ada, "scripted_factors", None)
+        if keep:  # draft only the factors the scenario scripts, in the scripted order, so Vakeel's ids G1, G2, ... are the scripted ones
+            packs = {p.factor: p for p in self.state.evidence_packs}
+            self.state = self.state.model_copy(update={"evidence_packs": [packs[f] for f in keep if f in packs]})
         self.state = sutradhar.delegate(self.state, list(self.state.evidence_packs))
+        if self.state.brief is not None and not (self.guard.is_open(self.case_id, G2) or self.guard.is_approved(self.case_id, G2)):
+            self.guard.open(self.case_id, G2)  # the graph's gate 2 node opens Gate 2 once the brief and the sparring record exist
         return self.state
 
     # -- what the Ada-bound clients saw -----------------------------------------------------------------------

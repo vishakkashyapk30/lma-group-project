@@ -182,8 +182,11 @@ class FakeToolbox:
         return self.world.dossier
 
     def t_span_check(self, value: Any, quote: str) -> SpanCheckResult:
-        score = self.nli.entails(quote, str(value))
-        return SpanCheckResult(supported=score >= 0.5, score=score, quote=quote)
+        # The real tool (offline lexical NLI): Peshkar's values are objects (FIR number, section, date), and the real
+        # claim text normalises dates; the overlap-only FakeNli rejects every structured value.
+        from vakeel_sahayak.tools.dossier import span_check
+
+        return span_check(value, quote)
 
     def t_rights_check(self, case_id: str, as_of: str | None = None):
         return self.world.rights

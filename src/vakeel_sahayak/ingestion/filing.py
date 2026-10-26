@@ -211,6 +211,9 @@ class Filer:
                     "box": box,
                     "text_en": text_en,
                     "info_kinds": tag_paragraph(text_en or chunk.text),
+                    "route": info.get("route"),
+                    "lang": info.get("lang"),
+                    "confidence": info.get("confidence"),
                 }
             )
             rows.append(row)
@@ -311,7 +314,9 @@ class Filer:
         if not m:
             return 0
         value = PreviousBail(court=m.group(2) or "court not stated", date=row.date, outcome=m.group(1)).model_dump(mode="json")
-        return self._merge("previous_bail", [value], row.source or SourceRef(), key=lambda v: (v["court"], v["date"], v["outcome"]))
+        # existing values come back from the store as PreviousBail models while the new one is a dict, so the key reads both.
+        parts = lambda v: tuple((v[k] if isinstance(v, dict) else getattr(v, k)) for k in ("court", "date", "outcome"))  # noqa: E731
+        return self._merge("previous_bail", [value], row.source or SourceRef(), key=parts)
 
     def file_personal(self, sentences: list[str], source: SourceRef) -> int:
         """File custody, health and personal circumstances (pseudonymised sentences) into the `personal` field."""

@@ -82,7 +82,8 @@ def test_intake_stays_on_the_laptop_and_files_only_pseudonymised_text(tmp_path, 
     sc = after_intake(tmp_path, monkeypatch)
     assert sc.ada_prompts == []
     assert leaked_names([sh.stores_text(sc.world, shared=False)], planted_names) == []
-    assert (sc.data_dir / "cases" / CASE / "bundle_1.pdf").exists()
+    # RECONCILED: Munshi reads raw client files from the case's inbox folder (MunshiAgent._inbox); the raw file stays there, on the laptop
+    assert (sc.data_dir / "cases" / CASE / "inbox" / "bundle_1.pdf").exists()
 
 
 def test_every_munshi_tool_call_is_an_event_pair(tmp_path, monkeypatch):

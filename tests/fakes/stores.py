@@ -40,6 +40,12 @@ def _tokens(text: str) -> set[str]:
     return set(re.findall(r"[a-z0-9]+", text.lower()))
 
 
+def _overlap(q: set[str], text: str) -> int:
+    """Query words found in `text`; a word also matches a longer form of itself ('date' finds 'dated'), as a stemmed index would."""
+    words = _tokens(text)
+    return sum(1 for w in q if w in words or (len(w) >= 4 and any(t.startswith(w) for t in words)))
+
+
 class _Fake:
     name: StoreName
 
@@ -291,7 +297,10 @@ class InMemoryFactsStore(_Fake):
 
     def put(self, field: str, value: TrackedField[Any]) -> None:
         self._log("put", field=field)
-        setattr(self._dossier.fields, field, value)
+        # validated into the field's own type, as the real store does (a filer hands over plain dicts and TrackedField[Any])
+        data = self._dossier.model_dump(mode="json")
+        data["fields"][field] = value.model_dump(mode="json")
+        self._dossier = type(self._dossier).model_validate(data)
 
     def dossier(self) -> CaseDossier:
         return self._dossier
@@ -309,13 +318,16 @@ class InMemoryCaseDocsStore(_Fake):
 
     def add_chunks(self, chunks: list[CaseChunk]) -> None:
         self._log("add_chunks", n=len(chunks))
-        self.chunks.extend(chunks)
+        have = {c.chunk_id for c in self.chunks}
+        self.chunks.extend(c for c in chunks if c.chunk_id not in have)  # a chunk id already stored is skipped, as in the real store
 
     def search(self, query: str, doc_types: list[DocumentType] | None = None, k: int = 5) -> list[CaseChunk]:
         self._log("search", query=query, doc_types=doc_types, k=k)
         q = _tokens(query)
         rows = [c for c in self.chunks if not doc_types or c.doc_type in doc_types]
-        rows.sort(key=lambda c: (-len(q & _tokens(c.text)), c.page))
+        # lexical overlap over the original and the English text, plus three points for a chunk of the document type the query names
+        # (a hybrid search finds a Hindi FIR for "First Information Report" although it shares no word with it)
+        rows.sort(key=lambda c: (-(_overlap(q, c.text + " " + (c.text_en or "")) + 3 * int(c.doc_type.value.lower() in q)), c.page))
         return rows[:k]
 
 

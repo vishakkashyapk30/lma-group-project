@@ -619,7 +619,9 @@ class BaseAgent(ABC):
         if store_call and budgets is not None and _spent(budgets, 'store_calls_exhausted', factor):
             return refuse("budget_exhausted", f"the store-call budget of {factor or 'the case'} is spent")
         charge = {"factor": factor, "store_calls": 1, "tokens": 0} if store_call else None
-        call_ev = self.emit(EventKind.TOOL_CALL, {"tool": name, "inputs": args_log, "outputs": {"budget_charge": charge} if charge else {}})
+        arg_source = clean.get("source")  # a tool that files or cites something names where it came from: the audit trail shows it on the call and the result
+        arg_sources = [arg_source] if isinstance(arg_source, (SourceRef, dict)) and arg_source else []
+        call_ev = self.emit(EventKind.TOOL_CALL, {"tool": name, "inputs": args_log, "outputs": {"budget_charge": charge} if charge else {}, "sources": arg_sources})
         if charge and budgets is not None:
             _charge(budgets, factor, actor=self.NAME, store_calls=1)
         self._sync_runtime()
@@ -648,7 +650,7 @@ class BaseAgent(ABC):
             return result
         if cache_key is not None:
             cache.put(cache_key, result)
-        self.emit(EventKind.TOOL_RESULT, {"tool": name, "outputs": {"result": jsonable(result)}, "sources": _sources_of(result), "parent_id": call_ev.event_id})
+        self.emit(EventKind.TOOL_RESULT, {"tool": name, "outputs": {"result": jsonable(result)}, "sources": _sources_of(result) or arg_sources, "parent_id": call_ev.event_id})
         return result
 
     def _log_of(self, case_id: str) -> EventLog:

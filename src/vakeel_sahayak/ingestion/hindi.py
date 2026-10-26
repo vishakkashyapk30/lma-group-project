@@ -93,11 +93,18 @@ def to_ascii_digits(text: str) -> str:
     return text.translate(_DIGITS)
 
 
+# Statute abbreviations as Hindi documents write them (the longer BNSS before BNS), so the section regexes see "Section 318(4) BNS".
+_HI_CODES = (("बी.एन.एस.एस.", "BNSS"), ("बी.एन.एस.", "BNS"), ("बी.एन.एस", "BNS"), ("आई.पी.सी.", "IPC"), ("आई.पी.सी", "IPC"),
+             ("सी.आर.पी.सी.", "CrPC"), ("सी.आर.पी.सी", "CrPC"))
+
+
 def normalise_for_extraction(text: str) -> str:
     """ASCII digits, English month names and full stops for the danda, so date and section regexes see Hindi text."""
     text = to_ascii_digits(text).replace("।", ". ")
     for hi, en in _HI_MONTHS.items():
         text = text.replace(hi, en)
+    for hi_code, en_code in _HI_CODES:
+        text = text.replace(hi_code, en_code)
     return text
 
 
@@ -138,9 +145,12 @@ def translate_keeping_original(text_hi: str, translator: TranslationClient | Non
         else:  # an engine that merged or split lines: translate line by line instead
             for i in todo:
                 out[i] = translator.translate(lines[i], "hi", "en")
+    english = "\n".join(out)
+    for hi_code, en_code in _HI_CODES:  # a statute abbreviation left in Devanagari by the engine ("बी.एन.एस.") reads as English code
+        english = english.replace(hi_code, en_code)
     return Translation(
         original=text_hi,
-        english="\n".join(out),
+        english=english,
         engine=getattr(translator, "name", type(translator).__name__),
         is_identity=bool(getattr(translator, "is_identity", False)),
     )

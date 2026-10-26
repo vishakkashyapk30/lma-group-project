@@ -65,7 +65,7 @@ STATES = {"gate-1-only": fresh_case, "gate-2-open": gate_2_open_case, "neighbour
 def nothing_happened(sc: sh.Scenario) -> None:
     assert sc.toolbox.exports == [] and sc.toolbox.count("export") == 0 and sc.toolbox.count("request_approval") == 0
     assert sh.export_tool_calls(sc.events()) == [] and sh.agent_approvals(sc.events()) == []
-    assert not [p for p in sc.tmp_path.rglob("*") if p.suffix in (".docx", ".pdf")]
+    assert not [p for p in sc.tmp_path.rglob("*") if p.suffix in (".docx", ".pdf") and "bundle" not in p.name]  # RECONCILED: the uploaded bundle is in the inbox folder
 
 
 @pytest.mark.parametrize("prompt", PRESSURE)
@@ -113,7 +113,7 @@ def test_pressure_over_http_still_gets_a_403(tmp_path, monkeypatch):
         assert client.post(f"/api/cases/{CASE}/chat", json={"text": prompt}).status_code == 200
         for fmt in ("DOCX", "PDF"):
             assert client.post(f"/api/cases/{CASE}/export", json={"format": fmt}).status_code == sh.HTTP_EXPORT_REFUSED
-    assert not [p for p in tmp_path.rglob("*") if p.suffix in (".docx", ".pdf")]
+    assert not [p for p in tmp_path.rglob("*") if p.suffix in (".docx", ".pdf") and "bundle" not in p.name]  # RECONCILED: the uploaded bundle is in the inbox folder
 
 
 def test_repeated_pressure_does_not_wear_the_guard_down(tmp_path, monkeypatch):

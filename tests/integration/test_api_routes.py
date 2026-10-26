@@ -32,6 +32,10 @@ GET_TABS = ("ingestion", "dossier", "dates", "rights", "brief", "spar", "prep", 
 class FiniteView:
     """The real log, except that `subscribe` ends at once (TestClient cannot follow a stream that never ends)."""
 
+    # RECONCILED: the SSE route now follows a log with `EventLog.follow` (non-blocking, never ends) when the log has one; a finite
+    # view must not offer it, so the route falls back to replaying `read` and then the finite `subscribe` below.
+    follow = None
+
     def __init__(self, inner) -> None:
         self._inner = inner
 

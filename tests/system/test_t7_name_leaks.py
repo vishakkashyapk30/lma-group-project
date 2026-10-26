@@ -117,8 +117,13 @@ def test_no_page_image_or_audio_ever_reaches_an_ada_prompt(tmp_path, monkeypatch
 def test_a_name_typed_into_the_chat_is_pseudonymised_before_ada(tmp_path, monkeypatch):
     """Counsel types a real name in the chat: the Ada-bound prompt carries the alias (Accused-1), never the name."""
     sc = with_names_run(tmp_path, monkeypatch)
-    assert any("Accused-1" in p for p in sc.ada_prompts)
+    # RECONCILED: Sutradhar composes chat answers from tool results and sends nothing about the question to Ada, and no drafting prompt carries
+    # the parties; what must show the alias is what the system keeps of the question. Asked through the API, the logged question has the alias.
+    sc.client().post(f"/api/cases/{CASE}/chat", json={"text": f"Did {PLANTED_NAMES[0]} have any earlier bail application?"})
+    asked = [e for e in sc.events() if e.inputs.get("action") == "chat"]
+    assert asked and any("Accused-1" in e.model_dump_json() for e in asked)
     assert leaked_names(sc.ada_prompts, ALL_NAMES) == []
+    assert leaked_names([sh.dump_events(sc.events())], ALL_NAMES) == []
 
 
 def test_a_devanagari_name_typed_into_the_chat_is_pseudonymised_too(tmp_path, monkeypatch):

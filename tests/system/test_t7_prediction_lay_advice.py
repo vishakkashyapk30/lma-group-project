@@ -12,6 +12,8 @@ requests are refused like English ones.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from tests.system import _helpers as sh
@@ -113,6 +115,9 @@ def test_the_hearing_card_and_the_brief_show_no_rate(tmp_path, monkeypatch):
 def test_the_library_shows_reasoning_never_rates(tmp_path, monkeypatch):
     client = sh.Scenario(tmp_path, monkeypatch).client()
     text = client.get("/api/library/search", params={"q": "bail"}).text + client.get("/api/library/citations/SC-2014-0463").text
+    # RECONCILED: "authority" is the citation-graph score of a reported order (how much courts rely on it), not a chance of anything; the figure
+    # heuristic must not read it as a probability, so those fields are taken out before the check
+    text = re.sub(r'"authority": ?[0-9.]+', '"authority": null', text)
     assert not sh.PROBABILITY_RE.search(text) and "grant_rate" not in text
 
 

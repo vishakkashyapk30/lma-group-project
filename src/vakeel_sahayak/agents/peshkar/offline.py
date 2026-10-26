@@ -28,7 +28,7 @@ from vakeel_sahayak.pipelines.text_utils import normalise_date
 from vakeel_sahayak.schemas.enums import DocumentType, InfoKind
 
 _FIR_NO = re.compile(
-    r"(?:F\.?\s?I\.?\s?R\.?|First\s+Information\s+Report|प्राथमिकी)\s*(?:No\.?|Number|Nos\.?|सं\.?|संख्या)?\s*[:\-]?\s*(?:No\.?\s*)?"
+    r"(?:F\.?\s?I\.?\s?R\.?|(?:First\s+)?Information\s+Report|प्रथम\s+सूचना\s+रिपोर्ट|प्राथमिकी)\s*(?:No\.?|Number|Nos\.?|सं\.?|संख्या)?\s*[:\-]?\s*(?:No\.?\s*)?"
     r"(\d{1,6})\s*(?:/|of)\s*((?:19|20)\d{2})",
     re.IGNORECASE,
 )
@@ -132,7 +132,10 @@ def _parse_fir(text: str, date_hint: str | None = None) -> dict[str, Any] | None
     ps = None
     if m := _PS.search(text):
         ps = m.group(1) or m.group(2)
-    fir_date = next((e.date for e in extract_events(text) if e.field == "fir_date"), None) or date_hint or _iso(text)
+    # a bare date counts only when it sits right after the FIR number ("FIR No. 112/2024 dated 14.08.2024"); a date elsewhere in the
+    # window (an arrest or a remand) is another event, not the date of the FIR
+    after_number = _iso(text[m.end() : m.end() + 25]) if (m := _FIR_NO.search(text)) else None
+    fir_date = next((e.date for e in extract_events(text) if e.field == "fir_date"), None) or date_hint or after_number
     if number is None and ps is None and fir_date is None:
         return None
     return {"number": number, "police_station": ps, "date": fir_date}
@@ -140,9 +143,10 @@ def _parse_fir(text: str, date_hint: str | None = None) -> dict[str, Any] | None
 
 def _fir(passages: list[_Passage], events: list[dict[str, Any]], retry: int) -> tuple[list[dict[str, Any]], bool, str | None]:
     found: list[dict[str, Any]] = []
-    for p in passages:
+    for p in sorted(passages, key=lambda p: p.doc_type != DocumentType.FIR):  # the FIR itself first: when readings tie it is the one kept
         for i, s in enumerate(p.sents):
-            if _FIR_NO.search(s):  # the station and the date often sit in the next sentence; a re-reading looks further out
+            # "सं." or "No." can end a sentence, so the number may open the next one; the station and the date often sit in the next sentence too
+            if _FIR_NO.search(s) or _FIR_NO.search(" ".join(p.sents[i : i + 2])):
                 window = " ".join(p.sents[max(0, i - retry) : i + 2 + retry])
                 if (value := _parse_fir(window)) is not None:
                     found.append(_item(value, window, p.doc, p.page))

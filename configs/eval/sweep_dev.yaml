@@ -1,0 +1,67 @@
+# Pre-freeze DEV-SET sweep for the status report (operator plan; `driver plan --sweep` prints it, `scripts/sweep_dev.py` runs it).
+# Only the 50 T1 dev cases (data/testsets/t1/dev.jsonl; first 25 where n=25) and, for the Munshi / injection / scheduling arms, the T2, T5 and T7 sets
+# (built from open-slice orders and synthetic scenarios, never the blind slice). Results are PRELIMINARY: small n, stand-in models, intervals wide.
+# An arm is comparable with Full only on the SAME backend, so each backend block carries its own Full.
+cases_dev: data/testsets/t1/dev.jsonl
+out_roots: {openai: data/eval/dev_runs, sarvam: data/eval/dev_runs/sarvam_block, offline: data/eval/dev_runs_offline, ada: data/eval/dev_runs_ada}
+caps: {openai_ledger_usd: 4.90, sarvam_inr_owner_key: 30, sarvam_inr_block_for_satvik: 500}  # owner correction 2026-10-27: owner's Sarvam key may spend only INR 30 in total; the big Sarvam block is run by Satvik with his own key
+backends:
+  openai: {model: gpt-6-luna, env: {VS_MODELS: auto, VS_LLM_BACKEND: openai, VS_EXTERNAL: pseudonymised, VS_NLI: auto}}  # export VS_OPENAI_CAP_USD=4.90 in the shell after sourcing .env (it sets 4.50)
+  sarvam: {model: sarvam-105b, env: {VS_MODELS: auto, VS_LLM_BACKEND: sarvam, VS_SARVAM: pseudonymised, VS_EXTERNAL: pseudonymised}}  # VS_SARVAM_CAP_INR comes from the shell: INR 30 total on the owner key; Satvik sets his own
+  offline: {model: "offline stand-in LLM (template); real stores and retrieval", env: {VS_MODELS: auto, VS_LLM_BACKEND: offline, VS_EXTERNAL: "off"}}
+  ada: {model: Qwen3-4B via vLLM on one 2080 Ti per server, env: {VS_MODELS: auto, VS_LLM_BACKEND: local}}
+# arm fields: id (driver system id), tier (must/should/could/baseline), phase (0 done earlier, 1 offline, 2 OpenAI, 3 Sarvam, 4 Ada), backend, n cases, runs, testset, ratio (tokens vs Full, plan 7.2), claims, status
+arms:
+  # ---- baselines already run on OpenAI (dev-baselines agent); reused, not rerun
+  - {id: full,  tier: baseline, phase: 0, backend: openai, n: 50, runs: 2, ratio: 1.0,  claims: [C1, C2, C3], status: done}
+  - {id: b0,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.07, claims: [C1, C2], status: done}
+  - {id: b0l,   tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.07, claims: [C1], status: done, note: "hosted stand-in for the prompted 32B (same gpt-6-luna)"}
+  - {id: b1,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.1,  claims: [C4], status: done}
+  - {id: b4,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 1.6,  claims: [C10], status: done}
+  - {id: b6,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.0,  claims: [C1], status: done, note: "rule baseline, no model"}
+  # ---- phase 1: zero model cost, laptop. Offline block carries its own offline Full (same retrieval, stand-in LLM)
+  - {id: full,  tier: baseline, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [], status: planned, note: "reference for every offline arm"}
+  - {id: S4,    tier: should, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [C9], status: planned}
+  - {id: S5,    tier: should, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [C9], status: planned}
+  - {id: S16,   tier: should, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [], status: planned, note: "per-case run equals Full; the chunking study is the evidence"}
+  - {id: "A10:*", tier: must, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [C5], status: planned, note: "seven store knock-outs, retrieval and slot fill only"}
+  - {id: S14b,  tier: should, phase: 1, backend: offline, n: 300, runs: 1, testset: T5, ratio: 0, claims: [C31], status: planned, note: "scheduling simulation on T5 through the batch desk"}
+  - {id: S7,    tier: must, phase: 1, backend: offline, n: 100, runs: 1, testset: T2, ratio: 0, claims: [C21], status: planned}
+  - {id: "P5-P8", tier: should, phase: 1, backend: offline, n: 100, runs: 1, testset: T2, ratio: 0, claims: [C21], status: planned}
+  - {id: "S17*", tier: must, phase: 1, backend: offline, n: 60, runs: 1, testset: T7, ratio: 0, claims: [C37], status: planned, note: "offline stand-in: attack-success numbers describe the stand-in, not a model"}
+  # ---- phase 2: OpenAI gpt-6-luna, 50 dev cases each (ledger total must stay <= 4.40 USD)
+  - {id: A2, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C13], status: planned}
+  - {id: A8, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C7], status: planned}
+  - {id: A9, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C7, C13], status: planned}
+  - {id: A3, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C11], status: planned}
+  - {id: A1, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C12], status: planned}
+  - {id: A6, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C6, C10], status: planned}
+  - {id: A7, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C10], status: planned}
+  - {id: b2, tier: baseline, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.15, claims: [C4], status: planned}
+  - {id: b3, tier: baseline, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.1, claims: [C4], status: planned}
+  # ---- phase 3 (PACKAGE for Satvik, own key and cap; owner key runs only a 3-case smoke): Sarvam-105B, its own Full and B0 on the same cases; ordered by priority
+  - {id: full, tier: baseline, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 1.0, claims: [], status: planned}
+  - {id: b0,   tier: baseline, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 0.07, claims: [], status: planned}
+  - {id: S3,   tier: must, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 1.0, claims: [C6], status: planned}
+  - {id: S3b,  tier: must, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 1.0, claims: [C6], status: planned}
+  - {id: S8,   tier: must, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 0.83, claims: [C13], status: planned}
+  - {id: S9,   tier: must, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 0.83, claims: [C7], status: planned}
+  - {id: S10,  tier: must, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 0.83, claims: [C8], status: planned}
+  - {id: S1,   tier: must, phase: 3, backend: sarvam, runner: satvik, n: 25, runs: 1, ratio: 1.17, claims: [C10], status: planned}
+  - {id: S15,  tier: must, phase: 3, backend: sarvam, runner: satvik, n: 25, runs: 1, ratio: 1.0, claims: [C26, C27], status: planned}
+  - {id: S11,  tier: could, phase: 3, backend: sarvam, runner: satvik, n: 25, runs: 1, ratio: 1.0, claims: [C7], status: planned}
+  # ---- phase 4: local Qwen3-4B on Ada (free of API credits); remaining arms
+  - {id: full, tier: baseline, phase: 4, backend: ada, n: 50, runs: 1, ratio: 1.0, claims: [], status: planned}
+  - {id: S2,   tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 0.67, claims: [C4, C9], status: planned}
+  - {id: S6,   tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 0.83, claims: [C10], status: planned}
+  - {id: B5,   tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 0.83, claims: [C10], status: planned}
+  - {id: S12,  tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 0.83, claims: [C9], status: planned}
+  - {id: S12b, tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 0.83, claims: [C9], status: planned}
+  - {id: S14,  tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 1.0, claims: [C31], status: planned}
+  - {id: S14d, tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 1.0, claims: [C31], status: planned}
+  - {id: S11b, tier: could, phase: 4, backend: ada, n: 25, runs: 1, ratio: 1.0, claims: [C7], status: planned}
+  - {id: S11c, tier: could, phase: 4, backend: ada, n: 25, runs: 1, ratio: 1.0, claims: [C7], status: planned}
+  - {id: S18,  tier: could, phase: 4, backend: ada, n: 25, runs: 1, ratio: 1.0, claims: [], status: planned}
+not_run:
+  S13: "workflow search has no model-backed evaluator wired (runs.yaml: runner workflow_search raises NotImplementedError)"
+  S15b: "declared, behaviour not built"

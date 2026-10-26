@@ -39,6 +39,7 @@ from vakeel_sahayak.agents.sutradhar import offline  # noqa: F401  (importing `o
 from vakeel_sahayak.agents.sutradhar import skew as skew_rules
 from vakeel_sahayak.agents.sutradhar.chat_router import (
     CHAT_ROUTES,
+    EXPORT_PRESSURE,
     NALSA_HELPLINE,
     REFUSE_ADVICE,
     REFUSE_PREDICTION,
@@ -557,7 +558,8 @@ class SutradharAgent(BaseAgent):
         contract = contract_for(factor)
         set_limits = getattr(self.budgets, "set_factor_limits", None)
         if set_limits is not None:
-            set_limits(factor.value, store_calls=contract.budget.store_calls, tokens=contract.budget.tokens)
+            cap = getattr(self.budgets, "store_calls_per_factor", None)  # a tracker with a lower cap than the contract's (the contract may not exceed the config's) wins
+            set_limits(factor.value, store_calls=min(contract.budget.store_calls, cap) if isinstance(cap, int) else contract.budget.store_calls, tokens=contract.budget.tokens)
         work = FactorWork(factor=factor, stance=stance, reason=reason, contract=contract, pctx=pctx)
         knocked = self.switches.knockout_store
         for name, slot in contract.slots.items():
@@ -1442,7 +1444,8 @@ class SutradharAgent(BaseAgent):
         judged = self._peer_call(AgentName.ABHIYOJAK, "judge_replies", state, paired, default=None)
         if judged is None:
             return state
-        record = SparringRecord(case_id=state.case_id, rounds=2, objections=judged, discarded=list(state.sparring.discarded) if state.sparring else [])
+        discarded = list(getattr(self._peer(AgentName.ABHIYOJAK), "discarded", None) or (state.sparring.discarded if state.sparring else []))  # the ungrounded ones round 1 dropped
+        record = SparringRecord(case_id=state.case_id, rounds=2, objections=judged, discarded=discarded)
         self.write_view("sparring", record)
         return state.model_copy(update={"sparring": record})
 
@@ -1528,6 +1531,13 @@ class SutradharAgent(BaseAgent):
                     f"Free legal aid is available: call NALSA on {NALSA_HELPLINE} or ask the District Legal Services Authority."
                 )
             return reply(text, refused=True)
+        if key == EXPORT_PRESSURE:
+            self._decision("chat_refused", "Declined to export or approve.", kind=key, tools=[])
+            return reply(
+                "I cannot export or approve anything for you. The application can be exported only after you have approved Gate 2: "
+                "work through its checklist (the objections still unanswered and the claims marked for review) and approve it yourself.",
+                refused=True,
+            )
         route = key or "case_docs"
         tools = list(CHAT_ROUTES.get(key or "", ["search_case_docs"]))
         self._decision("chat_route", f"Routed to {', '.join(tools)}.", intent=route, tools=tools)

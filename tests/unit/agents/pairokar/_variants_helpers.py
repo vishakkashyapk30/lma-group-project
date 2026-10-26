@@ -46,7 +46,7 @@ def build(switches: Switches | None = None, *, hours_per_case: float = 0.25, siz
 
     agent, ctx, _ = build_agent(PairokarAgent, **({"switches": switches} if switches else {}))
     # a Pairokar over a fresh queue and the stub runners, sharing the context of the fake agent
-    agent = PairokarAgent(ctx, queue=TriageQueue(), stage1_runner=stage1, full_runner=full, hours_per_case=hours_per_case)
+    agent = PairokarAgent(ctx, queue=TriageQueue(":memory:"), stage1_runner=stage1, full_runner=full, hours_per_case=hours_per_case)
     if sizes:
         agent.scheduler.sizes = dict(sizes)
     return SimpleNamespace(agent=agent, ctx=ctx, cards=cards, ran=ran, log=ctx.log)

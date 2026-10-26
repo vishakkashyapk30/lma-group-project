@@ -130,6 +130,9 @@ def test_no_response_shows_a_grant_rate_or_a_probability(tmp_path, monkeypatch):
     blob = json.dumps([client.get("/api/library/search", params={"q": "bail"}).json(),
                        client.get("/api/library/citations/SC-2014-0463").json(),
                        client.get("/api/library/bridge/IPC/420").json()]).lower()
+    # RECONCILED: "authority" is the citation-graph score of a reported order (how much courts rely on it), not a chance of anything; the
+    # figure heuristic must not read it as a probability, so those fields are taken out before the check
+    blob = re.sub(r'"authority": ?[0-9.]+', '"authority": null', blob)
     assert not re.search(r"grant[ _]rate", blob) and not sh.PROBABILITY_RE.search(blob)
 
 

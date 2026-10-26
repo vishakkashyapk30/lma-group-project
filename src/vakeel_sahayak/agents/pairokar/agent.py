@@ -99,7 +99,7 @@ class PairokarAgent(BaseAgent):
             llm: the 14B client, used only with `use_model=True`
             cases_dir: cases folder for the per-case logs and stores
             cache: the retrieval cache shared by every case of the batch (default: a new in-memory one)
-            queue: the batch queue (default: a new in-memory one)
+            queue: the batch queue (default: the desk's durable queue file under the data directory)
             stage1_runner: (case_id, path) -> TriageCard (default: Munshi, Peshkar and the Radar on the file)
             full_runner: (case_id, path) -> the case's output (default: Sutradhar then Vakeel on the case)
             case_logs: case id -> that case's EventLog (default: its file under `cases_dir`; with no `cases_dir`, the desk's log)
@@ -239,6 +239,11 @@ class PairokarAgent(BaseAgent):
         peshkar = PeshkarAgent(ctx)
         try:
             report = munshi.ingest([path], state)
+            sensitive = next((g for g in report.gaps if g.item == "sensitive matter"), None)  # Munshi declined it and filed nothing (plan §16)
+            if sensitive is not None:
+                from vakeel_sahayak.batch.scheduler import MatterDeclined
+
+                raise MatterDeclined(sensitive.action)
             state = state.model_copy(update={"ingestion": report})
             dossier = peshkar.build_dossier(state)
             peshkar.build_list_of_dates(state)
@@ -265,7 +270,18 @@ class PairokarAgent(BaseAgent):
         self.message(f"Stage 1 on {len(ids)} file(s).", case_ids=ids)
         cards = self.scheduler.triage_all(self.queue)
         wanted = set(ids)
-        return [c for c in cards if c.case_id in wanted]
+        cards = [c for c in cards if c.case_id in wanted]
+        for card in cards:  # the board reads each case's card from that case's record
+            self._write_card(card)
+        return cards
+
+    def _write_card(self, card: TriageCard) -> None:
+        """Append the card to its own case's record as the `triage_card` view (what `/api/desk/board` reads)."""
+        from vakeel_sahayak.schemas.events import Event
+
+        log = self._ctx_for(card.case_id).log
+        log.append(Event(event_id="", case_id=card.case_id, ts="", kind=EventKind.STORE_WRITE, actor=self.NAME,
+                         inputs={"store": "case.views", "view": "triage_card"}, outputs={"value": card.model_dump(mode="json")}))
 
     # ------------------------------------------------------------------ decisions
 

@@ -102,9 +102,10 @@ def test_no_field_is_verified_without_a_court_document(tmp_path, monkeypatch):
 def test_the_brief_says_per_counsel_not_on_record(tmp_path, monkeypatch):
     """The ground that rests on the dictated fact is labelled, even though the draft did not write the phrase."""
     sc = dictated_and_drafted(tmp_path, monkeypatch)
-    g4 = next(g for g in sc.state.brief.grounds if g.id == "G4")
+    # RECONCILED: Vakeel numbers the grounds in the order of the factors (G4 is not the health ground); the ground is found by its factor
+    g4 = next(g for g in sc.state.brief.grounds if g.factor == Factor.HEALTH_AGE_FAMILY)
     assert PHRASE not in SOLE_EARNER and PHRASE in g4.argument.lower()
-    assert all(PHRASE not in g.argument.lower() for g in sc.state.brief.grounds if g.id != "G4")  # court-record grounds are not labelled
+    assert all(PHRASE not in g.argument.lower() for g in sc.state.brief.grounds if g is not g4)  # court-record grounds are not labelled
 
 
 def test_the_exported_application_keeps_the_label(tmp_path, monkeypatch):

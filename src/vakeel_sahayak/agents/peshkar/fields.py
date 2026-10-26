@@ -79,7 +79,7 @@ FIELD_SPECS: dict[str, FieldSpec] = {
     s.name: s
     for s in (
         FieldSpec("fir", "scalar", ("FIR number police station date registered", "First Information Report"),
-                  _c(r"\bF\.?I\.?R\.?\b|first\s+information\s+report|प्राथमिकी|police\s+station|\bP\.?S\.?\b"),
+                  _c(r"\bF\.?I\.?R\.?\b|(?:first\s+)?information\s+report|प्रथम\s+सूचना|प्राथमिकी|police\s+station|\bP\.?S\.?\b"),
                   "A value is an object with number (like 112/2024), police_station and date (YYYY-MM-DD); use null for a part the quote does not state."),  # fmt: skip
         FieldSpec("offence_date", "scalar", ("date of the incident offence occurred", "alleged offence committed on"),
                   _c(r"incident|offence|occurrence|occurred|alleged\s+to\s+have|committed|घटना"),
@@ -277,19 +277,36 @@ def build_tracked(name: str, value: Any, source: SourceRef | None, status: Field
 
 
 def merge_subsumed(values: list[Any]) -> list[Any]:
-    """Drop an object value whose stated parts are all repeated by a fuller one (the same FIR or charge sheet read twice).
+    """Drop an object value that another reading of the same record repeats in full or in a fuller form.
 
+    A value is dropped when another one states everything it states (the same FIR or charge sheet read twice), or when the two
+    agree on every part both state, share at least one stated part and the other states more parts (ties keep the earlier one):
+    the English order gives the FIR number and station, the Hindi FIR the number and date, and they are one FIR, not a conflict.
     Two readings that disagree on a part both state are different values, and both stay (a conflict for counsel).
     An exact duplicate keeps its first copy; non-object values pass through unchanged.
     """
     kept: list[Any] = []
     for i, v in enumerate(values):
         if isinstance(v, dict) and any(
-            j != i and isinstance(w, dict) and _covers(w, v) and (w != v or j < i) for j, w in enumerate(values)
+            j != i and isinstance(w, dict) and ((_covers(w, v) and (w != v or j < i)) or _same_record(w, v, j < i))
+            for j, w in enumerate(values)
         ):
             continue
         kept.append(v)
     return kept
+
+
+def _stated(d: dict[str, Any]) -> dict[str, Any]:
+    return {k: val for k, val in d.items() if val not in (None, "")}
+
+
+def _same_record(big: dict[str, Any], small: dict[str, Any], big_first: bool) -> bool:
+    """The two agree on every part both state, share one, and `big` states more parts (or as many and came first)."""
+    a, b = _stated(big), _stated(small)
+    shared = a.keys() & b.keys()
+    if not shared or any(a[k] != b[k] for k in shared):
+        return False
+    return len(a) > len(b) or (len(a) == len(b) and big_first)
 
 
 def _covers(big: dict[str, Any], small: dict[str, Any]) -> bool:

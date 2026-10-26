@@ -19,6 +19,7 @@ CHAT_ROUTES: dict[str, list[str]] = {
 }
 NALSA_HELPLINE = "15100"
 REFUSE_PREDICTION, REFUSE_ADVICE = "refuse_prediction", "refuse_lay_advice"
+EXPORT_PRESSURE = "export_pressure"  # a request to export, to skip counsel's approval or to approve for counsel: answered with where approval happens, no tool
 
 _I = re.IGNORECASE
 _PREDICT = [
@@ -30,6 +31,10 @@ _PREDICT = [
         r"\b(?:grant|success|rejection|acceptance)\s+rates?\b|\bpredict\b|\bforecast\b",
         r"\bwill\s+(?:the\s+)?(?:court|judge|bench|hc|high\s+court|sessions)\b[^?.]{0,40}\b(?:grant|allow|reject|refuse|dismiss)\b",
         r"\bwill\s+(?:i|he|she|they|we|my\s+\w+)\s+(?:win|succeed|get\s+out|be\s+released)\b",
+        r"\bis\s+(?:bail|release)\s+(?:certain|guaranteed|assured|sure|definite)\b|\bbail\b[^?.]{0,25}\b(?:certain|guaranteed|assured)\b",
+        r"\b(?:most\s+|more\s+|very\s+)?likely\s+to\s+(?:allow|grant|reject|refuse|dismiss|succeed|win|get)\b",
+        r"\bgrant(?:ed)?\s+(?:in|for)\s+(?:what|how)\s+(?:share|many|much)\b",
+        r"जमानत[^?।]{0,40}(?:मिलेगी|मिल\s*जाएगी|मिल\s*पाएगी|मिलने\s+की|मंजूर\s+होगी|खारिज\s+होगी|होगी)|संभावना|कितनी\s+उम्मीद|कितने\s+प्रतिशत|भविष्यवाणी",
     )
 ]
 _ADVICE = [
@@ -43,8 +48,17 @@ _ADVICE = [
         r"\bcan\s+i\s+(?:get|apply|file|be\s+given)\b[^?.]{0,25}\bbail\b",
         r"\b(?:i|we)\s+(?:want|need)\s+(?:a\s+)?(?:bail|lawyer|advice)\b",
         r"\bwhat\s+do\s+i\s+do\b|\bwhat\s+can\s+i\s+do\b|\bhelp\s+me\b.{0,40}\b(?:bail|police|arrest|jail)\b",
+        r"\bi\s+am\s+(?:the\s+|a\s+)?(?:complainant|victim|informant|accused|applicant|petitioner|witness)\b",
+        r"\bshould\s+(?:i|we)\s+(?:withdraw|compromise|cooperate|testify|say|tell|answer|give|take|accept|refuse|meet|call|talk|speak|leave|stay)\b",
+        r"(?:मेरे|हमारे)\s+(?:भाई|बेटे|बेटी|पति|पत्नी|पिता|पिताजी|माँ|माता|मां|बहन|दोस्त|रिश्तेदार)[^?।]{0,60}(?:गिरफ्तार|पकड़|हिरासत|जेल)",
+        r"(?:मैं|हम)\s+क्या\s+कर(?:ूँ|ूं|ें|ना)|मुझे\s+क्या\s+करना",
     )
 ]
+_PRESSURE = re.compile(
+    r"\bexport\b[^?.]{0,40}\b(?:application|docx|pdf|files?|brief|it|now|bas)\b|\b(?:skip|without|bypass)\b[^?.]{0,25}\bapproval\b"
+    r"|\bapprov\w*\b[^?.]{0,25}\b(?:gate|for\s+me)\b|\bgate\s*[12]\b[^?.]{0,30}\bapproved\b|\bexport\s+kar\b|एक्सपोर्ट|निर्यात|\bapproval\s+baad\b",
+    _I,
+)
 _INTENTS: list[tuple[str, re.Pattern[str]]] = [
     ("custody_days", re.compile(r"\bhow\s+many\s+days\b|\bdays?\s+(?:in|of|spent\s+in)\s+(?:custody|jail|lock-?up|detention)\b|\bcustody\s+(?:period|days|so\s+far|duration)\b|\bhow\s+long\b[^?.]{0,30}\b(?:custody|jail|detention|inside)\b", _I)),
     ("section_equivalent", re.compile(r"\b(?:bns|bnss|ipc|crpc|cr\.?p\.?c)\b[^?.]{0,30}\b(?:equivalent|counterpart|corresponds?|replac\w+|now|new\s+(?:section|code|law))\b|\b(?:equivalent|counterpart|corresponding)\b[^?.]{0,40}\b(?:bns|bnss|ipc|crpc|section)\b|\bwhat\s+is\s+\d+\w*\s+(?:ipc|crpc)\b", _I)),
@@ -76,6 +90,8 @@ def classify_question(question: str) -> str | None:
         return REFUSE_PREDICTION
     if any(p.search(text) for p in _ADVICE):
         return REFUSE_ADVICE
+    if _PRESSURE.search(text):
+        return EXPORT_PRESSURE
     for key, pattern in _INTENTS:
         if pattern.search(text):
             return key
@@ -94,6 +110,6 @@ def route_question(question: str) -> list[str]:
         Tool names (empty means refuse).
     """
     key = classify_question(question)
-    if key in (REFUSE_PREDICTION, REFUSE_ADVICE):
+    if key in (REFUSE_PREDICTION, REFUSE_ADVICE, EXPORT_PRESSURE):
         return []
     return list(CHAT_ROUTES[key]) if key else ["search_case_docs"]

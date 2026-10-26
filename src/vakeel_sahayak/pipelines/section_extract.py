@@ -33,7 +33,7 @@ _ACT = rf"(?:the\s+)?(?:{_ACT_ALT})(?:\s+Act)?(?:\s*[,(]?\s*(?:18|19|20)\d\d\)?)
 _TOKEN = r"\d{1,3}[A-Za-z]{0,2}(?:\s?\([0-9A-Za-z]{1,4}\))*(?![\d])"
 _SEP = r"\s*(?:,|/|&|and|or|to|r/w|r\.w\.|read\s+with|along\s*with|alongwith|read\s+together\s+with|-)\s*(?:sections?\s+|secs?\.?\s*|s\.\s*)?"
 _LIST = rf"{_TOKEN}(?:{_SEP}{_TOKEN})*"
-_KEYWORD = r"(?:sections?|secs?\.?|ss\.|s\.|u/s\.?|u/ss\.?|under\s+sections?|under)"
+_KEYWORD = r"(?:sections?|secs?\.?|ss\.|s\.|u/s\.?|u/ss\.?|under\s+sections?|under|धारा|धाराएँ|धाराओं)"
 _GAP = r"(?:\s*,?\s*(?:of|under|in|to|r/w|read\s+with)?\s*(?:the\s+)?)"
 
 # 1. 'Section(s) <list> [of the] <ACT>'
