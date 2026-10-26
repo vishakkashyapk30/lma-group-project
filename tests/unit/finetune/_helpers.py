@@ -34,7 +34,8 @@ def teacher_dossier(case_id: str = "case-0007") -> dict[str, Any]:
     for name, field in d["fields"].items():
         src = field.get("source") or {}
         if not src.get("quote"):
-            field["value"], field["source"] = None, None
+            # RECONCILED: the schema (TrackedField) rejects COMPUTED/USER_STATED with no value, so an emptied field must be UNSUPPORTED
+            field["value"], field["source"], field["status"] = None, None, "UNSUPPORTED"
     return d
 
 
