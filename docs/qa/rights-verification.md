@@ -23,7 +23,7 @@ question stays in the table at the end (split.md HA-03: "each of the 7 rules has
 | Rule | Act text supports the rule? | Problems found | Suggested `last_verified` |
 |---|---|---|---|
 | `default_bail` | Yes for the IPC/BNS case | **Ignores special-act time limits** (UAPA s.43D(2), NDPS s.36A(4)): can say ELIGIBLE too early | `null` until fixed |
-| `undertrial_limit` | Yes for BNSS s.479(1) | **Ignores s.479(2)** (several pending cases: no release); CrPC s.436A covered life-imprisonment offences | `null` until fixed |
+| `undertrial_limit` | Yes for BNSS s.479(1) | **Ignores s.479(2)** (several pending cases restrict bail under the section; read by the Delhi High Court as a factor, not an absolute bar); CrPC s.436A covered life-imprisonment offences | `null` until fixed |
 | `notice_of_appearance` | Yes | Minor: BNSS s.35(7) (age 60+ / infirm, offences under 3 years) not modelled | date after review |
 | `grounds_of_arrest` | Communication: yes. Writing and 2 hours: from case law, not the act | Judgments not read | `null` until judgments are read |
 | `production_24h` | Yes (CrPC s.57) | **Store holds the wrong text for BNSS s.58** (body of s.59) | date after review; data bug to Vishak |
@@ -31,7 +31,8 @@ question stays in the table at the end (split.md HA-03: "each of the 7 rules has
 | `statutory_bar` | Partly | **Over-broad**: NDPS s.37 and UAPA s.43D(5) bar only some offences; "twin conditions" does not describe UAPA | `null` until fixed |
 
 Three of the problems can produce a wrong **ELIGIBLE** (the safety number in the evaluation plan is the false-ELIGIBLE rate):
-`default_bail` for UAPA and NDPS cases and `undertrial_limit` for a person with several pending cases.
+`default_bail` for UAPA and NDPS cases and `undertrial_limit` for a person with several pending cases (there the court may still
+grant bail, so the right answer is CHECK, not ELIGIBLE).
 
 Reproduced by calling the rules directly with `RuleInputs` (2026-10-27):
 
@@ -39,7 +40,7 @@ Reproduced by calling the rules directly with `RuleInputs` (2026-10-27):
 |---|---|---|
 | UAPA, maximum 5 years, no charge sheet, day 62 from first remand | `default_bail`: ELIGIBLE | Limit is 90 days (s.43D(2)): not yet |
 | NDPS s.21(c), maximum 20 years, no charge sheet, day 100 | `default_bail`: ELIGIBLE | Limit is 180 days (s.36A(4)): not yet |
-| BNS 303, maximum 3 years, 600 days in custody, not a first-time offender | `undertrial_limit`: ELIGIBLE | Not if other cases are pending (s.479(2)); `RuleInputs` has no field for them |
+| BNS 303, maximum 3 years, 600 days in custody, not a first-time offender | `undertrial_limit`: ELIGIBLE | If other cases are pending, s.479(2) restricts release and bail is the court's discretion: CHECK; `RuleInputs` has no field for them |
 | Arms Act s.25, maximum 3 years | `antil_category`: C | Not an act with a bail bar: A |
 | NDPS s.20(b)(ii)(A) (small quantity) | `statutory_bar`: BAR_APPLIES | s.37(1)(b) does not reach it |
 
@@ -78,9 +79,14 @@ past") release "on bond" after one-third. CrPC s.436A excluded only death.
 - Half, one-third and the death/life exclusion match BNSS s.479(1).
 - **Problem: s.479(2)** says that where "an investigation, inquiry or trial in more than one offence or in multiple cases are
   pending against a person, he shall not be released on bail by the Court." The rule never looks at other pending cases, so a person
-  with two pending cases past the threshold is reported **ELIGIBLE**. Proposed fix: CHECK (or NOT_APPLICABLE) when antecedents show
-  another pending case; and do not treat "no antecedents on record" as proof of a first-time offender (the proviso is about previous
-  convictions).
+  with two pending cases past the threshold is reported **ELIGIBLE**.
+- **How the courts read s.479(2) (checked by Harshita, 2026-10-27):** not as an absolute bar. The Delhi High Court (BAIL APPLN.
+  4657/2024, judgment of 5 May 2026) held that s.479(2) does not remove the court's discretion to grant bail once the s.479(1)
+  threshold is crossed; multiple pending cases remain a significant factor. Other courts may read it differently, and the outcome
+  depends on the facts.
+- Proposed fix: return **CHECK** (not ELIGIBLE, and not NOT_APPLICABLE) when antecedents show another pending case, with a detail
+  that names the s.479(2) restriction and says bail is then at the court's discretion. Also do not treat "no antecedents on record"
+  as proof of a first-time offender (the proviso is about previous convictions).
 - **CrPC-era cases:** s.436A did not exclude life imprisonment. For a case governed by the CrPC, "not for life" is stricter than the
   act. Which regime applies to an undertrial whose case began before 1 July 2024 is what In Re Inhuman Conditions in 1382 Prisons
   (2024) is cited for; to read before setting a date.
@@ -166,7 +172,7 @@ economic offences not under special acts.
 | # | Question | Who |
 |---|---|---|
 | 1 | Special-act limits in `default_bail` (UAPA s.43D(2), NDPS s.36A(4)) | Vishak (code), Harshita (NDPS s.36A text) |
-| 2 | BNSS s.479(2) and the first-time-offender test in `undertrial_limit` | Vishak (code) |
+| 2 | BNSS s.479(2): CHECK when other cases are pending (statutory restriction, court's discretion per Delhi HC, BAIL APPLN. 4657/2024); first-time-offender test in `undertrial_limit` | Vishak (code) |
 | 3 | Which regime (CrPC s.436A or BNSS s.479) applies to pre-1 July 2024 cases: read In Re 1382 Prisons (2024) | Harshita |
 | 4 | Read Vihaan Kumar (2025) and Mihir Rajesh Shah (2025): written grounds, language, 2 hours, from which date | Harshita |
 | 5 | Category C only for acts with a bail bar, in `engine.py` / `antil_category` | Vishak (code) |
