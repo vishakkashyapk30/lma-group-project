@@ -80,9 +80,11 @@ describe("STATUS_META: every status has an icon, a label and a colour (never col
     }
   });
 
-  it("USER_STATED and USER_EDITED stay distinguishable by label ('Stated by counsel' vs 'Edited by counsel')", () => {
-    expect(STATUS_META.USER_STATED.label).toBe("Stated by counsel");
-    expect(STATUS_META.USER_EDITED.label).toBe("Edited by counsel");
+  // RECONCILED: the redesign speaks to counsel in plain words (workspace-redesign handoff: "Plain-language status labels"), so the
+  // labels are "Entered by you" and "Corrected by you"; they must still differ, which is what this test protects.
+  it("USER_STATED and USER_EDITED stay distinguishable by label ('Entered by you' vs 'Corrected by you')", () => {
+    expect(STATUS_META.USER_STATED.label).toBe("Entered by you");
+    expect(STATUS_META.USER_EDITED.label).toBe("Corrected by you");
   });
 
   it("the f and pencil icons are reserved: ƒ only for COMPUTED, ✎ only for USER_*", () => {
@@ -132,18 +134,20 @@ describe("<StatusBadge /> (fails until implemented)", () => {
     expect(text).toContain(STATUS_META[status].label);
   });
 
-  it("UNSUPPORTED shows the cross icon and the word 'Unsupported'", () => {
+  // RECONCILED: plain-language label (workspace-redesign handoff): UNSUPPORTED reads "Not found"; the raw enum stays in data-status.
+  it("UNSUPPORTED shows the cross icon and the words 'Not found'", () => {
     const { getByTestId } = render(<StatusBadge status="UNSUPPORTED" />);
     const badge = getByTestId("status-badge");
     expect(badge).toHaveTextContent("✖");
-    expect(badge).toHaveTextContent("Unsupported");
+    expect(badge).toHaveTextContent("Not found");
+    expect(badge).toHaveAttribute("data-status", "UNSUPPORTED");
   });
 
   it("the label is real text in the accessibility tree; the icon glyph is decorative (aria-hidden) (ASSUMPTION)", () => {
     const { container } = render(<StatusBadge status="NEEDS_REVIEW" />);
     const hidden = container.querySelector("[aria-hidden='true']");
     expect(hidden?.textContent).toBe("?");
-    expect(container.textContent).toContain("Needs review");
+    expect(container.textContent).toContain("Needs your review"); // RECONCILED: plain-language label (was "Needs review")
   });
 
   it("exposes the raw status in data-status and references its colour token (ASSUMPTION)", () => {
