@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import sqlite3
 import threading
 import time
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 
 from vakeel_sahayak.schemas.enums import EventKind
@@ -246,6 +247,30 @@ class EventLog:
                 return
             else:
                 time.sleep(poll_interval)
+
+    async def follow(self, case_id: str, after_event_id: str | None = None, poll_interval: float = 0.2) -> AsyncIterator[Event]:
+        """Async twin of `subscribe` for the SSE route: the case's events after `after_event_id` (all of them if None or unknown), then
+        each new one as it arrives (plan §3.3 use 4).
+
+        The database read runs in a worker thread and the wait is `asyncio.sleep`, so a follower never blocks the server's event loop:
+        a blocking `subscribe` inside an async route freezes every other request of the API while a browser has a case open. When the
+        client goes away the route stops iterating and nothing is left polling.
+
+        Args:
+            case_id: the case to follow
+            after_event_id: resume after this event (a reconnecting browser's Last-Event-ID)
+            poll_interval: seconds between polls of the database
+
+        Returns:
+            An async event iterator that never ends on its own.
+        """
+        cursor = (await asyncio.to_thread(self.seq_of, after_event_id) or 0) if after_event_id else 0
+        while True:
+            rows = await asyncio.to_thread(self._read_rows, case_id, None, None, None, cursor)
+            for seq, event in rows:
+                cursor = seq
+                yield event
+            await asyncio.sleep(poll_interval)
 
     def _read_rows(
         self,
