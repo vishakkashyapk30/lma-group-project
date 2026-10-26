@@ -88,3 +88,29 @@ def test_run_manifest_records_gold(root, monkeypatch):
     rec = _gold_manifest(str(root / "t1_rule_only" / "cases.jsonl"))
     assert rec["gold_source"] == "rule" and rec["gold_sha256"] == gold_hashes(root / "t1_rule_only")["gold_sha256"]
     assert _gold_manifest(str(root / "t2" / "driver_cases.jsonl")) == {"gold_source": None, "gold_sha256": None}
+
+
+def test_merge_g2_changes_only_g2_in_all_three_folders_and_is_idempotent(root, tmp_path):
+    swap_t1("agreed", root)
+    donor = tmp_path / "donor"
+    donor.mkdir()
+    for name in ("cases.jsonl", "dev.jsonl"):
+        rows = read_rows(root / "t1" / name)
+        if rows:
+            rows[0]["gold"]["G2"] = {**rows[0]["gold"]["G2"], "labels": ["court:SC:abc"], "status": "resolved"}
+        (donor / name).write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    blind_before = (root / "t1" / "manifest_blind.json").read_text()
+    before = load_t1("test", "agreed", root)
+    from vakeel_sahayak.testsets.gold_source import merge_g2
+
+    out = merge_g2(donor, root, backup=tmp_path / "bak")
+    assert out["changed"]["t1/cases.jsonl"] == 1 and (tmp_path / "bak" / "t1" / "cases.jsonl").is_file()
+    for src in ("agreed", "rule"):
+        rows = load_t1("test", src, root)
+        assert rows[0]["gold"]["G2"]["labels"] == ["court:SC:abc"]
+    after = load_t1("test", "agreed", root)
+    assert {k: v for k, v in after[0]["gold"].items() if k != "G2"} == {k: v for k, v in before[0]["gold"].items() if k != "G2"}
+    assert (root / "t1" / "manifest_blind.json").read_text() == blind_before
+    assert all(v == 0 for v in merge_g2(donor, root)["changed"].values())
+    swap_t1("agreed", root)  # a later swap keeps the merged G2
+    assert load_t1("test", "agreed", root)[0]["gold"]["G2"]["labels"] == ["court:SC:abc"]

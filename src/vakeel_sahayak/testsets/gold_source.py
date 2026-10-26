@@ -12,7 +12,7 @@ Layout under `<testsets>/`:
 The source is chosen by the `gold_source` argument (`agreed` default, `rule`) or the environment variable `VS_GOLD_SOURCE`. Both directories carry `manifest.json` with
 `details.gold = {source, cases_sha256, dev_sha256, gold_sha256}`; run manifests (`MANIFEST.json`) copy `gold_source` and `gold_sha256`.
 
-CLI (wrapped by `scripts/swap_gold.sh`): `python -m vakeel_sahayak.testsets.gold_source swap --primary agreed|rule [--backup DIR]`, `info`, `refresh DIR --source S`.
+CLI (wrapped by `scripts/swap_gold.sh`): `python -m vakeel_sahayak.testsets.gold_source swap --primary agreed|rule [--backup DIR]`, `info`, `refresh DIR --source S`, `merge-g2 --donor DIR [--donor-interim g2.jsonl] [--backup DIR]` (G2 comes from the citation index, not from a labeler, so it is the same in both golds).
 Nothing here reads the sealed blind ids: the blind slice is recognised by the salted hashes of `manifest_blind.json`.
 """
 
@@ -262,6 +262,72 @@ def swap_interim_gold(primary: str, work_dir: str | Path, candidate_dir: str | P
     return log
 
 
+# ---------------------------------------------------------------------------------------------------------------- G2 merge
+def merge_g2_rows(rows: list[dict[str, Any]], donor: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int]:
+    """Copy the `gold.G2` record of every donor row into the row with the same `case_id` and `doc_id`; every other field is untouched.
+
+    G2 (cited authorities) is extracted by rules from the order text (no labeler), so one G2 serves both golds. Returns (rows, number whose G2 changed).
+    Raises ValueError when the two lists do not hold the same (case_id, doc_id) pairs in the same order.
+    """
+    if [(r["case_id"], r["doc_id"]) for r in rows] != [(r["case_id"], r["doc_id"]) for r in donor]:
+        raise ValueError("G2 donor and target list different cases")
+    out, changed = [], 0
+    for r, d in zip(rows, donor, strict=True):
+        g2 = d["gold"]["G2"]
+        if r["gold"].get("G2") != g2:
+            changed += 1
+        out.append({**r, "gold": {**r["gold"], "G2": g2}})
+    return out, changed
+
+
+def merge_g2(donor_dir: str | Path, testsets_dir: str | Path | None = None, backup: str | Path | None = None) -> dict[str, Any]:
+    """Put the G2 of `donor_dir` (a T1 folder built with the improved citation index) into `t1/`, `t1_gold_candidate/` and `t1_rule_only/`.
+
+    The three folders are the two golds and the source of the agreed swap, so all of them must carry the same G2 or a later `swap_t1` would undo the merge.
+    Only `gold.G2` changes; ids, id manifests and the blind hashes do not. Manifests are refreshed. `backup` (must not exist) receives the previous
+    `cases.jsonl` and `dev.jsonl` of every folder (`<backup>/<folder>/`). Idempotent. Returns the number of changed cases per folder and file and the new hashes.
+    """
+    root, donor = testsets_root(testsets_dir), Path(donor_dir)
+    folders = [(root / n, src) for n, src in ((PRIMARY_DIR, "agreed"), (CANDIDATE_DIR, "agreed"), (RULE_DIR, "rule")) if (root / n).is_dir()]
+    plan = {}
+    for d, _ in folders:
+        for name in GOLD_FILES:
+            if not (d / name).is_file():
+                continue
+            rows, changed = merge_g2_rows(load_rows(d / name), load_rows(donor / name))
+            plan[(d, name)] = (rows, changed)
+    if backup is not None and any(c for _, c in plan.values()):
+        if Path(backup).exists():
+            raise ValueError(f"{backup} exists already")
+        for (d, name) in plan:
+            (Path(backup) / d.name).mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(d / name, Path(backup) / d.name / name)
+    out: dict[str, Any] = {"changed": {}, "gold_sha256": {}}
+    for (d, name), (rows, changed) in plan.items():
+        if changed:
+            (d / name).write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
+        out["changed"][f"{d.name}/{name}"] = changed
+    for d, src in folders:
+        if (d / "manifest.json").is_file() and (d / "manifest_blind.json").is_file():
+            refresh_manifest(d, src)
+        out["gold_sha256"][d.name] = gold_hashes(d)
+    return out
+
+
+def merge_g2_interim(donor_gold: str | Path, work_dir: str | Path) -> list[str]:
+    """Replace `<work>/gold/g2.jsonl` by the donor's; the previous file is MOVED once to `<work>/gold/rule_only/g2.jsonl` (never overwritten)."""
+    gold, new = Path(work_dir) / "gold", Path(donor_gold)
+    ro = gold / "rule_only"
+    log: list[str] = []
+    if not (ro / "g2.jsonl").is_file():
+        ro.mkdir(parents=True, exist_ok=True)
+        (gold / "g2.jsonl").rename(ro / "g2.jsonl")
+        log.append(f"moved {gold / 'g2.jsonl'} -> {ro / 'g2.jsonl'}")
+    shutil.copyfile(new, gold / "g2.jsonl")
+    log.append(f"wrote {gold / 'g2.jsonl'} from {new}")
+    return log
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="T1 gold source: swap, info, refresh")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -272,6 +338,12 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--work", default=None, help="interim T1 work folder (default <interim>/t1_work); its gold/ files follow the swap")
     s.add_argument("--candidate", default=None, help="folder with the agreed g*.jsonl (default <interim>/gold_candidate)")
     s.add_argument("--no-interim", action="store_true")
+    m = sub.add_parser("merge-g2", help="merge the G2 of an improved-citation-index T1 folder into t1, t1_gold_candidate and t1_rule_only")
+    m.add_argument("--donor", required=True, help="T1 folder holding the new G2 (e.g. <testsets>/t1_candidate)")
+    m.add_argument("--donor-interim", default=None, help="the new g2.jsonl of the interim work folder")
+    m.add_argument("--work", default=None)
+    m.add_argument("--testsets", default=None)
+    m.add_argument("--backup", default=None)
     i = sub.add_parser("info")
     i.add_argument("--testsets", default=None)
     r = sub.add_parser("refresh")
@@ -280,6 +352,18 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
     if a.cmd == "info":
         print(json.dumps({s_: gold_info(s_, a.testsets) for s_ in SOURCES}, indent=1))
+        return 0
+    if a.cmd == "merge-g2":
+        try:
+            out = merge_g2(a.donor, a.testsets, a.backup)
+            if a.donor_interim:
+                from vakeel_sahayak.config import load_config
+
+                out["interim"] = merge_g2_interim(a.donor_interim, a.work or Path(load_config().paths.interim_dir) / "t1_work")
+        except (ValueError, FileNotFoundError) as exc:
+            print(f"REFUSED: {exc}", file=sys.stderr)
+            return 2
+        print(json.dumps(out, indent=1))
         return 0
     if a.cmd == "refresh":
         refresh_manifest(a.dir, a.source)

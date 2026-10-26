@@ -33,6 +33,13 @@ class DraftBrief(BaseModel):
     open_issues: list[OpenIssue] = Field(default_factory=list)
 
 
+def hosted_backend() -> bool:
+    """True when `VS_LLM_BACKEND` names a hosted API and models are not forced offline (then a baseline must send pseudonymised facts, as Full does)."""
+    import os
+
+    return os.environ.get("VS_LLM_BACKEND", "offline").lower() in ("openai", "sarvam") and os.environ.get("VS_MODELS", "offline").lower() != "offline"
+
+
 def facts_of(case: dict[str, Any]) -> str:
     """The case's facts text (`facts`, or `facts_text` of a T1 row)."""
     return str(case.get("facts") or case.get("facts_text") or "")
@@ -85,8 +92,14 @@ def draft(case: dict[str, Any], ctx: AgentContext, *, task: str, evidence: list[
     from vakeel_sahayak.models.prompting import render_prompt
     from vakeel_sahayak.orchestration.structured_output import StructuredOutputError, structured_call
 
-    data: dict[str, Any] = {"case": {"case_id": case["case_id"], "facts": facts_of(case), "checklist": checklist()},
-                            "corpus": {"evidence": evidence or []}, **(extra or {})}
+    facts, evidence = facts_of(case), evidence or []
+    if hosted_backend():  # the same input rule as Full: pseudonymised facts, PII masked in public rows, so the boundary lets the call through
+        from vakeel_sahayak.agents.outbound import mask_public
+        from vakeel_sahayak.eval.runners.driver import file_facts
+
+        facts, evidence = file_facts(ctx, case, shelve=False), mask_public(evidence)
+    data: dict[str, Any] = {"case": {"case_id": case["case_id"], "facts": facts, "checklist": checklist()},
+                            "corpus": {"evidence": evidence}, **(extra or {})}
     prompt = render_prompt(task, INSTRUCTIONS, data, system=SYSTEM, schema=schema_of(DraftBrief))
     try:
         res = structured_call(resolve_llm(ctx, role), prompt, DraftBrief, max_tokens=max_tokens, temperature=0.0, retries=2)

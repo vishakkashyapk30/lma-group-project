@@ -10,7 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 from vakeel_sahayak.agents.base import AgentContext
-from vakeel_sahayak.eval.baselines.common import draft
+from vakeel_sahayak.eval.baselines.common import draft, hosted_backend
 from vakeel_sahayak.models.offline_llm import OfflineRequest, register_offline_handler
 from vakeel_sahayak.schemas.bail_brief import BailBrief
 
@@ -41,6 +41,8 @@ def run_case_with_model(case: dict[str, Any], ctx: AgentContext, role: str | Non
     Returns:
         BailBrief.
     """
+    if role == "teacher" and hosted_backend():
+        role = None  # stand-in ('b0l-hosted'): the hosted API model fills the large-model slot (the `teacher` role has no hosted client); label the row as a stand-in
     return draft(case, ctx, task=TASK, role=role)
 
 
