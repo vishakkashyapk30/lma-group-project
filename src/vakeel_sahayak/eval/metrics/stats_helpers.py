@@ -10,6 +10,9 @@ def average_over_runs(per_run: list[dict[str, float]]) -> dict[str, float]:
         per_run: see behaviour
 
     Returns:
-        Averages.
+        Each metric averaged across the runs (plan §15.9: three runs averaged per case).
     """
-    raise NotImplementedError
+    if not per_run:
+        return {}
+    keys = per_run[0].keys()
+    return {key: sum(run[key] for run in per_run) / len(per_run) for key in keys}

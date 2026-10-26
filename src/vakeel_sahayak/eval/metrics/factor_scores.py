@@ -16,6 +16,13 @@ def factor_recall_precision(
         answerable: see behaviour
 
     Returns:
-        (recall, precision).
+        (recall, precision). Only factors whose supporting fact is in the input are scored (plan §15.1), so predicting or
+        missing an unanswerable factor neither helps nor hurts.
     """
-    raise NotImplementedError
+    answerable_set = set(answerable)
+    pred = set(predicted) & answerable_set
+    gold_a = set(gold) & answerable_set
+    hit = pred & gold_a
+    recall = len(hit) / len(gold_a) if gold_a else 1.0
+    precision = len(hit) / len(pred) if pred else 1.0
+    return recall, precision

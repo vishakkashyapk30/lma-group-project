@@ -16,19 +16,22 @@ def _frame(event: Event) -> str:
     return f"id: {event.event_id}\nevent: {event.kind.value}\ndata: {event.model_dump_json()}\n\n"
 
 
-async def event_stream(case_id: str, last_event_id: str | None = None) -> AsyncIterator[str]:
+async def event_stream(case_id: str, last_event_id: str | None = None, log: object | None = None) -> AsyncIterator[str]:
     """Yield SSE-formatted events for a case: the stored events after `last_event_id`, then the live ones.
 
     Args:
         case_id: the case whose events to stream
         last_event_id: resume after this event id (a reconnecting browser's `Last-Event-ID`)
+        log: the case record to read (default: the one `deps.get_event_log` resolves). The route passes its
+            dependency-injected log so a test's override (a finite-subscribe log) is honoured.
 
     Returns:
         SSE frames.
     """
-    from vakeel_sahayak.api import deps
+    if log is None:
+        from vakeel_sahayak.api import deps
 
-    log = deps.get_event_log(case_id)
+        log = deps.get_event_log(case_id)
     seen_target = last_event_id is None  # skip every frame up to and including last_event_id, in stored then live
 
     def past_resume_point(event: Event) -> bool:

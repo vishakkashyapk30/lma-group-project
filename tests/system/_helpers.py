@@ -725,7 +725,10 @@ class Scenario:
 
     def through_draft(self) -> CaseGraphState:
         """Sutradhar plans, Vakeel drafts, Abhiyojak spars (plan §6.2 step 3)."""
-        return self.run(AgentName.SUTRADHAR)
+        sutradhar = self.agent(AgentName.SUTRADHAR)
+        self.state = sutradhar.run(self.state)
+        self.state = sutradhar.delegate(self.state, list(self.state.evidence_packs))
+        return self.state
 
     # -- what the Ada-bound clients saw -----------------------------------------------------------------------
     @property

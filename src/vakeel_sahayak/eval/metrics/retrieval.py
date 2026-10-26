@@ -5,6 +5,11 @@ from __future__ import annotations
 from vakeel_sahayak.schemas.retrieval_plan import EvidencePack
 
 
+def _doc_id(item: str) -> str:
+    """The document id of a retrieved item ('DOC-A#14' -> 'DOC-A')."""
+    return item.split("#", 1)[0]
+
+
 def recall_at_k(retrieved: list[str], gold: list[str], k: int = 10) -> float:
     """Document-level recall@k.
 
@@ -14,18 +19,27 @@ def recall_at_k(retrieved: list[str], gold: list[str], k: int = 10) -> float:
         k: see behaviour
 
     Returns:
-        Recall.
+        Recall (gold documents found in the top k, counted once each, over all gold documents).
     """
-    raise NotImplementedError
+    gold_set = set(gold)
+    if not gold_set:
+        return 1.0
+    found = {_doc_id(item) for item in retrieved[:k]}
+    return len(gold_set & found) / len(gold_set)
 
 
 def slot_fill_rate(packs: list[EvidencePack]) -> float:
-    """Share of required slots FILLED.
+    """Share of slots FILLED across every evidence pack.
 
     Args:
-        packs: see behaviour
+        packs: the evidence packs Sutradhar produced
 
     Returns:
-        Rate.
+        Filled slots / total slots (0.0 when there are no slots).
     """
-    raise NotImplementedError
+    from vakeel_sahayak.schemas.enums import SlotStatus
+
+    slots = [slot for pack in packs for slot in pack.slots]
+    if not slots:
+        return 0.0
+    return sum(1 for s in slots if s.status == SlotStatus.FILLED) / len(slots)

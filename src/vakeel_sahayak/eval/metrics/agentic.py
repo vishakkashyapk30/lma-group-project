@@ -14,19 +14,35 @@ def pass_hat_k(results: list[list[bool]], k: int = 3) -> float:
         k: see behaviour
 
     Returns:
-        Rate.
+        Share of cases where all k runs pass.
     """
-    raise NotImplementedError
+    if not results:
+        return 0.0
+    return sum(1 for runs in results if all(runs[:k])) / len(results)
 
 
 def stale_claim_rate(brief: BailBrief, change_set: ChangeSet) -> float:
-    """Claims still stating an old value.
+    """Share of claims that still state the old value of a field the change set touched (plan §10, §15.8).
+
+    The denominator is the grounds that depend on a changed field; a ground is stale when the hash it depends on is still
+    the field's old hash.
 
     Args:
-        brief: see behaviour
-        change_set: see behaviour
+        brief: the current brief
+        change_set: the fields that changed, with their old and new hashes
 
     Returns:
-        Rate.
+        Stale claims / claims depending on a changed field (0.0 when none depend on one).
     """
-    raise NotImplementedError
+    changed = {fc.field: fc for fc in change_set.fields}
+    denom = 0
+    stale = 0
+    for ground in brief.grounds:
+        facts = ground.depends_on.facts if ground.depends_on else {}
+        touched = [f for f in facts if f in changed]
+        if not touched:
+            continue
+        denom += 1
+        if any(facts[f] == changed[f].old_hash for f in touched):
+            stale += 1
+    return stale / denom if denom else 0.0

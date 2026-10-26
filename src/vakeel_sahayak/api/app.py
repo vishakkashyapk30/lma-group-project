@@ -29,8 +29,12 @@ def create_app(config_dir: str | None = None) -> FastAPI:
     if config_dir:
         os.environ["VS_CONFIG_DIR"] = config_dir
     app = FastAPI(title="Vakeel-Sahayak.ai", description="Bail-preparation assistant API (plan §13).")
-    # Each router already bakes its prefix into every route; adding the routes directly materialises them in `app.routes`
-    # eagerly (this FastAPI version otherwise includes routers lazily, so they would not show up until the app is built).
+    # `include_router` wires each router so routing and `dependency_overrides` work (this FastAPI resolves included
+    # routers lazily at request time). It also means the routes do not appear in `app.routes` until the app is built, so
+    # we additionally append each router's concrete routes for enumeration (route-listing tests, OpenAPI). Routing still
+    # goes through the included routers, which are matched first; the appended copies are never matched.
+    for module in ROUTERS:
+        app.include_router(module.router)
     for module in ROUTERS:
         app.router.routes.extend(module.router.routes)
     app.add_middleware(

@@ -35,8 +35,18 @@ Files: `src/vakeel_sahayak/api/*`. All 8 routers built on the folded views (`rec
 
 **Deferred:** `CaseSummary.last_activity` not added (no test needs it; add when the frontend does).
 
-### Task 3 — Integration & system tests
-Files: `tests/integration`, `tests/system` (plan §13.6 user flows 1–7 + the T7 safety suite). Pass once the graph (Task 1) and API (Task 2) exist.
+### Task 3 — Integration & system tests  ← in progress
+Files: `tests/integration`, `tests/system` (plan §13.6 user flows 1–7 + the T7 safety suite).
+
+**`tests/integration/test_api_routes.py`: 8 passed / 7 failed, runs in ~58s (no hang).** Fixes made:
+- **Real hang bug fixed.** The `create_app` route-mounting hack (`app.router.routes.extend`) silently disabled `dependency_overrides`, so the SSE route hit the real never-ending `subscribe()` and hung forever. Now `create_app` uses `include_router` (override-aware routing) and appends concrete route copies only for the enumeration tests. The events route passes its injected log through to `event_stream`. Both SSE integration tests pass.
+- **`through_draft` helper** now runs the full draft (Sutradhar → Vakeel → Abhiyojak), not just retrieval, so drafted-case tests have a brief.
+- **Upload route runs Munshi intake** (`_run_intake`) so `GET /ingestion` reflects the dropped bundle.
+- Verified an ingestion report *with* documents round-trips through the fold + route, so the remaining failures are **agent content**, not API wiring.
+
+**The 7 remaining failures are agent-flow/content issues, not API routing** (owned across the team): the real Munshi doesn't split the fake messy bundle into exactly the 4 expected documents (`test_ingestion`, `test_uploading`); the dossier/sparring/tool-trace/gate-checklist tests depend on the same pipeline producing the fixture-expected values (`test_dossier_and_dates`, `test_spar`, `test_gate_1`, `test_gate_2_flow`, `test_sse_carries_the_tool_trace`). Munshi intake is tracked in `docs/handoff/munshi-real-pdf-reading.md`.
+
+**Still to do:** the `tests/system/*` flows (flow1–7, T7) — same kind: they exercise the full agent pipeline and will surface the same agent-content gaps plus the pre-existing Sutradhar chat-handler bug.
 
 ## Log
 - 2026-10-26: env built (`.venv`, `.[data,dev]`); `make smoke` passes offline; synced to `origin/main` c0d51dd (clean, no reset needed); `backup/shravani` created. HF data download blocked — account `shravaniiith` not yet granted access to the private dataset.

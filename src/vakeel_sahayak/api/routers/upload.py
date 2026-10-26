@@ -60,7 +60,31 @@ async def upload_files(case_id: str, files: list[UploadFile], log: Annotated[Eve
             questions.append(f"{name} could not be opened. Please upload an unlocked or intact copy.")
     log.append(Event(event_id="", case_id=case_id, ts="", kind=EventKind.USER_ACTION, actor=COUNSEL,
                      inputs={"action": "upload", "files": accepted}))  # names only, never page text (plan §16)
+    questions += _run_intake(log, case_id, [str(case_dir / name) for name in accepted])
     return UploadResponse(case_id=case_id, accepted=accepted, questions=questions)
+
+
+def _run_intake(log: EventLog, case_id: str, paths: list[str]) -> list[str]:
+    """Run Munshi over the just-uploaded files (plan §13.6 flow 1); returns any questions it raised. A failed intake is
+    swallowed so the upload response still returns (the error is recorded in the log by the agent)."""
+    if not paths:
+        return []
+    from vakeel_sahayak.agents.registry import create_agent
+    from vakeel_sahayak.api import service
+    from vakeel_sahayak.orchestration.state import CaseGraphState
+    from vakeel_sahayak.schemas.enums import AgentName
+
+    try:
+        state = CaseGraphState(case_id=case_id, log_path=log.db_path, files=paths)
+        munshi = create_agent(AgentName.MUNSHI, service.agent_context(log, case_id))
+        try:
+            state = munshi.run(state)
+        finally:
+            munshi.close()
+        report = state.ingestion
+        return list(report.questions) if report is not None else []
+    except Exception:  # noqa: BLE001 - intake failure must not fail the upload; the agent logs the error
+        return []
 
 
 @router.post("/audio", response_model=UploadResponse)

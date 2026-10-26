@@ -13,6 +13,16 @@ def rights_accuracy(report: RightsReport, designed: dict[str, str]) -> dict[str,
         designed: see behaviour
 
     Returns:
-        Metrics.
+        Each check name -> 1.0 if its status matches the designed answer else 0.0, plus `false_eligible_rate`: the share
+        of checks the report calls ELIGIBLE where the designed answer is not ELIGIBLE (plan §15.8).
     """
-    raise NotImplementedError
+    result: dict[str, float] = {}
+    false_eligible = 0
+    for check in report.checks:
+        name = check.check.value
+        status = check.status.value
+        result[name] = 1.0 if status == designed.get(name) else 0.0
+        if status == "ELIGIBLE" and designed.get(name) != "ELIGIBLE":
+            false_eligible += 1
+    result["false_eligible_rate"] = false_eligible / len(report.checks) if report.checks else 0.0
+    return result
