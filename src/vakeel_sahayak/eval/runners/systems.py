@@ -10,8 +10,9 @@ System ids (case-insensitive; the manifest records the canonical spelling):
 * three ids need an argument, written `ID:ARG`: `A5:base_4b` or `A5:prompted_32b` (the extractor), `A10:<store>` (the store knocked out, for example
   `A10:caselaw.reasoning`) and `S13:<field>=<value>[,<field>=<value>]` (a grid point of the searched switches, for example `S13:stopping=llm`).
 
-An id that exists as a switch set but that no agent reads yet (today only `S15b`) raises `NotImplementedError` naming the variant; an unknown id raises `ValueError`
-listing the valid ones. Nothing is ever run silently as Full under another name.
+An id that exists as a switch set but that no agent reads (none today: S15b was the last) raises `NotImplementedError` naming the variant; an unknown id raises `ValueError`
+listing the valid ones. A run whose switches say `output_format='free_then_parse'` (S15b, or an S13 grid point with that field) opens `structured_output.output_format` around the
+per-case runner, which is how the structured-output layer learns the format. Nothing is ever run silently as Full under another name.
 """
 
 from __future__ import annotations
@@ -166,7 +167,7 @@ def system_runner(name: str) -> tuple[Callable[[dict[str, Any], Any], Any], Swit
     """The runner and switches of a system id (see the module docstring for the ids).
 
     Raises:
-        NotImplementedError: a declared variant that no agent reads yet (today `S15b`), naming the variant and its switches.
+        NotImplementedError: a declared variant that no agent reads yet (none today), naming the variant and its switches.
         ValueError: unknown id, or an id of A5, A10, S13 without its argument.
     """
     canon = canonical_system(name)
@@ -185,4 +186,30 @@ def system_runner(name: str) -> tuple[Callable[[dict[str, Any], Any], Any], Swit
         from vakeel_sahayak.eval.runners.driver import run_agents
 
         return (lambda case, ctx: run_agents(case, ctx, stop_after="retrieval")), switches
-    return importlib.import_module(modules + "full_system").run_case, switches
+    runner = importlib.import_module(modules + "full_system").run_case
+    return (_in_free_format(runner) if switches.output_format == "free_then_parse" else runner), switches
+
+
+def _in_free_format(runner: Callable[[dict[str, Any], Any], Any]) -> Callable[[dict[str, Any], Any], Any]:
+    """S15b: the per-case runner inside `structured_output.output_format('free_then_parse')` (the decoding constraint off, a free-text note on, the same parser and repair loop)."""
+    def run(case: dict[str, Any], ctx: Any) -> Any:
+        from vakeel_sahayak.orchestration.structured_output import free_then_parse_stats, output_format
+
+        with output_format("free_then_parse"):
+            out = runner(case, ctx)
+        stats = free_then_parse_stats()
+        record = dict(getattr(ctx, "eval_record", None) or {})
+        record["variant_signals"] = {**(record.get("variant_signals") or {}), "output_format": {"variant": "S15b", "output_format": "free_then_parse", **stats,
+                                                                                               "repairs": stats["attempts"] - stats["calls"]}}
+        ctx.eval_record = record  # the driver saves it with the case
+        try:
+            from vakeel_sahayak.schemas.enums import EventKind
+            from vakeel_sahayak.schemas.events import Event
+
+            ctx.log.append(Event(event_id="", ts="", case_id=ctx.case_id, kind=EventKind.AGENT_MESSAGE, actor="driver",
+                                 outputs={"type": "output_format", "text": f"S15b: {stats['calls']} structured call(s) in free text, {stats['attempts'] - stats['calls']} repair(s)", **stats}))
+        except Exception:  # noqa: BLE001 - a fake context's log may not take it
+            pass
+        return out
+
+    return run

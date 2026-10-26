@@ -10,7 +10,7 @@ backends:
   sarvam: {model: sarvam-105b, env: {VS_MODELS: auto, VS_LLM_BACKEND: sarvam, VS_SARVAM: pseudonymised, VS_EXTERNAL: pseudonymised}}  # VS_SARVAM_CAP_INR comes from the shell: INR 30 total on the owner key; Satvik sets his own
   offline: {model: "offline stand-in LLM (template); real stores and retrieval", env: {VS_MODELS: auto, VS_LLM_BACKEND: offline, VS_EXTERNAL: "off"}}
   ada: {model: Qwen3-4B via vLLM on one 2080 Ti per server, env: {VS_MODELS: auto, VS_LLM_BACKEND: local}}
-# arm fields: id (driver system id), tier (must/should/could/baseline), phase (0 done earlier, 1 offline, 2 OpenAI, 3 Sarvam, 4 Ada), backend, n cases, runs, testset, ratio (tokens vs Full, plan 7.2), claims, status
+# arm fields: id (driver system id, or a label when kind is study), kind (driver, the default, or study: an offline non-driver arm run by `python -m vakeel_sahayak.eval.studies <study>`; `study_n` is its size), tier (must/should/could/baseline), phase (0 done earlier, 1 offline, 2 OpenAI, 3 Sarvam, 4 Ada), backend, n cases, runs, testset, ratio (tokens vs Full, plan 7.2), claims, status
 arms:
   # ---- baselines already run on OpenAI (dev-baselines agent); reused, not rerun
   - {id: full,  tier: baseline, phase: 0, backend: openai, n: 50, runs: 2, ratio: 1.0,  claims: [C1, C2, C3], status: done}
@@ -23,9 +23,15 @@ arms:
   - {id: full,  tier: baseline, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [], status: planned, note: "reference for every offline arm"}
   - {id: S4,    tier: should, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [C9], status: planned}
   - {id: S5,    tier: should, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [C9], status: planned}
-  - {id: S16,   tier: should, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [], status: planned, note: "per-case run equals Full; the chunking study is the evidence"}
   - {id: "A10:*", tier: must, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [C5], status: planned, note: "seven store knock-outs, retrieval and slot fill only"}
-  - {id: S14b,  tier: should, phase: 1, backend: offline, n: 300, runs: 1, testset: T5, ratio: 0, claims: [C31], status: planned, note: "scheduling simulation on T5 through the batch desk"}
+  # ---- phase 1 studies (kind: study): zero model cost, laptop; S4S5, S14, S16 write under <out_root>/studies/<study>/, M17 is a driver-style run under <out_root>/outputs/m17
+  - {id: S14b,  kind: study, study: s14, tier: should, phase: 1, backend: offline, n: 300, runs: 1, testset: T5, ratio: 0, claims: [C31], status: planned, note: "scheduling simulation on the 300 T5 cases: FCFS (S14b) vs urgency vs urgency + least work (S14c); the per-case driver arm equals Full"}
+  - {id: S14c,  kind: study, study: s14, tier: should, phase: 1, backend: offline, n: 300, runs: 1, testset: T5, ratio: 0, claims: [C31], status: planned, note: "same simulation as S14b (one study covers both)"}
+  - {id: S16, kind: study, study: s16, study_n: 300, tier: should, phase: 1, backend: offline, n: 300, runs: 1, ratio: 0, claims: [], status: planned, note: "chunk strategies on a re-chunked sample of 300 orders; self-supervised targets (G2 has none resolvable in the corpus)"}
+  - {id: S16b, kind: study, study: s16, study_n: 300, tier: could, phase: 1, backend: offline, n: 300, runs: 1, ratio: 0, claims: [], status: planned, note: "late chunking is a row of the same study"}
+  - {id: S4-retrieval, kind: study, study: s4s5, study_n: 150, tier: should, phase: 1, backend: offline, n: 150, runs: 1, ratio: 0, claims: [C9], status: planned, note: "AUROC of score skew (M19) on the real stores: G2 queries (thin, n printed) and a self-supervised proxy"}
+  - {id: S5-retrieval, kind: study, study: s4s5, study_n: 150, tier: should, phase: 1, backend: offline, n: 150, runs: 1, ratio: 0, claims: [C9], status: planned, note: "recall@10 with and without PPR expansion; same study as S4-retrieval"}
+  - {id: M17-removal, kind: study, study: m17, study_n: 20, tier: should, phase: 1, backend: offline, n: 20, runs: 1, ratio: 0, claims: [], status: planned, note: "citation faithfulness by removal (M17): redraft cited claims without their paragraph; offline stand-in drafter (about 80 s a case); the hosted arm is run later"}
   - {id: S7,    tier: must, phase: 1, backend: offline, n: 100, runs: 1, testset: T2, ratio: 0, claims: [C21], status: planned}
   - {id: "P5-P8", tier: should, phase: 1, backend: offline, n: 100, runs: 1, testset: T2, ratio: 0, claims: [C21], status: planned}
   - {id: "S17*", tier: must, phase: 1, backend: offline, n: 60, runs: 1, testset: T7, ratio: 0, claims: [C37], status: planned, note: "offline stand-in: attack-success numbers describe the stand-in, not a model"}
@@ -49,6 +55,7 @@ arms:
   - {id: S10,  tier: must, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 0.83, claims: [C8], status: planned}
   - {id: S1,   tier: must, phase: 3, backend: sarvam, runner: satvik, n: 25, runs: 1, ratio: 1.17, claims: [C10], status: planned}
   - {id: S15,  tier: must, phase: 3, backend: sarvam, runner: satvik, n: 25, runs: 1, ratio: 1.0, claims: [C26, C27], status: planned}
+  - {id: S15b, tier: could, phase: 3, backend: sarvam, runner: satvik, n: 25, runs: 1, ratio: 1.0, claims: [C26, C27], status: planned, note: "free text then parse (structured_output.output_format); built 2026-10-27, offline-smoked only"}
   - {id: S11,  tier: could, phase: 3, backend: sarvam, runner: satvik, n: 25, runs: 1, ratio: 1.0, claims: [C7], status: planned}
   # ---- phase 4: local Qwen3-4B on Ada (free of API credits); remaining arms
   - {id: full, tier: baseline, phase: 4, backend: ada, n: 50, runs: 1, ratio: 1.0, claims: [], status: planned}
@@ -63,5 +70,4 @@ arms:
   - {id: S11c, tier: could, phase: 4, backend: ada, n: 25, runs: 1, ratio: 1.0, claims: [C7], status: planned}
   - {id: S18,  tier: could, phase: 4, backend: ada, n: 25, runs: 1, ratio: 1.0, claims: [], status: planned}
 not_run:
-  S13: "workflow search has no model-backed evaluator wired (runs.yaml: runner workflow_search raises NotImplementedError)"
-  S15b: "declared, behaviour not built"
+  S13: "the deterministic grid-search driver exists (`driver`-less: `eval.runners.workflow_search`, offline smoke on 3 cases); its model-backed evaluation arm stays planned"

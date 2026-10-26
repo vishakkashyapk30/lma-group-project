@@ -78,6 +78,30 @@ def launch(jobs: list[str], argv: list[str] | None, description: str) -> int:
     return 0
 
 
+def main(argv: list[str] | None = None) -> int:
+    """CLI of `scripts/ada/run_shard.sh`: `python -m vakeel_sahayak.eval.runners.shard_runner --job NAME --shard N --n-shards M [--out-dir DIR] [--hours H]` runs one shard of one job of runs.yaml.
+
+    Returns:
+        0; a usage error (unknown or batch job, shard outside the range) exits 2 with the message and runs nothing.
+    """
+    import sys
+
+    ap = argparse.ArgumentParser(prog="shard_runner", description=main.__doc__)
+    ap.add_argument("--job", required=True)
+    ap.add_argument("--shard", type=int, default=0)
+    ap.add_argument("--n-shards", type=int, default=1)
+    ap.add_argument("--out-dir", default="results")
+    ap.add_argument("--hours", type=float, default=None)
+    a = ap.parse_args(argv)
+    try:
+        done = run_shard(a.job, a.shard, a.n_shards, a.out_dir, float(a.hours) if a.hours is not None else default_hours())
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+    print(f"{a.job}: {done} case(s) completed (shard {a.shard}/{a.n_shards})")
+    return 0
+
+
 def start_vllm(model_key: str) -> Any:
     """Launch vLLM in-process; model loaded from node /scratch.
 
@@ -103,3 +127,7 @@ def start_vllm(model_key: str) -> Any:
     model = str(cfg.get("model") or model_key)
     local = scratch / model.replace("/", "--")
     return LLM(model=str(local if local.exists() else model), tensor_parallel_size=int(cfg.get("tensor_parallel", 1) or 1))
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

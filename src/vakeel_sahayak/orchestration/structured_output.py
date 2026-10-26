@@ -7,12 +7,24 @@ dict schemas), and on failure the prompt is re-sent with a REPAIR note listing t
 Tools still validate argument values (plan §3.3); this layer only guarantees shape.
 
 `structured_call` returns the value with its token counts and attempt count; `constrained_generate` returns the value.
+
+Variant S15b (`Switches.output_format='free_then_parse'`, evaluation plan 3.3 row S15): inside `output_format('free_then_parse')` a call is NOT constrained at decoding (no
+`json_schema` goes to the backend) and its prompt ends with a note that lets the model write free text first and finish with one JSON object; the reply is then parsed and validated
+by the same `extract_json`, `validate_output` and repair loop, so a reply that cannot be parsed costs an extra attempt, which is the price of free text that the variant measures.
+Papers: Tam et al., "Let Me Speak Freely? A Study On The Impact Of Format Restrictions On Large Language Model Performance", EMNLP 2024 Industry,
+https://aclanthology.org/2024.emnlp-industry.91 (free text then a second step that converts it to the format; stricter constraints hurt reasoning), and Banerjee et al., "CRANE",
+ICML 2025, https://proceedings.mlr.press/v267/banerjee25a.html. What we took: free generation followed by parsing; what we changed: the "second step" is the repository's tolerant
+JSON extraction plus the repair re-send, not a second model call, so the variant costs no extra call when the first reply parses. Outside the scope nothing changes: the default
+path is byte-identical (the flag is None and neither the prompt nor the `json_schema` argument differs). The evaluation driver opens the scope for a run whose switches say
+`free_then_parse` (`eval/runners/systems.py`).
 """
 
 from __future__ import annotations
 
+import contextlib
 import json
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -21,6 +33,36 @@ from pydantic import BaseModel, ValidationError
 from vakeel_sahayak.models.base import LLMClient, approx_tokens, strip_thinking
 from vakeel_sahayak.models.json_schema import schema_of, validate
 from vakeel_sahayak.models.prompting import add_repair
+
+# S15b: set by `output_format(...)` for the duration of a run; None (the default) leaves every call as it was.
+_FORMAT: dict[str, str | None] = {"mode": None}
+_STATS: dict[str, int] = {"calls": 0, "attempts": 0}  # structured calls made inside the S15b scope and the generations they needed (a repair is one more attempt)
+FREE_NOTE = ("\n\nYou may think in free text first. End your reply with the final answer as ONE JSON object that follows the schema above; "
+             "only that object is read as the answer.")
+
+
+@contextlib.contextmanager
+def output_format(mode: str | None) -> Iterator[None]:
+    """Run a block with the S15b output format on (`mode='free_then_parse'`) or off (None, 'answer_only', 'reasoning_first': those are the agents' own schemas, not this layer's)."""
+    previous = _FORMAT["mode"]
+    _FORMAT["mode"] = "free_then_parse" if mode == "free_then_parse" else None
+    if _FORMAT["mode"] and not previous:
+        _STATS.update(calls=0, attempts=0)
+    try:
+        yield
+    finally:
+        _FORMAT["mode"] = previous
+
+
+def free_then_parse_stats() -> dict[str, int]:
+    """`{"calls", "attempts"}` of the structured calls made in the latest S15b scope (attempts above calls are repairs the free text needed)."""
+    return dict(_STATS)
+
+
+def free_then_parse_active() -> bool:
+    """True inside `output_format('free_then_parse')`."""
+    return _FORMAT["mode"] == "free_then_parse"
+
 
 _FENCE = re.compile(r"```(?:json|JSON)?\s*(.*?)```", re.DOTALL)
 
@@ -159,7 +201,10 @@ def structured_call(
         StructuredOutputError: no valid reply after `retries` repairs.
         ModelUnavailable: the backend cannot run (propagated; callers decide how to degrade).
     """
-    json_schema = schema_of(schema)
+    free = _FORMAT["mode"] == "free_then_parse"  # S15b: no decoding constraint, a note that allows free text, then parse
+    json_schema = None if free else schema_of(schema)
+    if free:
+        prompt = prompt + FREE_NOTE
     attempt_prompt = prompt
     errors: list[list[str]] = []
     raw = ""
@@ -178,9 +223,15 @@ def structured_call(
         else:
             value, problems = validate_output(decoded, schema)
             if not problems:
+                if free:
+                    _STATS["calls"] += 1
+                    _STATS["attempts"] += attempt
                 return StructuredResult(value=value, raw=raw, attempts=attempt, prompt_tokens=p_tok, completion_tokens=c_tok, errors=errors)
         errors.append(problems)
         attempt_prompt = add_repair(prompt, problems, raw)
+    if free:
+        _STATS["calls"] += 1
+        _STATS["attempts"] += retries + 1
     raise StructuredOutputError(
         f"no schema-valid reply after {retries + 1} attempts: {'; '.join(errors[-1][:4])}", retries + 1, errors[-1], raw
     )

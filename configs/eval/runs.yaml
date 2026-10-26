@@ -29,7 +29,7 @@ jobs:
   s1_critique_retrieval: {where: ada, systems: [S1], cases: 100, testset: T1, node_hours: 8.75}   # plan job 18
   s3_stopping:        {where: ada, systems: [S3, S3b], cases: 100, testset: T1, node_hours: 15}    # plan job 19 (C6)
   s7_gap_reread:      {where: laptop, systems: [full, S7], cases: 100, testset: T2, node_hours: 1}    # plan job 20: sequential arm is Full; needs T2 bundles as case rows
-  s15_output_format:  {where: ada, systems: [S15], cases: 100, testset: T1, node_hours: 5}         # plan job 21; S15b is declared but not built (see `exclusions`)
+  s15_output_format:  {where: ada, systems: [S15, S15b], cases: 100, testset: T1, node_hours: 7.5}     # plan job 21: reasoning-first (S15) and free text then parse (S15b) beside Full's answer-only schemas
   s17_defences:       {where: ada, systems: [S17, S17b, S17c, S17d], runs: 3, cases: 60, testset: T7, node_hours: 7}  # plan job 22 (C37); needs T7 scenarios as case rows
   s2_adaptive_depth:  {where: ada, systems: [S2], cases: 100, testset: T1, node_hours: 5}          # plan job 25
   s6_b5_router:       {where: ada, systems: [S6, B5], cases: 100, testset: T1, node_hours: 12.5}   # plan job 26
@@ -157,7 +157,7 @@ job_meta:
   s1_critique_retrieval: {tier: A, backend: ada}
   s3_stopping: {tier: A, backend: ada}
   s7_gap_reread: {tier: A, backend: laptop, note: "mostly laptop (plan job 20); the case rows are T2 bundles"}
-  s15_output_format: {tier: A, backend: ada, note: "S15b (free text then parse) is declared but not built; the 400-input field-accuracy arm is scored with the A5 harness"}
+  s15_output_format: {tier: A, backend: ada, note: "S15 and S15b (free text then parse, `structured_output.output_format`); the 400-input field-accuracy arm is scored with the A5 harness"}
   s17_defences: {tier: A, backend: ada, note: "arms scored on T7 injection scenarios (attack success rate); the case rows are T7 scenarios"}
   s2_adaptive_depth: {tier: B, status: deferred, backend: ada}
   s6_b5_router: {tier: B, status: deferred, backend: ada, note: "S6 needs the store-prior artefact (`agents.sutradhar.store_prior train`); without it the prior is neutral and S6 equals Full"}
@@ -175,8 +175,7 @@ job_meta:
 # (gold_source_sweep, below s13_workflow_search in `job_meta`, is rescoring only.)
 
 # Variant ids that are declared in `Switches` but have no job, with the reason. The validator fails when a declared id is neither implemented-with-a-job nor listed here.
-exclusions:
-  S15b: "declared, behaviour not built: output_format='free_then_parse' is not read by any agent (agents/vakeel/agent.py says so); system_runner raises NotImplementedError"
+exclusions: {}  # none today: S15b, the last declared-but-unbuilt id, was built (orchestration/structured_output.py)
 
 # Capped hosted resources. `driver plan` sums the estimated spend per provider over the jobs it is given, in the provider's currency, and warns when a cap is exceeded.
 budgets:

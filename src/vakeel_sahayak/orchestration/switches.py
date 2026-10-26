@@ -29,11 +29,11 @@ current behaviour, so the full system is unchanged:
 | S5 (A16) | `graph_expansion=True` | `search_reasoning(expand_graph=True)` for authority slots: personalised PageRank over the citation graph from the plain hits (HippoRAG 2 style), re-ranked by text plus walk score |
 | S3 (A11b) | `stopping='rules_llm'` or `'llm'` | Sutradhar's re-plan: a prompted sufficiency rater second-guesses (or replaces) the rule-based stop |
 
-EV-01 (evaluation plan 3.3 and 3.4): the switches below are DEFINED here (fields, validation, names) but their behaviour is built by
-the variant tasks; `Switches.implemented_variants()` lists the ids that do something today and `assert_variant_implemented(name)`
-makes the evaluation runners fail loudly on the rest. Every default is the current behaviour, so `Switches().variant() == 'full'`.
+EV-01 (evaluation plan 3.3 and 3.4): the switches below were DEFINED here first (fields, validation, names) and their behaviour was built by
+the variant tasks; today every id of the table is implemented. `Switches.implemented_variants()` lists the ids that do something and `assert_variant_implemented(name)`
+makes the evaluation runners fail loudly on an id that is declared but not built. Every default is the current behaviour, so `Switches().variant() == 'full'`.
 
-| Id (aliases) | Switch | Who will read it |
+| Id (aliases) | Switch | Who reads it |
 |---|---|---|
 | S6 (A12) | `store_prior='order'` | learned store prior orders calls inside a contract |
 | B5 (S6b) | `store_prior='only'` | learned store router replaces contracts |
@@ -46,7 +46,7 @@ makes the evaluation runners fail loudly on the rest. Every default is the curre
 | S13 | any grid of the switches above | the workflow-search driver (no single arm) |
 | S14 (A14), S14b, S14c | `plan_cache=True`; `urgency_policy='fifo'`; `'urgency_least_work'` (also `'shortest_first'`, a baseline with no variant id) | batch cache and scheduler |
 | S14d | `prefix_layout=True` | prompt layout (`models/prompting.render_prompt(prefix_friendly=)`); not named in the plan, added with sweep 3 |
-| S15 (A13), S15b | `output_format='reasoning_first'`; `'free_then_parse'` ('answer_only' is the current behaviour) | structured output |
+| S15 (A13), S15b | `output_format='reasoning_first'`; `'free_then_parse'` ('answer_only' is the current behaviour) | Vakeel's schemas (S15); `orchestration/structured_output.output_format` (S15b: no decoding constraint, free text then parse) |
 | S16, S16b | `chunking='proposition'`; `'late'` ('structure' is the current chunker) | chunking variants (retrieval-only runner) |
 | S17 (A15), S17b, S17c, S17d | `no_typed_handoff`; `no_spotlighting`; `no_guard`; all three | injection defences |
 | P7 | `munshi_image_only=True` | ingestion: page images straight to the vision model |
@@ -84,7 +84,7 @@ ABLATIONS: dict[str, dict[str, Any]] = {
 # Architecture variants of evaluation plan 3.3. S3 has two arms: "S3" (rules, then an LLM rater) and "S3b" (the LLM rater alone).
 # Papers: S3 = Sufficient Context (Joren et al., ICLR 2025), AutoSearch (Findings of ACL 2026), Stop-RAG (NeurIPS 2025 workshop).
 # S-numbering: the evaluation plan's. The literature review uses other ids for the same ideas (its S2 = plan S5, R1 = S3, R2 = S4).
-# EV-01 added every other S-id of the plan; their behaviour is not implemented yet (see IMPLEMENTED_VARIANTS).
+# EV-01 declared every S-id of the plan as a switch set; all of them are built now (see IMPLEMENTED_VARIANTS, which `assert_variant_implemented` reads).
 ARCHITECTURE: dict[str, dict[str, Any]] = {
     "S1": {"retrieval_policy": "self_critique"},
     "S2": {"retrieval_policy": "adaptive"},
@@ -127,8 +127,10 @@ INGESTION: dict[str, dict[str, Any]] = {
     "P8": {"munshi_keep_weak_text": True},  # sweep 4: not in the evaluation plan; id added here
 }
 BASELINE_SWITCHES: dict[str, dict[str, Any]] = {"B5": {"store_prior": "only"}}  # learned store router, no contracts
-# Ids whose behaviour exists today (S3 and the A1-A10 ablations, P5, P6, full). Everything else is defined but not implemented.
-IMPLEMENTED_VARIANTS: frozenset[str] = frozenset({"full", *ABLATIONS, "S1", "S2", "S3", "S3b", "S4", "S5", "S6", "B5", "S12", "S12b", "S13", "S16", "S16b", "S8", "S9", "S10", "S11", "S11b", "S11c", "S7", "S14", "S14b", "S14c", "S14d", "S15", "S17", "S17b", "S17c", "S17d", "S18", "P5", "P6", "P7", "P8"})
+# Ids whose behaviour exists today: full, A1-A10, S1-S18 including S3b, S11b, S11c, S12b, S14b-S14d, S15b, S16b, S17b-S17d, B5 and P5-P8 (S13 as the search harness, S14b, S14c, S16, S16b as studies and
+# scheduler/chunking switches read outside the per-case pipeline: `eval/runners/systems.SCOPES` says which). No id of the variant table is declared but unbuilt today; an id added to the
+# table and left out of this set is refused by `assert_variant_implemented` until its behaviour exists.
+IMPLEMENTED_VARIANTS: frozenset[str] = frozenset({"full", *ABLATIONS, "S1", "S2", "S3", "S3b", "S4", "S5", "S6", "B5", "S12", "S12b", "S13", "S16", "S16b", "S8", "S9", "S10", "S11", "S11b", "S11c", "S7", "S14", "S14b", "S14c", "S14d", "S15", "S15b", "S17", "S17b", "S17c", "S17d", "S18", "P5", "P6", "P7", "P8"})
 VARIANT_DESCRIPTIONS: dict[str, str] = {
     "full": "Munshi -> Peshkar -> Sutradhar, with Vakeel, Abhiyojak and all checks",
     "A1": "no dossier: Sutradhar and Vakeel read the raw facts",
@@ -375,7 +377,7 @@ class Switches(BaseModel):
 
     @staticmethod
     def implemented_variants() -> frozenset[str]:
-        """Variant ids whose behaviour exists today: 'full', A1-A10, S3, S3b, P5, P6. The rest are defined but not implemented yet."""
+        """Variant ids whose behaviour exists today: every id of the variant table ('full', A1-A10, S1-S18, B5, P5-P8). An id declared in the table and absent here is not built."""
         return IMPLEMENTED_VARIANTS
 
     def describe(self) -> str:

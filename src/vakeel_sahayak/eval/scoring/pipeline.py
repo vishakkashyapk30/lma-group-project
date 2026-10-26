@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from vakeel_sahayak.eval import label_sensitivity
 from vakeel_sahayak.eval.scoring import case_metrics as cm
 from vakeel_sahayak.eval.scoring import engine
 from vakeel_sahayak.eval.scoring.loader import (
@@ -38,7 +39,8 @@ def _json_default(o: Any) -> Any:
 
 
 def score_once(runs: list[RunSet], cases: list[dict[str, Any]], gold_source: str, slice_name: str, reference: str, cfg: cm.ScoreConfig,
-               rights: dict[str, list[dict[str, Any]]], testsets_dir: str | None = None, excluded_note: dict[str, int] | None = None) -> dict[str, Any]:
+               rights: dict[str, list[dict[str, Any]]], testsets_dir: str | None = None, excluded_note: dict[str, int] | None = None,
+               second_labeler_dir: str | None = None) -> dict[str, Any]:
     """One scoring pass of the loaded runs against one gold source (see `score_runs`, `summarise_systems`, `paired_comparisons`, `holm_families`)."""
     scored = engine.score_runs(runs, cases, cfg)
     rows = scored["rows"]
@@ -51,9 +53,12 @@ def score_once(runs: list[RunSet], cases: list[dict[str, Any]], gold_source: str
         "gold_source": gold_source, "gold_sha256": prov.get("gold_sha256"), "gold_dir": prov.get("gold_dir"), "slice": slice_name, "n_gold_cases": len(cases),
         "reference": reference, "config": cfg.as_dict(), "pending": scored["pending"], "excluded_records": scored["excluded_records"], "systems_in_runs": sorted({r.system for r in runs}),
         "run_manifests_gold_source": manifests_gold, "min_slice_n": engine.MIN_SLICE_N, "alpha": engine.ALPHA, "n_boot": engine.N_BOOT,
-        "models_modes": sorted({str((r.manifest.get("models") or {}).get("models_mode")) for r in runs}),
+        "checker": scored.get("checker"), "models_modes": sorted({str((r.manifest.get("models") or {}).get("models_mode")) for r in runs}),
     }
-    return {"meta": meta, "systems": systems, "paired": paired, "families": families, "rights": engine.rights_summary(rights) if rights else None, "per_case": rows}
+    # M5: the label-source sensitivity reads the three label sets of the agreed gold rows; the rule-only gold has only one, so the block is built on the agreed pass
+    sensitivity = label_sensitivity.compute(runs, cases, cfg, second_labeler_dir) if gold_source == "agreed" else None
+    return {"meta": meta, "systems": systems, "paired": paired, "families": families, "rights": engine.rights_summary(rights) if rights else None,
+            "label_sensitivity": sensitivity, "per_case": rows}
 
 
 def write_per_case(path_base: Path, rows: list[dict[str, Any]]) -> None:
@@ -73,7 +78,8 @@ def write_per_case(path_base: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def score_command(runs_dir: str, out: str, *, gold_source: str = "agreed", slice_name: str = "dev", reference: str = "full", testsets_dir: str | None = None,
-                  open_blind: bool = False, cfg: cm.ScoreConfig | None = None, lock: Path | None = None, check_tag: bool = True, allow_mixed_code: bool = False) -> dict[str, Any]:
+                  open_blind: bool = False, cfg: cm.ScoreConfig | None = None, lock: Path | None = None, check_tag: bool = True, allow_mixed_code: bool = False,
+                  second_labeler_dir: str | None = None) -> dict[str, Any]:
     """Score `runs_dir` against one gold source (`agreed`, `rule`) or both (`both`: the sweep). Returns the result dict(s) after writing the files.
 
     Raises `BlindSliceError` for the blind slice unless the flag, the freeze tag and an absent lock file allow it (the check happens after the runs are
@@ -94,7 +100,7 @@ def score_command(runs_dir: str, out: str, *, gold_source: str = "agreed", slice
     results: dict[str, Any] = {}
     for src in sources:
         cases = gold_rows(slice_name, ids, src, testsets_dir)
-        res = score_once(runs, cases, src, slice_name, reference, cfg, rights, testsets_dir)
+        res = score_once(runs, cases, src, slice_name, reference, cfg, rights, testsets_dir, second_labeler_dir=second_labeler_dir)
         res["meta"]["code_versions"] = versions
         results[src] = res
         (outd / f"score_{src}.json").write_text(json.dumps(res, indent=1, default=_json_default), encoding="utf-8")

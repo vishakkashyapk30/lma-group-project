@@ -8,8 +8,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 from tests.fakes.models import ScriptedLLM, Seq
 from tests.unit.agents._helpers import SpyBudget, build_agent, make_state
 from tests.unit.agents.vakeel import _variants_helpers as vh
@@ -48,10 +46,10 @@ def run_one(paragraphs, dossier, rights, llm, switches):
 def test_selection_and_implemented():
     assert s15().output_format == "reasoning_first" and s15().variant() == "S15"
     assert Switches.for_variant("A13").variant() == "S15"
-    assert "S15" in IMPLEMENTED_VARIANTS and "S15b" not in IMPLEMENTED_VARIANTS
+    # RECONCILED: S15b (free text then parse) is built in `orchestration/structured_output.py` (the structured-call layer, not Vakeel): it is in the registry now
+    assert "S15" in IMPLEMENTED_VARIANTS and "S15b" in IMPLEMENTED_VARIANTS
     assert_variant_implemented("A13")
-    with pytest.raises(NotImplementedError):
-        assert_variant_implemented("S15b")
+    assert_variant_implemented("S15b")
 
 
 def test_the_reasoning_field_comes_first_in_the_schema_and_the_default_has_none():

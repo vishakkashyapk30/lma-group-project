@@ -54,9 +54,16 @@ def test_plan_aliases_and_case():
     assert canonical_system("b5") == "B5"
 
 
-def test_a_declared_but_unbuilt_variant_fails_loudly_and_an_unknown_id_is_a_value_error():
+def test_a_declared_but_unbuilt_variant_fails_loudly_and_an_unknown_id_is_a_value_error(monkeypatch):
+    # RECONCILED: S15b, the last declared-but-unbuilt id, is built (orchestration/structured_output.py); the refusal is tested on an id taken out of the registry
+    from vakeel_sahayak.orchestration import switches as switches_module
+
+    monkeypatch.setattr(switches_module, "IMPLEMENTED_VARIANTS", switches_module.IMPLEMENTED_VARIANTS - {"S15b"})
     with pytest.raises(NotImplementedError, match="S15b"):
         system_runner("S15b")
+    monkeypatch.undo()
+    runner, switches = system_runner("S15b")
+    assert callable(runner) and switches.output_format == "free_then_parse"
     with pytest.raises(ValueError, match="unknown system"):
         system_runner("zz9")
 
@@ -158,7 +165,11 @@ def test_plan_all_and_sarvam_full_and_unknown_job(capsys):
     assert driver.main(["plan", "--job", "nope"]) == 2
 
 
-def test_run_refuses_an_unbuilt_id_with_exit_2(capsys):
+def test_run_refuses_an_unbuilt_id_with_exit_2(capsys, monkeypatch):
+    # RECONCILED: S15b is built; the refusal is tested with the id taken out of the registry
+    from vakeel_sahayak.orchestration import switches as switches_module
+
+    monkeypatch.setattr(switches_module, "IMPLEMENTED_VARIANTS", switches_module.IMPLEMENTED_VARIANTS - {"S15b"})
     assert driver.main(["run", "--system", "S15b"]) == 2
     assert "S15b" in capsys.readouterr().err
 

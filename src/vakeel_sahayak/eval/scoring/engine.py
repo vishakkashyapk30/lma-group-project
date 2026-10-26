@@ -12,7 +12,9 @@ from __future__ import annotations
 import statistics
 from typing import Any
 
+from vakeel_sahayak.eval.metrics.citations import coverage_risk_curve
 from vakeel_sahayak.eval.scoring import case_metrics as cm
+from vakeel_sahayak.eval.scoring import citation_scores
 from vakeel_sahayak.eval.scoring import stats_extra as sx
 from vakeel_sahayak.eval.scoring.loader import RunSet, read_events
 from vakeel_sahayak.eval.stats.bootstrap import paired_bootstrap_ci
@@ -39,6 +41,18 @@ METRICS: dict[str, tuple[str, bool]] = {
     "store_calls": ("Store calls per case", False),
     "seconds": ("Seconds per case", False),
     "cost_usd": ("USD per case", False),
+    "fabricated_citation_rate": ("Fabricated-citation rate (M9)", False),
+    "authority_reasoning_share": ("Authorities that are court reasoning (M13)", True),
+    "authority_sc_share": ("Authorities that are Supreme Court (M13)", True),
+    "authority_before_share": ("Authorities dated before the order (M13)", True),
+    "good_law_violation_rate": ("Good-law violation rate (M15)", False),
+    "known_treatment_share": ("Known-treatment share (M15)", True),
+    "citation_precision": ("Citation precision (M16)", True),
+    "citation_recall": ("Citation recall (M16)", True),
+    "citation_removal_change": ("Claims that change when the cited paragraph is removed (M17)", True),
+    "over_search_rate": ("Over-search rate (M18)", False),
+    "unfinished_factor_share": ("Factors stopped with a slot unfilled (M18)", False),
+    "confident_wrong_rate": ("Confident-wrong rate (M35)", False),
 }
 PAIRED_METRICS = ["factor_recall", "factor_precision_lenient", "factor_f1", "unsupported_fact_rate", "recall_at_10", "objection_recall", "tokens", "store_calls"]
 
@@ -84,7 +98,9 @@ def score_runs(runs: list[RunSet], cases: list[dict[str, Any]], cfg: cm.ScoreCon
                 continue
             row = cm.score_case(by_case[cid], rec, rs.manifest, read_events(rs, cid), cfg, pending)
             rows.append({"system": rs.system, "run": rs.run, **row})
-    return {"rows": rows, "pending": pending, "excluded_records": excluded, "by_case": by_case}
+    env = cfg.env or citation_scores.default_env() if rows else None
+    checker = None if env is None or env.checker_used is None else {"name": env.checker_used, "stand_in": "offline" in env.checker_used}
+    return {"rows": rows, "pending": pending, "excluded_records": excluded, "by_case": by_case, "checker": checker}
 
 
 def case_means(rows: list[dict[str, Any]]) -> dict[str, dict[str, dict[str, float | None]]]:
@@ -134,6 +150,39 @@ def _item_hits(rows: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
     return {c: {f: int(sum(v) / len(v) >= 0.5) for f, v in d.items()} for c, d in acc.items()}
 
 
+def _curve(rows: list[dict[str, Any]], n_boot: int = 300) -> dict[str, Any]:
+    """M33 for one system: the coverage-risk curve over the claims of all its runs, a bootstrap interval of AURC over cases, and whether the system can decline at all
+    (a system with no gate cannot: one point on the curve, plan 4.6)."""
+    claims = [{"emitted": bool(e), "score": sc, "cut": cut} for r in rows for e, sc, cut in (r.get("claims") or [])]
+    can_decline = any(r.get("can_decline") for r in rows)
+    out = coverage_risk_curve(claims)
+    out["can_decline"] = can_decline
+    if not can_decline:
+        out["aurc"] = None  # a system that cannot decline has a single point, no curve
+    by_case: dict[str, list[dict[str, Any]]] = {}
+    for r in rows:
+        by_case.setdefault(r["case_id"], []).extend({"emitted": bool(e), "score": sc, "cut": cut} for e, sc, cut in (r.get("claims") or []))
+    ids = [c for c, v in by_case.items() if v]
+    if can_decline and len(ids) >= 5 and out["aurc"] is not None:
+        import numpy as np
+
+        rng = np.random.default_rng(sx.SEED)
+        vals = []
+        for _ in range(n_boot):
+            pick = rng.integers(0, len(ids), size=len(ids))
+            a = coverage_risk_curve([c for i in pick for c in by_case[ids[i]]])["aurc"]
+            if a is not None:
+                vals.append(a)
+        if vals:
+            out["aurc_ci"] = [float(np.quantile(vals, 0.025)), float(np.quantile(vals, 0.975))]
+    cells: dict[str, int] = {}
+    for r in rows:
+        for k, v in (r.get("confident_cells") or {}).items():
+            cells[k] = cells.get(k, 0) + int(v)
+    out["cells"] = cells or None
+    return out
+
+
 def summarise_systems(rows: list[dict[str, Any]], runs: list[RunSet], n_cases: int, cfg: cm.ScoreConfig) -> dict[str, dict[str, Any]]:
     """Per-system block: runs, n, manifest facts, each metric's mean with its bootstrap interval and n, pass^k, G2 coverage, per-factor recall, cost."""
     means = case_means(rows)
@@ -156,6 +205,7 @@ def summarise_systems(rows: list[dict[str, Any]], runs: list[RunSet], n_cases: i
                 d["hits"] += h
                 d["n"] += 1
         man = manifests.get(system, {})
+        curve = _curve(srows)
         passed = _pass_stats(srows, 3)
         ps = passed["pass_hat_k"]
         n_passed = sum(1 for v in passed["per_case"].values() if v)
@@ -166,7 +216,7 @@ def summarise_systems(rows: list[dict[str, Any]], runs: list[RunSet], n_cases: i
             "g2": {"n_cases_with_gold": len(g2_cases), "mean_gold_size": _mean([float(r["g2_gold_n"]) for r in g2_cases.values()]),
                    "resolved_share": (1 - unres / raw_n) if raw_n else None, "retrieved_source": sorted({r["retrieved_source"] for r in srows})},
             "g4_n": len({r["case_id"] for r in srows if r["g4_n"]}), "g7_n": len({r["case_id"] for r in srows if r["g7_n"]}),
-            "per_factor": per_factor,
+            "per_factor": per_factor, "curve": curve,
             "cost_per_passed_case": (cost * len(per_case) / n_passed) if (cost is not None and n_passed) else None,
             "pass_hat_k": ps,
             "manifest": {k: man.get(k) for k in ("describe", "variant", "scope", "code_version", "prompt_hash", "config_hash", "gold_source", "gold_sha256", "seed")}

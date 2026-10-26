@@ -43,3 +43,24 @@ def slot_fill_rate(packs: list[EvidencePack]) -> float:
     if not slots:
         return 0.0
     return sum(1 for s in slots if s.status == SlotStatus.FILLED) / len(slots)
+
+
+def auroc(scores: list[float], labels: list[bool]) -> float | None:
+    """Area under the ROC curve of `scores` for the binary `labels` (M19: AUROC of the score-skew signal for "the top-10 contains a G2 paragraph").
+
+    The Mann-Whitney form: the probability that a random positive scores above a random negative, ties counting one half. Higher scores are predicted positive.
+
+    Returns:
+        The AUROC, or None when there is no positive or no negative (it is undefined, not 0.5).
+
+    Raises:
+        ValueError: `scores` and `labels` differ in length.
+    """
+    if len(scores) != len(labels):
+        raise ValueError(f"scores and labels differ in length: {len(scores)} != {len(labels)}")
+    pos = [s for s, y in zip(scores, labels, strict=True) if y]
+    neg = [s for s, y in zip(scores, labels, strict=True) if not y]
+    if not pos or not neg:
+        return None
+    wins = sum((p > n) + 0.5 * (p == n) for p in pos for n in neg)
+    return wins / (len(pos) * len(neg))

@@ -832,7 +832,7 @@ def _smoke_data_dir(stores: str) -> str:
 
 def smoke_all(argv: list[str] | None = None) -> int:
     """`driver smoke-all [--ids a,b] [--n 1] [--stores real|empty] [--out DIR]`: run every dispatchable id (Full, the baselines, every implemented variant; A5, A10 and S13
-    once per default arm) offline on the first T1 dev case(s) and print a pass/fail table; `S15b`, declared but unbuilt, must be refused loudly to pass. 0 when all pass.
+    once per default arm) offline on the first T1 dev case(s) and print a pass/fail table; a variant that is declared but unbuilt (none today) must be refused loudly to pass. 0 when all pass.
 
     Offline only: `VS_MODELS`, `VS_LLM_BACKEND` and `VS_EXTERNAL` are forced to the offline stand-ins and `VS_DATA_DIR` is a scratch directory (stores linked read-only with
     `--stores real`, the default when `data/stores` exists). A row passes when the case completed with no crashed-case error and no stage error, and the manifest
@@ -854,8 +854,10 @@ def smoke_all(argv: list[str] | None = None) -> int:
     os.environ.update(VS_MODELS="offline", VS_LLM_BACKEND="offline", VS_EXTERNAL="off", VS_NLI="offline", VS_HEAVY_CLIENTS="offline")
     os.environ["VS_DATA_DIR"] = _smoke_data_dir(args.stores)
     from vakeel_sahayak.eval.runners.systems import canonical_system, dispatchable_ids, system_runner
+    from vakeel_sahayak.orchestration.switches import IMPLEMENTED_VARIANTS, _variant_table
 
-    ids = [i.strip() for i in args.ids.split(",") if i.strip()] if args.ids else dispatchable_ids() + ["S15b"]
+    unbuilt = sorted(k for k in _variant_table() if k not in IMPLEMENTED_VARIANTS)  # declared but unbuilt: must be refused loudly (empty since S15b was built)
+    ids = [i.strip() for i in args.ids.split(",") if i.strip()] if args.ids else dispatchable_ids() + unbuilt
     out_root = Path(args.out or tempfile.mkdtemp(prefix="vs-smoke-all-out-"))
     rows: list[dict[str, Any]] = []
     for ident in ids:
@@ -883,7 +885,7 @@ def smoke_all(argv: list[str] | None = None) -> int:
             row["tokens"] = int((rec.get("meta") or {}).get("tokens", 0))
             row["status"], row["detail"] = ("FAIL", " | ".join(problems)) if problems else ("PASS", manifest["describe"][:90])
         except NotImplementedError as exc:
-            expected = ident.upper() == "S15B"
+            expected = ident.upper() in {u.upper() for u in unbuilt}
             row["status"], row["detail"] = ("PASS", f"refused loudly as declared-but-unbuilt: {str(exc)[:70]}") if expected else ("FAIL", f"NotImplementedError: {str(exc)[:200]}")
         except Exception as exc:  # noqa: BLE001 - one id's crash is a row of the table, the others still run
             row["detail"] = f"{type(exc).__name__}: {str(exc)[:240]}"

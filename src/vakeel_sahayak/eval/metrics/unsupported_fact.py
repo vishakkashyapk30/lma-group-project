@@ -76,6 +76,24 @@ def unsupported_fact_rate(brief: BailBrief, input_text: str) -> float:
     return sum(1 for s in sentences if score(input_text, s) < cut) / len(sentences)
 
 
+def sentence_support(brief: BailBrief, input_text: str) -> list[dict[str, object]]:
+    """The support score of every factual sentence of the brief against the input (what `unsupported_fact_rate` thresholds), with the ground it belongs to.
+
+    Returns:
+        One dict per sentence: `ground_id`, `check` (the ground's claim check, a string), `sentence`, `score` (the checker's support probability), `cut` (the threshold in
+        force) and `checker` (the backend's name). Empty when the brief has no sentences. The coverage-risk curve (M33) and the confident-wrong rate (M35) read these.
+    """
+    from vakeel_sahayak.eval.feature_common import sentences_of
+
+    name, score, cut = _scorer()
+    out: list[dict[str, object]] = []
+    for ground in brief.grounds:
+        for sentence in sentences_of(ground.argument):
+            out.append({"ground_id": ground.id, "check": getattr(ground.check, "value", str(ground.check)), "sentence": sentence,
+                        "score": float(score(input_text, sentence)), "cut": float(cut), "checker": name})
+    return out
+
+
 def _perturb(sentence: str) -> str | None:
     """A copy with one date or number changed (the constructed negative of plan §15.9); None when nothing can change."""
     m = _DATE.search(sentence)

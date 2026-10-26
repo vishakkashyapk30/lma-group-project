@@ -76,3 +76,50 @@ def test_offline_smoke_through_the_driver(tmp_path):
     assert runs[0] == runs[1] and runs[0]["evaluated"] == 2
     assert all(0.0 < r["score"] <= 1.0 and r["tokens"] > 0 for r in runs[0]["ranking"])
     assert (tmp_path / "r0.json").read_bytes() == (tmp_path / "r1.json").read_bytes()
+
+
+def test_recall_evaluator_scores_factor_recall_against_dev_g1(tmp_path):
+    world = h.case_0007_world()
+    toolbox = h.ScenarioToolbox(world)
+    case = {"case_id": "case-0007", "facts": FACTS, "before": world.case_date,
+            "gold": {"G1": {"labels": ["custody_period", "charge_sheet_filed"]}}, "answerable": ["custody_period", "charge_sheet_filed", "antecedents"]}
+    evaluate = ws.recall_evaluator(tools=toolbox.tools, llm=h.full_pipeline_llm())
+    out = evaluate(Switches(), [case])
+    assert out["cases_scored"] == 1 and 0.0 <= out["score"] <= 1.0 and out["tokens"] > 0 and "M1" in out["reward"]
+    assert out == ws.recall_evaluator(tools=toolbox.tools, llm=h.full_pipeline_llm())(Switches(), [case])  # deterministic
+    # a case whose agreed G1 has no answerable factor is left out of the mean (recall undefined), not scored 0
+    empty = {**case, "case_id": "case-0008", "gold": {"G1": {"labels": []}}}
+    assert evaluate(Switches(), [empty])["cases_scored"] == 0
+
+
+def test_main_runs_the_grid_offline_and_refuses_a_model_backend(tmp_path, monkeypatch, capsys):
+    cases = tmp_path / "dev.jsonl"
+    cases.write_text("\n".join(json.dumps({"case_id": f"t1dev-{i:03d}", "facts": "x", "before": "2024-02-16"}) for i in range(3)) + "\n", encoding="utf-8")
+    monkeypatch.setattr(ws, "recall_evaluator", lambda *a, **k: fake_eval)
+    monkeypatch.delenv("VS_LLM_BACKEND", raising=False)
+    out = tmp_path / "rep.json"
+    assert ws.main(["--cases", str(cases), "--n", "2", "--grid", "small", "--max-configs", "4", "--out", str(out)]) == 0
+    report = json.loads(out.read_text(encoding="utf-8"))
+    assert report["evaluated"] == 4 and report["cases"] == ["t1dev-000", "t1dev-001"] and report["test"] == "pending" and "harness" in report["note"]
+    assert report["winner"] == {"stopping": "rules_llm", "topology": "sequential"}
+    assert "score=" in capsys.readouterr().out
+    monkeypatch.setenv("VS_LLM_BACKEND", "openai")
+    assert ws.main(["--cases", str(cases), "--out", str(tmp_path / "x.json")]) == 2
+    assert "planned" in capsys.readouterr().err and not (tmp_path / "x.json").exists()
+    with pytest.raises(NotImplementedError, match="planned"):
+        ws.assert_offline()
+
+
+def test_job_runs_the_smoke_offline_and_the_hosted_arm_stays_planned(tmp_path, monkeypatch):
+    from vakeel_sahayak.eval.runners import jobs
+    from vakeel_sahayak.testsets import gold_source
+
+    monkeypatch.setattr(ws, "recall_evaluator", lambda *a, **k: fake_eval)
+    monkeypatch.setattr(gold_source, "load_t1", lambda split, *a, **k: [{"case_id": f"t1dev-{i:03d}"} for i in range(5)])
+    monkeypatch.delenv("VS_LLM_BACKEND", raising=False)
+    n = jobs.run_job("s13_workflow_search", {"runner": "workflow_search"}, 0, 1, str(tmp_path), 0.0)
+    report = json.loads((tmp_path / "runs" / "s13_workflow_search" / "search_report.json").read_text(encoding="utf-8"))
+    assert n == 4 and len(report["cases"]) == 3 and report["test"] == "pending"
+    monkeypatch.setenv("VS_LLM_BACKEND", "sarvam")
+    with pytest.raises(NotImplementedError, match="planned"):
+        jobs.run_job("s13_workflow_search", {"runner": "workflow_search"}, 0, 1, str(tmp_path), 0.0)

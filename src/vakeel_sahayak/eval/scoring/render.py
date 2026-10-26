@@ -213,6 +213,97 @@ def table_coverage(res: dict[str, Any]) -> Table:
                  ["Gold counts are orders with at least one label among the orders scored. G7 on T1 is nearly empty: the Rights Radar claim C30 rests on T4."])
 
 
+def table_label_sensitivity(res: dict[str, Any]) -> list[Table]:
+    """M5 (plan 4.1, 5.9): M1 to M4 per system under each label source, whether the system order survives, and the kappa between labelers per factor."""
+    ls = res.get("label_sensitivity")
+    if not ls or not ls.get("sources"):
+        return []
+    from vakeel_sahayak.eval.label_sensitivity import METRIC_LABELS, METRICS
+
+    cols = ["System", "Label source", *[METRIC_LABELS[m] for m in METRICS]]
+    rows = []
+    systems = sorted({s for e in ls["sources"].values() for s in e["systems"]})
+    for name in order_systems(systems, res["meta"]["reference"]):
+        for entry in ls["sources"].values():
+            cells = entry["systems"].get(name)
+            if cells:
+                rows.append([name, entry["label"], *[cell(cells[m]) for m in METRICS]])
+    notes = []
+    for source, order in ls["ranking"].items():
+        same = ls["sources"][source].get("same_ranking_as_agreed")
+        notes.append(f"{source}: systems by M1, best first: {' > '.join(order) or 'none'}" + ("" if same is None else " (same order as agreed)" if same else " (order differs from agreed)"))
+    missing = [s for s, ok in ls["available"].items() if not ok]
+    if missing:
+        notes.append("Not available in this gold: " + ", ".join(missing) + ".")
+    notes.append(ls["note"])
+    tables = [Table("table_label_sensitivity", "Label-source sensitivity of M1 to M4 (M5, preliminary)", caption_prefix(res) + " Same outputs, different label sources; mean [95% CI] with n.", cols, rows, notes)]
+    krows = []
+    for name, k in ls.get("kappa", {}).items():
+        for lab, v in k["per_label"].items():
+            ci = "n/a" if not v["ci95"] else f"[{v['ci95'][0]:.2f}, {v['ci95'][1]:.2f}]"
+            krows.append([name, lab, str(v["n_a"]), str(v["n_b"]), str(v["both"]), fmt(v["kappa"], 2), ci])
+        krows.append([name, "all labels pooled", str(k["n_labels_a"]), str(k["n_labels_b"]), "", fmt(k["pooled_kappa"], 2), f"n={k['n_orders']} orders"])
+    if krows:
+        tables.append(Table("table_label_kappa", "Agreement between label sources, per factor (M5, preliminary)", caption_prefix(res),
+                            ["Pair", "Label", "n first", "n second", "both", "Cohen kappa", "95% CI"], krows,
+                            ["Per-label binary kappa over the scored orders; pooled kappa treats every (order, label) cell as one item."]))
+    return tables
+
+
+def _checker_note(res: dict[str, Any]) -> str:
+    ck = res["meta"].get("checker")
+    if not ck:
+        return "No support checker was needed or run."
+    return f"Support checker: {ck['name']}" + (" (offline stand-in: a deterministic lexical checker, a plumbing check, not a validated judge)" if ck["stand_in"] else "") + "."
+
+
+def _pending_notes(res: dict[str, Any], keys: list[str]) -> list[str]:
+    return [f"{k}: not computed, {res['meta']['pending'][k]}" for k in keys if k in res["meta"]["pending"]]
+
+
+def table_citations(res: dict[str, Any]) -> Table:
+    """M9, M13, M15, M16, M17 per system (plan 4.2, 4.3): fabricated citations, authority quality, good law, ALCE-style citation precision and recall, removal faithfulness."""
+    keys = ["fabricated_citation_rate", "authority_reasoning_share", "authority_sc_share", "authority_before_share", "good_law_violation_rate", "known_treatment_share",
+            "citation_precision", "citation_recall", "citation_removal_change"]
+    cols = ["System", "Fabricated citations (M9)", "Court reasoning (M13)", "Supreme Court (M13)", "Dated before order (M13)", "Good-law violations (M15)", "Known treatment (M15)",
+            "Citation precision (M16)", "Citation recall (M16)", "Claims changed by removal (M17)"]
+    rows = []
+    for name in order_systems(list(res["systems"]), res["meta"]["reference"]):
+        m = res["systems"][name]["metrics"]
+        rows.append([name, *[cell(m[k], pending=k in res["meta"]["pending"]) if k in m else "n/a" for k in keys]])
+    notes = [_checker_note(res),
+             "M9: share of citations whose paragraph is not in the index or whose quotation is not in it (whitespace removed). M15: overruled precedents cited without a warning; 'known treatment' is "
+             "the share of cited precedents with at least one labelled citing treatment (unknown is not good). M16 precision: cited paragraph supports the citing sentence; recall: authority-claim "
+             "sentences with a supported citation. M17 needs the `m17_removal` arm (a redraft without the cited paragraph) and is a lower bound; n/a (n=0) means the arm was not run.",
+             "A system that cites nothing has no defined value (n counts the orders with at least one citation)."]
+    return Table("table_citations", "Citations and authority quality (preliminary)", caption_prefix(res), cols, rows, [*notes, *_pending_notes(res, keys)])
+
+
+def table_abstention(res: dict[str, Any]) -> Table:
+    """M33 (coverage-risk curve and AURC), M35 (confident-wrong) and M18 (stopping quality) per system (plan 4.6, 4.3)."""
+    cols = ["System", "Can decline", "Claims", "Coverage at the cut (M33)", "Risk at the cut (M33)", "Coverage, all emitted", "Risk, all emitted (M6)", "AURC [95% CI]",
+            "Confident-wrong (M35)", "Over-search (M18)", "Stopped with a slot unfilled (M18)"]
+    rows = []
+    for name in order_systems(list(res["systems"]), res["meta"]["reference"]):
+        s = res["systems"][name]
+        c = s.get("curve") or {"can_decline": False, "n_claims": 0, "aurc": None, "operating": None, "one_point": None}
+        op, one = c.get("operating") or {}, c.get("one_point") or {}
+        aurc = "one point (cannot decline)" if not c["can_decline"] and c["n_claims"] else fmt(c["aurc"])
+        if c.get("aurc_ci"):
+            aurc += f" [{c['aurc_ci'][0]:.3f}, {c['aurc_ci'][1]:.3f}]"
+        m = s["metrics"]
+        rows.append([name, "yes" if c["can_decline"] else "no", str(c["n_claims"]), fmt(op.get("coverage")), fmt(op.get("risk")), fmt(one.get("coverage")), fmt(one.get("risk")), aurc,
+                     cell(m.get("confident_wrong_rate") or {}, pending="confident_wrong_rate" in res["meta"]["pending"]), cell(m.get("over_search_rate") or {}), cell(m.get("unfinished_factor_share") or {})])
+    notes = [_checker_note(res),
+             "Claims are the factual sentences of the brief. A claim is emitted at threshold tau when its ground passed the gate and its support score is at least tau; coverage is emitted claims over "
+             "all claims, risk the share of emitted claims below the unsupported-fact cut. 'At the cut' keeps the claims the checker itself supports; 'all emitted' keeps every claim the gate emitted. "
+             "Because risk is defined with the same score, it is 0 at tau = cut by construction; what the curve shows is how much coverage is lost to reach zero risk.",
+             "M35: emitted claims that are unfaithful (not supported by the facts given) and uncorroborated (not supported by the rest of the order). It needs the order parts "
+             "(`data/interim/t1_work/parts.jsonl`). M18 is event-based: over-search is the share of retrieval calls after the first round where no required slot was missing or weak; "
+             "the replay to the 16-call budget for 'stopped too early' needs a re-run and is not computed.", *_pending_notes(res, ["confident_wrong_rate"])]
+    return Table("table_abstention", "Abstention, confident-wrong and stopping quality (preliminary)", caption_prefix(res), cols, rows, notes)
+
+
 def table_sweep(sweep: dict[str, Any]) -> list[Table]:
     """The gold-source sensitivity tables: system metrics on both golds with the delta, and robustness of each family test."""
     cap = f"Gold-source sensitivity sweep, {sweep['slice']} slice: the same outputs scored against the agreed (primary) and the rule-only (secondary) gold; no model call. Preliminary."
@@ -258,6 +349,14 @@ def figure_data(res: dict[str, Any], directory: Path) -> dict[str, Path]:
             for f, d in sorted(s["per_factor"].items()):
                 w.writerow([name, f, d["hits"] / d["n"] if d["n"] else "", d["n"]])
     paths["fig_per_factor"] = p
+    p = directory / "fig_coverage_risk.csv"
+    with p.open("w", encoding="utf-8", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["system", "tau", "coverage", "risk"])
+        for name, s in res["systems"].items():
+            for tau, cov, risk in (s.get("curve") or {}).get("points") or []:
+                w.writerow([name, tau, cov, risk])
+    paths["fig_coverage_risk"] = p
     return paths
 
 
@@ -331,10 +430,11 @@ def write_report(scores_dir: str, out: str | None = None, gold_source: str | Non
     for g, path in available.items():
         res = json.loads(path.read_text(encoding="utf-8"))
         tdir = dest / "tables" if g == main else dest / "tables" / g
-        tables = [table_main(res), table_cost(res), table_paired(res), table_holm(res), table_coverage(res)]
+        tables = [table_main(res), table_cost(res), table_paired(res), table_holm(res), table_coverage(res), table_citations(res), table_abstention(res)]
         rt = table_rights(res)
         if rt:
             tables.append(rt)
+        tables += table_label_sensitivity(res)
         for t in tables:
             written["tables"] += [str(p) for p in write_table(t, tdir)]
         if g == main:

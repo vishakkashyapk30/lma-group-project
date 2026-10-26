@@ -24,6 +24,7 @@ from typing import Any
 from vakeel_sahayak.eval.metrics.agentic import pass_hat_k  # noqa: F401  (re-exported for the aggregation step)
 from vakeel_sahayak.eval.metrics.factor_scores import factor_recall_precision
 from vakeel_sahayak.eval.metrics.retrieval import recall_at_k
+from vakeel_sahayak.eval.scoring.citation_scores import citation_values
 from vakeel_sahayak.schemas.enums import Factor
 
 NO_GROUND_PREFIX = "No supported argument could be drafted"
@@ -40,6 +41,7 @@ class ScoreConfig:
     k: int = 10
     strict: bool = False
     cost_per_token_usd: float | None = None
+    env: Any = None  # a `ScoreEnv` (paragraph stores, citation graph, rest of the order, checker); None builds the configured one on first use
 
     def as_dict(self) -> dict[str, Any]:
         return {"stances": list(self.stances), "pass_bar": self.pass_bar, "k": self.k, "strict": self.strict}
@@ -206,6 +208,7 @@ def score_case(case: dict[str, Any], record: dict[str, Any], manifest: dict[str,
         "seconds": float(meta["seconds"]) if meta.get("seconds") is not None else None, "cost_usd": case_cost(tokens, manifest, cfg),
         "passed": (recall >= cfg.pass_bar and not errors) if recall is not None else None, "n_errors": len(errors),
         "g7_n": len((gold.get("G7") or {}).get("labels") or []),
+        **citation_values(case, record, events, cfg.env, pending, strict=cfg.strict),
     }
 
 

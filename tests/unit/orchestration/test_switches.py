@@ -215,11 +215,11 @@ def test_implemented_variants_are_s3_and_the_existing_ablations():
     # RECONCILED: sweep 3 implemented S17, S17b, S17c, S17d (the injection-defence flags) and S7 (munshi_gap_policy='hierarchy') and P7 (munshi_image_only) and S14, S14b, S14c, S14d (serving)
     # RECONCILED: sweep 4 implemented S6 / A12 (store_prior='order') and B5 / S6b (store_prior='only')
     # RECONCILED: sweep 4 implemented S16 / S16b (chunking) and S12 (topology='sequential') and S12b ('single_agent')
-    assert done == {"full", "S6", "B5", "S12", "S12b", "S13", "S16", "S16b", "S7", "S14", "S14b", "S14c", "S14d", "S1", "S2", "S3", "S3b", "S4", "S5", "S8", "S9", "S10", "S11", "S11b", "S11c", "S15", "S17", "S17b", "S17c", "S17d", "S18", "P5", "P6", "P7", "P8", *(f"A{i}" for i in range(1, 11))}
-    # RECONCILED: every defined id is now implemented (S13 as the search harness, `eval/runners/workflow_search.py`)
+    assert done == {"full", "S6", "B5", "S12", "S12b", "S13", "S16", "S16b", "S7", "S14", "S14b", "S14c", "S14d", "S1", "S2", "S3", "S3b", "S4", "S5", "S8", "S9", "S10", "S11", "S11b", "S11c", "S15", "S15b", "S17", "S17b", "S17c", "S17d", "S18", "P5", "P6", "P7", "P8", *(f"A{i}" for i in range(1, 11))}
+    # RECONCILED: every defined id is now implemented (S13 as the search harness, `eval/runners/workflow_search.py`; S15b as `orchestration/structured_output.output_format`)
 
 
-@pytest.mark.parametrize("name", ["full", "A9", "a10", "S1", "S2", "S3", "S5", "S8", "A2b", "S10", "A8c", "S9", "A8b", "S15", "A13", "S11", "A8d", "A16", "A11b", "s3b", "P5", "S17", "A15", "S17b", "S17c", "S17d", "S7", "A11a", "P7", "S6", "A12", "B5", "S6b", "S12", "S12b", "S13", "S16", "S16b"])  # RECONCILED: S17 / A15, S7 / A11a and P7 built in sweep 3; S8 / A2b, S10 / A8c and S9 / A8b and S15 / A13 and S11 / A8d built in sweep 2
+@pytest.mark.parametrize("name", ["full", "A9", "a10", "S1", "S2", "S3", "S5", "S8", "A2b", "S10", "A8c", "S9", "A8b", "S15", "S15b", "A13", "S11", "A8d", "A16", "A11b", "s3b", "P5", "S17", "A15", "S17b", "S17c", "S17d", "S7", "A11a", "P7", "S6", "A12", "B5", "S6b", "S12", "S12b", "S13", "S16", "S16b"])  # RECONCILED: S17 / A15, S7 / A11a and P7 built in sweep 3; S8 / A2b, S10 / A8c and S9 / A8b and S15 / A13 and S11 / A8d built in sweep 2
 def test_assert_variant_implemented_accepts_built_variants(name):
     """Built variants (and the alias of S3) pass silently."""
     assert_variant_implemented(name)

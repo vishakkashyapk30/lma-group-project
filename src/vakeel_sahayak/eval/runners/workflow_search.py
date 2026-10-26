@@ -181,9 +181,95 @@ def slot_fill_evaluator(tools: dict[str, Any] | None = None, llm: Any = None) ->
     return evaluate
 
 
+def recall_evaluator(tools: dict[str, Any] | None = None, llm: Any = None, stances: tuple[str, ...] = ("favourable", "adverse")) -> Evaluator:
+    """The dev reward of the plan: factor recall (M1) against the agreed G1 of the dev cases, from the whole pipeline (`driver.run_agents`), tokens from the budget tracker.
+
+    Each case must be a T1 dev row (`gold`, `facts_text`); recall is the mean over the cases where it is defined (a case with no agreed answerable factor is left out, as in the
+    headline table), so a grid point is scored exactly like a system in `eval.scoring`. Offline this scores the stand-in models and says nothing about any workflow with a real model;
+    with a hosted or local model it is the evaluator of the plan's S13 arm (not run here).
+
+    Args:
+        tools: a toolbox replacing the registry (tests); None uses the real stores
+        llm: one client for every agent (tests); None lets each agent resolve its role
+        stances: ground stances that count as arguing a factor (as in scoring)
+    """
+    from vakeel_sahayak.eval.runners.driver import build_context, run_agents
+    from vakeel_sahayak.eval.scoring import case_metrics as cm
+
+    def evaluate(switches: Switches, cases: list[dict[str, Any]]) -> dict[str, Any]:
+        values: list[float] = []
+        tokens = 0
+        for case in cases:
+            ctx = build_context(case, switches, tools=dict(tools or {}), llm=llm)
+            result = run_agents(case, ctx)
+            gold = cm._factors(((case.get("gold") or {}).get("G1") or {}).get("labels"))
+            recall, _, _ = cm._prf(cm.argued_factors(result.get("brief") or {}, stances), gold, cm.answerable_of(case))
+            if recall is not None:
+                values.append(recall)
+            tokens += int(ctx.budgets.spent(None)[0])
+        return {"score": round(sum(values) / len(values), 6) if values else 0.0, "tokens": tokens, "cases_scored": len(values), "reward": "factor recall (M1) vs agreed G1 on dev"}
+
+    return evaluate
+
+
+def assert_offline() -> None:
+    """The model-backed S13 arm is planned, not run: refuse a hosted or local model backend (`VS_LLM_BACKEND` other than offline) so no paid call is made by accident.
+
+    Raises:
+        NotImplementedError: naming the backend; the search itself (`search`) takes any evaluator, so the arm needs only an evaluator wired to the model and the owner's go-ahead.
+    """
+    import os
+
+    backend = (os.environ.get("VS_LLM_BACKEND") or "offline").lower()
+    if backend != "offline":
+        raise NotImplementedError(f"the S13 workflow search is run offline only here (VS_LLM_BACKEND={backend!r}): the model-backed arm is planned; it uses `recall_evaluator` under that backend "
+                                  "after the owner's go-ahead and the pinned code tag")
+
+
+def main(argv: list[str] | None = None) -> int:
+    """`python -m vakeel_sahayak.eval.runners.workflow_search --cases <dev.jsonl> --n 3 --evaluator recall|slot_fill --max-configs 4 --out <report.json> [--mode grid|random] [--seed 0] [--grid small]`.
+
+    Runs the search on the first n dev cases offline (stand-in models, real stores unless `VS_DATA_DIR` points elsewhere), prints the ranking and writes the report. `--grid small` searches only
+    stopping and topology (4 points); the default grid is `DEFAULT_GRID` (64 points less the invalid ones, capped by `--max-configs`).
+    """
+    import argparse
+    import sys
+
+    ap = argparse.ArgumentParser(prog="workflow_search")
+    ap.add_argument("--cases", required=True)
+    ap.add_argument("--n", type=int, default=3)
+    ap.add_argument("--evaluator", choices=["recall", "slot_fill"], default="recall")
+    ap.add_argument("--mode", choices=["grid", "random"], default="grid")
+    ap.add_argument("--max-configs", type=int, default=4)
+    ap.add_argument("--max-tokens", type=int, default=None)
+    ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--grid", choices=["default", "small"], default="default")
+    ap.add_argument("--out", required=True)
+    a = ap.parse_args(argv)
+    try:
+        assert_offline()
+    except NotImplementedError as exc:
+        print(f"REFUSED: {exc}", file=sys.stderr)
+        return 2
+    rows = [json.loads(ln) for ln in Path(a.cases).read_text(encoding="utf-8").splitlines() if ln.strip()][: a.n]
+    grid = {"stopping": ["rules", "rules_llm"], "topology": ["orchestrated", "sequential"]} if a.grid == "small" else None
+    evaluate = recall_evaluator() if a.evaluator == "recall" else slot_fill_evaluator()
+    report = search(rows, evaluate, grid=grid, mode=a.mode, max_configs=a.max_configs, max_tokens=a.max_tokens, seed=a.seed, report_path=a.out)
+    report["note"] = "offline stand-in models: the ranking checks the harness, it is not a result about workflows"
+    Path(a.out).write_text(json.dumps(report, sort_keys=True, indent=1) + "\n", encoding="utf-8")
+    for r in report["ranking"]:
+        print(f"{r['rank']:>2}  score={r['score']:.3f}  tokens={r['tokens']}  {config_key(r['fields'])}")
+    print(f"evaluated {report['evaluated']} (stopped by {report['stopped_by']}); winner {report['winner']}; test pending; report {a.out}")
+    return 0
+
+
 def assert_grid_implemented(grid: dict[str, list[Any]] | None = None) -> None:
     """Fail loudly when a grid point selects a named variant that no agent reads (every searched field is a plain switch, so this is a guard for custom grids)."""
     for point in enumerate_grid(grid):
         name = Switches(**point).variant()
         if name != "custom":
             assert_variant_implemented(name)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

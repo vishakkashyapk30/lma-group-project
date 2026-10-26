@@ -135,12 +135,26 @@ def run_job(job: str, cfg: dict[str, Any], shard: int, n_shards: int, out_dir: s
     if job == "gold_source_sweep":
         return run_gold_source_sweep(cfg, out_dir)
     if cfg.get("runner") == "workflow_search":
-        raise NotImplementedError(f"job {job!r}: S13 runs through eval/runners/workflow_search.search on dev cases with a model-backed evaluator; none is wired to a hosted or local model yet")
+        return run_workflow_search_job(job, out_dir)
     if cfg.get("systems") and job not in NEEDS:  # a VI-03 job: systems of `systems.system_runner` on the rows of its test set
         return _run_systems(job, cfg, shard, n_shards, out_dir, deadline)
     if job in NEEDS:
         raise NotImplementedError(f"job {job!r} needs {NEEDS[job]}")
     raise NotImplementedError(f"job {job!r}: no arm is wired for it yet")
+
+
+def run_workflow_search_job(job: str, out_dir: str, n_cases: int = 3, max_configs: int = 4) -> int:
+    """The S13 job: the deterministic grid search on the first dev cases with the factor-recall evaluator, offline only (a smoke of the harness: `n_cases` cases, `max_configs` grid points).
+
+    Writes `<out>/runs/<job>/search_report.json`. The model-backed arm (the plan's 50 cases and about 30 search runs) is planned: a hosted or local backend raises NotImplementedError (`workflow_search.assert_offline`).
+    """
+    from vakeel_sahayak.eval.runners import workflow_search as ws
+    from vakeel_sahayak.testsets.gold_source import load_t1
+
+    ws.assert_offline()
+    dev = load_t1("dev")[:n_cases]
+    report = ws.search(dev, ws.recall_evaluator(), max_configs=max_configs, report_path=Path(out_dir) / "runs" / job / "search_report.json")
+    return int(report["evaluated"])
 
 
 def run_gold_source_sweep(cfg: dict[str, Any], out_dir: str) -> int:
