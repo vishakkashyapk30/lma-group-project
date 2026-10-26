@@ -9,7 +9,7 @@ help:             ## list the targets
 needs-venv:
 	@test -x "$(PY)" || { echo "no $(PY): run 'make setup' first (it creates .venv and installs the package)" >&2; exit 1; }
 
-setup:            ## create .venv (Python 3.10+), upgrade pip, install the package with the light extras (dev,data,testsets; EXTRAS=a,b to change), then install the git hooks (scripts/setup_dev.sh)
+setup:            ## create .venv (Python 3.11+), upgrade pip, install the package with the light extras (dev,data,testsets; EXTRAS=a,b to change), then install the git hooks (scripts/setup_dev.sh)
 	@scripts/setup_dev.sh
 	@$(MAKE) --no-print-directory hooks
 

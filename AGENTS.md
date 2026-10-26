@@ -4,7 +4,7 @@ Vakeel-Sahayak.ai is an agentic bail-preparation engine for Indian legal-aid law
 
 ## First day (copy these, in order)
 ```bash
-make setup         # needs Python 3.10+; creates .venv, upgrades pip, installs `.[dev,data,testsets]` (no torch, no GPU libraries), copies .env.example to .env, installs the git hooks. Safe to re-run.
+make setup         # needs Python 3.11+; creates .venv, upgrades pip, installs `.[dev,data,testsets]` (no torch, no GPU libraries), copies .env.example to .env, installs the git hooks. Safe to re-run.
                    # `make setup-full` (or EXTRAS=dev,data,eval make setup) adds the heavy extras (torch, docling, ...; several GB). `make help` lists every target
 make test-collect  # optional check: collection must be clean (about 4,700 tests); `.venv/bin/pytest tests/unit/scripts -q` checks the data scripts offline
 make data          # data/ in place? skip. Else installs the team bundle (needs HF_TOKEN in .env or hf auth login, and membership of the Hugging Face organisation Vakeel-Sahayak), else tells you how to rebuild.
@@ -43,7 +43,7 @@ Handoff notes (what is done, not done, next steps) are in `docs/handoff/*.md`; d
 - **Frontend:** it must feel like a product. Follow `frontend/DESIGN.md` including "Things we do not do": no status dots, no stylised numerals, no eyebrow labels, no gradient or glow, short motion only (150 to 300 ms), no scroll-jacking, and none of the banned fonts.
 
 ## Run it
-- Python: `make setup` (creates `.venv`), then use `.venv/bin/python` and `.venv/bin/pytest`. Offline stand-in models are the default (`VS_MODELS=offline`, `VS_LLM_BACKEND=offline`), so nothing needs a GPU or a key.
+- Python: `make setup` (creates `.venv`), then use `.venv/bin/python` and `.venv/bin/pytest`. Offline stand-in models are the default (`models_mode()` is `offline` when `VS_MODELS` is unset, with or without a `.env`; the code never reads `.env`), so nothing needs a GPU or a key. Real or hosted models need an explicit `VS_MODELS=auto` (or `real`); see `docs/handoff/python-and-defaults.md`.
 - One command for the whole stack: `docker compose up` (UI http://localhost:3000, API http://localhost:8000). The production UI is in live mode (an unreachable API shows an error, never sample data); build with `NEXT_PUBLIC_API_MODE=demo` for the sample case-0007 only. Ports: `FRONTEND_PORT`, `BACKEND_PORT`. Details in `DOCKER.md`.
 - Without Docker (Node 20): `cd frontend && npm ci && npm run build && NEXT_PUBLIC_API_BASE=http://localhost:8000 npx next start -p 3000`, and `.venv/bin/python -m uvicorn vakeel_sahayak.api.asgi:app --port 8000`.
 - Hosted model (OpenAI or Sarvam) for the evaluation driver: load the keys from the untracked `.env` only (`set -a; . ./.env; set +a`), then `VS_MODELS=auto VS_LLM_BACKEND=openai VS_EXTERNAL=pseudonymised VS_OPENAI_RUN_CAP_USD=0.30 .venv/bin/python -m vakeel_sahayak.eval.runners.driver eval-smoke --n 1 --out <dir>`. Use `pseudonymised`, not `public`: every agent role declares client text, and the driver pseudonymises each case's facts like the production intake (details in `docs/handoff/pilot-hosted-model.md`). For the real DeBERTa claim checker on CPU, install torch and `.[nli]`; without them `auto` falls back to the offline NLI and records it in the manifest.

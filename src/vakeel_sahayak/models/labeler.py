@@ -125,7 +125,8 @@ class EvalLabeler:
         assert_not_system_use()
         if self._llm is not None:
             return self._llm
-        if os.environ.get("VS_MODELS", "auto").lower() == "offline":
+        from vakeel_sahayak.models.factory import models_mode
+        if models_mode() == "offline":
             raise LabelerUnavailable("VS_MODELS=offline: the Llama evaluation labeler is not run; gold stays rule-only")
         if self._use_openai():
             self._llm = self._openai_client()

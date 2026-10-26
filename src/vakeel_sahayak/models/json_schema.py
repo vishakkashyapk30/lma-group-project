@@ -11,10 +11,12 @@ uses them, and the structured-output loop uses `validate` for dict schemas.
 from __future__ import annotations
 
 import re
-from datetime import date, datetime
+from datetime import date
 from typing import Any
 
 from pydantic import BaseModel
+
+from vakeel_sahayak.schemas.ids import parse_iso_datetime
 
 # Enum values preferred, in this order, when there is no evidence for a choice: the answer that sends the item to counsel.
 CONSERVATIVE_ENUM_ORDER: tuple[str, ...] = (
@@ -177,7 +179,7 @@ def _is_date(text: str) -> bool:
 
 def _is_datetime(text: str) -> bool:
     try:
-        datetime.fromisoformat(text)
+        parse_iso_datetime(text)
     except ValueError:
         return False
     return True

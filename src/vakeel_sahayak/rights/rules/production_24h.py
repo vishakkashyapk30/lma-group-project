@@ -8,6 +8,7 @@ from vakeel_sahayak.rights.base import Rule
 from vakeel_sahayak.rights.day_count import parse_date
 from vakeel_sahayak.rights.inputs import RuleInputs
 from vakeel_sahayak.schemas.enums import RightsCheckName, RightsStatus
+from vakeel_sahayak.schemas.ids import parse_iso_datetime
 from vakeel_sahayak.schemas.rights_report import RightsCheckResult
 
 
@@ -70,9 +71,9 @@ def _stamp(day: str | None, clock: str | None) -> datetime | None:
         return None
     try:
         if "T" in clock or " " in clock.strip():
-            return datetime.fromisoformat(clock.strip())
+            return parse_iso_datetime(clock.strip())
         if not day:
             return None
-        return datetime.fromisoformat(f"{day}T{clock.strip()}")
+        return parse_iso_datetime(f"{day}T{clock.strip()}")
     except ValueError:
         return None

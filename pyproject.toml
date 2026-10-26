@@ -7,7 +7,7 @@ name = "vakeel_sahayak"
 version = "0.0.1"
 description = "Vakeel-Sahayak.ai: an agentic bail-preparation engine for legal-aid counsel (skeleton)."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
   "pydantic>=2",
   "pyyaml>=6",
@@ -55,15 +55,15 @@ vakeel_sahayak = ["contracts/factors/*.yaml", "testsets/specs/*.yaml", "export/t
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
-ignore = ["E501", "B027"]
+ignore = ["E501", "B027", "UP017", "UP042"]  # UP017, UP042: py311 rewrites (datetime.UTC, StrEnum) not applied to existing code; StrEnum changes str()
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 ignore_missing_imports = true
 plugins = ["pydantic.mypy"]
 

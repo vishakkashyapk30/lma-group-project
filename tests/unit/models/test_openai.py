@@ -59,6 +59,7 @@ def _clean_env(monkeypatch):
         "VS_OPENAI_CAP_USD", "VS_OPENAI_RUN_CAP_USD", "VS_OPENAI_RUN_ID", "MISTRAL_API_KEY",
     ):
         monkeypatch.delenv(var, raising=False)
+    monkeypatch.setenv("VS_MODELS", "auto")  # RECONCILED: the default mode is now offline; these tests exercise the non-offline paths
     factory.reset_clients()
     yield
     factory.reset_clients()

@@ -68,6 +68,7 @@ def _clean_env(monkeypatch):
     """No Sarvam state leaks between tests; the real key (if any) is never used here."""
     for var in ("VS_SARVAM", "VS_MODELS", "VS_LABELER", "VS_TEACHER", "SARVAM_API_KEY"):
         monkeypatch.delenv(var, raising=False)
+    monkeypatch.setenv("VS_MODELS", "auto")  # RECONCILED: the default mode is now offline; these tests exercise the non-offline paths
     factory.reset_clients()
     yield
     factory.reset_clients()

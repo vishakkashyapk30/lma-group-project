@@ -4,16 +4,16 @@
 #   make setup                         # extras: dev,data,testsets (pytest, ruff, the hf command, pyarrow, test-set builders; no torch, no GPU libraries)
 #   make setup-full                    # adds lance,eval,nli,ocr,speech (torch, docling, surya, ...: several GB; the real-model paths)
 #   EXTRAS=dev,data,eval make setup    # any comma-separated list of the extras in pyproject.toml
-#   PYTHON=python3.12 make setup       # pick the interpreter (needs 3.10 or newer; the default is the first of python3.12, 3.11, 3.10, python3 that is new enough)
+#   PYTHON=python3.12 make setup       # pick the interpreter (needs 3.11 or newer; the default is the first of python3.13, python3.12, python3.11, python3 that is new enough)
 #
 # Re-running it only refreshes the installed packages. A .venv made with a too-old Python is refused (delete it and run again).
 set -euo pipefail
 cd "$(dirname "$0")/.."
-MIN_MAJOR=3; MIN_MINOR=10
+MIN_MAJOR=3; MIN_MINOR=11
 EXTRAS="${EXTRAS:-dev,data,testsets}"
 [ "${1:-}" != "--full" ] || EXTRAS="${FULL_EXTRAS:-dev,data,testsets,lance,eval,nli,ocr,speech}"
 
-ok_python() {   # $1 = command: true when it is Python >= 3.10
+ok_python() {   # $1 = command: true when it is Python >= 3.11
   command -v "$1" >/dev/null 2>&1 && "$1" -c "import sys; sys.exit(0 if sys.version_info >= ($MIN_MAJOR, $MIN_MINOR) else 1)" 2>/dev/null
 }
 
@@ -26,7 +26,7 @@ else
     ok_python "$PYTHON" || { echo "PYTHON=$PYTHON is missing or older than $MIN_MAJOR.$MIN_MINOR." >&2; exit 1; }
     cands=("$PYTHON")
   else
-    for c in python3.12 python3.11 python3.10 python3 python; do ok_python "$c" && cands+=("$c"); done
+    for c in python3.13 python3.12 python3.11 python3 python; do ok_python "$c" && cands+=("$c"); done
   fi
   if [ "${#cands[@]}" -eq 0 ]; then
     echo "no Python $MIN_MAJOR.$MIN_MINOR or newer found. Install one (Ubuntu: sudo apt install python3 python3-venv; macOS: brew install python@3.12; or conda/uv)," >&2

@@ -20,6 +20,7 @@ from vakeel_sahayak.config import parse_dotenv  # noqa: E402
 for _k, _v in parse_dotenv(ROOT / ".env").items():
     if _k in ("SARVAM_API_KEY", "OPENAI_API_KEY") and _v and not os.environ.get(_k):
         os.environ[_k] = _v
+os.environ.setdefault("VS_MODELS", "auto")  # hosted capabilities need a non-offline mode (the default is offline)
 os.environ["VS_EXTERNAL"] = "public"  # only public text may leave the machine in this script
 
 from vakeel_sahayak.models.sarvam.policy import public_scope  # noqa: E402

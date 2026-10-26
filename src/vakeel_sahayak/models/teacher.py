@@ -117,7 +117,8 @@ class TeacherClient:
             client: an LLMClient to use directly (tests, a shared engine)
         """
         if backend is None:
-            if os.environ.get("VS_MODELS", "auto").lower() == "offline":
+            from vakeel_sahayak.models.factory import models_mode
+            if models_mode() == "offline":
                 backend = "offline"
             else:
                 backend = os.environ.get("VS_TEACHER") or _yaml_runtime() or ("mistral" if MistralApiClient.available() else "vllm")

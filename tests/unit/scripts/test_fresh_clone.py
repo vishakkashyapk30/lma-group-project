@@ -200,7 +200,7 @@ def test_setup_explains_a_missing_or_old_python(tmp_path):
             text=True,
             check=False,
         )
-        assert p.returncode == 1 and "missing or older than 3.10" in p.stderr, p.stderr
+        assert p.returncode == 1 and "missing or older than 3.11" in p.stderr, p.stderr
     assert not (root / ".venv").exists()
     tools = tmp_path / "tools"  # only bash and dirname: no Python at all
     tools.mkdir()
@@ -214,7 +214,7 @@ def test_setup_explains_a_missing_or_old_python(tmp_path):
         text=True,
         check=False,
     )
-    assert bare.returncode == 1 and "no Python 3.10 or newer found" in bare.stderr
+    assert bare.returncode == 1 and "no Python 3.11 or newer found" in bare.stderr
 
 
 def test_make_targets_without_a_venv_say_make_setup(tmp_path):

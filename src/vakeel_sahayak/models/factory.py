@@ -1,7 +1,8 @@
 """Factory resolving model roles to clients using configs/models.yaml (plan §12).
 
-**Mode** (`models_mode()`): `VS_MODELS` = `offline` | `real` | `auto` (default `auto`; configs/models.yaml may set a
-top-level `mode`).
+**Mode** (`models_mode()`): `VS_MODELS` = `offline` | `real` | `auto` (default `offline`: nothing real is loaded and no key is used unless
+asked for; configs/models.yaml may set a top-level `mode`, which overrides that default; the environment overrides both).
+Nothing reads `.env` here: `make setup` copies `.env.example` (VS_MODELS=offline) and the shell or `set -a; . ./.env` exports it.
 
 - `offline`: every LLM role is the deterministic `OfflineLLM`, NLI is the lexical `OfflineNliClient`;
 - `real`: the configured backends, strictly (a missing dependency raises `ModelUnavailable`, never a silent stand-in);
@@ -72,15 +73,15 @@ _LOCK = threading.RLock()
 
 
 def models_mode() -> str:
-    """'offline', 'real' or 'auto' (`VS_MODELS`, else configs/models.yaml `mode`, else 'auto')."""
+    """'offline', 'real' or 'auto' (`VS_MODELS`, else configs/models.yaml `mode`, else 'offline')."""
     raw = os.environ.get("VS_MODELS")
     if not raw:
         try:
             from vakeel_sahayak.config import load_config
 
-            raw = str(load_config().models.get("mode") or "auto")
+            raw = str(load_config().models.get("mode") or "offline")
         except (FileNotFoundError, ValueError):
-            raw = "auto"
+            raw = "offline"
     mode = raw.strip().lower()
     if mode not in MODES:
         raise ValueError(f"VS_MODELS must be one of {MODES}, got {raw!r}")
@@ -105,7 +106,7 @@ def role_config(role: str) -> dict[str, object]:
 
 
 def llm_backend() -> str | None:
-    """`VS_LLM_BACKEND` (offline | local | sarvam | openai), or None when unset (each role then follows its configs/models.yaml runtime).
+    """`VS_LLM_BACKEND` (offline | local | sarvam | openai), or None when unset (each role then follows its configs/models.yaml runtime; with the default `VS_MODELS=offline` that is still the offline client).
 
     Raises:
         ValueError: for an unknown value.
@@ -179,7 +180,7 @@ def _sarvam_active(capability: str) -> bool:
     from vakeel_sahayak.models.sarvam.config import key_is_set, sarvam_config
     from vakeel_sahayak.models.sarvam.policy import SarvamMode, sarvam_mode
 
-    if os.environ.get("VS_MODELS", "").strip().lower() == "offline" or models_mode() == "offline":
+    if models_mode() == "offline":
         return False
     return sarvam_mode() is not SarvamMode.OFF and key_is_set() and bool(sarvam_config()["use"].get(capability, True))
 
@@ -196,7 +197,7 @@ def _openai_active() -> bool:
     from vakeel_sahayak.models.openai.config import key_is_set, openai_config
     from vakeel_sahayak.models.sarvam.policy import SarvamMode, provider_mode
 
-    if os.environ.get("VS_MODELS", "").strip().lower() == "offline" or models_mode() == "offline":
+    if models_mode() == "offline":
         return False
     return provider_mode("openai") is not SarvamMode.OFF and key_is_set() and bool(openai_config()["use"].get("llm", True))
 
@@ -474,7 +475,7 @@ def _pick(kind: str, offline: type) -> object:
     """Override, else the installed heavy backend, else the offline fallback (VS_MODELS=offline forces the fallback)."""
     if kind in _OVERRIDES:
         return _OVERRIDES[kind]
-    if os.environ.get("VS_MODELS", "auto") != "offline" and os.environ.get("VS_HEAVY_CLIENTS", "").strip().lower() != "offline":  # the second gate: vision/OCR/ASR/translation only (tests)
+    if models_mode() != "offline" and os.environ.get("VS_HEAVY_CLIENTS", "").strip().lower() != "offline":  # the second gate: vision/OCR/ASR/translation only (tests)
         heavy = _heavy(kind)
         if heavy is not None:
             return heavy

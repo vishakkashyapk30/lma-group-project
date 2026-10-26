@@ -27,7 +27,8 @@ HEAVY = ["torch", "vllm", "transformers", "openai", "peft", "bitsandbytes"]
 
 @pytest.fixture()
 def no_heavy_imports(monkeypatch):
-    """Make `import torch` (etc.) raise ImportError for the duration of a test."""
+    """Make `import torch` (etc.) raise ImportError for the duration of a test (and select VS_MODELS=auto, the non-offline mode)."""
+    monkeypatch.setenv("VS_MODELS", "auto")  # RECONCILED: the default mode is now offline; these tests check the configured backends
     for name in HEAVY:
         monkeypatch.setitem(sys.modules, name, None)
 

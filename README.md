@@ -22,7 +22,7 @@ The lawyer approves the dossier and the final draft; nothing is exported without
 ```
 .
 ├── README.md
-├── pyproject.toml                 Package `vakeel_sahayak` (Python >= 3.10); extras: ocr, speech, models, train, eval, dev
+├── pyproject.toml                 Package `vakeel_sahayak` (Python >= 3.11); extras: ocr, speech, models, train, eval, dev
 ├── Makefile                       Targets: setup, datasets, interim, stores, models, smoke, eval-*, test-*, docker-*
 ├── .env.example  .gitignore
 ├── configs/                       YAML: models, stores, budgets, thresholds, paths, tools, rights rules, splits
@@ -64,7 +64,7 @@ The lawyer approves the dossier and the final draft; nothing is exported without
 
 ## Getting started
 
-Python 3.10 or newer, git, bash, perl (for the commit hook); Node 20 only for the frontend. Full walk-through for new teammates: the "First day" block of `AGENTS.md`.
+Python 3.11 or newer, git, bash, perl (for the commit hook); Node 20 only for the frontend. Full walk-through for new teammates: the "First day" block of `AGENTS.md`.
 
 ```bash
 make setup         # .venv + `pip install -e '.[dev,data,testsets]'` + .env from .env.example + git hooks (make setup-full for the heavy extras)

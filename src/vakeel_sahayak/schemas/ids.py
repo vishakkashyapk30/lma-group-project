@@ -38,10 +38,22 @@ def check_iso_date(value: str) -> str:
     return value
 
 
+def parse_iso_datetime(value: str) -> datetime:
+    """`datetime.fromisoformat` that also accepts a trailing 'Z' (UTC), which Python before 3.11 rejects.
+
+    Raises:
+        ValueError: when `value` is not an ISO-8601 date-time.
+    """
+    text = value.strip()
+    if text[-1:] in ("Z", "z"):
+        text = text[:-1] + "+00:00"
+    return datetime.fromisoformat(text)
+
+
 def check_iso_datetime(value: str) -> str:
     """Return `value` if it parses as an ISO-8601 date-time, else raise ValueError."""
     try:
-        datetime.fromisoformat(value)
+        parse_iso_datetime(value)
     except ValueError as exc:
         raise ValueError(f"not an ISO-8601 timestamp: {value!r}") from exc
     return value
