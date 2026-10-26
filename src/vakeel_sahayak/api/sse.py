@@ -1,7 +1,8 @@
 """Server-Sent Events stream of agent events to the UI (plan §13.1, §3.3 use 4).
 
 One frame per event: `id:` the event id, `event:` the EventKind value, `data:` the event JSON. A reconnecting browser sends
-`Last-Event-ID`; the stream replays the stored events of the case after it, then follows `EventLog.subscribe`.
+`Last-Event-ID`; the stream replays the stored events of the case after it, then follows the new ones with `EventLog.follow`,
+which polls without blocking the event loop (the blocking `EventLog.subscribe` froze every other API request while a case was open).
 """
 
 from __future__ import annotations
@@ -32,6 +33,13 @@ async def event_stream(case_id: str, last_event_id: str | None = None, log: obje
         from vakeel_sahayak.api import deps
 
         log = deps.get_event_log(case_id)
+    follow = getattr(log, "follow", None)
+    if follow is not None:  # the SQLite record: stored and live events through one follower that never blocks the event loop
+        async for event in follow(case_id, last_event_id):
+            yield _frame(event)
+        return
+
+    # Logs without `follow` (test doubles): replay `read`, then iterate `subscribe`.
     seen_target = last_event_id is None  # skip every frame up to and including last_event_id, in stored then live
 
     def past_resume_point(event: Event) -> bool:
