@@ -1,7 +1,7 @@
 # `make help` lists the targets. Targets that run Python need .venv: `make setup` creates it (needs-venv says so instead of a stack trace).
 PY ?= .venv/bin/python
 
-.PHONY: help needs-venv setup-full data data-check data-bundle data-install data-publish models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend hooks check-commits live-smoke
+.PHONY: help needs-venv setup-full data data-check data-bundle data-install data-publish models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all eval-score eval-report frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend hooks check-commits live-smoke
 
 help:             ## list the targets
 	@grep -hE '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | sed -E 's/:[^#]*## /\t/' | sort | awk -F'\t' '{printf "  %-20s %s\n", $$1, $$2}'
@@ -133,6 +133,12 @@ eval-smoke-all: needs-venv   ## run every implemented variant offline on 1 T1 de
 	VS_MODELS=offline VS_LLM_BACKEND=offline $(PY) -m vakeel_sahayak.eval.runners.driver smoke-all
 eval-plan: needs-venv        ## print cases, tokens, cost (USD, INR) and hours of every job without running anything
 	$(PY) -m vakeel_sahayak.eval.runners.driver plan --all
+eval-score: needs-venv       ## score driver outputs against the T1 gold: make eval-score RUNS=<dir> OUT=<dir> [SLICE=dev|open|blind] [GOLD=agreed|rule|both]; GOLD=both is the gold-source sweep
+	@test -n "$(RUNS)" -a -n "$(OUT)" || { echo "usage: make eval-score RUNS=<driver output dir> OUT=<dir> [SLICE=dev] [GOLD=agreed|rule|both]"; exit 2; }
+	$(PY) -m vakeel_sahayak.eval.scoring score --runs $(RUNS) --out $(OUT) --slice $(or $(SLICE),dev) --gold-source $(or $(GOLD),agreed) $(SCORE_ARGS)
+eval-report: needs-venv      ## tables (Markdown, LaTeX, CSV) and figures from the scores: make eval-report OUT=<dir the scores are in>
+	@test -n "$(OUT)" || { echo "usage: make eval-report OUT=<dir written by eval-score>"; exit 2; }
+	$(PY) -m vakeel_sahayak.eval.scoring report --scores $(OUT)
 eval-smoke: needs-venv       ## run 3 T1 dev cases offline through the Full system (needs data/testsets/t1/dev.jsonl from the T1 builder)
 	VS_MODELS=offline VS_LLM_BACKEND=offline $(PY) -m vakeel_sahayak.eval.runners.driver eval-smoke
 
