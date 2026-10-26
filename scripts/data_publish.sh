@@ -10,6 +10,8 @@
 # The bundle's README.md is the dataset card (what is included and excluded and why; attributions: Open India Law CC BY 4.0, IPC2BNS-Verify, Kathbath; HLDC not included; private repo).
 # New files only: `hf upload` hashes each file and skips the ones the repository already holds, so a re-run after a rebuild sends only the changed or new parts
 # (the .state-* resume files of the bundle folder are never uploaded).
+# sweep-runs/ (result tarballs that teammates upload for the dev-set sweep, docs/handoff/sweep-satvik.md) is never touched: this upload has no --delete, so files that are
+# not in the local bundle folder stay on the dataset, and `make data` / data_install exclude sweep-runs/* from its download.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 bundle="${1:-${BUNDLE_DIR:-$HOME/vakeel-data-bundle}}"

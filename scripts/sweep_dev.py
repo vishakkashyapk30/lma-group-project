@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+"""Run the arms of the pre-freeze dev-set sweep (configs/eval/sweep_dev.yaml) as resumable shards of `driver run`.
+
+    bash -c 'set -a; . ./.env; set +a; exec .venv/bin/python scripts/sweep_dev.py run --phase 2 --shards 4 --parallel 2'
+    .venv/bin/python scripts/sweep_dev.py run --phase 1 --arms S4,S5 --dry-run
+
+Environment per backend comes from the yaml (`backends.<name>.env`) and is applied AFTER the shell's .env, so `.env`'s `VS_SARVAM=off` cannot win. Keys are never read
+or printed here: they reach the driver through the inherited environment only. Outputs: `<out_root>/outputs/<system>` (`__run2` for the second repeat), logs in
+`<out_root>/logs/`. A finished arm is skipped (every case file present), a half-done one resumes (the driver skips saved cases). Dev cases only.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+import yaml
+
+REPO = Path(__file__).resolve().parents[1]
+STORES = ["law.statutes", "law.concordance", "caselaw.reasoning", "caselaw.citations", "caselaw.similar", "advocacy.arguments", "advocacy.objections"]
+EXPAND = {"A10:*": [f"A10:{s}" for s in STORES], "S17*": ["S17", "S17b", "S17c", "S17d"], "P5-P8": ["P5", "P6", "P7", "P8"]}
+SPECIAL = {"S14b", "S16"}  # not per-case driver runs: S14b is the batch-desk simulation on T5, S16 is the chunking study (a per-case run equals Full)
+TESTSET_FILES = {"T1": "data/testsets/t1/dev.jsonl", "T2": "data/testsets/t2/driver_cases.jsonl", "T5": "data/testsets/t5/driver_cases.jsonl", "T7": "data/testsets/t7/driver_cases.jsonl"}
+
+
+def load_cfg() -> dict:
+    return yaml.safe_load((REPO / "configs/eval/sweep_dev.yaml").read_text(encoding="utf-8"))
+
+
+def dir_name(system: str, run_index: int) -> str:
+    base = system.lower().replace(":", "_")
+    return base if run_index == 1 else f"{base}__run{run_index}"
+
+
+def cases_file(cfg: dict, root: Path, testset: str, n: int) -> Path:
+    """The first n rows of the test set's case file, written once under <root>/cases/."""
+    src = REPO / TESTSET_FILES[testset.upper()]
+    rows = [ln for ln in src.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    dest = root / "cases" / f"{testset.lower()}_{n}.jsonl"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if not dest.exists():
+        dest.write_text("\n".join(rows[:n]) + "\n", encoding="utf-8")
+    return dest
+
+
+def n_done(out: Path, cases: Path) -> int:
+    ids = [json.loads(ln).get("case_id") for ln in cases.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    return sum((out / f"{i}.json").exists() for i in ids)
+
+
+def jobs_for(cfg: dict, args: argparse.Namespace) -> list[dict]:
+    jobs = []
+    wanted = {a.lower() for a in args.arms.split(",")} if args.arms else None
+    for arm in cfg["arms"]:
+        if arm["phase"] != args.phase or arm.get("status") == "done" or arm["id"] in SPECIAL:
+            continue
+        if args.backend and arm["backend"] != args.backend:
+            continue
+        for system in EXPAND.get(arm["id"], [arm["id"]]):
+            if wanted and system.lower() not in wanted and arm["id"].lower() not in wanted:
+                continue
+            for k in range(1, int(arm.get("runs", 1)) + 1):
+                jobs.append({"system": system, "arm": arm, "run_index": k})
+    return jobs
+
+
+def launch(job: dict, cfg: dict, args: argparse.Namespace) -> list[subprocess.Popen]:
+    arm = job["arm"]
+    root = REPO / cfg["out_roots"][arm["backend"]]
+    cases = cases_file(cfg, root, arm.get("testset", "T1"), int(arm["n"]))
+    out = root / "outputs" / dir_name(job["system"], job["run_index"])
+    if n_done(out, cases) >= int(arm["n"]):
+        print(f"skip {job['system']} run{job['run_index']}: {out.name} complete", flush=True)
+        return []
+    env = dict(os.environ)
+    env.update({k: str(v) for k, v in cfg["backends"][arm["backend"]]["env"].items()})
+    env["PYTHONPATH"] = str(REPO / "src") + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")  # run THIS checkout's code (a pinned git worktree), not another editable install
+    logs = root / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    procs = []
+    for shard in range(args.shards):
+        cmd = [sys.executable, "-m", "vakeel_sahayak.eval.runners.driver", "run", "--system", job["system"], "--cases", str(cases), "--out", str(out),
+               "--run-index", str(job["run_index"]), "--shard", str(shard), "--n-shards", str(args.shards)]
+        if args.dry_run:
+            print(" ".join(cmd))
+            continue
+        log = open(logs / f"{dir_name(job['system'], job['run_index'])}_s{shard}.log", "ab")
+        procs.append(subprocess.Popen(cmd, cwd=REPO, env=env, stdout=log, stderr=subprocess.STDOUT))
+    print(f"started {job['system']} run{job['run_index']} on {arm['backend']}: {len(procs)} shard(s) -> {out}", flush=True)
+    return procs
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    r = sub.add_parser("run")
+    r.add_argument("--phase", type=int, required=True)
+    r.add_argument("--arms", default=None, help="comma list of system ids (case-insensitive)")
+    r.add_argument("--backend", default=None)
+    r.add_argument("--shards", type=int, default=4)
+    r.add_argument("--parallel", type=int, default=1, help="arms running at the same time (each with --shards processes)")
+    r.add_argument("--dry-run", action="store_true")
+    args = ap.parse_args()
+    cfg = load_cfg()
+    jobs = jobs_for(cfg, args)
+    print(f"{len(jobs)} job(s) in phase {args.phase}", flush=True)
+    active: list[tuple[dict, list[subprocess.Popen]]] = []
+    queue = list(jobs)
+    t0 = time.time()
+    while queue or active:
+        active = [(j, p) for j, p in active if any(x.poll() is None for x in p)]
+        while queue and len(active) < args.parallel:
+            j = queue.pop(0)
+            procs = launch(j, cfg, args)
+            if procs:
+                active.append((j, procs))
+        if not args.dry_run and (queue or active):
+            time.sleep(20)
+        elif args.dry_run:
+            break
+    print(f"phase {args.phase} finished in {(time.time() - t0) / 60:.1f} min", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

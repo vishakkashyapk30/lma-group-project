@@ -49,7 +49,7 @@ case "$src" in
     need_mb=1500; [ "$raw" != 1 ] || need_mb=$((need_mb + 2000)); [ "$only_raw" != 1 ] || need_mb=2000
     free_mb=$(( $(df -Pk "$work" | awk 'NR==2 {print $4}') / 1024 ))
     [ "$free_mb" -gt "$need_mb" ] || echo "warning: only $free_mb MB free for the download in $work (about $need_mb MB needed). Point TMPDIR (or VS_DOWNLOAD_DIR) at a bigger disk, or use RAW=0." >&2
-    excl=(); [ "$raw" = 1 ] || excl+=(--exclude "raw.tar.part-*"); [ "$only_raw" != 1 ] || excl+=(--exclude "data.tar.gz.part-*")
+    excl=(--exclude "sweep-runs/*"); [ "$raw" = 1 ] || excl+=(--exclude "raw.tar.part-*"); [ "$only_raw" != 1 ] || excl+=(--exclude "data.tar.gz.part-*")
     echo "checking access to dataset $repo ..."
     hf_preflight "$repo" "$work" || exit 1
     echo "downloading dataset $repo into $work/bundle (resumable; a failed file is retried ${HF_TRIES:-3} times) ..."
