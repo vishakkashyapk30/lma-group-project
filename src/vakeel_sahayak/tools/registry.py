@@ -179,7 +179,7 @@ def validate_tool_config() -> list[str]:
 @cache
 def _args_model(name: str):  # noqa: ANN202
     """Pydantic model built from a tool function's signature and type hints (extra arguments are errors)."""
-    func = get_tool(name)
+    func = _discover()[1].get(name) or get_tool(name)  # the real function: a test that patches `get_tool` with a *args/**kwargs wrapper must not poison this cache
     try:
         hints = get_type_hints(func)
     except Exception:  # unresolvable annotation: fall back to Any rather than refuse the tool

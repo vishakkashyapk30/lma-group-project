@@ -85,7 +85,7 @@ def signals_from_dossier(dossier: CaseDossier | None, rights: RightsReport | Non
     """Case signals from the approved dossier and the RightsReport."""
     sig = CaseSignals()
     if dossier is not None:
-        sig.as_of = dossier.as_of
+        sig.as_of = dossier.as_of or (rights.as_of if rights is not None else None)  # a dossier folded from the log carries no date; the Rights Radar was counted to one
         f = dossier.fields
         for s in (f.sections.value or []) if f.sections.status != FieldStatus.UNSUPPORTED else []:
             sig.sections.append(
