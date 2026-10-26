@@ -95,3 +95,6 @@ Measured on all 250 T1 orders (dev 50 + cases 200), same path as `driver.file_fa
 The proxy is an independent regex over the raw text (words before `W/o S/o D/o`, and after the markers), minus caption words; it is a leak estimate, not ground truth. Residual leaks are OCR damage: `TEERATH PRASHADKUSHWAHA` (name glued to name), `Arjun Kumar Sahnihave filed` (t1dev-018), `BARBHUIYA` as counsel name, `Kotakinda` + glued second name. Refusing these is correct. Known older behaviour not touched: the driver's caption rule (`learn_caption_names`) can learn odd strings (`For the petitioner`, `supported more at that time`), which then get replaced.
 
 Tests: `tests/unit/privacy/test_caption_names.py`. Rerun the measurement with the loop in `driver.file_facts` over `data/testsets/t1/{dev,cases}.jsonl`.
+
+### Update: spotlight-tag false positive (product-complete.md)
+Hosted calls whose wrapped text carried a hash tag with a long digit run (for example `cc9937724702`) were refused `privacy_boundary` as a phone number. The phone and ID patterns in `privacy/pseudonymise.py` now ignore digit runs inside lowercase hex tokens and the boundary blanks our own delimiter before checking; client numbers are still refused. Details and the regexes: `docs/handoff/product-complete.md`.

@@ -422,11 +422,6 @@ class BaseAgent(ABC):
         tally.wrapped += 1
         src = source if isinstance(source, SourceRef) else SourceRef.model_validate(source or {})
         wrapped = wrap_untrusted(text, src)
-        for k in range(1, 9):  # the delimiter tag is a hash prefix: one with a long run of digits reads as a phone number to the privacy boundary and would block the call
-            tag = re.search(r"UNTRUSTED_DOCUMENT_DATA (\w+)>>>", wrapped)
-            if tag is None or not re.search(r"[6-9]\d{9}|\d{12}", tag.group(1)):
-                break
-            wrapped = wrap_untrusted(text, src.model_copy(update={"doc": f"{src.doc or 'unknown'}{'.' * k}"}))
         return wrapped
 
     def flag_instructions(self, data: Any, where: str = "case") -> list[str]:
@@ -769,6 +764,7 @@ class BaseAgent(ABC):
         if corpus is not None and self.ada_side:
             corpus = mask_public(jsonable(corpus))  # PII in public rows is masked, so the boundary does not refuse the call
         self.flag_instructions({"case": jsonable(case), "extra": jsonable(extra)} if extra else jsonable(case))
+        self._defence_state()[1].calls += 1
         instructions = self._handoff(instructions, case, extra)
         self.guard_outbound({"system": self.system_prompt(), "instructions": instructions, "case": case, "extra": extra}, public=corpus)
         budgets = getattr(self, "budgets", None)

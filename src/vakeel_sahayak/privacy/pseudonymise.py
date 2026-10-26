@@ -72,8 +72,8 @@ _PATTERNS: list[tuple[re.Pattern[str], str | None]] = [  # most specific role fi
 ]
 _PII = [
     (re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+"), "[EMAIL]"),
-    (re.compile(r"(?<!\d)(?:\+91[\s-]?)?[6-9]\d{9}(?!\d)"), "[PHONE]"),
-    (re.compile(r"(?<!\d)(?<![A-Z]{4})\d{4}\s?\d{4}\s?\d{4}(?!\d)"), "[ID-NUMBER]"),  # not the 12 digits of a court-order id such as HPHC010225332022
+    (re.compile(r"(?<![\da-f]{2})(?<!\d)(?:\+91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}(?![\da-f])"), "[PHONE]"),  # also '98765 43210'; not a digit run inside a lowercase hex token (a hash tag such as 'cc9937724702'); one letter glued before ('phone9876543210') still counts
+    (re.compile(r"(?<![\da-f]{2})(?<!\d)(?<![A-Z]{4})\d{4}\s?\d{4}\s?\d{4}(?![\da-f])"), "[ID-NUMBER]"),  # not the 12 digits of a court-order id such as HPHC010225332022
     (re.compile(r"\b[A-Z]{5}\d{4}[A-Z]\b"), "[ID-NUMBER]"),
 ]
 _ROLE_CONTEXT = 80  # characters either side of a name searched for a role word

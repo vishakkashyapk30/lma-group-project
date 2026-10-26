@@ -24,6 +24,7 @@ import pytest
 from vakeel_sahayak.eval.runners import driver as drv
 from vakeel_sahayak.eval.runners import systems
 from vakeel_sahayak.orchestration.switches import IMPLEMENTED_VARIANTS, Switches
+from vakeel_sahayak.schemas.enums import Factor
 
 
 class Run:
@@ -187,6 +188,26 @@ def test_s6_store_prior_is_wired_and_says_so_when_untrained():
     assert not v.signal_events()[0]["store_prior"]["trained"] and v.msgs("SUTRADHAR", "store_prior_untrained") == 1  # no artefact: equals the contract order, and the log says so
 
 
+def test_s6_trained_prior_changes_the_store_order_and_drops_the_untrained_event(tmp_path, monkeypatch):
+    """After `store_prior train` on gold-labelled TRAIN orders, S6 reorders the allowed stores and no longer reports `store_prior_untrained`."""
+    from vakeel_sahayak.agents.sutradhar.store_prior import Outcome, StorePrior, train_from_file
+
+    src = tmp_path / "orders.jsonl"  # the real trainer runs end to end on a gold-labelled TRAIN order ...
+    src.write_text(json.dumps({"doc_id": "o1", "court": "Kerala High Court", "date": "2022-05-01", "split": "train", "bns_era": False,
+                               "parts": {"prosecution": "State opposes", "defense": "Counsel argues"},
+                               "gold": {"G1": {"labels": ["custody_period"]}, "G2": {"labels": ["d1"]}, "G3": {"fields": {"sections": ["IPC 420"]}}}}), encoding="utf-8")
+    assert train_from_file(src, tmp_path / "unused.json")["used"] == 1
+    rows = [Outcome(f.value, st, useful) for f in Factor for st, useful in (("caselaw.similar", True), ("caselaw.reasoning", False)) for _ in range(20)]
+    StorePrior.train(rows).save(tmp_path / "prior.json")  # ... and a prior that prefers similar orders over reasoning decides the order of the two-store slot
+    monkeypatch.setenv("VS_STORE_PRIOR", str(tmp_path / "prior.json"))
+    v, f = Run("S6"), Run("full")
+    assert v.msgs("SUTRADHAR", "store_prior_untrained") == 0 and f.msgs("SUTRADHAR", "store_prior_untrained") == 0
+    sig = v.signal_events()
+    assert sig and all(o["store_prior"]["trained"] for o in sig)
+    assert any(t["prior"] != t["contract"] for o in sig for t in o["store_prior"]["slots"].values())  # the order differs from the contract's (= Full's)
+    assert all(sorted(t["prior"]) == sorted(t["contract"]) for o in sig for t in o["store_prior"]["slots"].values())  # no allowed store is lost
+
+
 def test_b5_prior_only_router_queries_stores_without_contracts():
     f, v = run("full"), run("B5")
     assert v.msgs("SUTRADHAR", "store_prior") == 3 and f.msgs("SUTRADHAR", "store_prior") == 0
@@ -273,6 +294,7 @@ def test_s17_defence_arms_report_which_defence_is_off():
     for ident, off in expect.items():
         sig = run(ident).signals["injection"]
         assert all(sig[a]["off"] == off for a in sig) and sig, ident
+        assert any(sig[a]["calls"] > 0 for a in sig), ident  # the model calls an agent made are counted (Tally.calls)
     assert "injection" not in run("full").signals
 
 

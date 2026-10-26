@@ -12,6 +12,7 @@ _MEDIA_PATH = re.compile(
     r"(?i)\.(?:wav|mp3|m4a|ogg|opus|flac|aac|webm|png|jpe?g|tiff?|bmp|webp|heic)\s*$"
 )  # a path to a client's audio or page image: the file itself never leaves the laptop
 _DATA_URI = re.compile(r"^data:(image|audio)/", re.IGNORECASE)
+_SPOTLIGHT_TAG = re.compile(r"<<<(?:END_)?UNTRUSTED_DOCUMENT_DATA [0-9a-f]{12}>>>")  # the delimiter our own spotlighting adds (injection_guard.wrap_untrusted); its hash tag is not client data
 _ALIAS_WORD = re.compile(r"(?:Accused|Co|Co-accused|Complainant|IO|Witness|Person)")
 
 
@@ -49,6 +50,7 @@ def _find_problems(payload: dict, mapping: PseudonymMap | None, known_names: lis
         elif _BINARY_KEYS.match(base_key) and leaf not in (None, "", [], {}):
             problems.append(f"{path}: image or audio field")
         elif isinstance(leaf, str):
+            leaf = _SPOTLIGHT_TAG.sub("<<<UNTRUSTED_DOCUMENT_DATA>>>", leaf) if "UNTRUSTED_DOCUMENT_DATA" in leaf else leaf
             if _MEDIA_PATH.search(leaf):
                 problems.append(f"{path}: path to an audio or image file")
             if _DATA_URI.match(leaf):

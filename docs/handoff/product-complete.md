@@ -67,3 +67,24 @@ Dead counter noted (privacy owner): `privacy/defences.Tally.calls` ("model calls
 - `tests/integration` and `tests/system` (900 s cap, background): 413 passed, 3 failed, 6 deselected. The 3 failures are the ones already listed as test-versus-design conflicts in `docs/handoff/regression-2026-10-26-b.md` (flow4 redrafted ground, change-set reopen, weak-slot relaxation); none touches code changed here.
 - `make smoke`: SMOKE OK, export blocked before Gate 2. `driver smoke-all` offline: 61 of 61 ids pass.
 - New tests: `tests/unit/eval/test_variant_effects.py` (42), `tests/unit/pipelines/test_order_splitter_rescue.py` (8), `tests/unit/tools_drafting/test_assemble_application_real.py` (2), `tests/unit/rights/test_unverified_surface.py` (1), `tests/unit/agents/test_untrusted_tag.py` (2). Ruff clean on every file touched.
+
+## Privacy false positive on the spotlight tag, and the trained S6 / B5 store prior
+
+**Root cause.** `wrap_untrusted` tags its delimiter with 12 hex characters (a SHA-256 prefix). The phone pattern `(?<!\d)(?:\+91[\s-]?)?[6-9]\d{9}(?!\d)` matched any ten-digit run inside such a tag (`cc9937724702`), so the boundary refused the call (`privacy_boundary`) under S10 and under any hosted call whose wrapped text carried such a tag. Fixed in `privacy/`, not in the wrapper:
+
+- `pseudonymise._PII` phone: now `(?<![\da-f]{2})(?<!\d)(?:\+91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}(?![\da-f])`. It no longer matches inside a lowercase hex token, and it now also catches the spaced form `98765 43210` (before, only ten contiguous digits). A single letter glued before the number (`phone9876543210`) still counts.
+- `pseudonymise._PII` 12-digit ID: `(?<![\da-f]{2})(?<!\d)(?<![A-Z]{4})\d{4}\s?\d{4}\s?\d{4}(?![\da-f])` (before: `(?<!\d)(?<![A-Z]{4})\d{4}\s?\d{4}\s?\d{4}(?!\d)`).
+- `boundary._find_problems`: the delimiter `<<<(END_)UNTRUSTED_DOCUMENT_DATA <12 hex>>>>` is blanked before the checks, so a tag of twelve digits (about 0.4 % of tags) is not read as an ID number either. Client text next to a block is still checked (test).
+- `BaseAgent.untrusted` no longer re-derives the tag (the workaround is removed); `tests/unit/agents/test_untrusted_tag.py` was reconciled to assert the same text passes unmodified.
+- `Tally.calls` was never incremented: `BaseAgent.ask` now counts one per model call (`injection.<agent>.calls`); asserted in `tests/unit/eval/test_variant_effects.py`.
+- Tests: `tests/unit/privacy/test_hash_tag_false_positive.py` (tags pass; real numbers with `+91`, separators, glued prefix and 12-digit Aadhaar-like numbers are still refused).
+
+**Store prior (S6 / B5) is now trained.** Build and train in one command (offline, no model call, about 50 s, needs `data/interim`):
+
+```bash
+.venv/bin/python scripts/build_store_prior_train.py            # --n 1500 --seed 17; --interim and --out-dir default to <VS_DATA_DIR or data>/interim and /eval
+```
+
+It samples at most 1,500 TRAIN-split High Court orders dated before 2024 with a clean split, balanced round-robin over (court, BNS era), after dropping the 464 excluded ids (test plus same-FIR, `pipelines.leakage.excluded_doc_ids`; dev, blind and test ids are never train in `splits.json`). Labels are the rule labelers on the court's own text (G1 rule labels, G2 resolved citations through `oil_metadata`, G3 sections, split parts); no hosted model, no manual label. Outputs under `data/eval/` (gitignored): `store_prior_train_orders.jsonl` (11 MB), `store_prior.json` (the artefact, 0.7 MB, digest `f503cecee94a12fa`) and `store_prior_manifest.json` (copy in `docs/results/store_prior_manifest.json`). Stats: 115,988 orders scanned, 25 courts, 1,500 orders used, 16,196 training rows, 2,636 store/factor pairs skipped as unknown. Limit: every sampled order is IPC era (BNS-era orders are dated 2024-07 or later, so none is in the train window); the era is in the context key, so BNS cases back off to the court and factor levels.
+
+Where the variants look: `store_prior.default_artefact_path()` = `$VS_STORE_PRIOR` if set, else `<VS_DATA_DIR or <repo>/data>/eval/store_prior.json`. From a worktree with `data/` symlinked nothing more is needed; otherwise `export VS_STORE_PRIOR=/abs/path/data/eval/store_prior.json` (a sweep or Sarvam run that sets `VS_DATA_DIR` to another folder must copy `store_prior.json` into its `eval/` or set `VS_STORE_PRIOR`). With the artefact present the `store_prior_untrained` event disappears and `trained` is true in the signals. On the case-0007 fixture the trained prior leaves the one two-store slot in contract order (the court's text gives caselaw reasoning and similar the same label); the test `test_s6_trained_prior_changes_the_store_order_and_drops_the_untrained_event` uses a prior that prefers similar orders to show the reorder.

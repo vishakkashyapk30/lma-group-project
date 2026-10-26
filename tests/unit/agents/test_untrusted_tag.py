@@ -1,5 +1,5 @@
 """The spotlight delimiter tag is a hash prefix; a tag with ten digits in a row looked like a phone number to the privacy boundary and blocked an
-innocent open-issue text (S10 isolation-off run on the real-store dev case). `BaseAgent.untrusted` re-derives such a tag; every other text is wrapped exactly as before."""
+innocent open-issue text (S10 isolation-off run on the real-store dev case). the privacy boundary now ignores such a tag, and `BaseAgent.untrusted` wraps every text unchanged."""
 
 from __future__ import annotations
 
@@ -15,12 +15,15 @@ PHONE_LIKE_TAG_TEXT = "open issue 462"  # sha256 tag b8519730609c: ten digits in
 OPEN = SourceRef(doc="open issue")
 
 
-def test_a_phone_like_tag_is_re_derived_and_passes_the_boundary():
+def test_a_phone_like_tag_passes_the_boundary_without_any_re_derivation():
+    # RECONCILED: the root cause is fixed in privacy/ (hex-token guard in the phone and ID patterns, spotlight delimiter skipped by the boundary), so the
+    # wrapper no longer re-derives the tag; the same text must pass the boundary as wrapped by `wrap_untrusted`.
     raw = wrap_untrusted(PHONE_LIKE_TAG_TEXT, OPEN)
-    assert any("email, phone or ID number" in p for p in _find_problems({"c": {"x": raw}}, None, None))  # the unfixed wrapper trips the boundary
+    assert "b8519730609c" in raw
+    assert not [p for p in _find_problems({"c": {"x": raw}}, None, None) if "email, phone or ID number" in p]
     agent, _, _ = build_agent(VakeelAgent)
     wrapped = agent.untrusted(PHONE_LIKE_TAG_TEXT, OPEN)
-    assert PHONE_LIKE_TAG_TEXT in wrapped and "UNTRUSTED_DOCUMENT_DATA" in wrapped
+    assert wrapped == raw and PHONE_LIKE_TAG_TEXT in wrapped
     assert not [p for p in _find_problems({"c": {"x": wrapped}}, None, None) if "email, phone or ID number" in p]
 
 
