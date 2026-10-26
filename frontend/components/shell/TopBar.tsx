@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
-import { getApiMode, onApiModeChange, type ApiMode } from "@/lib/api";
+import { getApiMode, getConnection, onApiModeChange, onConnectionChange, unreachableMessage, type ApiMode, type Connection } from "@/lib/api";
 import { toggleReducedMotion } from "@/lib/useReducedMotion";
 import { useCaseMeta } from "./meta";
 import { NAV_ITEMS } from "./nav";
@@ -27,20 +27,33 @@ function useCrumbs(): { crumbs: Crumb[]; stage: string | null } {
   return { crumbs: [{ label: item?.label ?? "Vakeel-Sahayak" }], stage: null };
 }
 
-/** Honest mode label: sample data when no API is configured or reachable, connected otherwise. */
+/** Honest mode label: sample data, connected, or (in live mode) a server that does not answer. */
 export function ModeChip(): ReactElement {
   const [mode, setMode] = useState<ApiMode>("demo");
+  const [connection, setConnection] = useState<Connection>("unknown");
   useEffect(() => {
     setMode(getApiMode());
-    return onApiModeChange(setMode);
+    setConnection(getConnection());
+    const offMode = onApiModeChange(setMode);
+    const offConnection = onConnectionChange(setConnection);
+    return () => {
+      offMode();
+      offConnection();
+    };
   }, []);
   const sample = mode === "demo";
+  const down = !sample && connection === "down";
+  const tip = sample
+    ? "No server connected. You are working with built-in sample cases, changes stay in this browser and no external model service is used."
+    : down
+      ? `${unreachableMessage()} Nothing is shown in place of your cases while it is down.`
+      : "Connected to the local server. Its model and privacy settings are under Settings.";
   return (
-    <Tooltip content={sample ? "No server connected. You are working with built-in sample cases, changes stay in this browser and no external model service is used." : "Connected to the local server. External model services are off unless the server was started with one turned on, which this page cannot see. See Help, Privacy."} side="bottom">
-      <span data-testid="mode-chip" data-mode={mode} tabIndex={0} className="hidden h-8 items-center gap-1.5 rounded-md border border-line px-2.5 text-xs text-ink-soft md:inline-flex">
+    <Tooltip content={tip} side="bottom">
+      <Link href="/settings" data-testid="mode-chip" data-mode={mode} data-connection={connection} className="hidden h-8 items-center gap-1.5 rounded-md border border-line px-2.5 text-xs text-ink-soft no-underline hover:text-ink md:inline-flex">
         <HardDrive aria-hidden className="size-3.5" />
-        {sample ? "Local · Sample data" : "Local · Connected"}
-      </span>
+        {sample ? "Local · Sample data" : down ? "Local · Not connected" : "Local · Connected"}
+      </Link>
     </Tooltip>
   );
 }
@@ -60,6 +73,7 @@ function HelpMenu(): ReactElement {
         <DropdownMenuItem asChild><Link href="/" className="no-underline">Product overview</Link></DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Settings</DropdownMenuLabel>
+        <DropdownMenuItem asChild><Link href="/settings" className="no-underline">Server, models and privacy</Link></DropdownMenuItem>
         <DropdownMenuItem onSelect={toggleMotion}>Reduce motion</DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild><a href="tel:15100" className="no-underline"><Phone aria-hidden />Free legal aid: NALSA 15100</a></DropdownMenuItem>

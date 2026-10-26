@@ -83,7 +83,7 @@ export function CauseList({ className }: CauseListProps): ReactElement {
           </select>
         </label>
         <p className="text-sm text-ink-soft" role="status" aria-live="polite">
-          {cases ? <>{visible.length} of {cases.length} matters{attention > 0 ? <> · <span className="font-medium text-haldi">{attention} items need attention</span></> : null}</> : "Loading matters"}
+          {cases ? <>{visible.length} of {cases.length} matters{attention > 0 ? <> · <span className="font-medium text-haldi">{attention} items need attention</span></> : null}</> : error ? null : "Loading matters"}
         </p>
       </div>
 

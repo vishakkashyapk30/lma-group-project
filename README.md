@@ -15,7 +15,7 @@ The lawyer approves the dossier and the final draft; nothing is exported without
 
 **Status (2026-10-26):** the agents, stores, Rights Radar, evaluation infrastructure (one driver entry for every variant, job plans, preregistration template), test sets T1 to T9, gold labels G1 to G7 by agreement with a non-Qwen labeler, the feature and ingestion arms, the LangGraph flow and the API routes (with Swagger) are built and tested on offline stand-ins; the hosted-model driver has run on three dev cases. Not yet built: DOCX export and the hearing card, the real-API frontend mode, the metrics and statistics code, and any real-model result numbers. The team data copy is a private Hugging Face dataset (`make data`). Start with `AGENTS.md`, then `split.md` (who does what) and `progress.md` (status of everything).
 
-**Quick start:** `docker compose up`, then open http://localhost:3000 (the UI runs on sample data until the API routes exist). See `DOCKER.md`.
+**Quick start:** `docker compose up`, then open http://localhost:3000 (the UI talks to the local API; Settings shows its model and privacy settings). See `DOCKER.md`.
 
 ## Repository layout
 

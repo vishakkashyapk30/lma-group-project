@@ -21,6 +21,34 @@ def _origins() -> list[str]:
     return [o.strip() for o in raw.split(",") if o.strip()]
 
 
+def _settings() -> dict[str, object]:
+    """The server's effective model and privacy settings for the frontend's Settings page (read-only; never a key or a secret).
+
+    `models` (VS_MODELS: offline | real | auto), `llm_backend` (VS_LLM_BACKEND, None when each role follows configs/models.yaml),
+    `external` (VS_EXTERNAL: the shared gate for hosted services), `sarvam` and `openai` (each provider's effective mode) and `data_dir`.
+    A setting that cannot be read is reported as None rather than failing the health check.
+    """
+    from vakeel_sahayak.config import load_config
+    from vakeel_sahayak.models.factory import llm_backend, models_mode
+    from vakeel_sahayak.models.sarvam.policy import provider_mode
+
+    out: dict[str, object] = {}
+    readers = {
+        "models": models_mode,
+        "llm_backend": llm_backend,
+        "external": lambda: (os.environ.get("VS_EXTERNAL") or "off").strip().lower(),
+        "sarvam": lambda: provider_mode("sarvam").value,
+        "openai": lambda: provider_mode("openai").value,
+        "data_dir": lambda: str(load_config().paths.data_dir),
+    }
+    for key, read in readers.items():
+        try:
+            out[key] = read()
+        except Exception:  # noqa: BLE001 - a broken setting must not take the health check down
+            out[key] = None
+    return out
+
+
 def build() -> FastAPI:
     """Return the real app when implemented, otherwise a skeleton that reports 503 for every /api route."""
     try:
@@ -38,7 +66,7 @@ def build() -> FastAPI:
 
         @application.get("/healthz", include_in_schema=False)
         async def _healthz() -> dict[str, object]:
-            return {"status": "ok", "api_implemented": implemented, "models": os.environ.get("VS_MODELS", "offline")}
+            return {"status": "ok", "api_implemented": implemented, **_settings()}
 
     if not any(isinstance(m.cls, type) and m.cls is CORSMiddleware for m in application.user_middleware):
         application.add_middleware(
