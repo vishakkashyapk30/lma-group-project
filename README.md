@@ -13,7 +13,7 @@ Vakeel-Sahayak.ai helps a lawyer prepare a regular bail application in an Indian
 
 The lawyer approves the dossier and the final draft; nothing is exported without that approval, and this is enforced in code. The project combines all five course capabilities and is evaluated against simpler baselines (see `docs/evaluation-plan.md`).
 
-**Status (2026-10-25):** the agents, stores, Rights Radar, evaluation infrastructure and a redesigned frontend are built and unit-tested on offline stand-in models. Not yet built: the LangGraph flow that connects the agents, the real API routes, DOCX export, the metrics and statistics code, and any real-model results. Start with `AGENTS.md`, then `split.md` (who does what) and `progress.md` (status of everything).
+**Status (2026-10-26):** the agents, stores, Rights Radar, evaluation infrastructure (one driver entry for every variant, job plans, preregistration template), test sets T1 to T9, gold labels G1 to G7 by agreement with a non-Qwen labeler, the feature and ingestion arms, the LangGraph flow and the API routes (with Swagger) are built and tested on offline stand-ins; the hosted-model driver has run on three dev cases. Not yet built: DOCX export and the hearing card, the real-API frontend mode, the metrics and statistics code, and any real-model result numbers. The team data copy is a private Hugging Face dataset (`make data`). Start with `AGENTS.md`, then `split.md` (who does what) and `progress.md` (status of everything).
 
 **Quick start:** `docker compose up`, then open http://localhost:3000 (the UI runs on sample data until the API routes exist). See `DOCKER.md`.
 
@@ -55,7 +55,7 @@ The lawyer approves the dossier and the final draft; nothing is exported without
 ├── scripts/                       Local helpers; scripts/ada/ holds interactive shard runners and the QLoRA sbatch
 ├── data/                          raw/ interim/ stores/ testsets/ cases/ (contents gitignored; see data/README.md)
 └── docs/
-    ├── plan.md                    Working project plan (v5)
+    ├── plan.md                    Working project plan (v6)
     ├── architecture/skeleton.md   Plan-section to module map and conventions for coding agents
     ├── proposal/                  Proposal for TA review (md, tex, pdf, build.sh, figures/)
     ├── research/                  Background research from the ideation phase

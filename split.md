@@ -14,13 +14,16 @@ Day 1 is the day all four of you have finished the history sync (Wave 0). Effort
 
 | Area | State |
 |---|---|
-| Six agents, stores, Rights Radar, privacy, event log | Built, tested offline (3,351 unit tests pass) |
-| Hosted LLM clients | Sarvam (mocked tests) and OpenAI with a hard 5 USD cap (mocked tests); no live call yet |
-| Eval infrastructure | Driver, baselines B0 to B6, ablations A1 to A10, T1 test set built on real data |
-| Literature variants | S1 to S5, S7 to S11, S14, S15, S17, P7 built, off by default; S6, S12, S13, S16 started (sweep 4 was cut off) |
-| Frontend | Redesigned (shell, landing, guided workspace); old tests fail on purpose |
-| Data | Stores built (1.76 GB); Kathbath done; statutes, HLDC, e-SCR need a person |
-| **Not built** | LangGraph flow, real API routes, DOCX export, metrics and statistics, T2 to T9 builders, features F1 to F8, real model runs, any result number |
+| Six agents, stores, Rights Radar, privacy, event log | Built, tested offline |
+| Hosted LLM clients | OpenAI (hard 5 USD cap, ledger) and Sarvam (INR spend ledger, cap from `VS_SARVAM_CAP_INR`) both pass live smoke tests; the driver has run Full on 3 dev cases with `gpt-6-luna` (about 0.0078 USD per case) |
+| Eval infrastructure | Driver with one entry for every variant (`run --system`, `plan`, `smoke-all`), runs.yaml jobs with costs, preregistration template, gold-source sweep job registered; scoring waits for metrics and statistics |
+| Literature variants | S1 to S18, P5 to P8, B5 built and switch-gated (S15b not built); plan v6 applies the 25 edits and the citations are verified |
+| Test sets and gold | T1 to T9 built (T7 safety, driver case rows for T2, T5, T7, native Hindi High Court set for T2); gold G1 to G7 by agreement (primary) with the rule-only gold as a declared secondary |
+| Features and ingestion | F1 to F4, F7, F8 and P1 to P6 arms run offline; F5, F6 need the export modules; P3, P4 need Docling and a vision model |
+| Graph and API | LangGraph flow and the API routes with Swagger built by Shravani (graph unit tests pass; her API tests pass except 2 traced to a Sutradhar bug) |
+| Frontend | Redesigned (shell, landing, guided workspace); old tests fail on purpose; real-API mode not done |
+| Data | Stores rebuilt with the current T1 splits, SC metadata and SCC links; statutes (CrPC, NDPS, First Schedule flags) from official PDFs; Kathbath complete; HLDC and indictrans2 access pending; team copy is the private organisation dataset `Vakeel-Sahayak/vakeel-sahayak-data` (`make data`) |
+| **Not built** | DOCX export and hearing card, real-API frontend mode, metrics and statistics (Harshita), real-model result numbers, S15b, the rescoring loop of the gold sweep |
 
 ## 2. Streams and owners
 

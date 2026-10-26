@@ -47,7 +47,7 @@ Handoff notes (what is done, not done, next steps) are in `docs/handoff/*.md`; d
 
 ## Tests (the full suite is slow; run by area)
 - Per-area commands are in `progress.md` section 5. The broad regression (about 12 minutes, last result 3,351 passed, 16 skipped) is the command in `docs/handoff/literature-sweep-3.md`.
-- Known failing until built (stubs): `tests/unit/orchestration/test_graph.py`, `test_fallback_state_machine.py`, `tests/unit/api`, `tests/unit/export`, `tests/unit/eval/{test_metrics,test_stats,test_features,test_ingestion_pipelines}.py`, `tests/unit/testsets` (T2 to T9), `tests/integration`, `tests/system`, and the old frontend tests (`frontend/tests`, `frontend/e2e`), which describe the earlier design.
+- Known failing until built (stubs): `tests/unit/export`, `tests/unit/eval/{test_metrics,test_stats}.py` (Harshita's metrics and statistics), 3 tests in `tests/unit/eval/test_ingestion_pipelines.py` that wait for helpers in `eval/metrics/ingestion.py`, parts of `tests/integration` and `tests/system` that still reach an export or API stub, and the old frontend tests (`frontend/tests`, `frontend/e2e`), which describe the earlier design.
 - Each test gets its own data dir through `tests/conftest.py` (`VS_DATA_DIR`); do not make tests depend on `data/`.
 - Tests encode the plan. Fix the code first; change a test only if it contradicts the plan, and mark it `# RECONCILED: <reason>`. Never weaken or delete tests.
 
