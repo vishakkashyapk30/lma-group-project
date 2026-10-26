@@ -75,14 +75,14 @@ export const FIELD_STATUS_META: Record<FieldStatus, StatusMeta> = {
   UNSUPPORTED: meta("sindoor", "cross", "Not found", "Not found in the file, or the check failed."),
   AMBIGUOUS: meta("haldi", "question", "Conflicting documents", "The documents disagree, or the section mapping is unclear."),
   USER_STATED: meta("clay", "pencil", "Entered by you", "Typed or dictated by you; no court record behind it."),
-  USER_EDITED: meta("clay", "pencil", "Entered by you", "Corrected by you; no court record behind it."),
+  USER_EDITED: meta("clay", "pencil", "Corrected by you", "Corrected by you; no court record behind it."),
 };
 
 /** Claim checks (plan §8.1). REPAIRED is not in the §13.2 table: it is supported after rewording, so neem. */
 export const CLAIM_CHECK_META: Record<ClaimCheck, StatusMeta> = {
   SUPPORTED: meta("neem", "check", "Supported", "The facts and authorities support the claim."),
   REPAIRED: meta("neem", "wrench", "Reworded to fit the record", "Reworded until the source supports it."),
-  NEEDS_REVIEW: meta("haldi", "question", "Needs your check", "The check failed after two repair rounds; you need to review it."),
+  NEEDS_REVIEW: meta("haldi", "question", "Needs your review", "The check failed after two repair rounds; you need to review it."),
 };
 
 /** Sparring verdicts (plan §9). PARTLY is between answered and unanswered: haldi. */

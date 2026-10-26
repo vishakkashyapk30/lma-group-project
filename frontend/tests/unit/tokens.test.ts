@@ -28,16 +28,18 @@ function contrast(a: string, b: string): number {
   return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
 }
 
+// RECONCILED: the palette was retuned in the frontend redesign and is documented in frontend/DESIGN.md ("Colour"): a lighter
+// canvas, white panels and a darker ink; the hues of maroon, oxblood and gold leaf are unchanged. The test now pins DESIGN.md.
 const PALETTE: Record<string, string> = {
-  "--color-parchment": "#F6EEDC",
-  "--color-cream": "#FBF7EE",
+  "--color-parchment": "#F7F5F0",
+  "--color-cream": "#FFFFFF",
   "--color-maroon": "#7A1626",
   "--color-oxblood": "#4A0E17",
   "--color-gold-leaf": "#B08D57",
-  "--color-ink": "#231A16",
+  "--color-ink": "#211C19",
 };
 const STATUS: Record<string, string> = {
-  "--color-neem": "#3D6B45",
+  "--color-neem": "#2F6B3A",
   "--color-indigo": "#2E3A6B",
   "--color-sindoor": "#B3261E",
   "--color-haldi": "#8C5A0B",
@@ -53,21 +55,24 @@ describe("Manuscript palette (plan §13.2)", () => {
   });
 });
 
-describe("fonts (plan §13.2 Type)", () => {
+// RECONCILED: the type was replaced in the redesign (frontend/DESIGN.md "Type"): Fraunces, DM Sans and IBM Plex are on the brief's
+// banned list, so headings use Newsreader, the interface Schibsted Grotesk, ids Spline Sans Mono and Hindi Noto Serif Devanagari / Hind.
+describe("fonts (frontend/DESIGN.md Type)", () => {
   it.each([
-    ["--font-display", "Fraunces"],
-    ["--font-devanagari-display", "Tiro Devanagari Hindi"],
-    ["--font-devanagari-body", "Noto Sans Devanagari"],
-    ["--font-ui", "DM Sans"],
-    ["--font-mono", "IBM Plex Mono"],
+    ["--font-display", "Newsreader"],
+    ["--font-devanagari-display", "Noto Serif Devanagari"],
+    ["--font-devanagari-body", "Hind"],
+    ["--font-ui", "Schibsted Grotesk"],
+    ["--font-mono", "Spline Sans Mono"],
   ])("%s starts with %s", (name, family) => {
     expect(cssVar(name)).toContain(`"${family}"`);
   });
 });
 
 describe("motion tokens (plan §13.4, §13.7)", () => {
-  it("working loops are capped at 2s by default", () => {
-    expect(cssVar("--motion-working-loop-max")).toBe("2s");
+  // RECONCILED: DESIGN.md "Motion" caps the only loops (skeleton pulse, running-agent glyph) at 1.2 s, inside the plan's 2 s limit.
+  it("working loops are capped at 1.2s by default, inside the plan's 2s limit", () => {
+    expect(cssVar("--motion-working-loop-max")).toBe("1.2s");
   });
   it("the prefers-reduced-motion block sets --motion-working-loop-max to 0s", () => {
     const block = css.match(/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{([\s\S]*?\})\s*\}/);
@@ -116,16 +121,18 @@ describe("tailwind.config.ts references the CSS variables", () => {
 describe("WCAG contrast of the palette text pairs (plan §13.2; tolerance 0.1 for the plan's rounding)", () => {
   const TOL = 0.1;
   const c = (name: string) => cssVar(name);
+  // RECONCILED: the ratios are DESIGN.md's table for the retuned palette (canvas #F7F5F0, white panels); cream on oxblood is now
+  // white on oxblood (15.4), and gold leaf on oxblood stays about 5.0.
   it.each([
-    ["cream on oxblood", "--color-cream", "--color-oxblood", 14.4],
-    ["maroon on parchment", "--color-maroon", "--color-parchment", 9.2],
-    ["ink on parchment", "--color-ink", "--color-parchment", 14.8],
-    ["gold leaf on oxblood", "--color-gold-leaf", "--color-oxblood", 5.0],
-    ["neem on cream", "--color-neem", "--color-cream", 5.8],
-    ["indigo on cream", "--color-indigo", "--color-cream", 10.2],
-    ["sindoor on cream", "--color-sindoor", "--color-cream", 6.1],
-    ["haldi on cream", "--color-haldi", "--color-cream", 5.5],
-    ["clay on cream", "--color-clay", "--color-cream", 5.9],
+    ["cream on oxblood", "--color-cream", "--color-oxblood", 15.3],
+    ["maroon on parchment", "--color-maroon", "--color-parchment", 9.8],
+    ["ink on parchment", "--color-ink", "--color-parchment", 15.5],
+    ["gold leaf on oxblood", "--color-gold-leaf", "--color-oxblood", 4.97],
+    ["neem on cream", "--color-neem", "--color-cream", 6.4],
+    ["indigo on cream", "--color-indigo", "--color-cream", 10.9],
+    ["sindoor on cream", "--color-sindoor", "--color-cream", 6.5],
+    ["haldi on cream", "--color-haldi", "--color-cream", 5.9],
+    ["clay on cream", "--color-clay", "--color-cream", 6.3],
   ])("%s >= %s", (_label, fg, bg, planned) => {
     expect(contrast(c(fg as string), c(bg as string))).toBeGreaterThanOrEqual((planned as number) - TOL);
   });
@@ -139,13 +146,13 @@ describe("WCAG contrast of the palette text pairs (plan §13.2; tolerance 0.1 fo
     expect(contrast(c("--color-maroon"), c("--color-parchment"))).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("gold leaf on parchment is 2.7:1 (fails AA text) and is documented as decoration only in tokens.css", () => {
+  // RECONCILED: on the new canvas gold leaf is 2.8:1; tokens.css and DESIGN.md word the rule "thin accent line only; never text".
+  it("gold leaf on parchment is about 2.8:1 (fails AA text) and is documented as never text in tokens.css", () => {
     const ratio = contrast(c("--color-gold-leaf"), c("--color-parchment"));
-    expect(ratio).toBeGreaterThan(2.6);
-    expect(ratio).toBeLessThan(2.8);
+    expect(ratio).toBeGreaterThan(2.7);
+    expect(ratio).toBeLessThan(2.9);
     expect(ratio).toBeLessThan(4.5); // therefore never legal as text
     const goldLine = css.split("\n").find((l) => l.includes("--color-gold-leaf:"))!;
-    expect(goldLine).toMatch(/decoration only/i);
-    expect(goldLine).toMatch(/text only on oxblood/i);
+    expect(goldLine).toMatch(/never text/i);
   });
 });
