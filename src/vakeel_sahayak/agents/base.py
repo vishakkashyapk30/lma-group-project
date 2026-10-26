@@ -421,7 +421,13 @@ class BaseAgent(ABC):
             return text
         tally.wrapped += 1
         src = source if isinstance(source, SourceRef) else SourceRef.model_validate(source or {})
-        return wrap_untrusted(text, src)
+        wrapped = wrap_untrusted(text, src)
+        for k in range(1, 9):  # the delimiter tag is a hash prefix: one with a long run of digits reads as a phone number to the privacy boundary and would block the call
+            tag = re.search(r"UNTRUSTED_DOCUMENT_DATA (\w+)>>>", wrapped)
+            if tag is None or not re.search(r"[6-9]\d{9}|\d{12}", tag.group(1)):
+                break
+            wrapped = wrap_untrusted(text, src.model_copy(update={"doc": f"{src.doc or 'unknown'}{'.' * k}"}))
+        return wrapped
 
     def flag_instructions(self, data: Any, where: str = "case") -> list[str]:
         """Log (without the text) every path in `data` whose text looks like an instruction to the model (plan §16, T7). S17c `no_guard` only counts them."""
@@ -641,7 +647,7 @@ class BaseAgent(ABC):
             result = ToolError(tool=name, kind="invalid_args", message=exc.message, retryable=True)
         except ModelUnavailable as exc:
             result = ToolError(tool=name, kind="model_unavailable", message=str(exc), retryable=False)
-        except NotImplementedError as exc:  # a later-phase builder (e.g. the Phase 5 DOCX) is still a stub
+        except NotImplementedError as exc:  # a tool whose builder is still a stub (none in the default run: the Phase 5 DOCX builders are implemented)
             result = ToolError(tool=name, kind="not_implemented", message=str(exc) or f"{name} is not implemented yet", retryable=False)
         except Exception as exc:  # noqa: BLE001 - tool crashes come back as errors the agent can recover from (plan §15.8)
             result = ToolError(tool=name, kind="tool_failed", message=f"{type(exc).__name__}: {exc}", retryable=True)

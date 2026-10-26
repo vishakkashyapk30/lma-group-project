@@ -21,6 +21,14 @@ class RightsCheckResult(BaseModel):
     dates: dict[str, str] = Field(default_factory=dict)  # the dates the rule used, e.g. {'first_remand': '2024-08-21'}
     last_verified: str | None = None
 
+    @property
+    def verification(self) -> str:
+        """'unverified' until a person re-checks the rule text against the bare act and sets `last_verified`; else the date.
+
+        A plain property, not a field, so serialised reports and golden files are unchanged. Shown beside every rule text.
+        """
+        return self.last_verified or "unverified"
+
 
 class RightsReport(BaseModel):
     """Rights Radar output (plan §7.3)."""
@@ -28,6 +36,11 @@ class RightsReport(BaseModel):
     case_id: CaseId
     as_of: IsoDate
     checks: list[RightsCheckResult] = Field(default_factory=list)
+
+    @property
+    def unverified_checks(self) -> list[str]:
+        """Names of the checks whose rule text nobody has verified against the bare act yet (all seven until Harshita's re-check)."""
+        return [c.check.value for c in self.checks if not c.last_verified]
 
     def get(self, check: RightsCheckName | str) -> RightsCheckResult | None:
         """Return the result of one check by name, or None if the report does not hold it."""

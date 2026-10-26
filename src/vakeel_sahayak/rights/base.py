@@ -17,7 +17,7 @@ class Rule(ABC):
     rule_text: str = ""
     sources: list[str] = []
     rule_cite: str = ""  # short citation shown in RightsCheckResult.rule (plan §7.3 example)
-    last_verified: str | None = None  # TODO: set in week 0 after checking the bare act
+    last_verified: str | None = None  # None means UNVERIFIED (shown as 'unverified'). Person task, not to be guessed: Harshita re-checks every rule text against the bare act, then sets it in configs/rights_rules.yaml (docs/handoff/product-complete.md)
     allowed_statuses: list[RightsStatus] = []
     params: dict[str, Any] = {}  # rule parameters from configs/rights_rules.yaml (`params:`)
 

@@ -1,9 +1,12 @@
 """Tools in drafting.application (plan §8.2). Each function has a matching <NAME>_SPEC.
 
 `assemble_application` is a thin wrapper: it reads the brief, the approved dossier, the List of Dates and the uploaded
-documents from the case's event log (views, plan §3.3) and hands them to `export.application.assemble_application_docx`,
-which fills the python-docx template. That builder is Phase 5; until it exists the tool raises a clear
-NotImplementedError (which `BaseAgent.call_tool` returns as a `not_implemented` ToolError), never a fake file.
+documents from the case's event log (views, plan §3.3) and hands them to `export.application.assemble_application_docx`
+(the Phase 5 python-docx builder, which exists and is also what `export.exporter.export_case` and the export API call).
+The tool returns the real path of a draft DOCX. Gate rule: the draft goes to `<cases_dir>/<case_id>/draft/`, never to
+`.../export/`, which only `export_case` fills and only after counsel's Gate 2; the draft carries the "AI-generated draft"
+banner and is not an export. Anything the builder raises other than a stub is returned by `BaseAgent.call_tool` as a
+ToolError.
 """
 
 from __future__ import annotations
@@ -14,9 +17,9 @@ from vakeel_sahayak.schemas.enums import AgentName
 from vakeel_sahayak.tools.base import ToolError, ToolSpec
 
 PHASE5_MESSAGE = (
-    "assemble_application needs the court-ready DOCX builder (export.application.assemble_application_docx), "
-    "which is built in Phase 5 (API and export); it is still a stub"
-)
+    "assemble_application is not available: the court-ready DOCX builder "
+    "(export.application.assemble_application_docx) raised NotImplementedError"
+)  # only used if the builder is ever stubbed out again; the builder is implemented today
 
 
 def assemble_application(case_id: str) -> str | ToolError:
@@ -26,10 +29,8 @@ def assemble_application(case_id: str) -> str | ToolError:
         case_id: the case (its brief, dossier, timeline and documents come from its event log)
 
     Returns:
-        Path of the DOCX, or a ToolError for an invalid or bulk case id. Assembling is not exporting: no gate is checked.
-
-    Raises:
-        NotImplementedError: the Phase 5 DOCX builder is still a stub.
+        Path of the draft DOCX (under `draft/`, not `export/`), or a ToolError for an invalid or bulk case id. Assembling a
+        draft is not exporting: no gate is checked, and no file is ever written into the gated `export/` folder here.
     """
     from vakeel_sahayak.export.application import assemble_application_docx
     from vakeel_sahayak.record.case_state import CaseState
@@ -45,7 +46,7 @@ def assemble_application(case_id: str) -> str | ToolError:
     brief = state.brief()
     report = state.ingestion_report()
     docs = list(report.documents) if report is not None else []
-    out_dir = Path(runtime.config.paths.cases_dir) / case_id / "export"
+    out_dir = Path(runtime.config.paths.cases_dir) / case_id / "draft"
     out_dir.mkdir(parents=True, exist_ok=True)
     try:
         return assemble_application_docx(brief, state.dossier(), state.timeline(), docs, str(out_dir / "application.docx"))

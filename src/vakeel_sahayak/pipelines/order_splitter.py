@@ -249,15 +249,132 @@ def split_all(orders_path: str, out_path: str) -> tuple[int, int]:
     return len(kept), len(dropped)
 
 
-def rescue_with_non_qwen(dropped_path: str) -> int:
-    """Fallback (plan §19): split failures with a non-Qwen model and report how many.
+@dataclass
+class RescueReport:
+    """Outcome of a rescue pass: counts and the ids of the rescued orders."""
 
-    Needs the evaluation labeler (Llama-3.1-8B) and runs only in the evaluation environment (Phase 3+).
+    attempted: int = 0
+    rescued: int = 0
+    still_dropped: int = 0
+    rescued_ids: list[Any] = field(default_factory=list)
+
+
+def _rescue_schema(n_blocks: int) -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": {
+            "parts": {"type": "array", "items": {"enum": [p.value for p in PART_ORDER]}, "minItems": n_blocks, "maxItems": n_blocks}
+        },
+        "required": ["parts"],
+    }
+
+
+def rescue_split(text: str, labeler: Any | None = None) -> SplitResult | None:
+    """Re-split one unclean order with the non-Qwen labeler, keeping the spans verbatim (plan §19).
+
+    The model only chooses a part for each paragraph block; it never writes text. Every part is the join of whole blocks of
+    the order, so each rescued part cites verbatim spans (checked below), and the stage order and the length floors of
+    `analyse_split` still apply. Public court text only (`public_scope`). Never Qwen (the labeler refuses it).
 
     Args:
-        dropped_path: see behaviour
+        text: the whole order (public court text)
+        labeler: an `EvalLabeler` (or any object with `.client()`); None builds the default one from `VS_LABELER`
+
+    Returns:
+        A clean SplitResult, or None when the labeler is unavailable (offline stand-in: the rule decision stands), answers
+        badly, goes backwards in stage, or the result still fails the clean-split checks.
+    """
+    from vakeel_sahayak.models.base import ModelUnavailable
+    from vakeel_sahayak.models.labeler import EvalLabeler
+    from vakeel_sahayak.models.prompting import render_prompt
+    from vakeel_sahayak.models.sarvam.policy import public_scope
+    from vakeel_sahayak.orchestration.structured_output import StructuredOutputError, constrained_generate
+
+    blocks = paragraph_blocks(text)
+    if len(blocks) < len(PART_ORDER):
+        return None
+    labeler = labeler if labeler is not None else EvalLabeler()
+    schema = _rescue_schema(len(blocks))
+    numbered = [{"i": i, "text": b[:700]} for i, b in enumerate(blocks)]
+    prompt = render_prompt(
+        "order_splitter.rescue",
+        "For each numbered paragraph of this Indian bail order choose its part: facts, defense_submissions (for the "
+        "accused), prosecution_submissions (for the State), reasoning (the court's analysis) or operative_order (the final "
+        "order). Parts appear in that order (defense and prosecution may interleave). Answer only with the JSON object "
+        '{"parts": [one part per paragraph, in order]}.',
+        {"paragraphs": numbered},
+        system="You are an annotator of Indian court orders.",
+        schema=schema,
+    )
+    try:  # LabelerUnavailable is a ModelUnavailable and a NotImplementedError: both mean "keep the rule decision"
+        with public_scope("order-split-rescue"):
+            out = constrained_generate(labeler.client(), prompt, schema, max_tokens=max(256, 8 * len(blocks)))
+    except (ModelUnavailable, NotImplementedError, StructuredOutputError):
+        return None
+    raw = out.get("parts") if isinstance(out, dict) else None
+    if not isinstance(raw, list) or len(raw) != len(blocks):
+        return None
+    try:
+        labels = [OrderPart(str(x)) for x in raw]
+    except ValueError:
+        return None
+    stage = {OrderPart.FACTS: 0, OrderPart.DEFENSE: 1, OrderPart.PROSECUTION: 1, OrderPart.REASONING: 2, OrderPart.OPERATIVE: 3}
+    if any(stage[b] < stage[a] for a, b in zip(labels, labels[1:], strict=False)):
+        return None
+    flat = re.sub(r"\s+", " ", text)
+    if not all(b in flat for b in blocks):  # span grounding: every block is verbatim in the order
+        return None
+    buckets: dict[OrderPart, list[str]] = {p: [] for p in PART_ORDER}
+    for block, label in zip(blocks, labels, strict=True):
+        buckets[label].append(block)
+    parts = {p: "\n\n".join(buckets[p]) for p in PART_ORDER}
+    missing = [p for p in PART_ORDER if not parts[p].strip()]
+    short = [p for p in PART_ORDER if p not in missing and count_tokens(parts[p]) < MIN_WORDS[p]]
+    if missing or short:
+        return None
+    return SplitResult(parts=parts, clean=True, n_blocks=len(blocks))
+
+
+def rescue_dropped(dropped_path: str, out_path: str | None = None, labeler: Any | None = None) -> RescueReport:
+    """Re-split every dropped order and write the rescued ones (see `rescue_with_non_qwen`); returns the full report."""
+    report = RescueReport()
+    rescued: list[dict[str, Any]] = []
+    for rec in read_jsonl(dropped_path):
+        text = str(rec.get("text") or "")
+        report.attempted += 1
+        result = rescue_split(text, labeler) if text else None
+        if result is None:
+            report.still_dropped += 1
+            continue
+        rescued.append(
+            {
+                "doc_id": rec.get("doc_id"),
+                "parts": {p.value: t for p, t in result.parts.items()},
+                "spans": {p.value: t.split("\n\n") for p, t in result.parts.items()},  # verbatim blocks, each found in the order
+                "rescued_by": "non-qwen-labeler",
+            }
+        )
+        report.rescued += 1
+        report.rescued_ids.append(rec.get("doc_id"))
+    write_jsonl(out_path or str(dropped_path) + ".rescued.jsonl", rescued)
+    return report
+
+
+def rescue_with_non_qwen(dropped_path: str, out_path: str | None = None, labeler: Any | None = None) -> int:
+    """Fallback (plan §19): re-split the orders that failed the cue splitter with a non-Qwen labeler; return how many were rescued.
+
+    Opt-in: nothing calls it by default and `split_all` is unchanged. The labeler is the evaluation labeler facade
+    (`models/labeler.py`: OpenAI on public court text under `public_scope`, never Qwen). Offline (`VS_MODELS=offline`) it
+    is unavailable and the stand-in keeps the rule decision: every record stays dropped and the count is 0. Rescued
+    records go to `out_path` (default `<dropped_path>.rescued.jsonl`) as `{doc_id, parts, spans, rescued_by}`; `spans`
+    lists the verbatim blocks of each part.
+
+    Args:
+        dropped_path: the `.dropped.jsonl` written by `split_all`
+        out_path: where to write rescued records
+        labeler: injected labeler (tests); None builds the default
 
     Returns:
         Rescued count.
     """
-    raise NotImplementedError("model-assisted rescue needs the Llama-3.1-8B labeler client (evaluation environment)")
+    return rescue_dropped(dropped_path, out_path, labeler).rescued

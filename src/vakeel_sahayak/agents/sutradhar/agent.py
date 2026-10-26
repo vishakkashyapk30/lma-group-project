@@ -220,6 +220,9 @@ class SutradharAgent(BaseAgent):
             from vakeel_sahayak.agents.sutradhar.store_prior import StorePrior
 
             self._prior = StorePrior.load()
+            if not self._prior.trained:  # S6 / B5 only reach here: say so, because an untrained prior orders stores exactly like the contract (S6 equals Full)
+                self._decision("store_prior_untrained", "No trained store prior was found, so the neutral prior is used: S6 follows the contract order. "
+                               "Train one with `python -m vakeel_sahayak.agents.sutradhar.store_prior train --orders <train-split gold orders>`.", mode=self.switches.store_prior)
         return self._prior
 
     def set_store_prior(self, prior: Any) -> None:
