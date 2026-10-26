@@ -1,7 +1,7 @@
 #!/bin/bash
 # Serve Qwen3-32B-AWQ with vLLM on one 4 x RTX 2080 Ti Ada node (OpenAI-compatible endpoint on port 8000).
 # Run it INSIDE an interactive GPU session (plan 17: inference is interactive, the only sbatch job is QLoRA training):
-#   srun -A research --qos=medium -p u22 --constraint=2080ti --gres=gpu:4 -c 8 --mem-per-cpu=6G --time=05:30:00 --pty bash
+#   srun -A research --qos=medium -p u22 --constraint=2080ti -N 1 -n 1 --gres=gpu:4 -c 2 --mem=48G --time=05:30:00 --pty bash   (add -x <bad node> to skip a node with a broken GPU; always -N 1 -n 1, or srun runs the script once per task)
 #   bash scripts/ada/serve_qwen32b.sh 2>&1 | tee ~/serve_qwen32b.log      (keep the session open; cleanup runs on exit)
 # Compute nodes cannot see /share1 and have no Python packages for this, so the job installs vLLM into node-local /scratch and downloads the
 # weights (Apache-2.0, 19.3 GB) from Hugging Face into /scratch at start. Everything under /scratch/$USER/vs is removed when the job ends.
@@ -9,7 +9,9 @@
 #   ssh -N -L 8001:<node>:8000 ada      then   VS_LLM_BACKEND=local with the vLLM URL http://localhost:8001/v1 (see configs/models.yaml, teacher)
 set -uo pipefail
 W=/scratch/$USER/vs; M=$W/models/Qwen3-32B-AWQ; R=Qwen/Qwen3-32B-AWQ
-mkdir -p "$W" "$M"; trap 'echo cleanup; rm -rf "$W"' EXIT
+mkdir -p "$W" "$M" "$W/tmp" "$W/cache"; trap 'echo cleanup; rm -rf "$W"' EXIT
+# $HOME is NFS with about 2 GB free: pip would cache the 436 MB vLLM wheel there and hang. Keep every cache and temp file on node-local scratch.
+export PIP_CACHE_DIR="$W/cache/pip" PIP_NO_CACHE_DIR=1 TMPDIR="$W/tmp" XDG_CACHE_HOME="$W/cache" HF_HOME="$W/cache/hf" TRITON_CACHE_DIR="$W/cache/triton" VLLM_CACHE_ROOT="$W/cache/vllm" TORCHINDUCTOR_CACHE_DIR="$W/cache/inductor"
 echo "node=$(hostname) start=$(date +%T)"; nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 # PyPI is slow from the compute nodes (about 5 MB/s; the 888 MB torch wheel did not finish in 150 s) while download.pytorch.org gives about 20 MB/s, so torch and the CUDA
 # libraries come from the PyTorch index (its +cu128 builds win the version comparison) and everything else from PyPI.
