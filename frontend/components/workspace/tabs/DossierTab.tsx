@@ -250,7 +250,8 @@ export function DossierTab({ caseId }: DossierTabProps): ReactElement {
   const section = ws.activeTab === "dates" ? "dates" : "facts";
 
   const state = stepState({
-    resource: "dossier", noun: "facts", loading: data.loading.dossier, error: data.errors.dossier, hasData: Boolean(dossier),
+    // A dossier with no fields yet (no papers read) is empty too: there is nothing to confirm, so Gate 1 is not offered.
+    resource: "dossier", noun: "facts", loading: data.loading.dossier, error: data.errors.dossier, hasData: dossier !== null && dossierEntries(dossier).length > 0,
     onRetry: () => void data.refresh(["dossier"]),
     emptyTitle: "No facts yet",
     emptyBody: "The facts are drawn from your documents. Add the case papers first.",

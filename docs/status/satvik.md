@@ -11,9 +11,9 @@ My tasks (split.md stream B): SA-01 to SA-08. Updated 2026-10-26. All finished w
 | SA-01 Vitest and Playwright reconciled with the redesign | done |
 | Fix: SSE stream blocked every API request (Shravani's area; please review) | done |
 | Fix: Munshi ignored the files the upload route hands over (Vishak's area; please review) | done |
-| SA-06 case flow in the UI against the real API | in progress |
-| SA-03 workspace visual QA, DESIGN.md "Workspace principles" | not started |
-| SA-07 onboarding, empty states, Hindi strings, axe audit | not started |
+| SA-06 case flow in the UI against the real API | done (`frontend/e2e/live_flow.spec.ts`, run with `E2E_LIVE_API=1`) |
+| SA-03 workspace visual QA, DESIGN.md "Workspace principles" | done |
+| SA-07 onboarding, empty states, Hindi strings, axe audit | done, except a Hindi translation of the interface (see below) |
 
 ## Test results (Python 3.10 venv, offline models)
 - Export, drafting tools, API, the gate and API-route integration tests and four system test files: 279 passed; the 41 remaining failures also fail on `main` (none new), and 67 that failed on `main` now pass.
@@ -29,6 +29,6 @@ My tasks (split.md stream B): SA-01 to SA-08. Updated 2026-10-26. All finished w
 - **Vishak:** `make setup` is still a stub (`uv venv .venv && uv pip install -e ".[data,dev]"` works); the offline feature runs need `VS_MODELS=offline` exported, because `models_mode()` reads the process environment, not `.env`; with offline models Peshkar extracts almost nothing from T1 facts, so F5 offline numbers describe the harness only.
 - **Frontend tooling:** Next.js 15 needs Node 18.18 or newer (Ubuntu's apt Node is 12).
 
-## SA-06 next steps
-1. The upload route runs only Munshi; Peshkar (facts, List of Dates, rights report) must follow it, as the LangGraph flow does. The upload, draft, chat and desk routes run agents inside async handlers and freeze the API while they work; run them in a worker thread.
-2. Fix the frontend issues it shows; list backend issues for Shravani; add a Playwright spec that runs against a live API when one is configured.
+## What is left
+- **Hindi interface strings (SA-07):** every Hindi text the app shows is marked `lang="hi"`, but the interface itself is English only. Translating its labels (legal terms such as Gate, objection, default bail) needs a Hindi-speaking teammate to write or review them; a machine translation could mislead counsel, so none was added.
+- **Backend follow-ups found by SA-06** (Vishak/Shravani): the hearing card can pick a quoted paragraph number as a concern (`agents/vakeel/hearing.first_sentence`; the client falls back to the factor); on offline models, Vakeel's claim checks can refuse a sentence as "not safe to send to Ada" when a name is not pseudonymised, which then shows as an open issue.

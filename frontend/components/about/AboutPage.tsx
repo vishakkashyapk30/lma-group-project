@@ -136,7 +136,8 @@ export function AboutPage({ className }: AboutPageProps): ReactElement {
           <Hourglass aria-hidden className="mt-0.5 size-4 shrink-0" />
           <span>The evaluation has not been run yet. The result cells are empty on purpose; they will be filled in from the test runs, and no figure here is an estimate.</span>
         </p>
-        <div className="overflow-x-auto border-y border-line">
+        {/* The table scrolls sideways on a phone; the region is focusable so keyboard users can scroll it too (WCAG 2.1.1). */}
+        <div role="region" aria-label="Planned evaluations, scrolls sideways" tabIndex={0} className="overflow-x-auto border-y border-line focus-visible:outline focus-visible:outline-2 focus-visible:outline-maroon">
           <table className="w-full min-w-[40rem] text-left text-sm">
             <caption className="sr-only">Planned evaluations and their results</caption>
             <thead>

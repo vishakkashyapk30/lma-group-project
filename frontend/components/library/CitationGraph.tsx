@@ -206,7 +206,7 @@ export function CitationGraph({ docId = "DLHC-2022-1187", onSelectDoc, className
       {data ? (
         <details className="rounded-lg border border-line bg-cream p-3">
           <summary className="cursor-pointer text-sm font-semibold text-maroon">Treatments as a table ({data.edges.length})</summary>
-          <div className="mt-3 overflow-x-auto">
+          <div role="region" aria-label="Treatments table, scrolls sideways" tabIndex={0} className="mt-3 overflow-x-auto focus-visible:outline focus-visible:outline-2 focus-visible:outline-maroon">
             <table className="w-full text-left text-sm">
               <caption className="sr-only">Who cites whom and how</caption>
               <thead><tr className="border-b border-line text-xs text-ink-soft"><th scope="col" className="py-1 pr-3">Citing</th><th scope="col" className="py-1 pr-3">Treatment</th><th scope="col" className="py-1 pr-3">Cited</th><th scope="col" className="py-1">Cited status</th></tr></thead>
