@@ -15,14 +15,14 @@ Rule: raw client files never leave the laptop. Only pseudonymised text may be co
 ## Get the data from the team bundle (fastest)
 
 The owner shares a compressed, checksummed copy of everything that is slow to rebuild (`interim`, `stores`, `testsets`, `gaps`, `eval`, `raw/MANIFEST.json`;
-about 1.5 to 2 GB; also `interim/hindi_native.jsonl`, the Kathbath transcripts and audio index, and `bundle_manifest.json`). It is a PRIVATE Hugging Face dataset, `vishakkashyapk/vakeel-sahayak-data`
-(https://huggingface.co/datasets/vishakkashyapk/vakeel-sahayak-data); ask the owner for read access, then log in once with `hf auth login` or put
+about 1.5 to 2 GB; also `interim/hindi_native.jsonl`, the Kathbath transcripts and audio index, and `bundle_manifest.json`). It is a PRIVATE Hugging Face dataset, `Vakeel-Sahayak/vakeel-sahayak-data`
+(https://huggingface.co/datasets/Vakeel-Sahayak/vakeel-sahayak-data); ask the owner for read access, then log in once with `hf auth login` or put
 `HF_TOKEN=...` in the untracked `.env`, and from the repository root:
 
 ```bash
 make data                                                       # all in one: skip if `make data-check` passes, else install with an HF token, else explain
 make data-check                                                 # present/missing table; non-zero when required items are missing (REQUIRE_MODELS=1 also requires the T1 models)
-make data-install SRC=hf:vishakkashyapk/vakeel-sahayak-data     # or SRC=<a folder or URL the owner gave you>
+make data-install SRC=hf:Vakeel-Sahayak/vakeel-sahayak-data     # or SRC=<a folder or URL the owner gave you>
 make data-install SRC=~/vakeel-data-bundle FORCE=1             # FORCE=1 overwrites what is already in data/
 ```
 

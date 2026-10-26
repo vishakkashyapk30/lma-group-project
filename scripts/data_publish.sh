@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Upload the data bundle folder to the private Hugging Face dataset (make data-publish). Run by the owner only, after `make data-bundle`.
 #
-#   make data-publish                                   # ~/vakeel-data-bundle -> vishakkashyapk/vakeel-sahayak-data
+#   make data-publish                                   # ~/vakeel-data-bundle -> Vakeel-Sahayak/vakeel-sahayak-data
 #   scripts/data_publish.sh /path/to/bundle [repo_id]
 #   HF_REPO=other/name make data-publish
 #
@@ -10,7 +10,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 bundle="${1:-${BUNDLE_DIR:-$HOME/vakeel-data-bundle}}"
-repo="${2:-${HF_REPO:-vishakkashyapk/vakeel-sahayak-data}}"
+repo="${2:-${HF_REPO:-Vakeel-Sahayak/vakeel-sahayak-data}}"
 for f in README.md SHA256SUMS bundle_manifest.json; do [ -f "$bundle/$f" ] || { echo "missing $bundle/$f: run make data-bundle first" >&2; exit 1; }; done
 ls "$bundle"/data.tar.gz.part-* >/dev/null 2>&1 || { echo "no data parts in $bundle" >&2; exit 1; }
 grep -q "Open India Law corpus by Vaquill AI" "$bundle/README.md" || { echo "the dataset card lacks the Open India Law attribution" >&2; exit 1; }

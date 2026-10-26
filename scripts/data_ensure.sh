@@ -3,15 +3,15 @@
 #
 #   1. data/stores exists and `make data-check` passes: do nothing (exit 0).
 #   2. else, with a Hugging Face token (HF_TOKEN in the environment or the untracked .env): install the team bundle
-#      (scripts/data_install.sh hf:vishakkashyapk/vakeel-sahayak-data; FORCE=1 overwrites a partial data/).
+#      (scripts/data_install.sh hf:Vakeel-Sahayak/vakeel-sahayak-data; FORCE=1 overwrites a partial data/).
 #   3. else print the two options and exit 1: ask the owner for access to the private dataset, or rebuild (make datasets interim stores).
 #
-# VS_DATA_DIR, PY, ENV_FILE (default .env) and BUNDLE_REPO (default vishakkashyapk/vakeel-sahayak-data) are honoured. The token is never printed.
+# VS_DATA_DIR, PY, ENV_FILE (default .env) and BUNDLE_REPO (default Vakeel-Sahayak/vakeel-sahayak-data) are honoured. The token is never printed.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 PY="${PY:-.venv/bin/python}"
 DATA="${VS_DATA_DIR:-data}"
-REPO="${BUNDLE_REPO:-vishakkashyapk/vakeel-sahayak-data}"
+REPO="${BUNDLE_REPO:-Vakeel-Sahayak/vakeel-sahayak-data}"
 
 if [ -d "$DATA/stores" ] && "$PY" scripts/_data_check.py --data "$DATA" >/dev/null 2>&1; then
   echo "data is in place ($DATA/stores exists and make data-check passes): nothing to do."

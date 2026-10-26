@@ -3,7 +3,7 @@
 #
 #   make data-install SRC=~/vakeel-data-bundle
 #   make data-install SRC=https://host/path/to/bundle/            # a folder served over HTTP(S) (SHA256SUMS lists the parts)
-#   make data-install SRC=hf:vishakkashyapk/vakeel-sahayak-data   # private Hugging Face dataset: `hf auth login`, or HF_TOKEN in the untracked .env
+#   make data-install SRC=hf:Vakeel-Sahayak/vakeel-sahayak-data   # private Hugging Face dataset: `hf auth login`, or HF_TOKEN in the untracked .env
 #   scripts/data_install.sh --force <src>                         # overwrite what is already in data/
 #   VS_DATA_DIR=/scratch/data scripts/data_install.sh <src>        # another target folder (tests, trials)
 #
