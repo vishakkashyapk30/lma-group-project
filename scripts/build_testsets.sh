@@ -6,7 +6,7 @@
 #   SMALL=1 scripts/build_testsets.sh         # T2 with 12 cases (CI-sized) instead of 100
 #   T1=1 scripts/build_testsets.sh            # also (re)build T1 (about 15 minutes; needs data/interim)
 #
-# Order matters: T6 reads T2 truth, T5 reads T4. T7 (safety scenarios) is not built here.
+# Order matters: T6 reads T2 truth, T5 reads T4. T7 and the T2/T5 driver rows are built by `SETS=t7` (after T2 and T5).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 PY="${PYTHON:-.venv/bin/python}"
@@ -26,7 +26,7 @@ for s in $SETS; do
     t6) "$PY" -m vakeel_sahayak.testsets.t6_chat_questions ;;
     t8) "$PY" -m vakeel_sahayak.testsets.t8_speech ;;
     t9) "$PY" -m vakeel_sahayak.testsets.t9_citation_formats ;;
-    t7) echo "T7 is built by its own task (EV-04); skipped" ;;
+    t7) "$PY" -m vakeel_sahayak.testsets.t7_safety; "$PY" -m vakeel_sahayak.testsets.driver_cases ;;
     *) echo "unknown set: $s" >&2; exit 2 ;;
   esac
 done
