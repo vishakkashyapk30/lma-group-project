@@ -12,11 +12,21 @@ from pathlib import Path
 
 from vakeel_sahayak.ingestion.hindi import normalise_for_extraction
 from vakeel_sahayak.models.base import AsrClient
+from vakeel_sahayak.pipelines.concordance.refs import make_ref
 from vakeel_sahayak.pipelines.order_facts import DATE_RE
 from vakeel_sahayak.pipelines.section_extract import extract_sections
 from vakeel_sahayak.pipelines.text_utils import normalise_date
 
 _FIR_NO = re.compile(r"\bF\.?I\.?R\.?\s*(?:no\.?|number|क्रमांक)?\s*[:#-]?\s*(\d{1,6})\s*(?:/|of)\s*(\d{2,4})", re.IGNORECASE)
+# Spoken or Hindi FIR numbers: 'The FIR number is 664/2025', 'एफआईआर संख्या 879/2025 है' (the strict pattern above needs the number right after 'FIR no.').
+_FIR_SPOKEN = re.compile(
+    r"(?:\bF\.?I\.?R\.?|एफ\.?\s?आई\.?\s?आर\.?|प्राथमिकी)\s*(?:no\.?|number|संख्या|क्रमांक|नंबर)?\s*(?:is|was|:|#|-|है|थी)?\s*(\d{1,6})\s*(?:/|of)\s*((?:19|20)\d{2})",
+    re.IGNORECASE,
+)
+# 'धारा 269 BNS के अंतर्गत', 'BNS की धारा 269', 'धारा 318(4) बीएनएस': a section the Latin-script extractor does not read (it needs a bracket or 'Section ... of the').
+_HI_ACTS = {"आईपीसी": "IPC", "आई पी सी": "IPC", "बीएनएसएस": "BNSS", "बीएनएस": "BNS", "सीआरपीसी": "CrPC", "सी आर पी सी": "CrPC", "IPC": "IPC", "BNSS": "BNSS", "BNS": "BNS", "CrPC": "CrPC"}
+_HI_ACT_ALT = "|".join(sorted((re.escape(k) for k in _HI_ACTS), key=len, reverse=True))
+_HI_SECTION = re.compile(rf"धारा\s*(\d+[A-Za-z]?(?:\([0-9A-Za-z]+\))*)\s*(?:के\s*(?:अंतर्गत|तहत)\s*)?({_HI_ACT_ALT})|({_HI_ACT_ALT})\s*(?:की|के)?\s*धारा\s*(\d+[A-Za-z]?(?:\([0-9A-Za-z]+\))*)")
 _ONES = "first second third fourth fifth sixth seventh eighth ninth".split()
 _ORDINALS = {
     **{w: i for i, w in enumerate(_ONES, 1)},
@@ -87,8 +97,15 @@ def readback(transcript: str) -> list[str]:
         iso = normalise_date(m.group(0).replace(",", ", ").strip())
         if iso:
             items.append(f'date: {iso} (heard as "{m.group(0)}")')
-    items += [f"section: {ref}" for ref in extract_sections(text)]
+    refs = list(extract_sections(text))
+    for m in _HI_SECTION.finditer(text):
+        act, number = (m.group(2), m.group(1)) if m.group(1) else (m.group(3), m.group(4))
+        ref = make_ref(_HI_ACTS[act], number)
+        if ref not in refs:
+            refs.append(ref)
+    items += [f"section: {ref}" for ref in refs]
     items += ["FIR number: " + f"{m.group(1)}/{m.group(2)}" for m in _FIR_NO.finditer(text)]
+    items += ["FIR number: " + f"{m.group(1)}/{m.group(2)}" for m in _FIR_SPOKEN.finditer(text)]
     items += [f"duration: {m.group(1)} {m.group(2).lower()}" for m in _DURATION.finditer(text)]
     items += [f"age: {m.group(1)}" for m in _AGE.finditer(text)]
     return list(dict.fromkeys(items))

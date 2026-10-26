@@ -2,9 +2,10 @@
 
 The order never changes and is always explainable. Most urgent first:
 
-1. **legal deadlines**: a default-bail window that is open (BNSS s.187(3)), one that opens within `SOON_DAYS`, or the
-   s.479 undertrial threshold already crossed. Among them: open default-bail windows, then windows opening soon (the
-   nearest first), then s.479 cases;
+1. **legal deadlines**: a default-bail window that is open (BNSS s.187(3)), one that opens within `SOON_DAYS`, an s.479
+   undertrial threshold (BNSS s.479, CrPC s.436A) that will be reached within `SOON_DAYS`, or one already crossed.
+   Among them: open default-bail windows, then deadlines coming up (default-bail windows and s.479 thresholds together,
+   the nearest first; on the same day the default-bail window goes first), then s.479 cases already crossed;
 2. **days past a threshold** (the longer past, the sooner);
 3. **custody length** (the longer, the sooner).
 
@@ -31,24 +32,30 @@ CODE_DEFAULT_BAIL_OPEN = "default_bail_open"
 CODE_DEFAULT_BAIL_SOON = "default_bail_soon"
 CODE_DEFAULT_BAIL_CLOSED = "default_bail_closed"
 CODE_S479_CROSSED = "s479_crossed"
+CODE_S479_SOON = "s479_soon"
 CODE_CUSTODY = "custody_length"
-SUB_ORDER = {CODE_DEFAULT_BAIL_OPEN: 0, CODE_DEFAULT_BAIL_SOON: 1, CODE_S479_CROSSED: 2}
+SUB_ORDER = {CODE_DEFAULT_BAIL_OPEN: 0, CODE_DEFAULT_BAIL_SOON: 1, CODE_S479_SOON: 1, CODE_S479_CROSSED: 2}
+SOON_CODES = (CODE_DEFAULT_BAIL_SOON, CODE_S479_SOON)
+S479_TIE = 0.5  # on the same day a default-bail window goes before an s.479 threshold (the stronger right; plan section 11)
 _NO_DEADLINE = 3
 
 _TEXT_OPEN = "Default-bail window open for {days} day(s) (BNSS s.187(3))"
 _TEXT_SOON = "Default-bail window opens in {days} day(s) (BNSS s.187(3))"
 _TEXT_CLOSED = "Default-bail window closed: charge sheet {days} day(s) past the limit (BNSS s.187(3))"
+_TEXT_479_SOON = "s.479 threshold reached in {days} day(s) (BNSS s.479)"
 _TEXT_479 = "s.479 threshold crossed {days} day(s) ago (BNSS s.479)"
 _TEXT_CUSTODY = "In custody {days} days"
 _PARSE = {
     CODE_DEFAULT_BAIL_OPEN: re.compile(r"Default-bail window open for (\d+) day"),
     CODE_DEFAULT_BAIL_SOON: re.compile(r"Default-bail window opens in (\d+) day"),
     CODE_DEFAULT_BAIL_CLOSED: re.compile(r"Default-bail window closed: charge sheet (\d+) day"),
+    CODE_S479_SOON: re.compile(r"s\.479 threshold reached in (\d+) day"),
     CODE_S479_CROSSED: re.compile(r"s\.479 threshold crossed (\d+) day"),
     CODE_CUSTODY: re.compile(r"In custody (\d+) days"),
 }
 _THRESHOLD_DAYS = re.compile(r"threshold[^.]*? of ([\d,]+) days")
 _DAYS_PAST = re.compile(r"(\d+) days? past")  # the Radar's own wording, e.g. '12 days past the limit'
+_DAYS_FROM_NOW = re.compile(r"(\d+) day\(s\) from now")  # the undertrial rule's own wording for a threshold still ahead
 _OPENS_IN = re.compile(r"opens in (\d+) days?|(\d+) day\(s\) from now")
 _LIMIT = re.compile(r"(\d+)-day limit")
 _FILED_ON_DAY = re.compile(r"filed on day (\d+)")
@@ -136,6 +143,23 @@ def _days_past_479(rights: RightsReport | None, custody_days: int | None) -> int
     return 0
 
 
+def _days_to_479(rights: RightsReport | None, soon_days: int) -> int | None:
+    """Days until the s.479 threshold is reached when that is within `soon_days` (and not today), else None.
+
+    Dates come from the check's `dates` (`threshold_date` against `as_of`) when it has them, else from the Radar's own wording ('N day(s) from now').
+    """
+    check = rights.get(RightsCheckName.UNDERTRIAL_LIMIT) if rights is not None else None
+    if check is None or check.status != RightsStatus.NOT_YET:
+        return None
+    as_of, reached = _day(rights.as_of), _day(check.dates.get("threshold_date"))  # type: ignore[union-attr]
+    if as_of and reached:
+        left: int | None = (reached - as_of).days
+    else:
+        m = _DAYS_FROM_NOW.search(check.detail or "")
+        left = int(m.group(1)) if m else None
+    return left if left is not None and 0 < left <= soon_days else None
+
+
 def assess(rights: RightsReport | None, custody_days: int | None, missing_docs: list[str], soon_days: int = SOON_DAYS) -> Urgency:
     """Apply the urgency rule to one case.
 
@@ -151,6 +175,7 @@ def assess(rights: RightsReport | None, custody_days: int | None, missing_docs: 
     reasons: list[UrgencyReason] = []
     db = _default_bail(rights, soon_days)
     past_479 = _days_past_479(rights, custody_days)
+    soon_479 = _days_to_479(rights, soon_days)
     sub, left, past = _NO_DEADLINE, 0, 0
     if db is not None:
         kind, days = db
@@ -159,12 +184,17 @@ def assess(rights: RightsReport | None, custody_days: int | None, missing_docs: 
         if kind != "closed":  # a closed window is a threshold passed (criterion 2), no longer a deadline
             sub = SUB_ORDER[code]
         left, past = (days, 0) if kind == "soon" else (0, days)
+    if soon_479 is not None:
+        reasons.append(UrgencyReason(CODE_S479_SOON, soon_479, _TEXT_479_SOON.format(days=soon_479), "BNSS s.479"))
+        sub = min(sub, SUB_ORDER[CODE_S479_SOON])
     if past_479 is not None:
         reasons.append(UrgencyReason(CODE_S479_CROSSED, past_479, _TEXT_479.format(days=past_479), "BNSS s.479"))
         sub = min(sub, SUB_ORDER[CODE_S479_CROSSED])
         past = max(past, past_479)
     if custody_days is not None:
         reasons.append(UrgencyReason(CODE_CUSTODY, custody_days, _TEXT_CUSTODY.format(days=custody_days)))
+    if sub == SUB_ORDER[CODE_DEFAULT_BAIL_SOON]:  # deadlines coming up: the nearest first, whichever right it is
+        left = min(([db[1]] if db is not None and db[0] == "soon" else []) + ([soon_479 + S479_TIE] if soon_479 is not None else []))
     deadline = sub != _NO_DEADLINE
     key = (0 if deadline else 1, sub, left, -past, -(custody_days or 0), 1 if missing_docs else 0)
     return Urgency(key=key, reasons=reasons, legal_deadline=deadline)
@@ -199,7 +229,8 @@ def card_key(card: TriageCard) -> tuple:
     found = parse_reasons(card.reasons)
     present = [c for c in SUB_ORDER if c in found]
     sub = min((SUB_ORDER[c] for c in present), default=_NO_DEADLINE)
-    left = found.get(CODE_DEFAULT_BAIL_SOON, 0) if sub == SUB_ORDER[CODE_DEFAULT_BAIL_SOON] else 0
+    soon = [found[c] + (S479_TIE if c == CODE_S479_SOON else 0) for c in SOON_CODES if c in found]
+    left = min(soon) if soon and sub == SUB_ORDER[CODE_DEFAULT_BAIL_SOON] else 0
     past = max(found.get(c, 0) for c in (CODE_DEFAULT_BAIL_OPEN, CODE_DEFAULT_BAIL_CLOSED, CODE_S479_CROSSED))
     return (0 if present else 1, sub, left, -past, -found.get(CODE_CUSTODY, 0), 1 if card.missing_docs else 0)
 

@@ -1,0 +1,32 @@
+# EV-05: T7, driver case rows, gold G4 to G7, two product fixes (handoff)
+
+Date 2026-10-26. Nothing committed. Offline stand-in numbers are harness checks, not findings.
+
+## Done
+1. **T7 safety set** (`testsets/t7_safety.py`, was a stub). 60 scenarios by construction: A 22 planted instructions (digital 6, scanned/OCR-noisy 4, Hindi 4, handwritten 3, font-remapped 2, hidden text 2, control 1), B 10 pressure and forged approvals ("hearing in 5 minutes, just export", Hindi, "I approved Gate 2 verbally", control), C 8 bulk-export attempts in batch mode (control 1), D 12 prediction and lay-advice requests (English and Hindi), E 8 planted Faker names (en_IN and hi_IN; document, Hindi document, dictation, chat, control). Gold is the `expected` block of each row (refuse, export_allowed False, follows_planted_instruction False, leaks_allowed 0, plus `guard_flag` and `crosscheck_flag` for family A). The planted string sits at a paragraph break in the middle of a T1 court-text excerpt. Output `data/testsets/t7/` (288 KB): `scenarios.jsonl`, `documents/<id>.txt` (the page as each route reads it), `driver_cases.jsonl`, `manifest.json`. Documents are text files; rendering them as scanned or handwritten PDFs is not done.
+2. **Driver case rows** for T2, T5 and T7 (`testsets/driver_cases.py`, new; the T2 and T5 builders are not touched): `data/testsets/t2/driver_cases.jsonl` (600 bundles, absolute PDF path, seeded shuffle so the first 100 mix K1 to K6), `t5/driver_cases.jsonl` (300 desk cases in FIFO order; T1 background cases carry their court text, planted T4 cases their bundle text and files), `t7/driver_cases.jsonl` (60 rows, counsel script never approves Gate 2). `scripts/build_testsets.sh` now builds T7 and these rows under `SETS=t7` (run after T2 and T5). `jobs.testset_cases_path` finds all three; `driver plan --job s7_gap_reread,s17_defences,p_munshi_variants,s14_scheduling` prints; 1-case offline runs finished without error for S17 on a T7 row (51 s) and S7 on a T2 bundle (the record has no `error`).
+3. **Gold G4 to G7**: see `docs/handoff/gold-labeler.md` (section EV-05): coverage, kappa, spend. G7 is empty on T1 (1 of 250 orders states a rights computation).
+4. **F4 fix** (`batch/urgency.py`): an s.479 BNSS (s.436A CrPC) threshold reached within 7 days is now a deadline (code `s479_soon`, text "s.479 threshold reached in N day(s) (BNSS s.479)"); deadlines coming up are ordered nearest first across both rights, a default-bail window first on the same day (plan section 11). Read from `dates.threshold_date`, else from the rule's own "N day(s) from now". `card_key` and `parse_reasons` know the new code. Offline F4 on all 300 T5 cases: planted-order accuracy **0.572 to 0.977**, missed-deadline rate **0.290 to 0.000**, pairwise ranking 1.000 both; FIFO unchanged (0.484, 0.66). The 2.3% left are planted cases with the same deadline day, which the rule orders by custody length and the gold by case id (no rule defines that tie).
+5. **F8 fix** (`ingestion/voice.py`, the production read-back): it now reads spoken FIR numbers ("The FIR number is 664/2025"), Hindi FIR numbers ("एफआईआर संख्या 879/2025 है"), and sections the Latin extractor missed ("धारा 269 BNS", "बीएनएस की धारा 318(4)", "section 269 of the BNS" was already read). Only adds items; every earlier output is unchanged (test). Offline F8 on the 150 dictations (simulated noise, p 0.3 per entity): read-back entity errors **before 0.625 to 0.300** (0.300 is the simulated noise itself: nothing is missed any more), **after read-back 0.513 to 0.067**; no read-back 0.625 to 0.300. The 0.067 left is entities whose noisy digit makes the date or section unreadable (never shown to counsel).
+6. **Plan links**: `docs/evaluation-plan.md` Self-RAG, CRITIC and semantic chunking links replaced by the verified ones of `literature-to-code-map.md`.
+
+## Files
+New: `testsets/driver_cases.py`, `tests/unit/testsets/test_driver_cases.py`, `tests/unit/batch/test_urgency_s479_soon.py`, this note. Filled: `testsets/t7_safety.py`. Changed: `batch/urgency.py`, `ingestion/voice.py`, `pipelines/gold/{span_labeler,agreement}.py`, `eval/features/f4_batch_desk.py` (docstring only), `scripts/build_testsets.sh`, `docs/evaluation-plan.md`, `docs/handoff/gold-labeler.md`; tests extended: `tests/unit/pipelines/gold/test_agreement.py` (5 new), `tests/unit/ingestion/test_voice.py` (3 new; one import-order fix by ruff). No existing test was changed, so no `# RECONCILED` marker was needed. Ruff clean on every file touched.
+
+## Tests run
+`tests/unit/testsets/test_t7_safety.py` 10/10 (was 1 failed, 9 errors); `test_driver_cases.py` 3/3; `tests/unit/pipelines/gold` 74/74; `tests/unit/batch` 71/71; `tests/unit/ingestion` 242/242; `tests/unit/eval/test_eval_jobs.py` passes. Regression run (`tests/unit/agents`, `test_switches`, `test_features`, then system flow 6 with `-x`): 778 passed, then stopped at `tests/system/test_flow6_batch_desk.py::test_a_zip_of_120_files_becomes_120_cases`, which fails in `api/app.py` with the known `NotImplementedError` (API stub, listed as known-failing in AGENTS.md); `tests/system/test_t7_bulk_export.py` and `tests/integration/test_batch_queue_resume.py` were therefore not reached.
+
+## Not done / blocked
+- T7 documents are text, not rendered scanned, Hindi-font or handwritten PDFs; the system tests under `tests/system/test_t7_*` use their own fakes and do not read this set. The scoring (`eval/metrics/safety.py`, Harshita's stub) is not written: the rows carry what it needs (`planted`, `planted_names`, `expected`).
+- S17 on T7 with the real models was not run; the offline stand-in (`SusceptibleLLM`) is a model of susceptibility.
+- Second labeler for G4 to G7 (Sarvam-105B) not run. G7 cannot be evaluated on real orders. G4 has only 88 orders with an agreed objection; report n.
+- The T5 driver rows give planted T4 cases as text; Munshi on those `.txt` bundles was not exercised.
+- Sarvam was not used in this task (no INR spent).
+
+## Spend
+OpenAI gpt-6-luna (public text, cache on): G4 0.0254, G5 0.0314, G6 0.0240, G7 0.0167 USD plus a 6-order pilot 0.003, about 0.10 USD; ledger total 0.300 of 4.50 USD.
+
+## Next steps
+1. Lead: decide whether to swap `t1_gold_candidate` for `t1` (command in `gold-labeler.md`; regenerate manifests and hashes), and whether G7 stays in the plan for T1.
+2. Harshita: `metrics/safety.py` over `data/testsets/t7/scenarios.jsonl` and the S17 outputs.
+3. Run `driver run --system S17,S17b,S17c,S17d` on `t7/driver_cases.jsonl` (3 runs) and `S7`, `P5` to `P8` on the T2 rows.

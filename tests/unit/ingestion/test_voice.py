@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 from tests.fakes.models import FakeAsr
 from tests.unit.ingestion._helpers import patch_attr_everywhere
 from vakeel_sahayak.ingestion.voice import delete_audio, readback, transcribe_dictation
@@ -91,3 +90,21 @@ def test_delete_audio_keep_true_keeps_the_file(tmp_path):
 def test_delete_audio_is_idempotent_for_missing_file(tmp_path):
     """ASSUMPTION: deleting a file that is already gone is not an error."""
     delete_audio(str(tmp_path / "gone.wav"))
+
+
+# ---- read-back of spoken and Hindi FIR numbers and Hindi sections (found by feature run F8) ----------------------------------
+def test_readback_shows_spoken_fir_number_and_unbracketed_section():
+    items = readback("The order in this case is dated 10 July 2025. The case is registered under Section 269 of the BNS. The FIR number is 664/2025.")
+    assert "FIR number: 664/2025" in items and "section: BNS 269" in items
+
+
+def test_readback_shows_hindi_fir_number_and_hindi_sections():
+    items = readback("इस मामले में आदेश 10 जुलाई 2025 का है। मामला धारा 269 BNS के अंतर्गत दर्ज है। एफआईआर संख्या 879/2025 है।")
+    assert "FIR number: 879/2025" in items and "section: BNS 269" in items and any(i.startswith("date: 2025-07-10") for i in items)
+    assert "section: IPC 420" in readback("धारा 420 आईपीसी के अंतर्गत मामला दर्ज है।")
+    assert "section: BNS 318(4)" in readback("बीएनएस की धारा 318(4) लगी है।")
+
+
+def test_readback_is_unchanged_where_it_already_worked_and_has_no_false_fir():
+    assert readback("FIR no. 112/2024 under Section 318(4) BNS") == ["section: BNS 318(4)", "FIR number: 112/2024"]
+    assert not [i for i in readback("The FIR was registered on 12/03/2024 at the station.") if i.startswith("FIR number")]

@@ -10,9 +10,9 @@ s.479 threshold is reached); the gold ranking is the plan §11 urgency rule. Arm
 Ranking and missed deadlines are computed from the order alone. A planted case MISSES its deadline when its full run starts after the deadline day: the desk serves `CASES_PER_DAY` = 20 cases a day (5 GPU
 hours a day at the default 0.25 GPU-hours per full run, `batch.queue.DEFAULT_CASE_HOURS`); this capacity is an assumption of the evaluation, stated here and recorded in every file. Cases per node-hour, cache hit
 rate and output equality need real full runs: set `VS_F4_STAGE2=N` to run the first N T1 cases (the unplanted ones, which carry facts text) through `eval.runners.driver.run_agents` with and without the cache
-(offline stand-in models by default, so the seconds are the stand-in's); cases without a full run have no value for those three metrics and they are left out of the means. The urgency rule only knows a
-default-bail window and an already-crossed s.479 threshold as deadlines (`batch/urgency.py`), so an s.479 threshold still days away is ranked by custody length: `planted_order_accuracy` (planted
-pairs ordered as the gold deadline ranking) shows how far that departs from the plan §11 gold order. This is a finding of the evaluation, not a tuned result.
+(offline stand-in models by default, so the seconds are the stand-in's); cases without a full run have no value for those three metrics and they are left out of the means. The urgency rule treats a default-bail window and an s.479 threshold (already crossed, or reached within 7 days) as deadlines (`batch/urgency.py`); before that was added an s.479 threshold still days away
+was ranked by custody length and `planted_order_accuracy` was 0.57 (offline run of 2026-10-26: 0.572, missed-deadline rate 0.29); with it 0.977 and 0.000. The remaining 2% are planted cases with the same deadline day, which the rule
+orders by custody length and the gold by case id. This is a finding of the evaluation, not a tuned result.
 """
 
 from __future__ import annotations
