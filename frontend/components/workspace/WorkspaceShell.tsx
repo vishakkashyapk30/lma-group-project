@@ -51,16 +51,17 @@ export function WorkspaceShell({ caseId, className }: WorkspaceShellProps): Reac
   return (
     <div className={cn("flex h-[calc(100dvh-var(--nav-h))] min-h-[34rem] flex-col bg-parchment", className)}>
       <h1 className="sr-only">{summary ? summary.title : "Case"}</h1>
+      {/* Below xl the stepper takes its own row (it scrolls sideways on a phone); from xl it shares the row with the case controls. */}
       <div data-print-hide className="flex flex-wrap items-center gap-x-3 border-b border-line bg-parchment px-3 sm:px-4">
-        <StageRail className="min-w-0 flex-1" />
-        <div className="flex shrink-0 items-center gap-1 pb-2 sm:pb-0">
+        <StageRail className="min-w-0 basis-full xl:basis-0 xl:flex-1" />
+        <div className="ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1 pb-2 xl:pb-0">
           <SavedNote />
           <DocumentsMenu caseId={caseId} />
           <Button variant="ghost" size="sm" data-testid="details-button" aria-pressed={ws.detailsOpen} onClick={() => ws.setDetailsOpen(!ws.detailsOpen)}>
             Details
           </Button>
-          <Button variant="secondary" size="sm" data-testid="chat-button" aria-pressed={ws.chatOpen} onClick={() => (ws.chatOpen ? ws.closeChat() : ws.openChat())}>
-            <MessageSquareText aria-hidden /> Ask about this case
+          <Button variant="secondary" size="sm" data-testid="chat-button" aria-label="Ask about this case" aria-pressed={ws.chatOpen} onClick={() => (ws.chatOpen ? ws.closeChat() : ws.openChat())}>
+            <MessageSquareText aria-hidden /> <span className="2xl:hidden">Ask</span><span className="hidden 2xl:inline">Ask about this case</span>
           </Button>
         </div>
       </div>

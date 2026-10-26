@@ -152,3 +152,38 @@ test("the workspace only calls endpoints the backend defines", async ({ page }) 
   for (const key of ["II", "III", "IV", "VI", "VII"]) await step(page, key);
   await expectNoUnmatched(mock);
 });
+
+test.describe("layout by width (frontend/DESIGN.md, Workspace principles 7)", () => {
+  for (const width of [390, 768, 1024, 1280, 1440]) {
+    test(`no sideways page scroll at ${width} px; the stepper is whole from 1024 px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/case/case-0007");
+      await expect(page.getByTestId(TID.stageRail)).toBeVisible();
+      const m = await page.evaluate(() => {
+        const ol = document.querySelector("[data-testid=stage-rail] ol") as HTMLElement;
+        return { doc: document.documentElement.scrollWidth, olClient: ol.clientWidth, olScroll: ol.scrollWidth };
+      });
+      expect(m.doc).toBeLessThanOrEqual(width);
+      if (width >= 1024) expect(m.olScroll).toBeLessThanOrEqual(m.olClient);
+      await expect(page.getByTestId(TID.stage("VII"))).toBeAttached();
+    });
+  }
+
+  test("on a phone the source sheet takes focus and Escape closes it", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/case/case-0007");
+    await step(page, "II");
+    await field(page, "fir").getByTestId(TID.dossierFieldSource).click();
+    await expect(page.getByTestId(TID.sourcePanel)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Close source" })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId(TID.sourcePanel)).toHaveCount(0);
+  });
+
+  test("compact case controls keep their full names for screen readers", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/case/case-0007");
+    await expect(page.getByTestId(TID.chatButton)).toHaveAccessibleName("Ask about this case");
+    await expect(page.getByTestId(TID.documentsButton)).toHaveAccessibleName(/Documents/);
+  });
+});

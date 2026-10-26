@@ -27,10 +27,10 @@ export function Stepper({ label, children, className }: StepperProps): ReactElem
   };
   const kids = Children.toArray(children);
   return (
-    <ol ref={ref} aria-label={label} onKeyDown={onKeyDown} className={cn("flex items-center overflow-x-auto", className)}>
+    <ol ref={ref} aria-label={label} onKeyDown={onKeyDown} className={cn("relative flex items-center overflow-x-auto", className)}>
       {kids.map((k, i) => (
         <Fragment key={i}>
-          {i > 0 ? <li aria-hidden className="mx-1 h-px w-3 shrink-0 bg-line-strong/50 lg:w-5" /> : null}
+          {i > 0 ? <li aria-hidden className="mx-1 h-px w-3 shrink-0 bg-line-strong/50" /> : null}
           {k}
         </Fragment>
       ))}

@@ -18,7 +18,9 @@ export function DocumentsMenu({ caseId }: { caseId: string }): ReactElement {
         <>
           <FileText aria-hidden className="size-4" />
           <span>
-            Documents <span className="tabular">({count})</span>
+            {/* Below 2xl the label is the count only, so the stepper keeps one row at laptop widths; the name stays for screen readers. */}
+            <span className="sr-only 2xl:not-sr-only">Documents </span>
+            <span className="tabular">({count})</span>
           </span>
         </>
       }

@@ -15,21 +15,35 @@ A calm tool for a legal-aid lawyer who uses it daily. Dense where it should be, 
 ```
 /            Landing (marketing, own header and footer, outside the app shell)
 /cases       Cases (home of the app)
-/case/[id]   Case workspace: stage stepper + three panes
+/case/[id]   Case workspace: a stepper and one step at a time
 /desk        Batch desk
 /library     Precedent library
 /help        Help: start a case, shortcuts, limits (links to /about)
 /about       How it works and its limits (reached from Help)
+/settings    The server, its model and privacy settings and the data folder (read from GET /healthz)
 ```
 
 App shell (every route except `/`):
 
-- Left sidebar: Cases, Batch desk, Precedent library, Help. Icons plus labels, active state (tint, maroon text, thin left mark), collapsible to an icon rail (remembered in localStorage, tooltips carry the labels). Inside a case it stays an icon rail so the three panes get the width. Below `lg` it becomes a drawer opened from the top bar.
+- Left sidebar: Cases, Batch desk, Precedent library, Help, Settings. Icons plus labels, active state (tint, maroon text, thin left mark), collapsible to an icon rail (remembered in localStorage, tooltips carry the labels). Inside a case it stays an icon rail so the step gets the width. Below `lg` it becomes a drawer opened from the top bar.
 - Top bar: breadcrumb (page title, or `Cases > case title` with `Stage: <name>` inside a case), search field that opens the command palette (Ctrl/Cmd+K), mode chip, primary New case button, settings and help menu.
-- Mode chip: `Local · Sample data` when no server is connected (built-in sample cases, changes stay in the browser) and `Local · Connected` when the API answers. It reflects `getApiMode()` and never claims more.
+- Mode chip: `Local · Sample data` in demo mode (built-in sample cases, changes stay in the browser), `Local · Connected` when the API answers, and `Local · Not connected` when a live server stops answering. It links to Settings and never claims more. Product builds are live: an unreachable server is an error on the page, never the sample case (`NEXT_PUBLIC_API_MODE`).
 - Command palette: Actions (New case, Reduce motion, Collapse sidebar), Pages, and Cases (fetched when opened). Combobox plus listbox semantics, arrows, Enter, Esc.
 - Help menu: Help and shortcuts, How it works and its limits, Product overview, Reduce motion, NALSA 15100.
-- Case stepper: Intake, Dossier, Rights, Brief, Spar, Hearing prep, File, with the two approval gates (Gate 1, Gate 2) as small buttons. Each step has an indicator (check, ring, empty ring, lock) and its state is read out as a word.
+- Case stepper: Add documents, Review facts, Check rights, Draft grounds, Prepare for the hearing, Export. Each step has an indicator (check, ring, empty ring, lock) and its state is read out as a word. Likely objections live inside Draft grounds; the gates live inside their steps (see Workspace principles).
+
+## Workspace principles
+
+The case workspace (`components/workspace`) is built for a lawyer working through one bail file, often on a laptop between hearings.
+
+1. One step at a time. The stepper shows where the file is; the page shows one step with one primary button at its foot ("Confirm facts and continue", "Continue to Export"). Locked steps say why ("Opens once you confirm the facts").
+2. What needs counsel comes first. Every step opens with "Needs your attention": unreadable pages, Munshi's questions, facts not found, conflicting documents, grounds to review, unanswered objections. Each item has one jump button. An empty list says so in a sentence.
+3. Gates are decisions inside the steps. Review facts ends in "Confirm facts and continue" (Gate 1) and Export in "Approve this draft for export" (Gate 2). The button stays disabled while the list above is not clear, and opens a confirm dialog that says what the approval locks. The export buttons do not exist before Gate 2. Counsel's resolutions are sent with the approval and recorded on the server.
+4. Sources on demand, never a permanent pane. A fact or a numbered citation opens the source panel (quote, Hindi beside English, page with the highlighted box, route, language). Chat is a drawer, the case file a popover (Documents), the agent trace the Details drawer. At most two columns at once.
+5. Plain status words. Badges read "Confirmed from the documents", "Calculated", "Not found", "Entered by you", "Corrected by you", "Needs your review"; the raw enum stays in `data-status` and under Details. Different meanings never share a word.
+6. Nothing is dropped silently. A ground that failed its check stays in the draft with a "Needs check" mark; a fact the papers do not give stays "Not found" until counsel adds it or marks it unknown.
+7. Layout by width. From `xl` the stepper and the case controls (Documents, Details, Ask) share one row; below `xl` the stepper takes its own row and scrolls sideways, keeping the current step in view. Below `2xl` Documents and Ask show a count and a short word (their full names stay for screen readers). Below `lg` the source panel and the chat are full-screen sheets that take focus when they open and close with Escape. No page scrolls sideways at any width.
+8. Agent work is a quiet line. While an agent works, one progress line with a small breathing glyph says what is happening ("Reading the papers"); there is no dashboard of agents. Long work runs on the server without freezing the page, and the line updates from the event stream.
 
 ## Typography
 
@@ -138,7 +152,9 @@ Landing motion (styles/landing.css; every element rests in its final state, so r
 `components/shell`: AppShell, Sidebar, MobileDrawer, TopBar (with ModeChip and help menu), CommandPalette, ShellProvider (palette, new-case, drawer, collapsed state, Ctrl/Cmd+K), `meta.ts` (case title and stage published to the top bar), `nav.ts` (single list of destinations).
 `components/common`: Logo (mark, mark only, reversed), PageHeader, StatusBadge (icon and word, no pill), SourceChip, AgentGlyph.
 `components/agents/AgentSignature`: a quiet one-line status with a small glyph that breathes while the agent runs.
-`components/landing`: LandingPage, WorkspacePreview (static, composed from the real status component), Reveal.
+`components/landing`: LandingPage, HeroLoop (the one-run product loop), Footer, Reveal.
+`components/workspace`: WorkspaceShell (stepper row, step, side panel, drawers), StageRail, StepView and `tabs/*` (one view per step), StepFrame and StepFooter, NeedsYou, SidePanel and SourcePanel, ChatPane, TraceDrawer, GateModal (confirm dialog), DocumentsMenu, ProgressLine, ChangeBanner.
+`components/settings`: SettingsPage (server address, live/demo mode, connection, the server's model, privacy and data settings).
 
 ## Things we do not do
 
@@ -160,4 +176,5 @@ Do instead: plain, specific, short copy a lawyer would write (Cases, New case, R
 
 ## Known follow-ups for later tasks
 
-The workspace panes, tabs, chat and gate modal were not redesigned here. They inherit the new tokens, radius and flat shadow, but still contain older habits to clean up: numbered circles in the hearing-prep card, "Part"-style labels in a few headings, `font-display text-maroon` headings, bordered chips for some tags, and the Sutradhar status line wrapping beside its buttons in the chat header.
+- The hearing-prep card shows concerns quoted from orders; a quote that is only a paragraph number falls back to "The bench may ask about <factor>" in the client, but the backend should pick a better sentence (`agents/vakeel/hearing.first_sentence`).
+- Page images in the source panel come from `GET /api/cases/{id}/files/{doc}/pages/{n}`; the demo backend serves placeholders.
