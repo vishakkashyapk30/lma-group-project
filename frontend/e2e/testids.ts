@@ -2,112 +2,63 @@
  * UI CONTRACT for the Playwright specs (plan §13.3-§13.7). UI implementers MUST expose these hooks; the specs depend on
  * nothing else about the DOM. Everything here is an ASSUMPTION of the test author (the plan names the concepts, not the ids).
  *
+ * RECONCILED (2026-10-26, docs/handoff/workspace-redesign.md and docs/handoff/landing-colour-motion.md): this contract now describes
+ * the redesigned landing and the one-step-at-a-time workspace. The scene, gate-diamond, three-pane and right-tab hooks of the earlier
+ * design are gone; every rule they carried is still tested through the hooks below.
+ *
  * Conventions
- *  - `data-testid` values are listed in TID. Parametrised ids are functions (scene(3) -> "scene-3").
+ *  - `data-testid` values are listed in TID. Parametrised ids are functions (stage("II") -> "stage-II").
  *  - "interactive element" means the testid sits on the focusable control itself (button / link / tab), not a wrapper.
  *  - Status text is real text. Icons are glyphs from lib/status.ts, wrapped in an aria-hidden span; the label is visible text.
  *
  * LANDING (/)
- *  - scene-0 .. scene-6: seven sections in DOM order. Scene 0 contains the headline "Bail is the rule, jail the exception.",
- *    open-case-button ("Open a case"), watch-journey-button ("Watch the journey"), and stats-band (contains "75.8%").
- *    Scene 6 contains the text "Article 21" and "39A".
- *  - scene-indicator: container of exactly six scene-dot elements (scenes 1..6, "a row of six"). The dot of the scene in view
- *    has aria-current="true"; the other five have none. (Hero, scene 0, lights no dot.)
- *  - Reduced motion (prefers-reduced-motion: reduce): a static-storyboard element wraps the scenes; every scene-N carries
- *    data-motion="static" and one scene-caption (non-empty text); no running animation inside the scenes. When motion is
- *    allowed, static-storyboard is absent and scenes carry data-motion="animated".
+ *  - h1 states the product; open-case-button ("Open workspace", href /cases) and a "See how it works" link to #how in the hero.
+ *  - Bands, as h2, in DESIGN.md's order: How it works, the sources example, What you stay in control of, the Preamble close.
+ *  - The hero product loop (aria-label "Product preview: ...") plays once and rests on "Approved for export"; a quiet Replay
+ *    button. Under reduced motion it shows the final frame with no animation and Replay hidden.
  *  - site-footer: contains "यतो धर्मस्ततो जयः", "AI-generated drafts for counsel. Not legal advice.", "NALSA" and "15100".
- *  - watch-journey-button scrolls to scene 1.
  *
  * WORKSPACE (/case/[id])
- *  - pane-case-file | pane-chat | pane-right: the three panes.
- *  - stage-rail (navigation landmark) containing stage-I .. stage-VII (interactive; text = numeral + label; aria-current="step"
- *    on the current stage; aria-disabled="true" while locked) and gate-diamond-1 / gate-diamond-2 (interactive; open the
- *    gate modal; data-approved="true"|"false").
- *  - Gate state: RECONCILED with record/gates.py: GateStatus.open === true means the gate has NOT been approved yet (it is
- *    still open for counsel), false means approved; stages III-VII unlock once GATE_1_DOSSIER is approved (open === false);
- *    the unresolved_* lists say what still blocks approval.
- *  - right-tab-dossier|dates|rights|brief|spar|prep: role="tab" with aria-selected. Rail <-> tab sync: stage II <-> dossier,
- *    III <-> rights, IV <-> brief, V <-> spar, VI <-> prep (selecting either selects the other; stage becomes aria-current).
- *  - dossier-field (one per dossier field; data-field = field key) containing status-badge; dossier-field-edit (button inside the
- *    row), dossier-field-input (text input), dossier-field-save (button); dossier-field-source (button inside the row: click
- *    scrolls the PDF to the source box and draws pdf-highlight).
- *  - status-badge: icon + label text; data-status = raw status (e.g. "UNSUPPORTED").
- *  - rights-chip (one per RightsCheckResult; data-check = check name, data-status = status; text has the check title such as
- *    "Default bail" and a status-badge).
- *  - pdf-viewer (in pane-case-file; page images come from GET /api/cases/{id}/files/{doc}/pages/{n}); pdf-highlight
- *    (data-box="x0,y0,x1,y1").
- *  - document-item (data-doc-id), doc-type-stamp (text = document type), route-badge (text TEXT | LAYOUT | OCR | VISION from
- *    page_routes text_layer | layout | ocr | vision; data-route = lower-case route).
- *  - upload-input: the <input type="file" multiple> behind the drop zone (may be visually hidden).
- *  - chat-input (textbox), chat-send (button), chat-message (data-role = counsel|agent, data-agent = AgentName for agent
- *    messages), tool-chip (inside a chat-message; text = tool name). Identical agent questions are shown once.
- *  - draft-brief-button ("Draft bail brief"), show-plan-button ("Show the plan"), trace-drawer (dialog; Escape closes it),
- *    trace-step (one per Sutradhar TOOL_CALL event, data-tool = tool name).
- *  - brief-ground (data-ground = id) with status-badge for its ClaimCheck; needs-review-marker inside a ground whose check is
- *    NEEDS_REVIEW (maroon underline: computed text-decoration-line includes "underline").
- *  - spar-objection (data-objection = id) containing a status-badge for its verdict.
- *  - prep-card (hearing-prep card; renders the string values of GET .../prep).
- *  - gate-modal (role="dialog"), gate-checklist-item (one per unresolved item; data-kind = unsupported | needs_review |
- *    unanswered; data-item = item name; kind "unsupported" contains a checkbox that acknowledges it), gate-approve-button
- *    (disabled until every unsupported item is acknowledged and no needs_review / unanswered item is left). The modal
- *    re-fetches the GateStatus every time it opens. Escape closes it. Approve sends acknowledged_fields.
- *  - export-button ("Export"; in stage VII; disabled while GATE_2_EXPORT is not open, or enabled but the server's 403 is shown),
- *    export-link (anchor per returned file link), error-banner (role="alert"; shows API errors including the export 403).
+ *  - stage-rail (navigation landmark) with six steps stage-I, II, III, IV, VI, VII (Add documents, Review facts, Check rights,
+ *    Draft grounds, Prepare for the hearing, Export; interactive; aria-current="step" on the step shown; aria-disabled="true"
+ *    while locked). SPAR (Likely objections) is shown inside Draft grounds and has no step.
+ *  - pane-main holds the one step on screen. documents-button opens the case file (pane-case-file), chat-button the chat drawer
+ *    (pane-chat), details-button the Details drawer with the trace (trace-drawer, trace-step with data-tool).
+ *  - needs-you / needs-you-item: what needs counsel on the current step (unreadable pages, questions, UNSUPPORTED fields, grounds
+ *    that need review, unanswered objections), each with one jump button.
+ *  - Add documents: upload-input, mic-button (aria-pressed; dictation-status), document-item (data-doc-id) with doc-type-stamp;
+ *    route-badge under each document's "Reading details" expander.
+ *  - Review facts: right-tab-dossier / right-tab-dates (role="tab"); dossier-field (data-field, data-status, data-changed) with
+ *    status-badge, dossier-field-edit / -input / -save, dossier-field-source (opens source-panel with pdf-viewer and pdf-highlight
+ *    data-box="x0,y0,x1,y1"), "Mark <Label> as unknown" for an UNSUPPORTED field, changed-marker; date-row per List of dates event;
+ *    confirm-facts-button (Gate 1; disabled while something needs counsel) opens gate-modal.
+ *  - Check rights: rights-chip (data-check, data-status, data-changed) with status-badge; less urgent checks under "Other checks".
+ *  - Draft grounds: draft-brief-button; brief-ground (data-ground, data-state CURRENT|STALE, data-changed) with change-reason,
+ *    needs-review-marker, per-counsel-label, and its claim check as aux-badge under "Details"; spar-objection (data-objection)
+ *    with a status-badge for its verdict.
+ *  - Prepare for the hearing: prep-card. Export: approve-export-button (Gate 2; disabled while items are open) opens gate-modal;
+ *    export-button and export-link appear only after approval.
+ *  - gate-modal (role="dialog"): what the approval locks, gate-checklist-item (data-kind, data-item) for what counsel dealt with,
+ *    gate-approve-button. error-banner (role="alert") shows API errors.
+ *  - change-banner (role="status") with change-item (data-kind field|right, data-name) while a change set awaits re-confirmation.
+ *  - readback-card (in the chat drawer) with readback-item and readback-confirm, after a dictation.
+ *  - agent-signature (data-agent) with agent-status: the quiet indicator shown while an agent works.
  *
- * FLOW 4: THE CASE MOVES ON (plan §7.4, §10, §13.6; hooks added with e2e/flow4_case_moves_on.spec.ts)
- *  - The change set reaches the UI as events on the SSE stream (STORE_WRITE with outputs.change_set = a ChangeSet, then CHANGE_SET_APPROVED,
- *    CLAIM_STALED, an AGENT_MESSAGE and a STORE_WRITE with outputs.redrafted = ground ids). SKELETON-GAP: no REST route serves a ChangeSet.
- *  - change-banner (role="status"; in pane-right, visible while a change set is awaiting re-approval): lists one change-item per changed
- *    dossier field (data-kind="field", data-name = field key) and per changed Rights Radar check (data-kind="right", data-name = check name).
- *  - dossier-field gets data-changed="true" and contains changed-marker (visible text "Changed" plus a glyph, never colour alone) when its field is in
- *    the change set; every other dossier-field has no data-changed or data-changed="false". rights-chip likewise for changed checks.
- *  - Re-approval: while a change set is pending gate-diamond-1 has data-approved="false"; opening it shows gate-modal with no checklist items
- *    (nothing is unsupported) and an enabled gate-approve-button.
- *  - brief-ground carries data-state="CURRENT" | "STALE" (STALE between CLAIM_STALED and the redraft) and, once redrafted, data-changed="true" and a
- *    change-reason (the 'why': names the changed dependency, e.g. the charge sheet). Unchanged grounds have no data-changed="true" and
- *    their text is untouched, word for word.
- *
- * FLOW 5: A DICTATED CASE (plan §4.5, §13.6; hooks added with e2e/flow5_dictated_case.spec.ts)
- *  - mic-button: toggle button in pane-case-file next to the drop zone (aria-label "Dictate"); aria-pressed="true" while recording. Recording uses
- *    MediaRecorder; on stop the blob is POSTed (multipart field "file") to /api/cases/{id}/audio. dictation-status: live text ("Recording",
- *    "Transcribing", "Heard") next to the button.
- *  - readback-card (in pane-chat, from the UploadResponse.questions of the audio upload, Munshi speaking): one readback-item per line Munshi
- *    heard (dates, sections, numbers; plain text), and readback-confirm ("Confirm"), which sends a chat message containing the word "confirm"
- *    and the read-back values. SKELETON-GAP: no REST route confirms a read-back; the chat route stands in.
- *  - Confirmed dictated facts come back as dossier fields with data-status="USER_STATED" (badge "Stated by counsel").
- *  - per-counsel-label: inside a brief-ground whose facts are USER_STATED; text "per counsel, not on record".
- *
- * AGENT SIGNATURES
- *  - agent-signature (data-agent = AgentName; data-motion = "static" under reduced motion) with agent-status (non-empty text).
- *    Munshi: pane-case-file. Peshkar: Dates and Rights tabs. Sutradhar: chat header. Vakeel: Brief tab. Abhiyojak: Spar tab.
- *    Pairokar: /desk.
- *
- * DESK (/desk)
- *  - desk-upload-input (<input type="file">), desk-board, triage-card (data-case-id; DOM order = urgency_rank ascending),
- *    triage-reason, triage-flag, triage-missing, triage-next-step; every card shows "needs its own approval" and contains a
- *    link (role=link) to /case/{case_id}. There is no "Export all" control anywhere on the page.
+ * DESK (/desk): desk-upload-input, desk-board, triage-card (data-case-id; DOM order = urgency_rank ascending), triage-reason,
+ *  triage-flag, triage-missing, triage-next-step, a link to /case/{case_id}; the page states that each case needs its own
+ *  approval and that there is no bulk export. No "Export all" control anywhere.
  *
  * LIBRARY (/library): library-search (textbox), bridge-view.
  */
 export const TID = {
-  scene: (n: number) => `scene-${n}`,
-  sceneIndicator: "scene-indicator",
-  sceneDot: "scene-dot",
-  sceneCaption: "scene-caption",
-  staticStoryboard: "static-storyboard",
-  statsBand: "stats-band",
   siteFooter: "site-footer",
-  watchJourneyButton: "watch-journey-button",
   openCaseButton: "open-case-button",
 
   stageRail: "stage-rail",
   stage: (numeral: string) => `stage-${numeral}`,
-  gateDiamond: (n: 1 | 2) => `gate-diamond-${n}`,
   paneCaseFile: "pane-case-file",
   paneChat: "pane-chat",
-  paneRight: "pane-right",
-  rightTab: (name: "dossier" | "dates" | "rights" | "brief" | "spar" | "prep") => `right-tab-${name}`,
+  rightTab: (name: "dossier" | "dates") => `right-tab-${name}`, // the Facts / List of dates tabs of Review facts
 
   statusBadge: "status-badge",
   dossierField: "dossier-field",
@@ -128,7 +79,6 @@ export const TID = {
   chatMessage: "chat-message",
   toolChip: "tool-chip",
   draftBriefButton: "draft-brief-button",
-  showPlanButton: "show-plan-button",
   traceDrawer: "trace-drawer",
   traceStep: "trace-step",
   briefGround: "brief-ground",
@@ -158,6 +108,17 @@ export const TID = {
   agentStatus: "agent-status",
 
   deskUploadInput: "desk-upload-input",
+  paneMain: "pane-main",
+  documentsButton: "documents-button",
+  chatButton: "chat-button",
+  detailsButton: "details-button",
+  sourcePanel: "source-panel",
+  dateRow: "date-row",
+  confirmFactsButton: "confirm-facts-button",
+  approveExportButton: "approve-export-button",
+  needsYou: "needs-you",
+  needsYouItem: "needs-you-item",
+  auxBadge: "aux-badge", // a ground's claim check (under Details) and the "Needs check" mark
   deskBoard: "desk-board",
   triageCard: "triage-card",
   triageReason: "triage-reason",
@@ -169,31 +130,35 @@ export const TID = {
   bridgeView: "bridge-view",
 } as const;
 
-export const STAGE_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII"] as const;
-export const RIGHT_TABS = ["dossier", "dates", "rights", "brief", "spar", "prep"] as const;
-export type RightTab = (typeof RIGHT_TABS)[number];
+/** RECONCILED: the stepper's buttons, in order (stage-V, Likely objections, is shown inside Draft grounds and has no button). */
+export const STAGE_NUMERALS = ["I", "II", "III", "IV", "VI", "VII"] as const;
 
-/** Stage numeral -> right-pane tab it is synced with (stages without a tab are omitted). */
-export const STAGE_TAB: Record<string, RightTab> = { II: "dossier", III: "rights", IV: "brief", V: "spar", VI: "prep" };
+/** The six steps of the stepper with their plain-language labels (lib/stages.ts). */
+export const STEPS = [
+  { key: "I", label: "Add documents" },
+  { key: "II", label: "Review facts" },
+  { key: "III", label: "Check rights" },
+  { key: "IV", label: "Draft grounds" },
+  { key: "VI", label: "Prepare for the hearing" },
+  { key: "VII", label: "Export" },
+] as const;
 
 /** Accessible names / visible strings the specs rely on (plan text). */
 export const TEXT = {
-  headlineA: "Bail is the rule",
-  headlineB: "jail the exception",
-  openCase: /open a case/i,
-  watchJourney: /watch the journey/i,
-  stat: "75.8%",
+  // RECONCILED: the colour-band landing (docs/handoff/landing-colour-motion.md) replaced the scene headline, stats band and
+  // "Watch the journey"; its hero states the product and offers "Open workspace" and "See how it works".
+  headline: "Prepare a bail application from the case file",
+  openCase: /open workspace/i,
+  seeHow: /see how it works/i,
   motto: "यतो धर्मस्ततो जयः",
   disclaimer: "AI-generated drafts for counsel. Not legal advice.",
   nalsa: "NALSA",
   nalsaNumber: "15100",
-  article21: /Article\s*21|Art\.\s*21/,
-  article39A: /39A/,
   needsOwnApproval: /needs its own approval/i,
   exportAll: /export all/i,
   changed: /changed/i,
   perCounsel: "per counsel, not on record",
-  statedByCounsel: "Stated by counsel",
+  statedByCounsel: "Entered by you", // RECONCILED: plain-language label of USER_STATED (lib/status.ts)
 } as const;
 
 export const AGENTS = ["MUNSHI", "PESHKAR", "SUTRADHAR", "VAKEEL", "ABHIYOJAK", "PAIROKAR"] as const;

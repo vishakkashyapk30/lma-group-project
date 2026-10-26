@@ -105,17 +105,17 @@ export function LandingPage(): ReactElement {
       <section id="control" aria-labelledby="control-heading" className="scroll-mt-4 bg-neem-tint">
         <Reveal className="mx-auto max-w-[76rem] px-4 py-16 sm:px-6 lg:py-20">
           <h2 id="control-heading" data-rv style={rv(0)} className="font-display text-3xl font-semibold lg:text-4xl">What you stay in control of</h2>
-          <dl className="mt-10 grid gap-x-14 gap-y-8 md:grid-cols-2">
+          <ul role="list" className="mt-10 grid gap-x-14 gap-y-8 md:grid-cols-2">
             {CONTROL.map((c, i) => (
-              <div key={c.title} data-rv style={rv(i + 1)} className="flex gap-3">
+              <li key={c.title} data-rv style={rv(i + 1)} className="flex gap-3">
                 <CheckDraw />
                 <div>
-                  <dt className="font-semibold text-ink">{c.title}</dt>
-                  <dd className="mt-1 max-w-[32rem] text-ink-soft">{c.body}</dd>
+                  <h3 className="font-sans text-base font-semibold text-ink">{c.title}</h3>
+                  <p className="mt-1 max-w-[32rem] text-ink-soft">{c.body}</p>
                 </div>
-              </div>
+              </li>
             ))}
-          </dl>
+          </ul>
         </Reveal>
       </section>
 
