@@ -17,7 +17,6 @@ from tests.unit.export._helpers import Spy
 from tests.unit.orchestration import _helpers as h
 from tests.unit.pipelines._helpers import patch_everywhere
 from vakeel_sahayak.export.exporter import export_case
-from vakeel_sahayak.record.event_log import EventLog
 from vakeel_sahayak.schemas.enums import ClaimCheck, ExportFormat, SparringVerdict
 
 CASE = "case-0007"
@@ -35,8 +34,9 @@ def spy(monkeypatch):
 
 def record(tmp_path, monkeypatch, dossier, *, gate2: bool):
     """case-0007 with Gate 1 approved, a clean brief and, if `gate2`, Gate 2 approved."""
-    h.point_default_log_at(tmp_path, monkeypatch)
-    log = EventLog()
+    # RECONCILED: `EventLog()` with no path is a private in-memory log that no exporter can find; seed the file-backed log that
+    # `point_default_log_at` attaches to the tool runtime instead, as tests/unit/orchestration/test_gates.py does.
+    log = h.point_default_log_at(tmp_path, monkeypatch)
     h.seed_dossier(log, CASE, h.resolved_dossier(dossier))
     h.approve(log, CASE, h.G1, [], "h:0a1b")
     h.seed_brief_and_sparring(log, CASE, [h.ground("G1", ClaimCheck.SUPPORTED)], [h.objection("O1", SparringVerdict.ANSWERED)])
