@@ -314,8 +314,9 @@ class MunshiAgent(BaseAgent):
     def run(self, state: CaseGraphState) -> CaseGraphState:
         """Run Munshi's full job for the current graph state.
 
-        Reads the files added with `add_files`, or else the files in the case's inbox folder, and puts the
-        IngestionReport on the state. The stage is left for the graph to advance.
+        Reads the files added with `add_files`, else the graph state's `files` (how the API upload route, the LangGraph intake
+        node and the evaluation driver hand files over), else the files in the case's inbox folder, and puts the IngestionReport
+        on the state. The stage is left for the graph to advance.
 
         Args:
             state: see behaviour
@@ -324,7 +325,7 @@ class MunshiAgent(BaseAgent):
             Updated state.
         """
         self._bind(state.case_id)
-        files = self.files or self._inbox()
+        files = self.files or [str(f) for f in state.files] or self._inbox()
         report = self.ingest(files, state)
         out = self._with_injection(state.model_copy(update={"ingestion": report}))
         if self.switches.munshi_image_only:
