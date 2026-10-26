@@ -73,3 +73,25 @@ Hosted check (t1dev-000, cap 0.10 USD, cache off, run `budget-fix`): 5 `vakeel.r
 
 ### Weak argument: authority stance (opt-in `Switches.authority_stance='outcome'`, variant id S18)
 `agents/vakeel/stance.py` (design and paper in its docstring; row in `docs/literature-to-code-map.md`, Sweep 4). Outcome comes from the reasoning rows' `outcome` (read from the operative part by the store builders): in the current store 90,073 granted, 21,576 rejected, 2,816 withdrawn, 46,782 unrecorded rows. Test: `tests/unit/agents/vakeel/test_variants_authority_stance.py`. Not yet measured on T1 with a hosted model (next step: run t1dev-001 with and without the switch and count grounds that cite a refusal). Limits: a paragraph from a mixed order (some co-accused granted, one refused) takes the order's single outcome; 29% of rows have no outcome and count as unknown, so they are not demoted.
+
+## Pseudonymiser: caption names
+
+Problem: High Court captions name the party before the relation marker (`Sadhna Kushwaha, W/o Late Rakesh Roshan Kushwaha ...`), often glued to the word before (`ChhattisgarhSadhna Kushwaha`). The rules learned only names after a role word, so those names were missed, and the old `Late Rakesh Roshan` capture left `Late Person-5` / `Person-5 Kushwaha`, which the boundary's own title rule then flagged (t1dev-017 was refused for that).
+
+Changes (`privacy/pseudonymise.py`; `privacy/boundary.py` only so the check ignores caption words the same way):
+- New rules: a 2 to 3 word title-case or 1 to 4 word capitals name before `W/o S/o D/o R/o`, `wife of`, `son of`, `daughter of`, `alias`, `@`; one title-case word before `S/o W/o D/o` or ` @ `; a name before `Aged NN` (`AJMAL SHAH,AGED 19 YEARS`); capitals names after `S/O` (with `SHRI/SRI/LATE/SMT`, and `YEARSS/O.` glue); `alias`/`@` followed by a name; a camel-case pair after a marker (`S/o DasariRamanna`). `Late` joins the titles and is no longer part of the name.
+- Glue: `_split_glued_before` puts a space before a learned name that follows a lowercase letter or digit (`ChhattisgarhSadhna`, `1Tapas`), only for capitalised spellings and first words of 3+ letters (4+ for one-word names), so places are not cut.
+- Consistency: `leaked_name_tokens(text, mapping)` lists learned name tokens left in the output; `_sweep_name_tokens` replaces a surviving capitalised token (4+ letters, not a common particle, never lowercase in the text) by its alias.
+- False-positive guards: caption words at the ends of a run (`Aged`, `Resident`, `For`, `At Present`, `And Another`, ...) are trimmed (`_trim_edges`), `No`, `Justice`, `Court` are not names; `State Of X` is judged before trimming.
+
+Measured on all 250 T1 orders (dev 50 + cases 200), same path as `driver.file_facts` (caption rule, then learn, then clean) and `boundary._find_problems`:
+
+| | before | after |
+|---|---|---|
+| orders the boundary refuses | 1 (t1dev-017) | 1 (t1-196: `S/o Kotakinda...` camel-case glue) |
+| orders where the new, stricter boundary (new rules) would refuse the old output | 124 | 1 |
+| orders with a party-name token of a name-before/after-marker proxy still in the output | 80 (160 tokens) | 5 (6 tokens) |
+
+The proxy is an independent regex over the raw text (words before `W/o S/o D/o`, and after the markers), minus caption words; it is a leak estimate, not ground truth. Residual leaks are OCR damage: `TEERATH PRASHADKUSHWAHA` (name glued to name), `Arjun Kumar Sahnihave filed` (t1dev-018), `BARBHUIYA` as counsel name, `Kotakinda` + glued second name. Refusing these is correct. Known older behaviour not touched: the driver's caption rule (`learn_caption_names`) can learn odd strings (`For the petitioner`, `supported more at that time`), which then get replaced.
+
+Tests: `tests/unit/privacy/test_caption_names.py`. Rerun the measurement with the loop in `driver.file_facts` over `data/testsets/t1/{dev,cases}.jsonl`.

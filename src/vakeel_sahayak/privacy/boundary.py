@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from vakeel_sahayak.privacy.pseudonymise import _NOT_A_PERSON, _PATTERNS, _PII, PseudonymMap
+from vakeel_sahayak.privacy.pseudonymise import _NOT_A_PERSON, _PATTERNS, _PII, PseudonymMap, _trim_edges
 
 _BINARY_KEYS = re.compile(r"(?i)^(image|images|page_image|page_images|audio|pixels|raw_bytes|wav|png|jpg|jpeg)$")
 _MEDIA_PATH = re.compile(
@@ -64,8 +64,15 @@ def _find_problems(payload: dict, mapping: PseudonymMap | None, known_names: lis
 
 
 def _only_aliases(pattern: re.Pattern[str], text: str) -> bool:
-    """True when every capture of the name pattern in `text` is already an alias (for example 'Accused-1')."""
-    return all(re.fullmatch(_ALIAS_WORD, m.group(1).strip()) or _NOT_A_PERSON.match(" ".join(m.group(1).split())) for m in pattern.finditer(text))
+    """True when every capture of the name pattern in `text` is already an alias (for example 'Accused-1'), or is only caption words ('Aged', 'Police Station')."""
+    for m in pattern.finditer(text):
+        if _NOT_A_PERSON.match(" ".join(m.group(1).split())):
+            continue
+        s, e = _trim_edges(text, *m.span(1))  # the pseudonymiser ignores caption words at the ends of a run, so the check does too
+        name = text[s:e]
+        if not (e <= s or re.fullmatch(_ALIAS_WORD, name.strip()) or _NOT_A_PERSON.match(" ".join(name.split()))):
+            return False
+    return True
 
 
 def assert_pseudonymised(

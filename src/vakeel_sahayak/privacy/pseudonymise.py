@@ -39,11 +39,27 @@ _HI_NAME = rf"(?!(?:{_HI_STOP})(?![\u0900-\u097F]))[\u0900-\u097F]{{2,}}"
 _HI_NAME3 = rf"{_HI_NAME}(?:[ \t]+{_HI_NAME}){{0,2}}"
 _HI_NAME2 = rf"{_HI_NAME}(?:[ \t]+{_HI_NAME}){{1,2}}"
 _POLICE = r"(?:Sub-Inspector|Inspector|Insp\.?|ASI|SI|SHO|DSP|ACP|DCP|Constable|Const\.?|Head Constable|HC)"
-_TITLE = r"(?:Shri|Sri|Smt\.?|Mr\.?|Mrs\.?|Ms\.?|Dr\.?|Km\.?|Kumari)"
+_TITLE = r"(?:Shri|Sri|Smt\.?|Mr\.?|Mrs\.?|Ms\.?|Dr\.?|Km\.?|Kumari|Late)"
+_NOT_NAME_WORD = (  # words of a High Court caption that start a title-case run but are not part of a name
+    "Aged|Age|Years?|Caste|District|Distt|Police|Station|Village|Tahsil|Tehsil|Thana|Through|Versus|Page|State|Court|High|Hon|Honble|Resident|Presently|"
+    "Occupation|Address|Applicant|Petitioner|Respondent|Accused|Appellant|Complainant|Chhattisgarh|Madhya|Pradesh|Uttar|Rajasthan|Gujarat|Bihar|Jharkhand|"
+    "Himachal|Punjab|Haryana|Delhi|Karnataka|Kerala|Orissa|Odisha|Bombay|Madras|Calcutta|Allahabad|Patna|Gauhati|Lucknow|Bench|Nagpur|Indore|Gwalior|Jabalpur|Bilaspur"
+)
+_REL_MARK = r"(?:W/o|S/o|D/o|R/o|W/O|S/O|D/O|R/O|(?i:wife of|son of|daughter of)(?![a-z])|\balias\b|@)"
+_REL_MARK_PERSON = r"(?:W/o|S/o|D/o|W/O|S/O|D/O|\s@\s)"  # markers that follow a person (not an address)
+_CAPW = rf"(?!(?:{_NOT_NAME_WORD.upper()}|OCC|OCCUPATION|WORKING|PS|AGE|AGED|LATE|SHRI|SRI|SMT|MRS|MR|MS|DR|KUMARI|INFORMANT|SON|DAUGHTER|WIFE|HUSBAND)\b)[A-Z]{{3,}}"  # a capitals word that may belong to a name
+_NAME_CAP = rf"{_CAPW}(?:[ \t]+{_CAPW}){{0,3}}"
 _PATTERNS: list[tuple[re.Pattern[str], str | None]] = [  # most specific role first: the first span for a name wins
     (re.compile(rf"\b(?i:Investigating Officer|I\.O\.|IO)\b[\s,:-]*(?:{_TITLE}\s+)?({_NAME})"), "io"),
     (re.compile(rf"\b{_POLICE}\s+({_NAME})"), "io"),
-    (re.compile(rf"\b(?i:S/o|D/o|W/o|son of|daughter of|wife of)\s+(?:{_TITLE}\s+)?({_NAME})"), "person"),
+    (re.compile(rf"\b(?i:S/o|D/o|W/o|son of|daughter of|wife of)\s*(?:{_TITLE}\s+){{0,2}}((?:[A-Z][a-z]+){{2}}(?![A-Za-z])|{_NAME})"), "person"),
+    # a High Court caption names the party BEFORE the relation marker: 'Sadhna Kushwaha, W/o Late Rakesh Kushwaha', 'RAM SINGH S/O ...'; the name may be glued to the word before it ('ChhattisgarhSadhna Kushwaha')
+    (re.compile(rf"(?<![A-Z])(?!(?:{_NOT_NAME_WORD})\b)(?:Late\s+)?((?:(?:Mohd|Md)\.?\s+)?[A-Z][a-z]+(?:\s+[A-Z][a-z]+){{1,2}})\s*,?\s*(?={_REL_MARK})"), "person"),
+    (re.compile(rf"(?<![A-Za-z])(?!(?:{_NOT_NAME_WORD})\b)([A-Z][a-z]{{3,}})\s*,?\s*(?={_REL_MARK_PERSON})"), "person"),  # one word: 'Nitin S/o Rakesh'
+    (re.compile(rf"(?<![A-Za-z])({_NAME_CAP})\s*,?\s*(?={_REL_MARK})"), "person"),
+    (re.compile(rf"(?<![A-Za-z])(?!(?:{_NOT_NAME_WORD})\b)((?:[A-Z][a-z]+(?:[ \t]+[A-Z][a-z]+){{0,2}})|{_NAME_CAP})[ \t]*,?[ \t]*(?=(?i:aged?)\b[ \t.:]*(?:(?i:about)[ \t]*)?\d)"), "person"),  # 'AJMAL SHAH,AGED 19 YEARS'
+    (re.compile(rf"(?:(?i:[SDW]/o)\.?|\b(?i:son of|daughter of|wife of)(?![a-z]))[ \t]*(?:(?:Late|LATE|SHRI|SRI|SMT\.?|Shri|Sri|Smt\.?|Mrs?\.?|MRS?\.?)[ \t]+){{0,2}}({_NAME_CAP})"), "person"),  # 'S/O PARVAT SINGH LODHI'
+    (re.compile(rf"(?:\b(?i:alias)|@)\s*(?:{_TITLE}\s+)?({_NAME}|{_NAME_CAP})"), "person"),
     (re.compile(rf"\b(?i:co-accused|accused|complainant|informant|witness|surety)\b(?:\s+(?:is|was|are|were))?[\s,:-]+(?:{_TITLE}\s+)?({_NAME})"), None),
     (re.compile(rf"\b(?i:against|versus|vs?\.)\s+(?:{_TITLE}\s+)?({_PERSON2}|{_HI_NAME2})"), None),
     (re.compile(rf"(?<![\u0900-\u097F])({_HI_NAME2})(?=['\u2019]s\b)"), None),
@@ -212,11 +228,27 @@ def _role_near(text: str, start: int, end: int) -> str:
 
 
 _NOT_A_PERSON = re.compile(
-    r"(?i)^(?:the\s+)?state(?:\s+of\b.*)?$|^(?:union\s+of\s+india|vs?\.?|versus|against|for\s+(?:the\s+)?(?:petitioners?|appellants?|respondents?|applicants?|state|accused))$"
+    r"(?i)^(?:the\s+)?state(?:\s+of\b.*)?$|^nos?\.?$|^(?:hon'?ble\s+)?(?:mr\.?\s+)?(?:justice|judge|court|magistrate)$|^(?:union\s+of\s+india|vs?\.?|versus|against|for\s+(?:the\s+)?(?:petitioners?|appellants?|respondents?|applicants?|state|accused))$"
 )  # 'The State' (a party of every bail order), a bare 'Vs', 'For Petitioner' are not people
 
 
 _ALIAS_AT = re.compile(r"(?:Co-accused|Accused|Complainant|IO|Witness|Person)-\d+\b", re.IGNORECASE)  # text that is already an alias is not a name
+
+
+_EDGE_STOP = frozenset(
+    "aged age years year resident residing petitioner petitioners respondent applicant accused appellant son daughter wife for at present and another anr "
+    "ors vs versus the state represented police station of through by in no caste occupation".split()
+)  # words of a caption that a title-case run picks up at its ends without being part of the name ('Anil Gupta For', 'Amrit Tiwari Aged', 'At Present')
+
+
+def _trim_edges(text: str, start: int, end: int) -> tuple[int, int]:
+    """Shrink [start, end) so it neither starts nor ends on a caption word; (start, start) when nothing but such words is left."""
+    words = [(m.start() + start, m.end() + start) for m in re.finditer(r"\S+", text[start:end])]
+    while words and text[words[-1][0] : words[-1][1]].strip(".,;:").casefold() in _EDGE_STOP:
+        words.pop()
+    while words and text[words[0][0] : words[0][1]].strip(".,;:").casefold() in _EDGE_STOP:
+        words.pop(0)
+    return (words[0][0], words[-1][1]) if words else (start, start)
 
 
 def detect_names(text: str) -> list[NameSpan]:
@@ -225,8 +257,10 @@ def detect_names(text: str) -> list[NameSpan]:
     seen: set[tuple[int, int]] = set()
     for pattern, fixed_role in _PATTERNS:
         for m in pattern.finditer(text):
-            s, e = m.span(1)
-            if (s, e) not in seen and not _NOT_A_PERSON.match(" ".join(text[s:e].split())) and not _ALIAS_AT.match(text, s):
+            if _NOT_A_PERSON.match(" ".join(m.group(1).split())):  # 'State Of Chhattisgarh' is judged whole, before caption words are trimmed off its ends
+                continue
+            s, e = _trim_edges(text, *m.span(1))
+            if e > s and (s, e) not in seen and not _NOT_A_PERSON.match(" ".join(text[s:e].split())) and not _ALIAS_AT.match(text, s):
                 seen.add((s, e))
                 spans.append(NameSpan(s, e, fixed_role or _role_near(text, s, e)))
     for detector in _DETECTORS:
@@ -252,7 +286,55 @@ def pseudonymise_text(text: str, case_id: str, mapping: PseudonymMap | None = No
     for span in reversed(spans):  # a name glued to the next word ('SHARANORAL') gets a space so the whole-word replacement can find it
         if span.end < len(text) and text[span.end].isalnum() and text[span.end - 1].isalnum():
             text = text[: span.end] + " " + text[span.end :]
+    text = _split_glued_before(text, mapping)
     out = mapping.apply(text)
+    out = _sweep_name_tokens(out, mapping)
     for pattern, token in _PII:
         out = pattern.sub(token, out)
     return out, mapping
+
+
+def _split_glued_before(text: str, mapping: PseudonymMap) -> str:
+    """Put a space before a learned name written glued to a lowercase word ('ChhattisgarhSadhna Kushwaha'), so the whole-word replacement can find it.
+
+    Only a capitalised spelling of the name that follows a lowercase letter and starts a word of at least three letters (four for a one-word name) is split, so a short single name
+    inside a longer word is never cut, and the rest of the text is untouched."""
+    for name in mapping.known_names():
+        words = name.split()
+        if len(words[0]) < (3 if len(words) > 1 else 4):
+            continue
+        tail = re.escape(words[0][1:]) + "".join(r"\s+" + re.escape(w) for w in words[1:])
+        text = re.sub(rf"(?<=[a-z\d])(?=[{re.escape(words[0][0].upper())}](?i:{tail})(?!\w))", " ", text)
+    return text
+
+
+_COMMON_NAME_TOKENS = frozenset(
+    "state court india indian high police station district village shri smt late kumar kumari devi singh begum bai the and for with "
+    "bail order case accused applicant petitioner respondent complainant person".split()
+)  # tokens too common in legal text (or too generic) to be removed on their own
+
+
+def leaked_name_tokens(text: str, mapping: PseudonymMap) -> list[str]:
+    """Consistency check: the tokens (three letters or more) of every learned name that still appear in `text`, whole word, any case."""
+    out: list[str] = []
+    for name in mapping.known_names():
+        for tok in re.findall(r"[^\W\d_]{3,}", name):
+            if tok.casefold() not in {t.casefold() for t in out} and re.search(rf"(?<!\w){re.escape(tok)}(?!\w)", text, re.IGNORECASE):
+                out.append(tok)
+    return out
+
+
+def _sweep_name_tokens(text: str, mapping: PseudonymMap) -> str:
+    """Second sweep: a learned name written only in part ('Kushwaha' after 'Sadhna Kushwaha' was replaced as a whole) still points to the person.
+
+    A token of a learned name that survives replacement is replaced by that name's alias when it is capitalised in the text (so a lowercase common
+    word is left alone), is not a title, place or common name particle, and is not a token of a legal term (it appears in no lowercase form in the text).
+    A repeated alias made this way ('Person-5 Person-5') collapses to one."""
+    for name in mapping.known_names():
+        alias = mapping._alias_by_key[_key(name)]  # noqa: SLF001
+        for tok in re.findall(r"[^\W\d_]{4,}", name):
+            if tok.casefold() in _COMMON_NAME_TOKENS or re.search(rf"(?<!\w){re.escape(tok.lower())}(?!\w)", text):
+                continue
+            text = re.sub(rf"(?<![\w-])(?-i:{re.escape(tok)}|{re.escape(tok.upper())})(?![\w-])", alias, text)
+        text = re.sub(rf"({re.escape(alias)})(?:\s+\1)+(?![\w-])", r"\1", text)
+    return text
