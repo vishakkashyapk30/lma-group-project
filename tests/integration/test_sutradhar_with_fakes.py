@@ -117,7 +117,17 @@ def test_a_second_parity_paragraph_fills_the_slot_in_one_round(install_stores):
 def test_weak_slot_is_relaxed_in_the_fixed_order_and_only_that_slot_is_replanned(install_stores):
     """Plan §6.2 step 2.4: later rounds re-plan only the unfilled slot and relax filters in the order factor, section family, court; 'before' never goes."""
     env = build(install_stores)
-    rounds, _ = loop(env)
+    # RECONCILED: the six slots of this contract cost 6 of the 8 store calls (plan §6.2, hard stop) in round 1, so only two relaxations fit at the default budget (factor, then
+    # section family; see the next test). The full ladder is shown at the 16-call point of the plan's budget sweep (§6.2 "Budget sweeps"): the limit is raised after planning.
+    plan = env.agent.plan_factor(PARITY, env.state)
+    env.budgets.set_factor_limits(PARITY.value, store_calls=16)
+    rounds = [plan]
+    while True:
+        assessed = env.agent.assess(PARITY, env.agent.run_plan(plan))
+        plan = env.agent.replan(plan, assessed)
+        if plan is None:
+            break
+        rounds.append(plan)
     assert len(rounds) >= 3
     assert all([s.slot for s in p.steps] == ["authority"] for p in rounds[1:])
     args = [authority_args(p) for p in rounds]
@@ -128,6 +138,16 @@ def test_weak_slot_is_relaxed_in_the_fixed_order_and_only_that_slot_is_replanned
     court_dropped = first(lambda a: a.get("court") is None)
     assert 1 <= factor_dropped <= family_widened <= court_dropped
     assert all(a["before"] == h.AS_OF for a in args)
+
+
+def test_default_budget_relaxes_factor_then_section_family_before_the_hard_stop(install_stores):
+    """Plan §6.2: with 8 store calls per factor, round 1 (6 calls) leaves two relaxations: the factor, then the section family; the court is never reached."""
+    env = build(install_stores)
+    rounds, _ = loop(env)
+    args = [authority_args(p) for p in rounds]
+    assert len(rounds) == 3 and args[1].get("factor") is None and "factor" in args[0]
+    assert set(args[2]["section_family"]) > set(h.FAMILY) and all(a["court"] == "Delhi HC" for a in args)
+    assert env.budgets.snapshot().store_calls[PARITY.value] == 8
 
 
 def test_relaxation_stays_within_the_per_factor_store_call_budget(install_stores):

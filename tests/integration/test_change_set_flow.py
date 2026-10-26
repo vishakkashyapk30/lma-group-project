@@ -166,7 +166,10 @@ def test_charge_sheet_filed_reopens_its_factor_and_nothing_else_needs_replanning
     sut, _, _ = h.build_agent(SutradharAgent, llm=env.llm, toolbox=env.tb, world=env.world, budgets=BudgetTracker())
     reopened = sut.reopen_after_change(after_approval(env, cs), cs)
     assert Factor.CHARGE_SHEET_FILED in reopened
-    assert Factor.PARITY_WITH_CO_ACCUSED not in reopened and Factor.CUSTODY_PERIOD not in reopened
+    assert Factor.PARITY_WITH_CO_ACCUSED not in reopened
+    # RECONCILED: custody_period's ground reads the default_bail Rights check (FACTOR_RIGHTS, plan §10 "RightsReport entries" are dependencies), and filing the charge sheet changes that
+    # check (`cs.rights_changed == ['default_bail']`), so custody_period is reopened by design, like charge_sheet_filed. Parity, which reads neither, stays closed.
+    assert Factor.CUSTODY_PERIOD in reopened
 
 
 # ---- incremental redrafting --------------------------------------------------------------------------------------

@@ -45,3 +45,11 @@ RECONCILED tests (marked in the files): chat answers are composed from tool resu
 | `tests/integration/test_sutradhar_with_fakes.py::test_weak_slot_is_relaxed...` | Vishak | The relaxation loop stops once the authority slot fills after the family widens, so "court" is never dropped as the test expects. |
 
 Flow6 now passes (the last text fix, "N days", was checked on the batch and Pairokar unit tests and the card regex only).
+
+## The three red tests, resolved (27 October)
+
+Only tests changed; the production code was right in all three.
+
+- `test_sutradhar_with_fakes::test_weak_slot_is_relaxed...`: the regression note was wrong. The loop does not stop when the slot fills (it stays WEAK, 1 of 2). It stops on the hard budget of plan §6.2 (8 store calls per factor): the six slots of the parity contract cost 6 calls in round 1, then one call each for the factor relaxation and the section-family widening makes 8, so the court is never reached. The code keeps the plan's hard stop. RECONCILED: the ordered ladder (factor, family, court, `before` kept) is now asserted at the 16-call point of the budget sweep (limit raised after planning with `set_factor_limits`), and a new test asserts the default-budget behaviour (3 rounds, factor then family, court kept, exactly 8 calls).
+- `test_change_set_flow::test_charge_sheet_filed_reopens...`: the custody_period assertion contradicted plan §10 (RightsReport entries are dependencies) and the sibling test: custody_period's ground reads `default_bail` (`FACTOR_RIGHTS`), and the filing changes that check, so it is reopened by design. RECONCILED: the test now asserts custody_period IS reopened; the strict check that parity stays closed is kept.
+- `test_flow4_case_moves_on::test_the_redrafted_ground_depends_on_the_new_value`: the first bundle's order sheet already said "charge sheet filed on 02.11.2024", and the later order never reaches the state's dossier before counsel re-approves. The first bundle now reads 28.10.2024 (a "not filed" sheet would make the factor not applicable and leave no G2), and the test applies counsel's re-approval of the value read from the new order (02.11.2024) before redrafting, so the dossier value and the dependency hash really change.

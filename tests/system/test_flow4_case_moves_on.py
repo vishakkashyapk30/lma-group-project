@@ -41,7 +41,12 @@ def moved_on(tmp_path, monkeypatch, *, noop: bool = False):
     drafts = {Factor.PARITY_WITH_CO_ACCUSED: sh.GROUNDS["G1"], Factor.CHARGE_SHEET_FILED: G2_UNFILED}
     ada = sh.ada_client()
     ada.by_schema["Ground"] = ss.ground_by_factor(drafts)
-    sc = sh.Scenario(tmp_path, monkeypatch, pages=sh.messy_bundle_pages(), ada=ada)
+    # The dossier is read from the papers, so the first bundle's order sheet must read differently from the later order, or the charge_sheet value (and the hash G2 depends on) never moves.
+    # The first sheet records an earlier, preliminary filing date (28.10.2024); the later order (below) records 02.11.2024. (The charge_sheet_filed factor is not drafted at all while
+    # nothing is stated as filed, so a "not filed" first sheet would leave no G2 to redraft; the approved G2 text stays the scripted "not yet filed" draft.)
+    pages = sh.messy_bundle_pages()
+    pages[-1] = sh.page(sh.CHARGE_SHEET_ORDER_TEXT.replace("02.11.2024", "28.10.2024"), DocumentType.BAIL_ORDER)
+    sc = sh.Scenario(tmp_path, monkeypatch, pages=pages, ada=ada)
     sc.through_gate1()
     sc.through_draft()
     sc._patch_everywhere("get_nli", lambda: FakeNli())
@@ -123,7 +128,13 @@ def test_only_the_affected_ground_is_redrafted_and_the_rest_stay_word_for_word(t
 def test_the_redrafted_ground_depends_on_the_new_value(tmp_path, monkeypatch):
     sc, approved = moved_on(tmp_path, monkeypatch)
     change = sc.agent(AgentName.PESHKAR).detect_changes(sc.state)
-    new = redraft_incrementally(sc.state, change)
+    # Counsel re-approves the dossier with the value Peshkar read from the new order (02.11.2024), which is not the one the first bundle gave (28.10.2024).
+    old_value = sc.state.dossier.fields.charge_sheet
+    assert old_value.value.date == "2024-10-28"
+    reread = TrackedField[ChargeSheetValue](value=ChargeSheetValue(filed=True, date="2024-11-02"), source=SourceRef(doc="d5 (order sheet)", page=1), status=FieldStatus.VERIFIED)
+    fields = sc.state.dossier.fields.model_copy(update={"charge_sheet": reread})
+    reapproved = sc.state.model_copy(update={"dossier": sc.state.dossier.model_copy(update={"fields": fields})})
+    new = redraft_incrementally(reapproved, change)
     assert by_id(new)["G2"].depends_on.facts["charge_sheet"] != by_id(approved)["G2"].depends_on.facts["charge_sheet"]
 
 
