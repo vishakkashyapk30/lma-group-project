@@ -187,6 +187,14 @@ class EventLog:
             ).fetchone()
         return _decode(row) if row else None
 
+    def case_ids(self) -> list[str]:
+        """Distinct case ids in the log, in the order each was first seen (the cause list reads this)."""
+        with self._lock:
+            rows = self._conn.execute(
+                "SELECT case_id, MIN(seq) AS first_seq FROM events GROUP BY case_id ORDER BY first_seq"
+            ).fetchall()
+        return [r["case_id"] for r in rows]
+
     def children(self, event_id: str) -> list[Event]:
         """Events causally downstream of one event (used by truth maintenance, plan §10).
 

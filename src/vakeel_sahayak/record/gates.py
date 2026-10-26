@@ -39,8 +39,13 @@ def gate_status(log: EventLog, case_id: str, gate: GateId) -> GateStatus:
         n for n in type(dossier.fields).model_fields if getattr(dossier.fields, n).status == FieldStatus.UNSUPPORTED
     ]
     brief = state.brief()
-    review = [g.id for g in brief.grounds if g.check == ClaimCheck.NEEDS_REVIEW]
-    unanswered = [o.id for o in state.sparring().objections if o.verdict == SparringVerdict.UNANSWERED]
+    resolved = {
+        str(e.inputs.get("item"))
+        for e in state.events()
+        if e.kind == EventKind.USER_ACTION and e.inputs.get("action") == "resolve"
+    }
+    review = [g.id for g in brief.grounds if g.check == ClaimCheck.NEEDS_REVIEW and g.id not in resolved]
+    unanswered = [o.id for o in state.sparring().objections if o.verdict == SparringVerdict.UNANSWERED and o.id not in resolved]
     # Gate 1 covers the dossier; Gate 2 adds the brief and the sparring record.
     if gate == GateId.GATE_1_DOSSIER:
         review, unanswered = [], []

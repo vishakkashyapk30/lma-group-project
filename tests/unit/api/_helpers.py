@@ -72,9 +72,10 @@ def sse_frames(body: str) -> list[dict[str, str]]:
 
 
 def make_events(n: int, case_id: str = CASE) -> list[Event]:
+    # RECONCILED: cycle from (i-1) so the first event (ev0001) is a TOOL_CALL, as test_frame_carries_the_kind_and_the_event_json expects.
     kinds = [EventKind.TOOL_CALL, EventKind.TOOL_RESULT, EventKind.STORE_WRITE, EventKind.AGENT_MESSAGE]
-    return [Event(event_id=f"ev{i:04d}", case_id=case_id, ts=f"2025-02-03T09:{i:02d}:00Z", kind=kinds[i % 4], actor="MUNSHI",
-                  tool="inspect_page" if i % 4 < 2 else None, inputs={"page": i}) for i in range(1, n + 1)]
+    return [Event(event_id=f"ev{i:04d}", case_id=case_id, ts=f"2025-02-03T09:{i:02d}:00Z", kind=kinds[(i - 1) % 4], actor="MUNSHI",
+                  tool="inspect_page" if (i - 1) % 4 < 2 else None, inputs={"page": i}) for i in range(1, n + 1)]
 
 
 def dumps(obj: Any) -> str:

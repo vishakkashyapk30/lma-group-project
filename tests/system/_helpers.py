@@ -576,10 +576,10 @@ class Scenario:
         if memory_log:
             self.log: Any = InMemoryEventLog()
         else:
-            from vakeel_sahayak.record.event_log import EventLog  # NotImplementedError until the log exists
+            from vakeel_sahayak.api import deps  # the shared case record the API and the agents both use
 
-            self.log = EventLog()
-        self.guard = GateGuard()
+            self.log = deps.get_event_log(case_id)
+        self.guard = GateGuard(self.log)
         self.state = CaseGraphState(case_id=case_id)
 
     # -- wiring -----------------------------------------------------------------------------------------------
