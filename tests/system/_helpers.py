@@ -644,8 +644,8 @@ class Scenario:
 
     # -- files ------------------------------------------------------------------------------------------------
     def add_upload(self, name: str, content: bytes = b"%PDF-1.4\n% stub\n") -> Path:
-        """Put a raw client file where Munshi ingests from (laptop only)."""
-        target = self.data_dir / "cases" / self.case_id / name
+        """Put a raw client file in the case's inbox, where Munshi ingests from (laptop only; see `MunshiAgent._inbox`)."""
+        target = self.data_dir / "cases" / self.case_id / "inbox" / name
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(content)
         return target

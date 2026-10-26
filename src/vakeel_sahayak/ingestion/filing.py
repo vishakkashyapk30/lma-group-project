@@ -299,7 +299,9 @@ class Filer:
                 continue
             code, section = split_ref(ref)
             values.append(SectionValue(as_written=ref, code=code, section=section).model_dump(mode="json"))
-        n = self._merge("sections", values, source, key=lambda v: v["as_written"], status=status) if values else 0
+        # existing values come back from the store as SectionValue models while new ones are dicts, so the key reads both.
+        as_written = lambda v: v["as_written"] if isinstance(v, dict) else v.as_written  # noqa: E731
+        n = self._merge("sections", values, source, key=as_written, status=status) if values else 0
         self.counts.sections += n
         return n
 

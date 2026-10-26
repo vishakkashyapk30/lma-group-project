@@ -46,7 +46,17 @@ Files: `tests/integration`, `tests/system` (plan §13.6 user flows 1–7 + the T
 
 **The 7 remaining failures are agent-flow/content issues, not API routing** (owned across the team): the real Munshi doesn't split the fake messy bundle into exactly the 4 expected documents (`test_ingestion`, `test_uploading`); the dossier/sparring/tool-trace/gate-checklist tests depend on the same pipeline producing the fixture-expected values (`test_dossier_and_dates`, `test_spar`, `test_gate_1`, `test_gate_2_flow`, `test_sse_carries_the_tool_trace`). Munshi intake is tracked in `docs/handoff/munshi-real-pdf-reading.md`.
 
-**Still to do:** the `tests/system/*` flows (flow1–7, T7) — same kind: they exercise the full agent pipeline and will surface the same agent-content gaps plus the pre-existing Sutradhar chat-handler bug.
+**Progress (2026-10-26, round 2):** debugged the pipeline end-to-end. Fixes made:
+- **`ingestion/filing.py` `_merge` crash (real bug):** `file_sections` stored section dicts but the store returns `SectionValue` models, so the key `v["as_written"]` crashed on the 2nd document of any multi-doc bundle. Fixed the key to read both. (336 ingestion unit tests still pass; the 1 failing is an unrelated real-vision-model test.)
+- **`Scenario.add_upload` wiring:** wrote uploads to `<case>/` but `Munshi._inbox` reads `<case>/inbox/`, so Munshi found no files. Now writes to the inbox.
+- Recovered: flow1 4→6 passed; integration still 8/15 (runs cleanly, no hang).
+
+**Remaining failures are agent content-correctness, NOT API/orchestration (not Shravani's code):**
+- **Munshi split/classify:** on the fixture bundle Munshi's classifier re-labels/re-splits pages away from the expected `[FIR 1-4, REMAND 5-7, REMAND 8-10, BAIL 11-14]` (it merged the remands, split the bail order, relabelled p14 as ORDER_SHEET). Munshi owner / `docs/handoff/munshi-real-pdf-reading.md`.
+- **Peshkar extraction:** `arrest_date`/`charge_sheet` come back None from the filed shelf — the extractor isn't pulling them from the fake page text. Peshkar/extractor owner.
+- **Sutradhar `_chat_custody`/`_chat_section`** tool-arg bug (the 2 chat-router + 7 flow2 failures). Sutradhar owner.
+
+**Conclusion:** Task 3's test *infrastructure* is fixed (suites run, no hang; the API-side integration passes). Fully green needs Munshi/Peshkar/Sutradhar agent-behaviour fixes owned by other workstreams — not Shravani's modules. Flagged for those owners.
 
 ## Log
 - 2026-10-26: env built (`.venv`, `.[data,dev]`); `make smoke` passes offline; synced to `origin/main` c0d51dd (clean, no reset needed); `backup/shravani` created. HF data download blocked — account `shravaniiith` not yet granted access to the private dataset.
