@@ -19,9 +19,9 @@ Copy `.env.example` to an untracked `.env` to change ports, models or tags. Ever
 * Ports bind to `127.0.0.1` (`BIND_ADDR`) so nothing is exposed to the network by default (plan section 16).
 * Data lives in the named volume `vs_data` (mounted at `/app/data`: stores, case event logs, SQLite files).
 * Containers run as non-root with a read-only root filesystem, tmpfs `/tmp`, all capabilities dropped, `restart: unless-stopped`.
-* The API routes are still stubs (Phase 5). `vakeel_sahayak.api.asgi` serves `/healthz` and answers `/api/*` with 503 while
-  `create_app()` raises `NotImplementedError`; the frontend reacts to 5xx by switching to its built-in demo mode (case-0007), so
-  the UI works. Once Phase 5 lands, the same entry point serves the real app.
+* `vakeel_sahayak.api.asgi` serves the real API and `GET /healthz` (which also reports the model and privacy settings shown on the
+  frontend's Settings page). The production frontend is in live mode: if the backend does not answer, pages show an error and never
+  the built-in sample case. Build with `NEXT_PUBLIC_API_BASE=demo` (or `NEXT_PUBLIC_API_MODE=demo`) for the sample case only.
 * The browser talks to the backend through a same-origin proxy: `NEXT_PUBLIC_API_BASE=/backend`, and the Next server rewrites
   `/backend/*` to `http://backend:8000/*`. This works from any host without CORS. `NEXT_PUBLIC_*` values and the rewrite target
   are fixed at build time: after changing `NEXT_PUBLIC_API_BASE`, run `docker compose build frontend`.

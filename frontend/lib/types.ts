@@ -867,3 +867,18 @@ export interface GroundRevision {
   previous_argument?: string | null;
   at: string;
 }
+
+/** GET /healthz: the server's effective settings for the Settings page (src/vakeel_sahayak/api/asgi.py `_settings`). Never carries a key. */
+export interface ServerStatus {
+  status: string;
+  api_implemented: boolean;
+  /** VS_MODELS: "offline" (built-in stand-ins), "real" or "auto". */
+  models: string | null;
+  /** VS_LLM_BACKEND: "offline" | "local" | "sarvam" | "openai"; null when each role follows configs/models.yaml. */
+  llm_backend: string | null;
+  /** VS_EXTERNAL: the shared gate for hosted model services ("off" | "public" | "pseudonymised" | "consented"). */
+  external: string | null;
+  sarvam: string | null;
+  openai: string | null;
+  data_dir: string | null;
+}

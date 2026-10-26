@@ -1,17 +1,20 @@
 // Typed client for the FastAPI backend (plan §13.1), one function per route in src/vakeel_sahayak/api/routers/.
 //
-// Mode: the client talks to NEXT_PUBLIC_API_BASE (or NEXT_PUBLIC_API_BASE_URL; default http://localhost:8000); when that is empty, or a request fails with a network
-// error (or a 5xx from a backend whose routes are still stubs), the client switches to demo mode for the rest of the
-// session and answers from the in-browser demo backend in lib/mock/server.ts. Demo mode is sticky so that the event
-// stream, the gates and the data stay consistent. Set NEXT_PUBLIC_DEMO_FALLBACK=strict to fall back on network errors
-// only (5xx then surface as ApiError).
+// The client talks to NEXT_PUBLIC_API_BASE (or NEXT_PUBLIC_API_BASE_URL; default http://localhost:8000). NEXT_PUBLIC_API_MODE says what
+// happens when the server cannot answer:
+// - "live" (the default in production builds): the server only. A network failure or a 5xx surfaces as an ApiError that the page shows;
+//   the client never answers with the sample cases in its place, so counsel never sees someone else's case as their own.
+// - "demo": the built-in sample cases (lib/mock/server.ts) only, with no network. Also the mode when NEXT_PUBLIC_API_BASE is empty or "demo".
+// - "auto" (the default in development and tests): the server, switching to the sample cases for the rest of the session on a network
+//   error or a 5xx. Demo mode is sticky so that the event stream, the gates and the data stay consistent.
+// NEXT_PUBLIC_DEMO_FALLBACK=strict, the older switch, means "live".
 import { ApiError } from "./errors";
 export { ApiError };
 import * as demo from "./mock/server";
 import type {
   ApproveRequest, BailBrief, BridgeData, BudgetState, CaseDossier, CaseSummary, ChatMessage, CitationGraphData,
   DeskBoard, DraftStartResponse, ExportFormat, GateId, GateStatus, GroundRevision, HearingPrepCard, IngestionReport,
-  LibrarySearchHit, MockPage, RightsReport, SparringRecord, TimelineEvent, UploadResponse,
+  LibrarySearchHit, MockPage, RightsReport, ServerStatus, SparringRecord, TimelineEvent, UploadResponse,
 } from "./types";
 
 /* ── Mode ───────────────────────────────────────────────────────────────────────────────────────────────────────── */
@@ -28,13 +31,51 @@ export const API_BASE: string | null = (() => {
   return trimmed && trimmed !== "demo" ? trimmed : null;
 })();
 
-const STRICT = process.env.NEXT_PUBLIC_DEMO_FALLBACK === "strict";
+/** How the client chooses between the server and the sample cases (see the header comment). */
+export type ApiSetting = "live" | "demo" | "auto";
+
+export const API_SETTING: ApiSetting = (() => {
+  const raw = (process.env.NEXT_PUBLIC_API_MODE ?? "").trim().toLowerCase();
+  if (raw === "live" || raw === "demo" || raw === "auto") return raw;
+  if (process.env.NEXT_PUBLIC_DEMO_FALLBACK === "strict") return "live";
+  return process.env.NODE_ENV === "production" ? "live" : "auto";
+})();
+
+/** True when a failed request may switch the session to the sample cases ("auto" only). */
+const MAY_FALL_BACK = API_SETTING === "auto";
 
 export type ApiMode = "live" | "demo";
 
-let mode: ApiMode = API_BASE ? "live" : "demo";
-let demoReason: string | null = API_BASE ? null : "NEXT_PUBLIC_API_BASE is empty";
+let mode: ApiMode = API_BASE && API_SETTING !== "demo" ? "live" : "demo";
+let demoReason: string | null =
+  API_SETTING === "demo" ? "NEXT_PUBLIC_API_MODE is demo" : API_BASE ? null : "NEXT_PUBLIC_API_BASE is empty";
 const modeListeners = new Set<(m: ApiMode) => void>();
+
+/** Whether the server answered the last request: "unknown" before the first one, "down" after a network failure or a 5xx. */
+export type Connection = "unknown" | "ok" | "down";
+
+let connection: Connection = "unknown";
+const connectionListeners = new Set<(c: Connection) => void>();
+
+function setConnection(next: Connection): void {
+  if (next === connection) return;
+  connection = next;
+  connectionListeners.forEach((l) => l(connection));
+}
+
+export function getConnection(): Connection {
+  return connection;
+}
+
+export function onConnectionChange(listener: (c: Connection) => void): () => void {
+  connectionListeners.add(listener);
+  return () => connectionListeners.delete(listener);
+}
+
+/** The message shown when the server cannot be reached in live mode. */
+export function unreachableMessage(): string {
+  return `Cannot reach the server at ${API_BASE ?? "(no address set)"}. Check that it is running, then try again.`;
+}
 
 /** "live" while the real backend answers; "demo" once the client has fallen back to the demo backend. */
 export function getApiMode(): ApiMode {
@@ -50,9 +91,9 @@ export function getDemoReason(): string | null {
   return demoReason;
 }
 
-/** Switch to demo mode for the rest of the session. */
+/** Switch to demo mode for the rest of the session; only in "auto" (a live session never turns into sample data). */
 export function enterDemoMode(reason: string): void {
-  if (mode === "demo") return;
+  if (mode === "demo" || !MAY_FALL_BACK) return;
   mode = "demo";
   demoReason = reason;
   if (typeof console !== "undefined") console.info(`[vakeel-sahayak] demo mode: ${reason}`);
@@ -95,11 +136,14 @@ async function http<T>(method: string, path: string, body?: Body, signal?: Abort
     });
   } catch (e) {
     if (signal?.aborted) throw e;
+    setConnection("down");
+    if (!MAY_FALL_BACK) throw new ApiError(0, unreachableMessage());
     enterDemoMode(`the API at ${API_BASE} is unreachable`);
     throw new FallBack("network");
   }
+  setConnection(res.status >= 500 ? "down" : "ok");
   if (!res.ok) {
-    if (res.status >= 500 && !STRICT) {
+    if (res.status >= 500 && MAY_FALL_BACK) {
       enterDemoMode(`the API answered ${res.status} for ${method} ${path}`);
       throw new FallBack("server");
     }
@@ -109,10 +153,14 @@ async function http<T>(method: string, path: string, body?: Body, signal?: Abort
     } catch {
       /* not JSON */
     }
-    const message =
+    const said =
       detail && typeof detail === "object" && "detail" in detail && typeof (detail as { detail: unknown }).detail === "string"
         ? (detail as { detail: string }).detail
-        : `${method} ${path} failed with ${res.status}`;
+        : null;
+    const message =
+      res.status >= 500
+        ? `The server could not complete this request (error ${res.status})${said ? `: ${said}` : ""}. Try again; if it keeps failing, check the server log.`
+        : said ?? `${method} ${path} failed with ${res.status}`;
     throw new ApiError(res.status, message, detail);
   }
   if (res.status === 204) return undefined as T;
@@ -133,6 +181,19 @@ async function call<T>(live: () => Promise<T>, offline: () => Promise<T>): Promi
 
 const enc = encodeURIComponent;
 const c = (caseId: string) => `/api/cases/${enc(caseId)}`;
+
+/* ── Server status (asgi.py /healthz) ───────────────────────────────────────────────────────────────────────────── */
+
+/** GET /healthz: the server's model and privacy settings; null in demo mode or when the server does not answer (never sample data). */
+export async function getServerStatus(): Promise<ServerStatus | null> {
+  if (!apiUrl("/healthz")) return null;
+  try {
+    return await http<ServerStatus>("GET", "/healthz");
+  } catch (e) {
+    if (e instanceof FallBack || (e instanceof ApiError && e.status === 0)) return null;
+    throw e;
+  }
+}
 
 /* ── /api/cases (routers/cases.py) ──────────────────────────────────────────────────────────────────────────────── */
 
@@ -374,6 +435,7 @@ export const api = {
   getBridge,
   libraryBridge: getBridge,
   eventsUrl,
+  getServerStatus,
 } as const;
 
 export default api;
