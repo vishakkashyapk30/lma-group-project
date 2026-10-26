@@ -271,9 +271,49 @@ export function getSpar(caseId: string): Promise<SparringRecord> {
   return call(() => http("GET", `${c(caseId)}/spar`), () => demo.getSpar(caseId));
 }
 
-/** GET /api/cases/{case_id}/prep: the hearing-prep card. */
+type Raw = Record<string, unknown>;
+const str = (v: unknown): string => (typeof v === "string" ? v : v == null ? "" : String(v));
+
+/**
+ * The hearing-prep card as the UI types it. The backend sends Vakeel's card (agents/vakeel/hearing.build_card): bench_concerns
+ * ({factor, concern, answer, ground, authority, source}), lead_points ({ground, point}), conditions (texts) with condition_sources
+ * ({condition, source}), open_issues and label. Cards already in the UI's shape (the demo backend), or in neither shape, pass through.
+ */
+export function normalizePrep(raw: unknown): HearingPrepCard {
+  const card = (raw ?? {}) as Raw;
+  // A card in neither known shape is passed through untouched; the Prepare for the hearing step shows its text as it is.
+  if (!Array.isArray(card.bench_concerns) && !Array.isArray(card.likely_concerns)) return raw as HearingPrepCard;
+  const list = (v: unknown): Raw[] => (Array.isArray(v) ? (v.filter((x) => x && typeof x === "object") as Raw[]) : []);
+  const sources = new Map(list(card.condition_sources).map((s) => [str(s.condition), str(s.source)]));
+  const concerns = Array.isArray(card.likely_concerns) ? list(card.likely_concerns) : list(card.bench_concerns);
+  const conditions = Array.isArray(card.conditions) ? card.conditions : [];
+  return {
+    case_id: str(card.case_id),
+    hearing_date: (card.hearing_date as string | null | undefined) ?? null,
+    likely_concerns: concerns.map((x) => ({
+      // A concern quoted from an order can be only its paragraph number ("3."): fall back to Vakeel's own wording.
+      concern: /\p{L}/u.test(str(x.concern)) ? str(x.concern) : `The bench may ask about ${str(x.factor).replace(/_/g, " ")}.`,
+      factor: str(x.factor) as HearingPrepCard["likely_concerns"][number]["factor"],
+      basis: str(x.basis ?? (x.source === "prosecution objection" ? "Raised in sparring." : x.source ? "From comparable orders." : "")),
+      answer: str(x.answer),
+      ground_id: (x.ground_id ?? x.ground ?? null) as string | null,
+      authority: (x.authority ?? null) as string | null,
+      sources: Array.isArray(x.sources) ? (x.sources as string[]) : undefined,
+    })),
+    lead_points: list(card.lead_points).map((x) => ({ ground_id: str(x.ground_id ?? x.ground), point: str(x.point) })),
+    conditions: conditions.map((x) =>
+      typeof x === "string"
+        ? { condition: x, seen_in: sources.get(x) ? [sources.get(x) as string] : [] }
+        : { condition: str((x as Raw).condition), seen_in: Array.isArray((x as Raw).seen_in) ? ((x as Raw).seen_in as string[]) : [] },
+    ),
+    open_issues: Array.isArray(card.open_issues) ? card.open_issues.map(str) : [],
+    label: str(card.label),
+  };
+}
+
+/** GET /api/cases/{case_id}/prep: the hearing-prep card, in the UI's shape (normalizePrep). */
 export function getPrep(caseId: string): Promise<HearingPrepCard> {
-  return call(() => http("GET", `${c(caseId)}/prep`), () => demo.getPrep(caseId));
+  return call(async () => normalizePrep(await http<unknown>("GET", `${c(caseId)}/prep`)), () => demo.getPrep(caseId));
 }
 
 /** GET /api/cases/{case_id}/budget: spend and budget hits. */
@@ -350,10 +390,19 @@ export function approveGate(caseId: string, gate: GateId, acknowledged: string[]
 
 /* ── Export (routers/export.py) ─────────────────────────────────────────────────────────────────────────────────── */
 
-/** POST /api/cases/{case_id}/export: 403 unless Gate 2 is approved for this case (plan §16). Returns file paths. */
+/** URL of GET /api/cases/{case_id}/export/files/{name} for an exported file (the server returns its own paths). */
+export function exportFileUrl(caseId: string, path: string): string {
+  const name = path.split(/[\\/]/).pop() ?? path;
+  return `${API_BASE ?? ""}${c(caseId)}/export/files/${enc(name)}`;
+}
+
+/** POST /api/cases/{case_id}/export: 403 unless Gate 2 is approved for this case (plan §16). Returns download links. */
 export function exportCase(caseId: string, format: ExportFormat = "DOCX"): Promise<string[]> {
   const body = { format };
-  return call(() => http("POST", `${c(caseId)}/export`, { json: body }), () => demo.exportCase(caseId, body));
+  return call(
+    async () => (await http<string[]>("POST", `${c(caseId)}/export`, { json: body })).map((p) => exportFileUrl(caseId, p)),
+    () => demo.exportCase(caseId, body),
+  );
 }
 
 /* ── Desk (routers/desk.py) ─────────────────────────────────────────────────────────────────────────────────────── */

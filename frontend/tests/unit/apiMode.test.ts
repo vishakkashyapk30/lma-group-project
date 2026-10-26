@@ -108,3 +108,46 @@ describe("getServerStatus", () => {
     expect(await (await loadApi({ NEXT_PUBLIC_API_MODE: "demo" })).getServerStatus()).toBeNull();
   });
 });
+
+describe("normalizePrep (the backend's hearing card in the UI's shape)", () => {
+  it("maps Vakeel's card: bench_concerns, ground ids, plain conditions with their sources", async () => {
+    const m = await loadApi({ NEXT_PUBLIC_API_MODE: "live" });
+    const card = m.normalizePrep({
+      case_id: "case-0001", label: "AI-generated draft. Not legal advice.",
+      bench_concerns: [{ factor: "parity_with_co_accused", concern: "Different role.", answer: "Same role on record.", ground: "G1", authority: "X v Y, para 14", source: "prosecution objection" }],
+      lead_with: ["G2"], lead_points: [{ ground: "G2", factor: "custody_period", point: "167 days in custody.", check: "SUPPORTED" }],
+      conditions: ["Surrender of passport"], condition_sources: [{ condition: "Surrender of passport", source: "DLHC-1#4" }],
+      open_issues: ["Antecedents unknown."],
+    });
+    expect(card.likely_concerns[0]).toMatchObject({ concern: "Different role.", ground_id: "G1", authority: "X v Y, para 14", factor: "parity_with_co_accused" });
+    expect(card.lead_points).toEqual([{ ground_id: "G2", point: "167 days in custody." }]);
+    expect(card.conditions).toEqual([{ condition: "Surrender of passport", seen_in: ["DLHC-1#4"] }]);
+    expect(card.open_issues).toEqual(["Antecedents unknown."]);
+  });
+  it("a concern that is only a paragraph number falls back to the factor", async () => {
+    const m = await loadApi({ NEXT_PUBLIC_API_MODE: "live" });
+    const card = m.normalizePrep({ bench_concerns: [{ factor: "witness_tampering", concern: "3.", answer: "a", ground: "G5" }], lead_points: [], conditions: [], open_issues: [] });
+    expect(card.likely_concerns[0].concern).toBe("The bench may ask about witness tampering.");
+  });
+    it("passes a card in neither known shape through untouched", async () => {
+    const m = await loadApi({ NEXT_PUBLIC_API_MODE: "live" });
+    const other = { title: "Hearing prep card", likely_questions: ["Why?"] };
+    expect(m.normalizePrep(other)).toBe(other);
+  });
+    it("leaves a card already in the UI's shape as it is", async () => {
+    const m = await loadApi({ NEXT_PUBLIC_API_MODE: "live" });
+    const ui = { case_id: "c", likely_concerns: [{ concern: "q", factor: "flight_risk", basis: "b", answer: "a", ground_id: "G1" }], lead_points: [{ ground_id: "G1", point: "p" }], conditions: [{ condition: "c", seen_in: ["s"] }], open_issues: [], label: "L" };
+    expect(m.normalizePrep(ui)).toMatchObject(ui);
+  });
+});
+
+describe("exportCase download links", () => {
+  it("turns the server's file paths into GET .../export/files/{name} links", async () => {
+    fetchMock.mockResolvedValueOnce(json(["/srv/data/cases/case-0001/export/application.docx", "/srv/data/cases/case-0001/export/hearing_card.docx"]));
+    const m = await loadApi({ NEXT_PUBLIC_API_MODE: "live" });
+    expect(await m.exportCase("case-0001")).toEqual([
+      "http://localhost:8000/api/cases/case-0001/export/files/application.docx",
+      "http://localhost:8000/api/cases/case-0001/export/files/hearing_card.docx",
+    ]);
+  });
+});

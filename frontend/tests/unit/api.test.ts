@@ -114,7 +114,9 @@ describe("api client endpoints (fail until implemented)", () => {
     const c = lastCall();
     expect(c).toMatchObject({ url: `${BASE}/api/cases/case-0007/export`, method: "POST" });
     expect(c.json()).toEqual({ format: "DOCX" });
-    expect(links).toEqual(["/files/case-0007/application.docx"]);
+    // RECONCILED: the export router returns the server's file paths (tests/unit/api/test_export_router.py); the client turns each into
+    // the download route GET /api/cases/{id}/export/files/{name}.
+    expect(links).toEqual([`${BASE}/api/cases/case-0007/export/files/application.docx`]);
   });
 
   it("exportCase surfaces 403 (Gate 2 not approved) as a typed ApiError with status 403", async () => {
