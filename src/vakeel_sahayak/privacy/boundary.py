@@ -1,4 +1,13 @@
-"""Outbound boundary: only pseudonymised text may be sent to Ada (plan §16)."""
+"""Outbound boundary: only pseudonymised text may be sent to Ada (plan §16).
+
+Two strengths. The default check (`assert_pseudonymised`) is the one the agents' own guard applies to every Ada-side payload: binary or
+media data, the case's real names, emails, phone and ID numbers, and names still written after a title or role word. The wire check
+(`assert_pseudonymised(..., wire=True)`) is what the privacy gate (`models.sarvam.policy.authorize`) applies to the text a hosted model
+(OpenAI, Sarvam) actually receives, after `privacy.quasi.WireCodec` replaced the quasi-identifiers: on top of the default it refuses any
+quasi-identifier left (FIR or case number, police station, place, address, house number, PIN, vehicle, account, IFSC, UPI, Aadhaar, PAN,
+passport, voter-ID or driving-licence number, date of birth, exact age) and any token of a learned name still in the text, also glued to
+another word (the residual-leak proxy of docs/handoff/pilot-hosted-model.md, now a refusal rule).
+"""
 
 from __future__ import annotations
 
@@ -36,9 +45,35 @@ def _walk(value: Any, path: str):  # noqa: ANN202
         yield path, path.rsplit(".", 1)[-1], value
 
 
-def _find_problems(payload: dict, mapping: PseudonymMap | None, known_names: list[str] | None, *, generic_names: bool = True) -> list[str]:
+_COMMON_TOKENS = frozenset(
+    "state court india indian high police station district village shri smt late kumar kumari devi singh begum bai the and for with "
+    "bail order case accused applicant petitioner petitioners petition respondent respondents complainant person counsel advocate advocates learned "
+    "justice judge mohd sahu khan prasad lal ram".split()
+)  # learned-name tokens too common in legal text, or in other people's names, to refuse on their own
+
+
+def name_token_leaks(text: str, names: list[str]) -> list[str]:
+    """Tokens (five letters or more, not a common particle) of the learned names that are still in `text`: as a whole capitalised word, or
+    glued to the end of another word ('PRASHADKUSHWAHA', 'accusedVeeranki'), or (six letters or more) to the start of one ('Karamjeetson'). A token that the text also
+    uses as a lowercase word ('prakash' in a sentence) is not counted, the same rule the pseudonymiser's second sweep applies."""
+    out: list[str] = []
+    for name in names:
+        for tok in re.findall(r"[^\W\d_]{5,}", name):
+            low = tok.casefold()
+            if low in _COMMON_TOKENS or low in {t.casefold() for t in out} or re.search(rf"(?<![\w-]){re.escape(tok.lower())}(?![\w-])", text):
+                continue
+            title, upper = tok[:1].upper() + tok[1:].lower(), tok.upper()
+            glued_prefix = rf"|(?<![A-Za-z])(?:{re.escape(title)}|{re.escape(upper)})" if len(tok) >= 6 else ""  # 'Sahnihave' would also hit 'Indralal' for 'Indra': six letters at least
+            if re.search(rf"(?:{re.escape(title)}|{re.escape(upper)})(?![a-z]){glued_prefix}", text):
+                out.append(tok)
+    return out
+
+
+def _find_problems(payload: dict, mapping: PseudonymMap | None, known_names: list[str] | None, *, generic_names: bool = True, wire: bool = False) -> list[str]:
     """List `path: reason` strings for everything in the payload that must not leave the laptop."""
     names = [*(known_names or []), *(mapping.known_names() if mapping else [])]
+    if wire:
+        from vakeel_sahayak.privacy.quasi import find_quasi
     name_res = [
         re.compile(r"(?<!\w)" + r"\s+".join(map(re.escape, n.split())) + r"(?!\w)", re.IGNORECASE) for n in names
     ]
@@ -62,6 +97,12 @@ def _find_problems(payload: dict, mapping: PseudonymMap | None, known_names: lis
                 problems.append(f"{path}: email, phone or ID number")
             if generic_names and any(p.search(leaf) for p, _ in _PATTERNS if not _only_aliases(p, leaf)):
                 problems.append(f"{path}: un-pseudonymised personal name")
+            if wire and not is_id:
+                left = find_quasi(leaf)
+                if left:
+                    problems.append(f"{path}: quasi-identifier ({', '.join(left)})")
+                if names and name_token_leaks(leaf, names):
+                    problems.append(f"{path}: part of a learned name")
     return problems
 
 
@@ -78,7 +119,7 @@ def _only_aliases(pattern: re.Pattern[str], text: str) -> bool:
 
 
 def assert_pseudonymised(
-    payload: dict, mapping: PseudonymMap | None = None, known_names: list[str] | None = None
+    payload: dict, mapping: PseudonymMap | None = None, known_names: list[str] | None = None, *, wire: bool = False
 ) -> None:
     """Raise if a payload bound for the cluster contains page images, audio or un-pseudonymised text.
 
@@ -90,11 +131,12 @@ def assert_pseudonymised(
         payload: see behaviour
         mapping: the case's alias map, whose real names must not appear
         known_names: further real names to look for (for example from the dossier)
+        wire: the stricter check for text a hosted model receives (quasi-identifiers, parts of learned names; see the module docstring)
 
     Raises:
         PrivacyBoundaryError: listing where the problems are, never what they are.
     """
-    problems = _find_problems(payload, mapping, known_names)
+    problems = _find_problems(payload, mapping, known_names, wire=wire)
     if problems:
         raise PrivacyBoundaryError("payload is not safe to send to Ada: " + "; ".join(problems))
 

@@ -1,15 +1,20 @@
 """Rule and regex pseudonymisation after OCR, before text leaves the laptop (plan §16, §12).
 
 Names become stable per-case aliases (Accused-1, Co-accused-1, Complainant-1, IO-1, Witness-1, Person-1). Detection is
-rule based (titles, role words, 'S/o'), plus emails, phone numbers and ID numbers. Presidio and InLegalNER plug in
+rule based (titles, role words, 'S/o', relatives such as 'his father X'), plus emails, phone numbers and ID numbers. Presidio and InLegalNER plug in
 later through `register_detector`: a detector takes text and returns NameSpan objects, and its spans are merged with
 the rules' spans. The alias map is local only: it is never written to the event log and never sent to Ada.
+
+The map also holds what the wire step needs (`privacy.quasi`): one alias per quasi-identifier (FIR and case numbers, police stations,
+places, addresses, vehicle, account and ID numbers, dates of birth, ages) and the case's one date shift (`date_shift_days`). The intake
+learns them here (`pseudonymise_text`) without changing the local text; the hosted model clients replace them on the way out and back.
 """
 
 from __future__ import annotations
 
 import json
 import re
+import threading
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -38,7 +43,7 @@ _HI_STOP = (
 _HI_NAME = rf"(?!(?:{_HI_STOP})(?![\u0900-\u097F]))[\u0900-\u097F]{{2,}}"
 _HI_NAME3 = rf"{_HI_NAME}(?:[ \t]+{_HI_NAME}){{0,2}}"
 _HI_NAME2 = rf"{_HI_NAME}(?:[ \t]+{_HI_NAME}){{1,2}}"
-_POLICE = r"(?:Sub-Inspector|Inspector|Insp\.?|ASI|SI|SHO|DSP|ACP|DCP|Constable|Const\.?|Head Constable|HC)"
+_POLICE = r"(?:Sub-Inspector|Inspector|Insp\.?|ASI|PSI|API|SI|PI|SHO|DSP|ACP|DCP|Constable|Const\.?|Head Constable|HC)"
 _TITLE = r"(?:Shri|Sri|Smt\.?|Mr\.?|Mrs\.?|Ms\.?|Dr\.?|Km\.?|Kumari|Late)"
 _NOT_NAME_WORD = (  # words of a High Court caption that start a title-case run but are not part of a name
     "Aged|Age|Years?|Caste|District|Distt|Police|Station|Village|Tahsil|Tehsil|Thana|Through|Versus|Page|State|Court|High|Hon|Honble|Resident|Presently|"
@@ -52,7 +57,7 @@ _NAME_CAP = rf"{_CAPW}(?:[ \t]+{_CAPW}){{0,3}}"
 _PATTERNS: list[tuple[re.Pattern[str], str | None]] = [  # most specific role first: the first span for a name wins
     (re.compile(rf"\b(?i:Investigating Officer|I\.O\.|IO)\b[\s,:-]*(?:{_TITLE}\s+)?({_NAME})"), "io"),
     (re.compile(rf"\b{_POLICE}\s+({_NAME})"), "io"),
-    (re.compile(rf"\b(?i:S/o|D/o|W/o|son of|daughter of|wife of)\s*(?:{_TITLE}\s+){{0,2}}((?:[A-Z][a-z]+){{2}}(?![A-Za-z])|{_NAME})"), "person"),
+    (re.compile(rf"\b(?i:S/o|D/o|W/o|son of|daughter of|wife of)\.?\s*(?:{_TITLE}\s+){{0,2}}((?:[A-Z][a-z]+){{2}}(?![A-Za-z])|{_NAME})"), "person"),
     # a High Court caption names the party BEFORE the relation marker: 'Sadhna Kushwaha, W/o Late Rakesh Kushwaha', 'RAM SINGH S/O ...'; the name may be glued to the word before it ('ChhattisgarhSadhna Kushwaha')
     (re.compile(rf"(?<![A-Z])(?!(?:{_NOT_NAME_WORD})\b)(?:Late\s+)?((?:(?:Mohd|Md)\.?\s+)?[A-Z][a-z]+(?:\s+[A-Z][a-z]+){{1,2}})\s*,?\s*(?={_REL_MARK})"), "person"),
     (re.compile(rf"(?<![A-Za-z])(?!(?:{_NOT_NAME_WORD})\b)([A-Z][a-z]{{3,}})\s*,?\s*(?={_REL_MARK_PERSON})"), "person"),  # one word: 'Nitin S/o Rakesh'
@@ -60,6 +65,8 @@ _PATTERNS: list[tuple[re.Pattern[str], str | None]] = [  # most specific role fi
     (re.compile(rf"(?<![A-Za-z])(?!(?:{_NOT_NAME_WORD})\b)((?:[A-Z][a-z]+(?:[ \t]+[A-Z][a-z]+){{0,2}})|{_NAME_CAP})[ \t]*,?[ \t]*(?=(?i:aged?)\b[ \t.:]*(?:(?i:about)[ \t]*)?\d)"), "person"),  # 'AJMAL SHAH,AGED 19 YEARS'
     (re.compile(rf"(?:(?i:[SDW]/o)\.?|\b(?i:son of|daughter of|wife of)(?![a-z]))[ \t]*(?:(?:Late|LATE|SHRI|SRI|SMT\.?|Shri|Sri|Smt\.?|Mrs?\.?|MRS?\.?)[ \t]+){{0,2}}({_NAME_CAP})"), "person"),  # 'S/O PARVAT SINGH LODHI'
     (re.compile(rf"(?:\b(?i:alias)|@)\s*(?:{_TITLE}\s+)?({_NAME}|{_NAME_CAP})"), "person"),
+    # relatives named by the relation word: 'his father Ram Lal', 'wife Smt. Sunita Devi', 'brother-in-law namely Anil Kumar'
+    (re.compile(rf"\b(?i:father|mother|husband|wife|brother|sister|son|daughter|uncle|aunt|nephew|niece|grandfather|grandmother|guardian|(?:father|mother|brother|sister|son|daughter)-in-law)(?:['\u2019]s)?(?:[ \t]+(?i:namely|named|viz\.?|i\.e\.?))?[ \t,:-]+(?:{_TITLE}[ \t]+)?({_NAME})(?![\w-])"), "person"),
     (re.compile(rf"\b(?i:co-accused|accused|complainant|informant|witness|surety)\b(?:\s+(?:is|was|are|were))?[\s,:-]+(?:{_TITLE}\s+)?({_NAME})"), None),
     (re.compile(rf"\b(?i:against|versus|vs?\.)\s+(?:{_TITLE}\s+)?({_PERSON2}|{_HI_NAME2})"), None),
     (re.compile(rf"(?<![\u0900-\u097F])({_HI_NAME2})(?=['\u2019]s\b)"), None),
@@ -77,6 +84,7 @@ _PII = [
     (re.compile(r"\b[A-Z]{5}\d{4}[A-Z]\b"), "[ID-NUMBER]"),
 ]
 _ROLE_CONTEXT = 80  # characters either side of a name searched for a role word
+_QUASI_LOCK = threading.Lock()
 
 
 @dataclass(frozen=True)
@@ -126,6 +134,9 @@ class PseudonymMap:
         self._alias_by_key: dict[str, str] = {}
         self._names: dict[str, str] = {}  # alias -> first-seen spelling of the real name
         self._counts: dict[str, int] = {}
+        self._quasi: dict[str, str] = {}  # 'CATEGORY|identity' -> alias such as '[FIR-1]' (privacy.quasi)
+        self._quasi_values: dict[str, str] = {}  # alias -> first-seen spelling of the value
+        self.date_shift_days: int | None = None  # the case's one date shift for outbound text (privacy.quasi); None until the intake draws it
 
     def alias_for(self, name: str, role: str) -> str:
         """Stable alias: the same name always gets the same alias, whatever the role of later mentions.
@@ -146,6 +157,29 @@ class PseudonymMap:
         self._alias_by_key[key] = alias
         self._names[alias] = " ".join(name.split())
         return alias
+
+    def quasi_alias(self, category: str, key: str, value: str, label: str = "") -> str:
+        """Stable alias of a quasi-identifier: '[FIR-1]', '[PS-2]', '[AGE-1 18-25]' (the label is shown after the number)."""
+        k = f"{category}|{key}"
+        with _QUASI_LOCK:  # agents' parallel workers share one map
+            if k not in self._quasi:
+                n = 1 + sum(1 for a in self._quasi_values if a.startswith(f"[{category}-"))
+                alias = f"[{category}-{n}{' ' + label if label else ''}]"
+                self._quasi[k] = alias
+                self._quasi_values[alias] = value
+            return self._quasi[k]
+
+    def quasi_original(self, alias: str) -> str | None:
+        """The value an alias stands for (local use only: decoding a reply, export)."""
+        return self._quasi_values.get(alias)
+
+    def ensure_date_shift(self, key: str | None = None) -> int:
+        """The case's date shift, drawn at random on first use (or computed from `key` for a public-source evaluation case)."""
+        if self.date_shift_days is None:
+            from vakeel_sahayak.privacy.quasi import deterministic_shift, random_shift
+
+            self.date_shift_days = deterministic_shift(key) if key else random_shift()
+        return self.date_shift_days
 
     def known_names(self) -> list[str]:
         """Real names held in the map, longest first. Local use only (the boundary check)."""
@@ -174,11 +208,19 @@ class PseudonymMap:
         """
         for alias in sorted(self._names, key=len, reverse=True):
             text = re.sub(rf"(?<![\w-]){re.escape(alias)}(?![\w])", lambda _m, a=alias: self._names[a], text)
+        for alias in sorted(self._quasi_values, key=len, reverse=True):
+            text = text.replace(alias, self._quasi_values[alias])
         return text
 
-    def to_dict(self) -> dict[str, dict[str, str] | dict[str, int]]:
-        """JSON-able form for local persistence."""
-        return {"names": dict(self._names), "counts": dict(self._counts)}
+    def to_dict(self) -> dict:
+        """JSON-able form for local persistence (the quasi-identifier aliases and the date shift only once there are any)."""
+        out: dict = {"names": dict(self._names), "counts": dict(self._counts)}
+        if self._quasi:
+            out["quasi"] = dict(self._quasi)
+            out["quasi_values"] = dict(self._quasi_values)
+        if self.date_shift_days is not None:
+            out["date_shift_days"] = int(self.date_shift_days)
+        return out
 
     @classmethod
     def from_dict(cls, data: dict) -> PseudonymMap:
@@ -187,6 +229,10 @@ class PseudonymMap:
         out._names = dict(data.get("names", {}))
         out._counts = dict(data.get("counts", {}))
         out._alias_by_key = {_key(n): a for a, n in out._names.items()}
+        out._quasi = dict(data.get("quasi", {}))
+        out._quasi_values = dict(data.get("quasi_values", {}))
+        shift = data.get("date_shift_days")
+        out.date_shift_days = int(shift) if shift is not None else None
         return out
 
 
@@ -276,10 +322,18 @@ def pseudonymise_text(text: str, case_id: str, mapping: PseudonymMap | None = No
         case_id: see behaviour (kept for the caller's bookkeeping; aliases are per map)
         mapping: existing alias map for the case
 
+    Names are replaced. The quasi-identifiers of the text (FIR numbers, police stations, places, ...) are learned into the map and the
+    case's date shift is drawn, but the returned (local) text keeps them: they are replaced only on the way to a hosted model
+    (`privacy.quasi.WireCodec`), so the dossier and the date tools work on the real values.
+
     Returns:
         Pseudonymised text and the (local-only) map.
     """
+    from vakeel_sahayak.privacy.quasi import learn_quasi
+
     mapping = mapping if mapping is not None else PseudonymMap()
+    mapping.ensure_date_shift()
+    learn_quasi(text, mapping)
     spans = sorted(detect_names(text), key=lambda s: s.start)
     for span in spans:
         mapping.alias_for(span.text_of(text), span.role)
@@ -327,14 +381,21 @@ def leaked_name_tokens(text: str, mapping: PseudonymMap) -> list[str]:
 def _sweep_name_tokens(text: str, mapping: PseudonymMap) -> str:
     """Second sweep: a learned name written only in part ('Kushwaha' after 'Sadhna Kushwaha' was replaced as a whole) still points to the person.
 
-    A token of a learned name that survives replacement is replaced by that name's alias when it is capitalised in the text (so a lowercase common
-    word is left alone), is not a title, place or common name particle, and is not a token of a legal term (it appears in no lowercase form in the text).
+    A token of a learned name that survives replacement is replaced by that name's alias when it is capitalised in the text (as learned, in capitals or
+    in title case; so a lowercase common word is left alone), is not a title, place or common name particle, and is not a token of a legal term (it
+    appears in no lowercase form in the text). Tokens of five letters or more are also found glued by OCR to the next capitalised word or inside a run
+    of capitals, and get a space on each side.
     A repeated alias made this way ('Person-5 Person-5') collapses to one."""
     for name in mapping.known_names():
         alias = mapping._alias_by_key[_key(name)]  # noqa: SLF001
         for tok in re.findall(r"[^\W\d_]{4,}", name):
             if tok.casefold() in _COMMON_NAME_TOKENS or re.search(rf"(?<!\w){re.escape(tok.lower())}(?!\w)", text):
                 continue
-            text = re.sub(rf"(?<![\w-])(?-i:{re.escape(tok)}|{re.escape(tok.upper())})(?![\w-])", alias, text)
+            forms = "|".join(re.escape(f) for f in dict.fromkeys((tok, tok.upper(), tok[:1].upper() + tok[1:].lower())))
+            text = re.sub(rf"(?<![\w-])(?-i:{forms})(?![\w-])", alias, text)
+            if len(tok) >= 5:  # glued by OCR to the next capitalised word ('ShuklaCounsel', 'GauravDhiman') or inside a run of capitals ('PRASADKUSHWAHA')
+                text = re.sub(rf"(?<![A-Za-z])(?-i:{forms})(?=[A-Z][a-z])", alias + " ", text)
+                text = re.sub(rf"(?<=[a-z])(?-i:{forms})(?![A-Za-z])", " " + alias, text)  # glued after a lowercase word ('accusedVeeranki', 'W/oDasari')
+                text = re.sub(rf"(?<=[A-Z]{{2}})(?-i:{re.escape(tok.upper())})(?![A-Za-z])|(?<![A-Za-z])(?-i:{re.escape(tok.upper())})(?=[A-Z]{{3}})", lambda m, a=alias: f" {a} ", text)
         text = re.sub(rf"({re.escape(alias)})(?:\s+\1)+(?![\w-])", r"\1", text)
     return text
