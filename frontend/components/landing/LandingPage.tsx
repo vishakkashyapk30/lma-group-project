@@ -11,6 +11,7 @@ import { sampleCaseHref } from "@/lib/sampleCase";
 import { ContinueCase } from "./ContinueCase";
 import { Footer } from "./Footer";
 import { FileDemo } from "./demos/FileDemo";
+import { ReadDemo } from "./demos/ReadDemo";
 import { Reveal } from "./Reveal";
 
 const STEPS = [
@@ -85,22 +86,17 @@ export function LandingPage(): ReactElement {
         </Reveal>
       </section>
 
-      {/* Sources: indigo */}
-      <section aria-labelledby="sources-heading" className="bg-indigo-deep">
-        <Reveal className="mx-auto grid max-w-[76rem] items-center gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:py-20">
+      {/* Read: indigo, the colour of sources */}
+      <section id="read" aria-labelledby="read-heading" className="scroll-mt-4 bg-indigo-deep">
+        <Reveal className="mx-auto grid max-w-[76rem] items-start gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16 lg:py-20">
           <div>
-            <h2 id="sources-heading" data-rv style={rv(0)} className="max-w-[18ch] font-display text-3xl font-semibold text-cream lg:text-4xl">Open a fact and see the words behind it</h2>
-            <p data-rv style={rv(1)} className="mt-4 max-w-[30rem] text-lg text-indigo-pale">Each value in the dossier carries the document and page it was read from. If the file does not say, the field says so.</p>
-          </div>
-          <div data-rv style={rv(2)} className="rounded-lg bg-cream p-5 text-ink sm:p-6">
-            <p className="font-mono text-xs text-indigo">Remand order · p. 1</p>
-            <p className="doc-text mt-3">
-              The accused was produced before this Court on <span className="sweep">14.08.2024</span>, and is remanded to judicial custody for fourteen days.
+            <h2 id="read-heading" data-rv style={rv(0)} className="max-w-[18ch] font-display text-3xl font-semibold text-cream lg:text-4xl">Open a fact and see the words behind it</h2>
+            <p data-rv style={rv(1)} className="mt-4 max-w-[30rem] text-lg text-indigo-pale">
+              Each value in the dossier carries the document, the page and the sentence it was read from, in the language of the paper. If the file does not say, the field says so.
             </p>
-            <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-3 text-sm">
-              <p><span className="text-ink-soft">Date of arrest</span> <span className="ml-1 font-medium">14.08.2024</span></p>
-              <p className="flex items-center gap-1.5 font-medium text-neem"><CheckDraw /> Confirmed from the documents</p>
-            </div>
+          </div>
+          <div data-rv style={rv(2)}>
+            <ReadDemo />
           </div>
         </Reveal>
       </section>

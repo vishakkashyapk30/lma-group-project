@@ -82,3 +82,54 @@ test("hero demo at 390 px: a finger can still file the FIR with the button, and 
   await page.waitForTimeout(500);
   expect(await seriousAxeViolations(page)).toEqual([]);
 });
+
+for (const motion of ["no-preference", "reduce"] as const) {
+  test.describe(`read: open a fact and see the words behind it (${motion})`, () => {
+    test.use({ reducedMotion: motion });
+    test.beforeEach(async ({ page }) => {
+      await MockBackend.install(page);
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto("/#read");
+    });
+
+    test("the first fact is open on its Hindi sentence and English line, the value marked in both", async ({ page }) => {
+      const first = page.getByTestId("read-row").first();
+      await expect(first).toHaveAttribute("data-open", "true");
+      const quote = first.getByTestId("read-quote");
+      await expect(quote.locator("[lang=hi]")).toContainText("प्रथम सूचना रिपोर्ट");
+      await expect(quote).toContainText("FIR No. 112/2024 dated 14.08.2024");
+      await expect(quote.locator("mark")).toHaveCount(2);
+    });
+
+    test("pulling a row down with the pointer opens it; a short pull does not", async ({ page }) => {
+      const row = page.getByTestId("read-row").nth(1);
+      const head = row.getByRole("button");
+      const b = (await head.boundingBox())!;
+      await page.mouse.move(b.x + 100, b.y + b.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(b.x + 100, b.y + b.height / 2 + 20, { steps: 4 });
+      await page.waitForTimeout(120);
+      await page.mouse.up();
+      await expect(row).not.toHaveAttribute("data-open", "true");
+      await page.mouse.move(b.x + 100, b.y + b.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(b.x + 100, b.y + b.height / 2 + 120, { steps: 10 });
+      await page.waitForTimeout(120);
+      await page.mouse.up();
+      await expect(row).toHaveAttribute("data-open", "true");
+      await expect(row.getByTestId("read-quote")).toContainText("10.08.2024");
+      await expect.poll(() => head.evaluate((el) => (el as HTMLElement).style.transform), { timeout: 2000 }).toBe("");
+    });
+
+    test("keyboard alone: Tab to a fact, Enter opens and closes it", async ({ page }) => {
+      const row = page.getByTestId("read-row").nth(2);
+      const head = row.getByRole("button");
+      await tabTo(page, head);
+      await page.keyboard.press("Enter");
+      await expect(head).toHaveAttribute("aria-expanded", "true");
+      await expect(row.getByTestId("read-quote")).toContainText("318(4), 316(2)");
+      await page.keyboard.press("Space");
+      await expect(head).toHaveAttribute("aria-expanded", "false");
+    });
+  });
+}
