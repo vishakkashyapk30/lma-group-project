@@ -52,18 +52,25 @@ export interface StepFooterProps {
   secondary?: ReactNode;
   /** Draw the arrow (a button that moves to the next step). */
   next?: boolean;
+  /** Replaces the primary button (the gate buttons, which hold instead of being disabled). */
+  control?: ReactNode;
+  /** Shown above the button row, inside the footer (the gate's list of open items). */
+  above?: ReactNode;
 }
 
-export function StepFooter({ label, onClick, disabled, busy, hint, testId, secondary, next = true }: StepFooterProps): ReactElement {
+export function StepFooter({ label, onClick, disabled, busy, hint, testId, secondary, next = true, control, above }: StepFooterProps): ReactElement {
   return (
     <div data-print-hide data-step-footer className="sticky bottom-0 z-raised -mx-5 mt-12 border-t border-line-strong/50 bg-parchment px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:-mx-8 sm:px-8">
+      {above}
       <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
         {hint ? <p id="step-hint" className="mr-auto min-w-0 text-sm text-ink-soft">{hint}</p> : null}
         {secondary}
-        <Button data-testid={testId} size="lg" onClick={onClick} disabled={disabled || busy} aria-describedby={hint && disabled ? "step-hint" : undefined}>
-          {label}
-          {next ? <ArrowRight aria-hidden /> : null}
-        </Button>
+        {control ?? (
+          <Button data-testid={testId} size="lg" onClick={onClick} disabled={disabled || busy} aria-describedby={hint && disabled ? "step-hint" : undefined}>
+            {label}
+            {next ? <ArrowRight aria-hidden /> : null}
+          </Button>
+        )}
       </div>
     </div>
   );

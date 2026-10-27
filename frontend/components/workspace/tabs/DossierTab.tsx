@@ -12,10 +12,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { errorMessage } from "@/lib/errors";
 import { DATE_FIELDS, dossierEntries, fieldLabel, parseEditText, STRING_LIST_FIELDS, valueToEditText } from "@/lib/fields";
-import { formatCourtDate, plural, toSelectedSource } from "@/lib/format";
+import { formatCourtDate, toSelectedSource } from "@/lib/format";
 import type { CaseDossier, DossierFieldName, SourceRef, TrackedField } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { checklistKey, useCaseData, useEdits, useGateChecklist, useGates, useNeedsYou, useWorkspace } from "@/lib/workspace";
+import { GateFooter } from "../GateFooter";
 import { GateModal } from "../GateModal";
 import { NeedsYou } from "../NeedsYou";
 import { StepFooter, StepFrame } from "../StepFrame";
@@ -268,7 +269,6 @@ export function DossierTab({ caseId }: DossierTabProps): ReactElement {
   const changed = new Set<string>(changedFields);
   const entries = dossierEntries(dossier);
   const confirmed = checklist.approved;
-  const blocked = checklist.blocking.length > 0;
 
   return (
     <StepFrame
@@ -284,13 +284,7 @@ export function DossierTab({ caseId }: DossierTabProps): ReactElement {
         confirmed ? (
           <StepFooter label="Continue to Check rights" onClick={() => ws.setStage("RIGHTS")} hint="You confirmed these facts." />
         ) : (
-          <StepFooter
-            label="Confirm facts and continue"
-            onClick={() => setGateOpen(true)}
-            disabled={blocked}
-            hint={blocked ? `${plural(checklist.blocking.length, "item")} above ${checklist.blocking.length === 1 ? "needs" : "need"} you before you can confirm.` : undefined}
-            testId="confirm-facts-button"
-          />
+          <GateFooter gate="GATE_1_DOSSIER" label="Confirm facts and continue" verb="confirm" onApprove={() => setGateOpen(true)} testId="confirm-facts-button" />
         )
       }
     >
