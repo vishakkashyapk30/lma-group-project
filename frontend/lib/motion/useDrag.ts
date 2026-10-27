@@ -2,7 +2,7 @@
 // Pointer drag on one axis for mouse, touch and pen: pointer capture, a 4 px slop so taps stay clicks, velocity over the
 // last 80 ms, and a click swallowed after a real drag. The caller turns the raw movement into an offset (usually with
 // rubberClamp) and decides what the release does; keyboard and button paths live in the component (DESIGN.md parity).
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { project } from "./spring";
 import { VelocityTracker } from "./velocity";
 
@@ -34,9 +34,15 @@ export interface DragOptions {
 export function useDrag(ref: RefObject<HTMLElement | null>, options: DragOptions): void {
   const opts = useRef(options);
   opts.current = options;
+  // The element behind the ref can change (a panel that re-mounts its content): rebind whenever it does.
+  const [el, setEl] = useState<HTMLElement | null>(null);
+  // Runs after every render on purpose (no deps); it only sets state when the element really changed.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (ref.current !== el) setEl(ref.current);
+  });
 
   useEffect(() => {
-    const el = ref.current;
     if (!el) return;
     let id: number | null = null;
     let origin = 0;
@@ -59,6 +65,15 @@ export function useDrag(ref: RefObject<HTMLElement | null>, options: DragOptions
       cross = other(e);
       dragging = false;
       vt.reset(origin, e.timeStamp);
+      // Follow the pointer outside the handle until the slop is passed and capture takes over.
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+      window.addEventListener("pointercancel", onCancel);
+    };
+    const unlisten = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
     };
 
     const onMove = (e: PointerEvent) => {
@@ -69,6 +84,7 @@ export function useDrag(ref: RefObject<HTMLElement | null>, options: DragOptions
         // A mostly cross-axis move is a scroll or another gesture: let it go.
         if (Math.abs(other(e) - cross) > slop && Math.abs(other(e) - cross) > Math.abs(d)) {
           id = null;
+          unlisten();
           return;
         }
         if (Math.abs(d) < slop) return;
@@ -88,6 +104,7 @@ export function useDrag(ref: RefObject<HTMLElement | null>, options: DragOptions
     const finish = (e: PointerEvent, cancelled: boolean) => {
       if (e.pointerId !== id) return;
       id = null;
+      unlisten();
       if (!dragging) {
         if (!cancelled) opts.current.onTap?.();
         return;
@@ -104,14 +121,9 @@ export function useDrag(ref: RefObject<HTMLElement | null>, options: DragOptions
     const onCancel = (e: PointerEvent) => finish(e, true);
 
     el.addEventListener("pointerdown", onDown);
-    el.addEventListener("pointermove", onMove);
-    el.addEventListener("pointerup", onUp);
-    el.addEventListener("pointercancel", onCancel);
     return () => {
       el.removeEventListener("pointerdown", onDown);
-      el.removeEventListener("pointermove", onMove);
-      el.removeEventListener("pointerup", onUp);
-      el.removeEventListener("pointercancel", onCancel);
+      unlisten();
     };
-  }, [ref]);
+  }, [el]);
 }

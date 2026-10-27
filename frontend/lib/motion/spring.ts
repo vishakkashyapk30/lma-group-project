@@ -150,3 +150,9 @@ export function runSpring(
     cancelAnimationFrame(raf);
   };
 }
+
+/** Decide a release: past `fraction` of `size` (counting the flick's projection) or faster than `speed` px/s. */
+export function shouldCommit(offset: number, velocity: number, projected: number, size: number, fraction: number, speed: number): boolean {
+  if (Math.sign(velocity) < 0 && Math.abs(velocity) > speed) return false; // flicked back
+  return velocity > speed || offset + projected > size * fraction;
+}
