@@ -12,11 +12,16 @@
  *  - Status text is real text. Icons are glyphs from lib/status.ts, wrapped in an aria-hidden span; the label is visible text.
  *
  * LANDING (/)
- *  - h1 states the product; open-case-button ("Open workspace", href /cases) and a "See how it works" link to #how in the hero.
- *  - Bands, as h2, in DESIGN.md's order: How it works, the sources example, What you stay in control of, the Preamble close.
- *  - The hero product loop (aria-label "Product preview: ...") plays once and rests on "Approved for export"; a quiet Replay
- *    button. Under reduced motion it shows the final frame with no animation and Replay hidden.
- *  - site-footer: contains "यतो धर्मस्ततो जयः", "AI-generated drafts for counsel. Not legal advice.", "NALSA" and "15100".
+ *  - h1 states the product; open-case-button ("Try the sample case", href /case/case-0007, or /cases in a strict live build) and a
+ *    "See how it works" link to #walk in the hero. The header offers "Open workspace", or continue-case ("Continue: <title>")
+ *    once a case has been opened in this browser (localStorage vs:last-case).
+ *  - Hero demo file-demo: fir-card (drag) or add-fir-button, dossier-drop, then demo-page and demo-row (data-status).
+ *  - The walk (nav "Walk through the sample case"): read-demo (read-row, read-quote), check-demo (hearing-handle role=slider,
+ *    hearing-date, custody-days, word-default-bail, word-undertrial), hold-demo (gate1-demo-button, gate1-list, gate1-confirm,
+ *    gate2-demo-button, gate2-list), draft-demo (draft-cite, draft-paragraph, draft-ground data-check), spar-demo (spar-card
+ *    data-verdict, spar-write, spar-reply-input, spar-reply-save); then privacy-demo, desk-band, close-open-sample.
+ *  - Bands, as h2, in order: see e2e/landing.spec.ts BANDS.
+ *  - site-footer: contains "यतो धर्मस्ततो जयः", "AI-generated drafts for counsel. Not legal advice.", "NALSA", "15100" and the Preamble's line.
  *
  * WORKSPACE (/case/[id])
  *  - stage-rail (navigation landmark) with six steps stage-I, II, III, IV, VI, VII (Add documents, Review facts, Check rights,
@@ -149,7 +154,7 @@ export const STEPS = [
 /** Accessible names / visible strings the specs rely on (plan text). */
 export const TEXT = {
   // RECONCILED: the colour-band landing (docs/handoff/landing-colour-motion.md) replaced the scene headline, stats band and
-  // "Watch the journey"; its hero states the product and offers "Open workspace" and "See how it works".
+  // "Watch the journey"; frontend-endeavours made the hero's way in "Try the sample case" (openCase below is the header's).
   headline: "Prepare a bail application from the case file",
   openCase: /open workspace/i,
   seeHow: /see how it works/i,

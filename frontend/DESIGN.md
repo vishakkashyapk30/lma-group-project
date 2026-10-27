@@ -89,7 +89,7 @@ Flat fills only: no gradients, no glow. Meaning: maroon acts, indigo informs (so
 
 | Token | Hex | Use | Contrast |
 | --- | --- | --- | --- |
-| saffron | `#E8A33D` | rules, the offset block behind the hero loop; never text | ink on it 7.8 |
+| saffron | `#E8A33D` | rules, outlined "Check" ranges, the margin rule on a ground that needs a check; never text | ink on it 7.8 |
 | saffron-tint | `#FBEBCB` | "How it works" band | ink 14.3, ink-soft 8.6, maroon 9.1 |
 | saffron-wash | `#FDF5E6` | "needs your check" row highlight | saffron-ink 7.3 |
 | saffron-ink | `#764706` | "Needs your check" text | 7.9 on white, 6.7 on tint |
@@ -99,7 +99,7 @@ Flat fills only: no gradients, no glow. Meaning: maroon acts, indigo informs (so
 | neem-tint | `#E4F0E1` | "control" band | ink 14.3, neem 5.4, neem-deep 8.5 |
 | neem-deep | `#1E4B2A` | "Approved for export" text, fill behind white | 8.5 on tint, 10.0 with white text |
 
-Landing band order: hero parchment, saffron-tint (how it works), indigo-deep (sources example), neem-tint (control), maroon with a faint white lattice at 7% opacity (Preamble line, gold-pale text), parchment-deep footer. Maroon and cream stay dominant (hero, buttons, close).
+Landing band order ("Walk the file"): hero parchment (headline and the FIR demo), the walk links, indigo-deep (Read: sources), saffron-tint (Check: rights against the dates), cream (Hold: the two gates), parchment (Draft), cream (Spar), neem-tint (Privacy), parchment-deep (Batch desk), flat maroon (close: open the sample case, who built it, how it is tested), parchment-deep footer (disclaimer, NALSA 15100, the Preamble line in English and Hindi, the motto). Every demo runs on the sample case-0007 data through `components/landing/sample.ts` and the product's own components, with no sign-in and no backend. Maroon and cream stay dominant (hero, buttons, close).
 
 White text on maroon is 10.7:1. Status colours always travel with an icon and a word.
 
@@ -170,8 +170,8 @@ Rules:
 Landing motion (styles/landing.css; every element rests in its final state, so reduced motion, no-JS and the end of a run look identical):
 
 - Band reveal: children marked `data-rv` rise 8 px and fade in, 250 ms (`--dur-slow`), 40 ms stagger, once, via IntersectionObserver; bands already on screen are left alone.
-- Highlight sweep behind the cited date (scaleX, 250 ms), animated check (stroke draw, 250 ms), underline draw on text links (180 ms), 1 px lift on buttons and a 3 px arrow nudge (120 to 180 ms).
-- Hero loop, one run of 8.55 s then rest (all 180 to 250 ms beats, `--ease`, opacity and transform only): FIR card slides in 0.4 s, remand order 0.75 s, dossier rows 2.1 / 2.4 / 2.7 / 3.0 s, source highlight sweeps over the quoted arrest date 3.4 s, "Needs your check" resolves to "Confirmed by you" 5.3 to 5.45 s, draft sentences 6.2 and 6.7 s with numbered sources, source list 7.2 s, status strip reads "Reading the papers", "Checking each fact against its source", "Drafting the application", then "Approved for export" with a drawn check at 8.3 s. Replay is a quiet text button that remounts the panel. The run pauses while the tab is hidden. With reduced motion (system or in-app) all animation is removed, the final frame shows, and Replay is hidden.
+- Underline draw on text links (180 ms), 1 px lift on buttons and a 3 px arrow nudge (120 to 180 ms).
+- Demos move only under the visitor's hand (springs from the table above): the FIR card follows the pointer and snaps into the dossier or springs home; a fact row resists a pull and opens; the hearing date coasts on a flick and settles on a day; a held gate moves at most 12 px. Each has a button and keyboard path, and under reduced motion each change is instant. Rows that appear use the motion library's presence (220 ms, opacity and a 6 px rise).
 - Loops: skeleton opacity pulse and the small glyph that breathes beside a running agent (1.2 s), nothing else.
 - Transform and opacity only. `prefers-reduced-motion` and the in-app "Reduce motion" setting collapse every duration to near zero.
 
@@ -181,7 +181,7 @@ Landing motion (styles/landing.css; every element rests in its final state, so r
 `components/shell`: AppShell, Sidebar, MobileDrawer, TopBar (with ModeChip and help menu), CommandPalette, ShellProvider (palette, new-case, drawer, collapsed state, Ctrl/Cmd+K), `meta.ts` (case title and stage published to the top bar), `nav.ts` (single list of destinations).
 `components/common`: Logo (mark, mark only, reversed), PageHeader, StatusBadge (icon and word, no pill), SourceChip, AgentGlyph.
 `components/agents/AgentSignature`: a quiet one-line status with a small glyph that breathes while the agent runs.
-`components/landing`: LandingPage, HeroLoop (the one-run product loop), Footer, Reveal.
+`components/landing`: LandingPage, `demos/` (FileDemo, ReadDemo, CheckDemo, HoldDemo, DraftDemo, SparDemo, PrivacyDemo), DeskBand, CloseBand, ContinueCase, Footer, Reveal, `sample.ts`. `components/rights/RightsTimeline` (shared with the Check rights step), `components/common/HoldButton`, `components/motion` (PageTransition, Morph, MotionProvider).
 `components/workspace`: WorkspaceShell (stepper row, step, side panel, drawers), StageRail, StepView and `tabs/*` (one view per step), StepFrame and StepFooter, NeedsYou, SidePanel and SourcePanel, ChatPane, TraceDrawer, GateModal (confirm dialog), DocumentsMenu, ProgressLine, ChangeBanner.
 `components/settings`: SettingsPage (server address, live/demo mode, connection, the server's model, privacy and data settings).
 

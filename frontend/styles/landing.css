@@ -87,12 +87,6 @@
   transform: translateX(3px);
 }
 
-/* Pattern for the maroon band: a faint lattice, flat, one colour. */
-.jaali-dark {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Cg fill='none' stroke='%23FFFFFF' stroke-opacity='0.07' stroke-width='1'%3E%3Cpath d='M24 4 44 24 24 44 4 24Z'/%3E%3Cpath d='M12 12h24v24H12z'/%3E%3Ccircle cx='24' cy='24' r='4'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 48px 48px;
-}
-
 /* Reduced motion (system setting or the in-app switch): content shows in its final state, nothing animates. */
 @media (prefers-reduced-motion: reduce) {
   [data-rv-state="pending"] [data-rv] { opacity: 1; transform: none; }

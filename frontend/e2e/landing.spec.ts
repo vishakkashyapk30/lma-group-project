@@ -19,7 +19,19 @@ import { seriousAxeViolations } from "./helpers";
 import { TEXT, TID } from "./testids";
 
 /** The band headings of DESIGN.md "Landing band order", top to bottom. */
-const BANDS = ["How it works", "Open a fact and see the words behind it", "Check bail rights against the dates", "Nothing goes ahead until you confirm it", "Every ground cites its authority, word for word", "Hear the prosecution's objections first", "What you stay in control of", "Justice, social, economic and political."];
+/** RECONCILED (frontend-endeavours): the bands are the walk through the sample case (Read, Check, Hold, Draft, Spar), then
+ * privacy, the batch desk and the close. "How it works" became the walk's in-page links; "What you stay in control of" became
+ * the Hold and Privacy demos; the Preamble line moved from the close band to the footer. */
+const BANDS = [
+  "Open a fact and see the words behind it",
+  "Check bail rights against the dates",
+  "Nothing goes ahead until you confirm it",
+  "Every ground cites its authority, word for word",
+  "Hear the prosecution's objections first",
+  "What leaves this computer",
+  "A folder of files, the most urgent first",
+  "Open the sample case",
+];
 
 const hero = (page: Page) => page.locator("section[aria-labelledby='hero-heading']");
 const heroDemo = (page: Page) => page.getByTestId("file-demo");
@@ -59,19 +71,23 @@ test.describe("landing, motion allowed", () => {
     expect(footerLast).toBe(true);
   });
 
-  test("footer shows the motto, the disclaimer and NALSA 15100", async ({ page }) => {
+  test("footer shows the motto, the disclaimer, NALSA 15100 and the Preamble's line", async ({ page }) => {
     const footer = page.getByTestId(TID.siteFooter);
     await footer.scrollIntoViewIfNeeded();
     await expect(footer).toContainText(TEXT.motto);
     await expect(footer).toContainText(TEXT.disclaimer);
     await expect(footer).toContainText(TEXT.nalsa);
     await expect(footer).toContainText(TEXT.nalsaNumber);
+    await expect(footer).toContainText("Justice, social, economic and political.");
   });
 
-  test("'See how it works' moves the visitor to the How it works band", async ({ page }) => {
+  test("'See how it works' moves the visitor to the walk through the sample case", async ({ page }) => {
+    // RECONCILED: the How it works band became the walk's in-page links (#walk) to the five demos.
     await hero(page).getByRole("link", { name: TEXT.seeHow }).click();
-    await expect(page).toHaveURL(/#how$/);
-    await expect(page.getByRole("heading", { name: "How it works" })).toBeInViewport();
+    await expect(page).toHaveURL(/#walk$/);
+    const walk = page.getByRole("navigation", { name: "Walk through the sample case" });
+    await expect(walk).toBeInViewport();
+    for (const name of ["Read", "Check", "Hold", "Draft", "Spar"]) await expect(walk.getByRole("link", { name })).toBeVisible();
   });
 
   test("the hero demo waits for the visitor: nothing in it moves until it is touched", async ({ page }) => {

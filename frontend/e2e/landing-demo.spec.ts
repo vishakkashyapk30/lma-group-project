@@ -324,3 +324,39 @@ for (const motion of ["no-preference", "reduce"] as const) {
     });
   });
 }
+
+test.describe("privacy, batch desk and the close", () => {
+  test.beforeEach(async ({ page }) => {
+    await MockBackend.install(page, { gate1Approved: true, draft: "done" });
+    await page.setViewportSize({ width: 1440, height: 900 });
+  });
+
+  test("privacy: Off sends nothing; Pseudonymised shows the FIR line as it would be sent, keyboard only", async ({ page }) => {
+    await page.goto("/#privacy");
+    await page.waitForTimeout(500); // hydration and the band's reveal
+    const demo = page.getByTestId("privacy-demo");
+    await expect(demo.getByTestId("privacy-off")).toHaveAttribute("aria-selected", "true");
+    await expect(demo.getByRole("tabpanel").getByTestId("privacy-sends")).toHaveText("Receive nothing.");
+    await tabTo(page, demo.getByTestId("privacy-off"), 160);
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowRight");
+    await expect(demo.getByTestId("privacy-pseudonymised")).toHaveAttribute("aria-selected", "true");
+    await expect(demo.getByRole("tabpanel").getByTestId("privacy-sends")).toContainText("accused: Accused-1, Co-accused-1");
+  });
+
+  test("batch desk: six sample files ranked, each with its reason, and a way to the desk", async ({ page }) => {
+    await page.goto("/#desk");
+    await expect(page.getByTestId("desk-band-card")).toHaveCount(6);
+    await expect(page.getByTestId("desk-band-card").first()).toContainText("Default-bail window open now");
+    await expect(page.getByRole("link", { name: "Open the batch desk" })).toHaveAttribute("href", "/desk");
+  });
+
+  test("the close opens the sample case and its title moves into the workspace's top bar", async ({ page }) => {
+    await page.goto("/");
+    await page.getByTestId("close-open-sample").scrollIntoViewIfNeeded();
+    await page.getByTestId("close-open-sample").click();
+    await expect(page).toHaveURL(/\/case\/case-0007$/);
+    await expect(page.locator("nav[aria-label=Breadcrumb] [data-morph='case-title-case-0007']")).toContainText("State v. Accused-1");
+    await expect(page.getByTestId("stage-rail")).toBeVisible();
+  });
+});
