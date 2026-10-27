@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Build proposal.pdf from proposal.tex.
-# Re-renders the Mermaid diagram first if figures/architecture.mmd is newer than its PDF.
+# Re-renders the Mermaid diagram first if figures/architecture_v5.mmd is newer than its PNG.
 # Needs: pdflatex (TeX Live), and for the diagram, Node.js plus Chrome/Chromium.
 # Usage: ./build.sh
 set -euo pipefail
 cd "$(dirname "$0")"
 
-if [[ figures/architecture.mmd -nt figures/architecture.pdf ]]; then
+if [[ figures/architecture_v5.mmd -nt figures/architecture_v5.png ]]; then
   export PUPPETEER_EXECUTABLE_PATH="${PUPPETEER_EXECUTABLE_PATH:-$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)}"
-  npx -y -p @mermaid-js/mermaid-cli mmdc -i figures/architecture.mmd -o figures/architecture.pdf
+  npx -y -p @mermaid-js/mermaid-cli mmdc -i figures/architecture_v5.mmd -o figures/architecture_v5.png -w 1568
 fi
 
 mkdir -p build
