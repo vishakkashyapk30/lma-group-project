@@ -74,8 +74,8 @@ esac
 # verify only the files that are going to be unpacked (a skipped raw archive need not be present)
 sums="$(mktemp "${TMPDIR:-/tmp}/vs-sums.XXXXXX")"; trap 'rm -f "$sums"; cleanup' EXIT
 cp "$bundle/SHA256SUMS" "$sums"
-[ "$raw" = 1 ] || sed -i '/ raw\.tar\.part-/d' "$sums"
-[ "$only_raw" != 1 ] || sed -i '/ data\.tar\.gz\.part-/d' "$sums"
+[ "$raw" = 1 ] || { sed -i.bak '/ raw\.tar\.part-/d' "$sums" && rm -f "$sums.bak"; }  # -i.bak: works with GNU and macOS sed
+[ "$only_raw" != 1 ] || { sed -i.bak '/ data\.tar\.gz\.part-/d' "$sums" && rm -f "$sums.bak"; }
 echo "verifying checksums ..."
 (cd "$bundle" && sha256sum -c --quiet "$sums") || { echo "checksum verification FAILED: nothing was unpacked" >&2; exit 1; }
 
