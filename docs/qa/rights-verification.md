@@ -56,11 +56,25 @@ imprisonment for a term of ten years or more; (ii) sixty days, where the investi
 said "a term of not less than ten years".
 
 - The 60/90 split matches the act.
-- The ten-year question is genuinely open: the CrPC wording "not less than ten years" and the BNSS wording "ten years or more" both
-  leave "may extend to ten years" unclear, so CHECK is the right answer. (The usual authority under the CrPC wording is Rakesh Kumar
-  Paul v. State of Assam (2017); to read.)
-- "Day 1 is the first remand" and "the right lapses once the charge sheet is filed before an application" come from Kapil Wadhawan
-  and M. Ravindran, not the act. To read.
+
+The rule also rests on three separate questions that the act does not answer. The judgments below were read by Harshita
+(2026-10-27). **All three interpret the former CrPC s.167(2)**; for proceedings governed by the BNSS, s.187(3) has to be checked
+separately (its text keeps the same structure, "on the expiry of the said period ... shall be released on bail if he is prepared to
+and does furnish bail", but no BNSS ruling has been read yet).
+
+1. **When does the period begin?** ED v. Kapil Wadhawan (2023): the remand date is included in the 60/90 days. The code counts the
+   first remand as day 1 (`day_count.count_days`, `INCLUSIVE_DAY_1`), which matches.
+2. **Does a charge sheet extinguish the right?** Not invariably. M. Ravindran v. DRI (2020): if the accused applied for default bail
+   after the right accrued, a later charge sheet does not defeat it; the timing of the application decides. The code matches: an
+   application made after the limit and before the charge sheet gives ELIGIBLE, and a charge sheet filed after the limit with no
+   recorded application gives WINDOW_CLOSED with "check whether an application was made". The rule text "the right lapses if the
+   charge sheet is filed before an application" should say "before the accused applies for default bail after the right accrued",
+   so it is not read as "any charge sheet ends the right".
+3. **Is a ten-year maximum a 60-day or a 90-day case?** Rakesh Kumar Paul v. State of Assam (2017) interpreted "not less than ten
+   years" in the CrPC; the distinction between a maximum of ten years and a minimum of ten years matters. The applicable period must
+   come from the statutory punishment and the binding interpretation, not from the phrase "may extend to ten years" on its own. The
+   code returns CHECK for a ten-year maximum and 90 days for a minimum of ten years or more. CHECK is the safe answer while the BNSS
+   wording "ten years or more" has no reading of its own; for CrPC-governed cases Rakesh Kumar Paul should decide it.
 - **Problem: special acts change the limits, and the rule does not know.** UAPA s.43D(2) (in the store) makes the limits "ninety
   days" for every UAPA offence (60 becomes 90) and lets the court extend to 180 days. NDPS s.36A(4) (not in our store; check the
   bare act) extends the limit to 180 days for offences under s.19, 24, 27A and commercial-quantity offences. Today a UAPA case on
@@ -178,7 +192,11 @@ economic offences not under special acts.
 | 5 | Category C only for acts with a bail bar, in `engine.py` / `antil_category` | Vishak (code) |
 | 6 | `statutory_bar`: section- and quantity-aware, add CHECK, UAPA test wording | Vishak (code) |
 | 7 | Wrong BNSS s.58 text in the statute store | Vishak (data) |
-| 8 | Read Kapil Wadhawan, M. Ravindran, Rakesh Kumar Paul, Arnesh Kumar, Antil for the parts of the rules they support | Harshita |
+| 8a | `default_bail`, counting from the remand date (Kapil Wadhawan): read; the code matches. Closed for CrPC cases | Harshita (done) |
+| 8b | `default_bail`, preserving a right exercised before the charge sheet (M. Ravindran): read; the code matches; reword the rule text | Harshita (done), Vishak (rule text) |
+| 8c | `default_bail`, a ten-year maximum (Rakesh Kumar Paul, CrPC): read; for BNSS cases the s.187(3) wording "ten years or more" still needs a reading of its own | Harshita |
+| 8d | The same three questions under BNSS s.187: find a BNSS-era ruling, or record that none is known | Harshita |
+| 9 | Read Arnesh Kumar and Antil for the parts of the rules they support | Harshita |
 
 When a row is closed, set `last_verified` for that rule in `configs/rights_rules.yaml` (and the matching `last_verified` in the
 rule module, which is still `None` in code) and note the date here.
