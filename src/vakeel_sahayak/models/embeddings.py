@@ -113,7 +113,10 @@ class Bgem3EmbeddingClient(EmbeddingClient):
                 raise ImportError(
                     "BGE-M3 needs the 'models' extra: pip install 'vakeel_sahayak[models]' (sentence-transformers)"
                 ) from exc
-            self._model = SentenceTransformer(self.model_name, device=self.device)
+            from vakeel_sahayak.models.nli import local_checkpoint
+
+            # the copy `make models` put under models/hf wins over a second download into the Hugging Face cache
+            self._model = SentenceTransformer(local_checkpoint(self.model_name) or self.model_name, device=self.device)
         return self._model
 
     def embed(self, texts: list[str]) -> list[list[float]]:
