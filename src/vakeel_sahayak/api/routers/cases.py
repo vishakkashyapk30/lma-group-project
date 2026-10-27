@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse
 
 from vakeel_sahayak.api import service
 from vakeel_sahayak.api.deps import get_event_log
-from vakeel_sahayak.api.models import FieldEditRequest, NewCaseRequest
+from vakeel_sahayak.api.models import FieldEditRequest, NewCaseRequest, RightsReportOut
 from vakeel_sahayak.orchestration.gates import GateGuard
 from vakeel_sahayak.record.event_log import EventLog
 from vakeel_sahayak.schemas.bail_brief import BailBrief
@@ -24,7 +24,6 @@ from vakeel_sahayak.schemas.dossier import CaseDossier, DossierFields
 from vakeel_sahayak.schemas.enums import EventKind, GateId
 from vakeel_sahayak.schemas.events import COUNSEL, Event
 from vakeel_sahayak.schemas.ingestion_report import IngestionReport
-from vakeel_sahayak.schemas.rights_report import RightsReport
 from vakeel_sahayak.schemas.sparring import SparringRecord
 from vakeel_sahayak.schemas.store_rows import TimelineEvent
 
@@ -95,14 +94,14 @@ async def get_dates(case_id: str, log: Annotated[EventLog, Depends(get_event_log
     return service.case_state(log, case_id).timeline()
 
 
-@router.get("/{case_id}/rights", response_model=RightsReport)
-async def get_rights(case_id: str, log: Annotated[EventLog, Depends(get_event_log)]) -> RightsReport:
-    """Rights tab."""
+@router.get("/{case_id}/rights", response_model=RightsReportOut)
+async def get_rights(case_id: str, log: Annotated[EventLog, Depends(get_event_log)]) -> RightsReportOut:
+    """Rights tab. Each check carries `verification` ('unverified' until a person re-checks its rule text; else the date) and the report lists `unverified_checks`."""
     service.require_case(log, case_id)
     report = service.case_state(log, case_id).rights_report()
     if report is None:
         raise HTTPException(status_code=404, detail="no rights report yet")
-    return report
+    return RightsReportOut.from_report(report)
 
 
 @router.post("/{case_id}/draft", response_model=dict[str, Any])

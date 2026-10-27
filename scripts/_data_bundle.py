@@ -14,6 +14,7 @@ import json
 import sys
 from pathlib import Path
 
+SKIP_DIRS = ("dev_runs_superseded",)  # old runs on unpinned code: never shipped, never scored
 EXCLUDED = ("key", "token", "secret", ".env")  # file names left out of the tar (same patterns as data_bundle.sh)
 KATHBATH = "raw/kathbath/hindi/test_known"
 KATHBATH_FILES = (
@@ -70,7 +71,11 @@ def state(data: Path, family: str) -> str:
 def bundled(root: Path) -> list[Path]:
     """Files of a folder that the tar holds (names with key, token, secret or .env in them are left out)."""
     return (
-        [p for p in root.rglob("*") if p.is_file() and not any(x in p.name.lower() for x in EXCLUDED)]
+        [
+            p
+            for p in root.rglob("*")
+            if p.is_file() and not any(x in p.name.lower() for x in EXCLUDED) and not any(d in p.parts for d in SKIP_DIRS)
+        ]
         if root.is_dir()
         else []
     )

@@ -62,3 +62,67 @@ def test_b0_with_the_offline_stand_in_runs_without_a_model(monkeypatch, make_ctx
 def test_every_system_name_resolves(name):
     runner, switches = system_runner(name)
     assert callable(runner) and switches.variant() in {"full", name.upper()}
+
+
+# ---- B0L as a real larger-model arm on the hosted backends -----------------------------------------------------------------------------------------------------
+
+def _hosted(monkeypatch, backend):
+    monkeypatch.setenv("VS_MODELS", "auto")
+    monkeypatch.setenv("VS_LLM_BACKEND", backend)
+    monkeypatch.setenv("VS_EXTERNAL", "pseudonymised")
+    monkeypatch.setenv("SARVAM_API_KEY", "test-not-a-key")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-not-a-key")
+    monkeypatch.delenv("VS_B0L_MODEL", raising=False)
+    from vakeel_sahayak.models import factory
+
+    factory._LLM_CACHE.clear()
+
+
+def test_b0l_and_b0_resolve_different_model_ids_under_sarvam(monkeypatch):
+    _hosted(monkeypatch, "sarvam")
+    from vakeel_sahayak.models import factory
+    from vakeel_sahayak.models.sarvam import adapters
+
+    real = adapters.sarvam_config
+    monkeypatch.setattr(adapters, "sarvam_config", lambda: {**real(), "chat": {**real()["chat"], "model": "sarvam-30b"}})  # the base model B0 runs on in this check
+    b0_model = factory.get_llm("agents_14b").model_id
+    assert b0_single_pass.b0l_model_id() == "sarvam-105b"
+    b0l_client = factory.get_llm_model("agents_14b", b0_single_pass.b0l_model_id())
+    assert b0l_client.model_id == "sarvam-105b" and b0_model == "sarvam-30b" and b0l_client.model_id != b0_model
+    monkeypatch.setenv("VS_B0L_MODEL", "sarvam-other")
+    assert b0_single_pass.b0l_model_id() == "sarvam-other"
+
+
+def test_b0l_records_its_model_and_flags_when_it_equals_b0(monkeypatch, make_ctx, toolbox):
+    _hosted(monkeypatch, "sarvam")
+    from vakeel_sahayak.models import factory
+
+    seen = []
+    llm = ScriptedLLM(strict=False, default=BailBrief(case_id="case-0007").model_dump_json())
+    llm.model_id = "sarvam-105b"
+    monkeypatch.setattr(factory, "get_llm_model", lambda role, model: (seen.append(model), llm)[1])
+    ctx = make_ctx(llm=llm, toolbox=toolbox)
+    b0_single_pass.run_case_with_model(case(toolbox.world), ctx, "teacher")
+    sig = ctx.eval_record["variant_signals"]["b0l"]
+    assert seen == ["sarvam-105b"] and sig == {"model_id": "sarvam-105b", "b0_model_id": "sarvam-105b", "same_model_as_b0": True}
+    assert ctx.llm is llm  # restored
+
+
+def test_b0l_on_openai_is_refused_not_duplicated(monkeypatch):
+    _hosted(monkeypatch, "openai")
+    with pytest.raises(NotImplementedError, match="B0L is unavailable"):
+        system_runner("b0l")
+    system_runner("b0")  # B0 itself is unaffected
+    monkeypatch.setenv("VS_B0L_MODEL", "gpt-5-mini")
+    system_runner("b0l")
+    assert b0_single_pass.b0l_model_id() == "gpt-5-mini"
+
+
+def test_b0l_offline_and_the_manifest_extra(monkeypatch):
+    monkeypatch.setenv("VS_MODELS", "offline")
+    assert b0_single_pass.b0l_model_id() is None
+    from vakeel_sahayak.eval.runners.driver import _system_manifest_extra
+
+    assert _system_manifest_extra("b0") is None and _system_manifest_extra("b0l") is None
+    _hosted(monkeypatch, "sarvam")
+    assert _system_manifest_extra("b0l") == {"b0l_model": "sarvam-105b"} and _system_manifest_extra("full") is None

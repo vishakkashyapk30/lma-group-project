@@ -56,9 +56,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--n", type=int, default=None)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--late-embedder", choices=["hashed", "bge-m3"], default="hashed", help="s16 only: 'bge-m3' runs S16b with true late chunking over BGE-M3 token vectors (opt-in; needs torch and models/hf/BAAI--bge-m3)")
     a = ap.parse_args(argv)
+    if a.late_embedder != "hashed" and a.name != "s16":
+        ap.error("--late-embedder applies to the s16 study only")
     try:
-        result = run_study(a.name, a.out, a.n, a.seed)
+        result = run_study(a.name, a.out, a.n, a.seed, **({"late_embedder": a.late_embedder} if a.late_embedder != "hashed" else {}))
     except FileNotFoundError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2

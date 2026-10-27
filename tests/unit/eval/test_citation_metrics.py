@@ -152,3 +152,44 @@ def test_sqlite_index_reads_keys_and_pieces(tmp_path):
     assert idx.get("DOC", 7) is None
     idx.close()
     assert not ci.SqliteParagraphIndex.from_config(tmp_path / "none").available()
+
+
+def rounds(factor, *spec):
+    """spec: (steps, assessment) per round."""
+    out = []
+    for i, (n, a) in enumerate(spec, start=1):
+        out += [ev("plan", factor, i, steps=list(range(n))), ev("assess", factor, i, assessment=a)]
+    return out
+
+
+def test_m18_stopped_too_early_replays_the_reference_trajectory():
+    run = rounds("A", (3, {"s": "MISSING", "t": "FILLED"})) + rounds("B", (2, {"s": "FILLED"})) + rounds("C", (4, {"s": "WEAK (1 of 2)"})) + rounds("D", (16, {"s": "MISSING"}))
+    ref = (rounds("A", (3, {"s": "MISSING"}), (4, {"s": "FILLED"}))      # filled after 7 calls: a later call would have helped
+           + rounds("C", (4, {"s": "WEAK (1 of 2)"}), (5, {"s": "WEAK (1 of 2)"}))  # never filled within the replay
+           + rounds("D", (16, {"s": "MISSING"}), (3, {"s": "FILLED"})))      # beyond the 16-call budget: not counted
+    r = ci.stopped_too_early(run, ref)
+    assert (r["factors"], r["stopped_early"], r["too_early"], r["no_reference"]) == (4, 2, 1, 0)
+    assert r["rate"] == pytest.approx(1 / 4) and r["case_too_early"]
+    assert r["details"] == [{"factor": "A", "calls_used": 3, "missing": ["s"], "filled_at_round": 2, "filled_at_calls": 7, "slots": ["s"]}]
+    # a reference that never reached factor C leaves it out of the count, not as too early
+    assert ci.stopped_too_early(run, rounds("A", (3, {"s": "MISSING"}), (4, {"s": "FILLED"})))["no_reference"] == 1
+    assert ci.stopped_too_early(run, ref, budget=5)["too_early"] == 0  # a tighter budget: the 7-call fill is out of reach
+    assert ci.stopped_too_early([], ref)["rate"] is None and not ci.stopped_too_early([], ref)["case_too_early"]
+
+
+def test_m18_stopped_too_early_pools_over_cases_and_reads_run_directories(tmp_path):
+    import json
+
+    from vakeel_sahayak.eval.scoring import stopping_replay as sr
+
+    run = rounds("A", (3, {"s": "MISSING"}))
+    deeper = rounds("A", (3, {"s": "MISSING"}), (2, {"s": "FILLED"}))
+    for root, events in (("run", run), ("ref", deeper)):
+        (tmp_path / root / "_events").mkdir(parents=True)
+        (tmp_path / root / "_events" / "t1dev-000.jsonl").write_text("\n".join(json.dumps(e) for e in events) + "\nnot json\n")
+    (tmp_path / "run" / "_events" / "t1dev-001.jsonl").write_text("")  # no reference for this case: not compared
+    res = sr.replay_dirs(tmp_path / "run", tmp_path / "ref")
+    assert res["cases_in_both"] == 1 and res["pooled"]["case_rate"] == 1.0 and res["pooled"]["factor_rate"] == 1.0
+    assert sr.main(["--runs", str(tmp_path / "run"), "--reference", str(tmp_path / "ref"), "--out", str(tmp_path / "o.json")]) == 0
+    assert json.loads((tmp_path / "o.json").read_text())["budget"] == 16
+    assert ci.stopped_too_early_rate([])["case_rate"] is None

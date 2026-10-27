@@ -384,6 +384,76 @@ def stopping_quality(events: Sequence[dict[str, Any]]) -> dict[str, Any]:
             "unfinished_share": (unfinished / len(factors)) if factors else None}
 
 
+def _rounds(events: Sequence[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    """Per factor, its rounds in order: `{"round", "calls" (cumulative planned calls up to and including the round), "assessment"}` from the Sutradhar plan and assess messages."""
+    calls: dict[str, dict[int, int]] = {}
+    assessed: dict[str, dict[int, dict[str, str]]] = {}
+    for ev in events:
+        out = ev.get("outputs") or {}
+        if ev.get("actor") != "SUTRADHAR" or ev.get("kind") != "AGENT_MESSAGE" or not isinstance(out, dict) or out.get("factor") is None or out.get("round") is None:
+            continue
+        factor, rnd = str(out["factor"]), int(out["round"])
+        if out.get("type") == "plan":
+            calls.setdefault(factor, {})[rnd] = len(out.get("steps") or [])
+        elif out.get("type") == "assess":
+            assessed.setdefault(factor, {})[rnd] = {str(k): str(v) for k, v in (out.get("assessment") or {}).items()}
+    result: dict[str, list[dict[str, Any]]] = {}
+    for factor, by_round in calls.items():
+        total, rows = 0, []
+        for rnd in sorted(by_round):
+            total += by_round[rnd]
+            rows.append({"round": rnd, "calls": total, "assessment": assessed.get(factor, {}).get(rnd)})
+        result[factor] = rows
+    return result
+
+
+def _unfilled(assessment: dict[str, str] | None) -> list[str]:
+    return sorted(k for k, v in (assessment or {}).items() if v.startswith(("MISSING", "WEAK")))
+
+
+def stopped_too_early(events: Sequence[dict[str, Any]], reference_events: Sequence[dict[str, Any]], budget: int = 16) -> dict[str, Any]:
+    """M18, the stopped-too-early half: replay each stopped factor towards the call budget from the STORED retrieval trajectory of a deeper run of the same case; no model, no store call.
+
+    `events` are the Sutradhar events of the run under test; `reference_events` those of a run of the same case that was allowed to go on (the reference trajectory: what retrieving
+    further produced, round by round, with its slot assessments). A factor of the run under test *stopped early* when its last assessment leaves a slot MISSING or WEAK while it had
+    used fewer than `budget` planned calls. It *would have gained from a later call* (`too_early`) when the reference trajectory of the same factor has, within `budget` calls and beyond the
+    calls the run used, a round whose assessment has one of those slots FILLED. A factor the reference never reached is `no_reference`: it is neither counted too early nor excluded from
+    `factors`. This is the slot half of the plan's definition (M18); "would add a G1-correct factor or a G2 hit" needs the briefs and the gold, scored separately.
+
+    Returns:
+        `factors`, `stopped_early` (candidates), `too_early`, `no_reference`, `rate` (too_early / factors; None with no factor), `case_too_early` (any factor), `details` (per factor: calls used, missing
+        slots, the reference round and call count that filled one).
+    """
+    run, ref = _rounds(events), _rounds(reference_events)
+    details: list[dict[str, Any]] = []
+    stopped = early = no_ref = 0
+    for factor, rows in run.items():
+        last = rows[-1]
+        missing = _unfilled(last["assessment"])
+        if not missing or last["calls"] >= budget:
+            continue
+        stopped += 1
+        deeper = [r for r in ref.get(factor, []) if last["calls"] < r["calls"] <= budget]
+        if factor not in ref:
+            no_ref += 1
+            continue
+        hit = next((r for r in deeper if any(str((r["assessment"] or {}).get(slot, "")).startswith("FILLED") for slot in missing)), None)
+        if hit is not None:
+            early += 1
+            details.append({"factor": factor, "calls_used": last["calls"], "missing": missing, "filled_at_round": hit["round"], "filled_at_calls": hit["calls"],
+                            "slots": [s for s in missing if str((hit["assessment"] or {}).get(s, "")).startswith("FILLED")]})
+    n = len(run)
+    return {"factors": n, "stopped_early": stopped, "too_early": early, "no_reference": no_ref, "rate": (early / n) if n else None, "case_too_early": early > 0, "details": details}
+
+
+def stopped_too_early_rate(per_case: Iterable[dict[str, Any]]) -> dict[str, Any]:
+    """The pooled M18 stopped-too-early rate over cases (the results of `stopped_too_early`): `case_rate` (cases with a factor that would have gained / cases with a factor), `factor_rate`."""
+    rows = [r for r in per_case if r.get("factors")]
+    cases = sum(1 for r in rows if r["case_too_early"])
+    factors, early = sum(r["factors"] for r in rows), sum(r["too_early"] for r in rows)
+    return {"cases": len(rows), "case_rate": (cases / len(rows)) if rows else None, "factors": factors, "too_early": early, "factor_rate": (early / factors) if factors else None}
+
+
 # ---------------------------------------------------------------------------------------------------------------- M33 and M35
 def claim_records(sentences: Sequence[dict[str, Any]], gate_pass: bool = True) -> list[dict[str, Any]]:
     """Claims for the curve from `unsupported_fact.sentence_support` rows: `emitted` is True when the ground's check is not a decline (NEEDS_REVIEW, UNANSWERED, REFUSED)."""

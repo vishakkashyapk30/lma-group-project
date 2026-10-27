@@ -163,7 +163,16 @@ def main() -> int:
     r.add_argument("--dry-run", action="store_true")
     r.add_argument("--include-done", action="store_true", help="also run arms marked done (the rerun of the baselines on the pinned code)")
     r.add_argument("--n", type=int, default=None, help="cap the number of cases of every arm (budget-limited runs)")
+    d = sub.add_parser("dirs", help="print the output directory names of the arms of a phase/backend (used by the packing scripts)")
+    d.add_argument("--phase", type=int, required=True)
+    d.add_argument("--backend", default=None)
+    d.add_argument("--arms", default=None)
     args = ap.parse_args()
+    if args.cmd == "dirs":
+        for j in jobs_for(load_cfg(), argparse.Namespace(phase=args.phase, backend=args.backend, arms=args.arms, n=None, include_done=False)):
+            if "study" not in j:
+                print(dir_name(j["system"], j["run_index"]))
+        return 0
     if args.shard_index is not None and not 0 <= args.shard_index < args.shards:
         ap.error(f"--shard-index {args.shard_index} is outside 0..{args.shards - 1}")
     cfg = load_cfg()

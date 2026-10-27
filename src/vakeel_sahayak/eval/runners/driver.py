@@ -475,7 +475,7 @@ def run_cases(cases_path: str, out_dir: str, system: str, runner: Any, switches:
     mine = [(i, c) for i, c in enumerate(cases) if i % n_shards == shard]
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    write_run_manifest(out, system=system, switches=switches, seed=seed, budgets=budgets, cases_path=cases_path, shard=shard, n_shards=n_shards)
+    write_run_manifest(out, system=system, switches=switches, seed=seed, budgets=budgets, cases_path=cases_path, shard=shard, n_shards=n_shards, extra=_system_manifest_extra(system))
     cache = shared_cache_for(switches)  # one retrieval cache for the whole run when a batch variant (S14, S14d) is on; None otherwise
     done = load_progress(out_dir)
     completed = 0
@@ -645,6 +645,19 @@ def _gold_manifest(cases_path: str | None) -> dict[str, Any]:
     from vakeel_sahayak.testsets.gold_source import gold_info_for_cases
 
     return gold_info_for_cases(cases_path)
+
+
+def _system_manifest_extra(system: str) -> dict[str, Any] | None:
+    """Manifest keys only some systems add: `b0l_model` (the hosted model id B0L runs on; nothing for the offline and local paths or any other system)."""
+    if system.lower() == "b0l":
+        from vakeel_sahayak.eval.baselines.b0_single_pass import b0l_model_id
+
+        try:
+            model = b0l_model_id()
+        except NotImplementedError:
+            model = None
+        return {"b0l_model": model} if model else None
+    return None
 
 
 def write_run_manifest(out_dir: Path, *, system: str, switches: Any, seed: int, budgets: dict[str, int] | None = None,

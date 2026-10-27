@@ -1,0 +1,52 @@
+# Final code files (handoff, 2026-10-27)
+
+Nothing committed. No model call of any kind, no key used; offline unit tests only. Every item is opt-in; default behaviour is unchanged (the 17 golden-digest failures in `tests/unit/agents/{peshkar,sutradhar}/test_variants_*` fail identically on the clean tracked tree: not caused by this work).
+
+## 1. OpenAI block for a teammate's own key
+- What: `scripts/sweep_openai_block.sh plan|run|pack` (mirror of the Sarvam one), instructions `docs/handoff/sweep-openai-teammate.md`, `scripts/sweep_dev.py dirs` (prints the output dir names of a phase/backend), `scripts/sweep_collect.sh` now accepts `openai_block/` packages (backend `openai`, same gold, prompt_hash, git_sha checks; unpacks into `data/eval/dev_runs/openai_block/`).
+- Run later (teammate): `git checkout dev-sweep-v1`, own `OPENAI_API_KEY` in own `.env`, `VS_OPENAI_CAP_USD=2.50 scripts/sweep_openai_block.sh run`, then `pack` and the printed `hf upload`. Cap env names: `VS_OPENAI_CAP_USD` (code clamps to 5 USD per ledger file), optional `VS_OPENAI_RUN_CAP_USD`; ledger `data/openai/ledger.sqlite`. Arms = phase 2, backend openai, not `done` in `configs/eval/sweep_dev.yaml` (A2, A8, A9, A3, A1, A6, A7, b2, b3). Owner: `scripts/sweep_collect.sh --hf sweep-openai-<date>.tar.gz`.
+- Tests (`tests/unit/scripts/test_sweep_collect.py`, 6 new): `test_openai_package_is_unpacked_with_the_same_checks`, `test_openai_package_with_a_sarvam_manifest_is_refused`, `test_mixed_or_unknown_top_directories_are_refused`, `test_openai_block_plan_lists_only_phase_two_openai_arms`, `test_openai_block_run_refuses_without_key_cap_or_pinned_tag` (runs a scratch copy with no `.env`, so it can never reach a model), `test_openai_block_pack_keeps_only_small_files_and_refuses_keys`.
+
+## 2. Real B0L
+- What: `eval/baselines/b0_single_pass.py` (`b0l_model_id`, `run_case_with_model`), `models/factory.get_llm_model(role, model)`, `eval/runners/systems.py` (refuses before any case), `driver._system_manifest_extra` (manifest key `b0l_model`), arm `b0l` added to the Sarvam block of `configs/eval/sweep_dev.yaml` (could, 50 cases, about INR 4).
+- Behaviour: `VS_LLM_BACKEND=sarvam`: B0L = `sarvam-105b` (or `VS_B0L_MODEL`). `openai`: `driver run --system b0l` exits 2 with "B0L is unavailable ... would duplicate B0" unless `VS_B0L_MODEL` names another model id (needs a price entry in `configs/models.yaml`). Offline and local: unchanged. Each case record has `variant_signals.b0l = {model_id, b0_model_id, same_model_as_b0}`.
+- CAVEAT (read before using the row): under Sarvam, Full and B0 already run on `sarvam-105b` (the configured chat model), so B0L equals B0 in model unless the base model is configured differently; the record then says `same_model_as_b0: true`. There is no larger Sarvam model in the price table, so the Sarvam B0L row is only a "larger model" row if `VS_B0L_MODEL` names a different one. The owner may prefer to drop the arm from Satvik's block.
+- Tests (`tests/unit/eval/test_b6_and_b0_variants.py`, 4 new): `test_b0l_and_b0_resolve_different_model_ids_under_sarvam` (fake base model sarvam-30b vs 105b), `test_b0l_records_its_model_and_flags_when_it_equals_b0`, `test_b0l_on_openai_is_refused_not_duplicated`, `test_b0l_offline_and_the_manifest_extra`.
+
+## 3. S13 model-backed arm
+- What: `eval/runners/workflow_search.py`: `model_backed_search`, `ledger_state`, CLI flag `--model-backed` (plus `--min-remaining`). Default CLI and `assert_offline` unchanged (hosted backends still refused without the flag).
+- Behaviour: grid search over workflow variants, whole pipeline on dev cases, reward = M1 vs agreed G1 (`recall_evaluator`); each configuration saved as `<out>/configs/NNN.json` (resume skips them); before each configuration the OpenAI (USD) or Sarvam (INR) ledger is read and the search stops with `stopped_by: ledger` when the remainder is below `--min-remaining` or 1.25 times the dearest configuration so far (a hosted call over the cap would silently fall back to the local client, so it stops before); writes `MANIFEST.json` and `search_report.json` (`test: pending`). A hosted backend needs `VS_OPENAI_CAP_USD` / `VS_SARVAM_CAP_INR` set or the CLI refuses.
+- Run later: `VS_MODELS=auto VS_LLM_BACKEND=openai VS_EXTERNAL=pseudonymised VS_OPENAI_CAP_USD=1.5 .venv/bin/python -m vakeel_sahayak.eval.runners.workflow_search --cases data/testsets/t1/dev.jsonl --n 25 --grid small --max-configs 4 --model-backed --out data/eval/dev_runs/s13`. Offline smoke: same without the env, `VS_LLM_BACKEND=offline`.
+- Tests (`tests/unit/eval/test_workflow_search.py`, 4 new): `test_model_backed_search_is_resumable_and_writes_a_manifest`, `test_model_backed_search_stops_before_the_ledger_runs_out_and_refuses_non_dev`, `test_cli_model_backed_needs_a_cap_on_a_hosted_backend_and_runs_offline_on_two_cases`, `test_model_backed_search_on_the_production_agents_with_the_stand_in_models` (2 cases, real agents, offline stand-ins).
+
+## 4. S16b true late chunking
+- What: `stores/late_encoder.py` (`BgeM3TokenEmbedder`: `embed_tokens`, `embed`, windowing `token_vectors`, torch/transformers imports guarded, CPU), numpy pooling hook in `LateChunkEmbedder.prepare` (only for numpy rows; list path byte-identical), `eval/studies/s16.py` param `late_embedder`, CLI `python -m vakeel_sahayak.eval.studies s16 --late-embedder bge-m3`.
+- Behaviour: with `bge-m3` only the control `structure` and `late` run, both on BGE-M3 (the other strategies on CPU would be far too slow); weights from `models/hf/BAAI--bge-m3` (`VS_MODELS_DIR` overrides); missing weights give FileNotFoundError naming `make models`. Texts over 8190 tokens are encoded in consecutive windows (no overlap). Not run on the corpus.
+- Run later (a sample, CPU): `.venv/bin/python -m vakeel_sahayak.eval.studies s16 --out data/eval/dev_runs_offline/studies/s16_bge --n 40 --late-embedder bge-m3`.
+- Tests (`tests/unit/stores/test_late_encoder.py`, 7 new): window coverage and spans, pooling inside chunk spans with a fake encoder, numpy pooling, missing-weights error, the torch wrapper on a tiny module on CPU, the study option with an injected encoder, the CLI option guard.
+
+## 5. M18 stopped-too-early
+- What: `eval/metrics/citations.py` `stopped_too_early(events, reference_events, budget=16)` and `stopped_too_early_rate`; `eval/scoring/stopping_replay.py` (CLI `python -m vakeel_sahayak.eval.scoring.stopping_replay --runs <dir> --reference <dir> --out f.json`, reads `_events/<case>.jsonl`).
+- Definition: a factor stopped early when its last assessment leaves a slot MISSING or WEAK with fewer than 16 planned calls used; it is too early when the stored trajectory of a deeper run of the same case (the reference) has a later round within 16 calls whose assessment has that slot FILLED. This is the slot half of the plan's definition; the "G1-correct factor or G2 hit" half needs the briefs and gold and is not computed. The reference run (Full with a 16-call factor budget) must be produced; it is not in the sweep yet, and the metric is not yet a column of `scoring score`.
+- Tests (`tests/unit/eval/test_citation_metrics.py`, 2 new): `test_m18_stopped_too_early_replays_the_reference_trajectory`, `test_m18_stopped_too_early_pools_over_cases_and_reads_run_directories`.
+
+## 6. Rights verification in the API
+- What: `api/models.py` `RightsCheckOut`, `RightsReportOut` (examples in the OpenAPI schema), `GET /api/cases/{id}/rights` returns them. Additive: every check has `verification` ('unverified' or the `last_verified` date), the report has `unverified_checks`. The stored `RightsReport` and goldens are untouched; chips unchanged.
+- Tests (`tests/unit/api/test_cases_router.py`, 4 new): unverified by default, date shown once verified, OpenAPI example present, stored report and chips unchanged.
+- Note for Satvik (frontend, not edited here): (1) read `check.verification` on each item of `GET /api/cases/{id}/rights`; (2) value is the string `"unverified"` until Harshita sets `last_verified` in `configs/rights_rules.yaml`, then an ISO date; (3) show it beside the rule text of every check ("Rule text not yet verified against the bare act" for `unverified`, "Verified <date>" otherwise); (4) `body.unverified_checks` lists the names if one banner on the Rights tab is wanted; (5) the field is additive: ignore it safely if absent (older backend).
+
+## 7. Optional bearer token
+- What: `api/auth.py` (`BearerTokenMiddleware`, `decide`), wired in `api/app.py`; DOCKER.md section "Optional token for counsel's actions".
+- Behaviour: `VS_API_TOKEN` unset: unchanged. Set: every POST/PUT/PATCH/DELETE under `/api` (create case, upload, audio, draft, field edit, gate approve, export, chat, desk) needs `Authorization: Bearer <token>`: none gives 401 (`WWW-Authenticate: Bearer`), wrong gives 403; `hmac.compare_digest`; the token is never logged or echoed. `/healthz`, docs, OPTIONS and GETs stay open unless `VS_API_TOKEN_READS=1`. The frontend does not send the header, so leave it unset with the bundled UI (Satvik would add `NEXT_PUBLIC_`-free server-side header injection, not a public env var).
+- Tests (`tests/unit/api/test_auth.py`, 6): decision rules, default unchanged, writes refused and nothing recorded without the token, reads gated with `VS_API_TOKEN_READS=1` and healthz open, token never logged, constant-time compare.
+
+## 8. Make targets
+`make sweep-plan`, `make sweep-smoke` (offline phase 1 dry run, prints commands only; it writes the small case files under `data/eval/dev_runs_offline/cases/`), `make dev-score` (the two scoring commands of `sweep-dev.md`), `make report-pdf` (`docs/report/Makefile`); in `.PHONY` and `make help`.
+
+## 9. Checks run
+`VS_MODELS=offline .venv/bin/pytest tests/unit/{scripts,eval,api,orchestration,stores,agents} -q`: 1722 passed, 1 skipped (matplotlib missing), 1 xfailed, 17 failed (the golden digests above, identical without these changes). `make smoke`: SMOKE OK. `make sweep-smoke`: ok. Ruff clean on every touched file except the pre-existing import-order finding in `tests/unit/api/test_export_router.py` (not touched).
+
+## Not written
+- No column for stopped-too-early in `scoring score` (needs the 16-call reference run to exist first).
+- The frontend does not send the bearer token and does not show `verification` (frontend is not in scope here; note above).
+- Sweep-satvik.md was not edited to list the new `b0l` row (the table there is the owner's costing).

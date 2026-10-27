@@ -250,6 +250,23 @@ def get_llm(role: str) -> LLMClient:
         return client
 
 
+def get_llm_model(role: str, model: str) -> LLMClient:
+    """A hosted client for an agent role with an explicit model id (B0L); only for `VS_LLM_BACKEND=sarvam|openai` with the API active. Not cached.
+
+    Raises:
+        ValueError: the backend is not a hosted API, or the API is not active (no key, or `VS_EXTERNAL` off): an explicit model never falls back silently to another one.
+    """
+    forced = llm_backend()
+    if forced not in ("sarvam", "openai"):
+        raise ValueError(f"an explicit model id needs VS_LLM_BACKEND=sarvam or openai, got {forced!r}")
+    active = _sarvam_active("llm") if forced == "sarvam" else _openai_active()
+    if not active:
+        raise ValueError(f"{forced} is not active (key missing or VS_EXTERNAL off): cannot build a client for model {model!r}")
+    cfg = {**effective_role_config(role), "model": model}
+    mode = models_mode()
+    return _resolve_sarvam_role(role, cfg, mode) if forced == "sarvam" else _resolve_openai_role(role, cfg, mode)
+
+
 def _resolve(role: str, cfg: dict[str, object], mode: str) -> LLMClient:
     """The local/vLLM/offline client of a role."""
     if mode == "offline" or cfg.get("runtime") == "offline":

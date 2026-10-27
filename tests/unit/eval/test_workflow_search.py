@@ -123,3 +123,73 @@ def test_job_runs_the_smoke_offline_and_the_hosted_arm_stays_planned(tmp_path, m
     monkeypatch.setenv("VS_LLM_BACKEND", "sarvam")
     with pytest.raises(NotImplementedError, match="planned"):
         jobs.run_job("s13_workflow_search", {"runner": "workflow_search"}, 0, 1, str(tmp_path), 0.0)
+
+
+# ---- the model-backed arm (opt-in; here on the offline stand-in and a fake ledger) ---------------------------------------------------------------------------
+
+def test_model_backed_search_is_resumable_and_writes_a_manifest(tmp_path, monkeypatch):
+    monkeypatch.delenv("VS_LLM_BACKEND", raising=False)
+    calls = []
+
+    def counting(switches, cases):
+        calls.append(switches.variant())
+        return fake_eval(switches, cases)
+
+    small = {"stopping": ["rules", "rules_llm"], "topology": ["orchestrated", "sequential"]}
+    r1 = ws.model_backed_search(DEV, tmp_path / "s13", evaluator=counting, grid=small, max_configs=2)
+    assert r1["evaluated"] == 2 and r1["stopped_by"] == "max_configs" and len(calls) == 2 and r1["resumed"] == 0 and r1["test"] == "pending"
+    r2 = ws.model_backed_search(DEV, tmp_path / "s13", evaluator=counting, grid=small, max_configs=4)
+    assert r2["evaluated"] == 4 and r2["resumed"] == 2 and len(calls) == 4 and r2["stopped_by"] == "exhausted"
+    assert r2["winner"] == {"stopping": "rules_llm", "topology": "sequential"}
+    man = json.loads((tmp_path / "s13" / "MANIFEST.json").read_text(encoding="utf-8"))
+    assert man["arm"] == "S13" and man["backend"] == "offline" and man["cases"] == ["t1dev-000"] and "git_sha" in man and man["test"] == "pending"
+
+
+def test_model_backed_search_stops_before_the_ledger_runs_out_and_refuses_non_dev(tmp_path, monkeypatch):
+    monkeypatch.setenv("VS_LLM_BACKEND", "openai")
+    spent = {"v": 0.0}
+
+    def state(backend):
+        return spent["v"], 1.0 - spent["v"], "USD"
+
+    def costly(switches, cases):
+        spent["v"] += 0.4
+        return fake_eval(switches, cases)
+
+    rep = ws.model_backed_search(DEV, tmp_path / "a", evaluator=costly, max_configs=10, min_remaining=0.1, state_fn=state)
+    # each configuration costs 0.4: after two there is 0.2 left, below 1.25 x 0.4, so the third never starts
+    assert rep["evaluated"] == 2 and rep["stopped_by"] == "ledger" and abs(spent["v"] - 0.8) < 1e-9
+    with pytest.raises(ws.WorkflowSearchError):
+        ws.model_backed_search([{"case_id": "t1test-001"}], tmp_path / "b", evaluator=costly, state_fn=state)
+
+
+def test_cli_model_backed_needs_a_cap_on_a_hosted_backend_and_runs_offline_on_two_cases(tmp_path, monkeypatch, capsys):
+    cases = tmp_path / "dev.jsonl"
+    cases.write_text("\n".join(json.dumps({"case_id": f"t1dev-{i:03d}", "facts": "x", "before": "2024-02-16"}) for i in range(3)) + "\n", encoding="utf-8")
+    monkeypatch.setattr(ws, "recall_evaluator", lambda *a, **k: fake_eval)
+    monkeypatch.setenv("VS_LLM_BACKEND", "sarvam")
+    monkeypatch.delenv("VS_SARVAM_CAP_INR", raising=False)
+    assert ws.main(["--cases", str(cases), "--model-backed", "--out", str(tmp_path / "o1")]) == 2
+    assert "VS_SARVAM_CAP_INR" in capsys.readouterr().err and not (tmp_path / "o1").exists()
+    monkeypatch.setenv("VS_LLM_BACKEND", "offline")
+    assert ws.main(["--cases", str(cases), "--n", "2", "--grid", "small", "--max-configs", "2", "--model-backed", "--out", str(tmp_path / "o2")]) == 0
+    rep = json.loads((tmp_path / "o2" / "search_report.json").read_text(encoding="utf-8"))
+    assert rep["evaluated"] == 2 and rep["cases"] == ["t1dev-000", "t1dev-001"]
+    # without the flag a hosted backend is still refused as before
+    monkeypatch.setenv("VS_LLM_BACKEND", "openai")
+    assert ws.main(["--cases", str(cases), "--out", str(tmp_path / "x.json")]) == 2
+
+
+def test_model_backed_search_on_the_production_agents_with_the_stand_in_models(tmp_path, monkeypatch):
+    """Two cases through the production pipeline on the offline stand-ins (fixture toolbox), reward M1 against the gold labels; rerun resumes everything."""
+    monkeypatch.delenv("VS_LLM_BACKEND", raising=False)
+    world = h.case_0007_world()
+    toolbox = h.ScenarioToolbox(world)
+    base = {"facts": FACTS, "before": world.case_date, "gold": {"G1": {"labels": ["custody_period", "charge_sheet_filed"]}}, "answerable": ["custody_period", "charge_sheet_filed", "antecedents"]}
+    cases = [{**base, "case_id": "case-0007"}, {**base, "case_id": "case-0008"}]
+    evaluate = ws.recall_evaluator(tools=toolbox.tools, llm=h.full_pipeline_llm())
+    grid = {"topology": ["orchestrated", "sequential"]}
+    rep = ws.model_backed_search(cases, tmp_path / "s", evaluator=evaluate, grid=grid)
+    assert rep["evaluated"] == 2 and rep["resumed"] == 0 and all(r["tokens"] > 0 and r["cases_scored"] == 2 for r in rep["ranking"])
+    again = ws.model_backed_search(cases, tmp_path / "s", evaluator=evaluate, grid=grid)
+    assert again["resumed"] == 2 and again["ranking"] == rep["ranking"]

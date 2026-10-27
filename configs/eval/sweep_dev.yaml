@@ -48,6 +48,7 @@ arms:
   # ---- phase 3 (PACKAGE for Satvik, own key and cap; owner key runs only a 3-case smoke): Sarvam-105B, its own Full and B0 on the same cases; ordered by priority
   - {id: full, tier: baseline, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 1.0, claims: [], status: planned}
   - {id: b0,   tier: baseline, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 0.07, claims: [], status: planned}
+  - {id: b0l,  tier: could, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 0.07, claims: [C1], status: planned, note: "B0L on sarvam-105b (model id in the manifest as b0l_model); equals b0's model unless the base model differs: read `same_model_as_b0` in the case records before using it as a larger-model row"}
   - {id: S3,   tier: must, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 1.0, claims: [C6], status: planned}
   - {id: S3b,  tier: must, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 1.0, claims: [C6], status: planned}
   - {id: S8,   tier: must, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 0.83, claims: [C13], status: planned}

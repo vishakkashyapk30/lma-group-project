@@ -212,3 +212,39 @@ def test_page_image_route_cannot_escape_the_case_directory(tmp_path, monkeypatch
     """A traversal in the document id never reads outside the case directory."""
     _, client = seeded(tmp_path, monkeypatch)
     assert client.get(f"/api/cases/{CASE}/files/{bad}/pages/1").status_code in (400, 404, 422)
+
+
+def test_rights_tab_marks_every_check_unverified_until_a_person_verifies_it(tmp_path, monkeypatch):
+    _, client = seeded(tmp_path, monkeypatch)
+    body = client.get(f"/api/cases/{CASE}/rights").json()
+    assert body["checks"] and all(c["verification"] == "unverified" for c in body["checks"])
+    assert sorted(body["unverified_checks"]) == sorted(c["check"] for c in body["checks"])
+    assert all(c["last_verified"] is None for c in body["checks"])  # the stored fields are unchanged; `verification` is additive
+
+
+def test_rights_tab_shows_the_verification_date_once_a_check_is_verified(tmp_path, monkeypatch):
+    rights = urgent_rights()
+    rights.checks[0] = rights.checks[0].model_copy(update={"last_verified": "2026-11-02"})
+    _, client = seeded(tmp_path, monkeypatch, rights=rights)
+    body = client.get(f"/api/cases/{CASE}/rights").json()
+    by = {c["check"]: c for c in body["checks"]}
+    first = rights.checks[0].check.value
+    assert by[first]["verification"] == "2026-11-02" and first not in body["unverified_checks"]
+    assert all(c["verification"] == "unverified" for k, c in by.items() if k != first)
+
+
+def test_rights_openapi_documents_the_verification_field_with_an_example(tmp_path, monkeypatch):
+    _, client = seeded(tmp_path, monkeypatch)
+    schema = client.get("/openapi.json").json()["components"]["schemas"]
+    assert "verification" in schema["RightsCheckOut"]["properties"] and "unverified_checks" in schema["RightsReportOut"]["properties"]
+    assert schema["RightsReportOut"]["example"]["checks"][0]["verification"] == "unverified"
+
+
+def test_rights_chips_and_the_stored_report_are_unchanged(tmp_path, monkeypatch):
+    from vakeel_sahayak.schemas.rights_report import RightsReport
+
+    rights = urgent_rights()
+    assert "verification" not in RightsReport.model_validate(rights.model_dump()).model_dump()["checks"][0]  # the golden shape of the stored report
+    _, client = seeded(tmp_path, monkeypatch, rights=rights)
+    chips = client.get(f"/api/cases/{CASE}").json()["rights_chips"]
+    assert chips and all(isinstance(c, str) for c in chips)

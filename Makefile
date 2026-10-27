@@ -1,7 +1,7 @@
 # `make help` lists the targets. Targets that run Python need .venv: `make setup` creates it (needs-venv says so instead of a stack trace).
 PY ?= .venv/bin/python
 
-.PHONY: help needs-venv setup-full data data-check data-bundle data-install data-publish models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all eval-score eval-report frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend hooks check-commits live-smoke
+.PHONY: help needs-venv setup-full data data-check data-bundle data-install data-publish models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all eval-score eval-report frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend hooks check-commits live-smoke sweep-plan sweep-smoke dev-score report-pdf
 
 help:             ## list the targets
 	@grep -hE '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | sed -E 's/:[^#]*## /\t/' | sort | awk -F'\t' '{printf "  %-20s %s\n", $$1, $$2}'
@@ -153,3 +153,17 @@ check-commits: ## fail if any commit in origin/main..HEAD names an AI assistant
 
 live-smoke: needs-venv ## one tiny live call per hosted capability with public text only (keys from .env or the environment)
 	$(PY) scripts/live_smoke.py all
+
+sweep-plan: needs-venv       ## the pre-freeze dev-set sweep: every arm with backend, cases and the spend still to pay (calls no model)
+	$(PY) -m vakeel_sahayak.eval.runners.driver plan --sweep
+
+sweep-smoke: needs-venv      ## the offline phase of the sweep as a dry run: prints the driver commands, runs nothing
+	VS_MODELS=offline VS_LLM_BACKEND=offline $(PY) scripts/sweep_dev.py run --phase 1 --dry-run
+
+dev-score: needs-venv        ## score data/eval/dev_runs on the dev slice (agreed and rule gold) and write the tables; no model call, slow with the real DeBERTa checker (docs/handoff/sweep-dev.md)
+	$(PY) -m vakeel_sahayak.eval.scoring score --runs data/eval/dev_runs --slice dev --gold-source both --out data/eval/dev_scores
+	$(PY) -m vakeel_sahayak.eval.scoring report --scores data/eval/dev_scores
+
+report-pdf:                  ## build the report PDF (docs/report/build.sh); skipped with a message when docs/report is missing
+	@test -f docs/report/build.sh || { echo "docs/report/build.sh is not here: nothing to build" >&2; exit 1; }
+	$(MAKE) -C docs/report

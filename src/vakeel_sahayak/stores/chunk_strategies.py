@@ -24,7 +24,7 @@ Papers (what was taken, what changed; none of this is a reproduction):
   preprint; page checked): embed the whole text with a long-context model first and pool the token vectors inside each chunk span afterwards.
   Taken: pooling after contextualisation. Changed: true late chunking needs token vectors; `LateChunkEmbedder` uses them when the base embedder offers
   `embed_tokens(text)`, and otherwise blends each chunk's vector with the whole document's vector (`BLEND`), flagged `mode='approximation'`. The offline hashed embedder
-  has no token vectors, so the offline run is the approximation. BGE-M3's token vectors are not wired in here (models/ is outside this change).
+  has no token vectors, so the offline run is the approximation. BGE-M3's token vectors come from `stores.late_encoder.BgeM3TokenEmbedder` (opt-in: `python -m vakeel_sahayak.eval.studies s16 --late-embedder bge-m3`).
 * Qu, Tu and Bao, "Is Semantic Chunking Worth the Computational Cost?", Findings of NAACL 2025, https://aclanthology.org/2025.findings-naacl.114/ (the evaluation
   plan links a preview mirror): no consistent gain of semantic over fixed chunks. Taken: fixed, recursive and semantic as the naive baselines and the lexical stand-in for the semantic breakpoint.
 
@@ -156,7 +156,12 @@ class LateChunkEmbedder:
                     start = document.find(chunk)
                 end = start + len(chunk)
                 inside = [v for (s, e), v in zip(spans, vectors, strict=False) if start >= 0 and s >= start and e <= end]
-                self._vectors[chunk] = _unit([sum(col) for col in zip(*inside, strict=False)]) if inside else self.base.embed([chunk])[0]
+                if inside and hasattr(inside[0], "shape"):  # numpy rows from a real encoder (`stores.late_encoder`): pool in numpy, not in Python
+                    from vakeel_sahayak.stores.late_encoder import mean_pool
+
+                    self._vectors[chunk] = mean_pool(inside)
+                else:
+                    self._vectors[chunk] = _unit([sum(col) for col in zip(*inside, strict=False)]) if inside else self.base.embed([chunk])[0]
                 cursor = max(cursor, end) if start >= 0 else cursor
             return len(chunks)
         whole = self.base.embed([document])[0]

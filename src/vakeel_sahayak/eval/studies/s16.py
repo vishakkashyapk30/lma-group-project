@@ -98,7 +98,7 @@ def g2_cases() -> list[dict[str, Any]]:
 
 
 def run(out_dir: str, n: int | None = None, seed: int = 0, *, strategies: tuple[str, ...] | None = None, parts_file: str | None = None, ks: tuple[int, ...] = (5, 10, 20),
-        use_g2: bool = True) -> dict[str, Any]:
+        use_g2: bool = True, late_embedder: str | Any = "hashed") -> dict[str, Any]:
     """The chunking study; writes `s16.json` and `s16.md` under `out_dir`.
 
     Args:
@@ -109,6 +109,8 @@ def run(out_dir: str, n: int | None = None, seed: int = 0, *, strategies: tuple[
         parts_file: the splitter's parts file (default `<data>/interim/t1_work/parts.jsonl`)
         ks: recall cut-offs
         use_g2: look for resolvable G2 queries (needs T1 files)
+        late_embedder: 'hashed' (default, unchanged: the blend approximation of late chunking) or 'bge-m3' (S16b with true late chunking over BGE-M3 token vectors; opt-in, needs torch and
+            models/hf/BAAI--bge-m3, slow on CPU, so only the control `structure` and `late` are run, both on BGE-M3; an embedder object with `embed_tokens` is also accepted)
     """
     from vakeel_sahayak.eval.baselines.chunking_variants import evaluate_strategy
     from vakeel_sahayak.stores.chunk_strategies import STRATEGIES
@@ -132,11 +134,20 @@ def run(out_dir: str, n: int | None = None, seed: int = 0, *, strategies: tuple[
     if g2:
         sets["g2"] = g2
     names = strategies or STRATEGIES
+    embedder = None
+    if late_embedder != "hashed":
+        if late_embedder in ("bge-m3", "bge_m3"):
+            from vakeel_sahayak.stores.late_encoder import BgeM3TokenEmbedder
+
+            embedder = BgeM3TokenEmbedder()
+        else:
+            embedder = late_embedder
+        names = tuple(x for x in ("structure", "late") if x in (strategies or ("structure", "late")))  # the control and S16b, on the same embedder
     results: dict[str, dict[str, Any]] = {}
     rows = []
     for kind, queries in sets.items():
         for s in names:
-            r = evaluate_strategy(s, docs, queries, ks=ks)
+            r = evaluate_strategy(s, docs, queries, ks=ks, **({"embedder": embedder} if embedder is not None else {}))
             results.setdefault(kind, {})[s] = r
             rows.append([kind, f"{s} ({'S16' if s == 'proposition' else 'S16b' if s == 'late' else 'control' if s == 'structure' else 'B3'})", len(queries),
                          *[r["recall"][str(k)] for k in ks], r["mrr"], r["index"]["chunks"], r["index"]["mean_tokens"]])
@@ -144,7 +155,7 @@ def run(out_dir: str, n: int | None = None, seed: int = 0, *, strategies: tuple[
            "targets": {"g2": "facts of T1 dev/open orders whose cited judgments are in the corpus (n above; 0 means no G2 number exists)",
                        "first_sentence": "self-supervised, NOT G2: first sentence of a reasoning paragraph, target = its order",
                        "dropout": "self-supervised, NOT G2: the same sentence with every third content word removed"},
-           "embedder": "offline hashed n-gram (the stores' own embedder is not used: the corpus is re-chunked in memory)"}
+           "embedder": "offline hashed n-gram (the stores' own embedder is not used: the corpus is re-chunked in memory)" if embedder is None else f"{getattr(embedder, 'name', 'custom')} with token vectors (structure and late only)"}
     notes = [f"Corpus: {len(docs)} orders from the splitter's parts file. G2 queries resolvable in this corpus: {len(g2)}" + (" (none: the cited Supreme Court judgments are not in the parts file, so there is no G2 recall to report)" if not g2 else "") + ".",
              "first_sentence and dropout are self-supervised proxies, NOT G2 (target = the order the sentence came from); they measure findability of a sentence among near-duplicate boilerplate, not recall of court-cited precedents.",
              "late = approximation (blend of chunk and document vectors) with the hashed embedder; true late chunking needs token vectors from the long-context embedder. Recall at document level, equal corpus for every strategy; index size is in the last two columns."]

@@ -178,6 +178,8 @@ def system_runner(name: str) -> tuple[Callable[[dict[str, Any], Any], Any], Swit
     if base in B0_MODELS:
         mod = importlib.import_module(modules + "b0_single_pass")
         role = B0_MODELS[base]
+        if base == "b0l":
+            mod.b0l_model_id()  # refuse before any case when no larger hosted model is available (NotImplementedError)
         return (lambda case, ctx, _m=mod, _r=role: _m.run_case_with_model(case, ctx, _r)), Switches()
     if base in BASELINE_MODULES:
         return importlib.import_module(modules + BASELINE_MODULES[base]).run_case, Switches()

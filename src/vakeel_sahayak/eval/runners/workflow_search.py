@@ -11,7 +11,8 @@ Papers (adapted, not reproduced; page details are as listed in the evaluation pl
 
 What is taken: evaluate candidate workflows on dev, rank by dev score, test only the winner. What is changed: the search space is a hand-written
 grid over our own switches (stopping, retrieval policy, weak signal, store prior, topology, critic), not code written by a meta-agent, and the search
-is an exhaustive or seeded random enumeration, not an LLM-guided tree search. Nothing here calls a hosted model by itself.
+is an exhaustive or seeded random enumeration, not an LLM-guided tree search. Nothing here calls a hosted model by itself; the model-backed arm is `model_backed_search`
+(CLI `--model-backed`, opt-in, ledger-capped, resumable, writes a manifest).
 
 Honest limits. The offline smoke (`slot_fill_evaluator` with the fixture toolbox) scores slot-fill rate of the retrieval stage on the offline stand-ins:
 it proves the harness (determinism, budget cap, ranking, dev-only guard, saved report), not that any workflow is better. A real search scores G1 recall
@@ -226,6 +227,120 @@ def assert_offline() -> None:
                                   "after the owner's go-ahead and the pinned code tag")
 
 
+def ledger_state(backend: str) -> tuple[float, float, str] | None:
+    """`(spent, remaining, unit)` of the spend ledger of a hosted backend ('openai': USD, 'sarvam': INR), None for any other backend (no ledger)."""
+    if backend == "openai":
+        from vakeel_sahayak.models.openai.ledger import report
+
+        rep = report()
+        return float(rep["spent_usd"]), float(rep["remaining_usd"]), "USD"
+    if backend == "sarvam":
+        from vakeel_sahayak.models.sarvam.spend import report as sarvam_report
+
+        rep = sarvam_report()
+        return float(rep["spent_inr"]), float(rep["remaining_inr"]), "INR"
+    return None
+
+
+CAP_ENVS = {"openai": "VS_OPENAI_CAP_USD", "sarvam": "VS_SARVAM_CAP_INR"}
+
+
+def model_backed_search(
+    cases: list[dict[str, Any]],
+    out_dir: str | Path,
+    *,
+    evaluator: Evaluator | None = None,
+    grid: dict[str, list[Any]] | None = None,
+    mode: str = "grid",
+    max_configs: int = 12,
+    max_tokens: int | None = None,
+    seed: int = 0,
+    min_remaining: float = 0.5,
+    state_fn: Callable[[str], tuple[float, float, str] | None] = ledger_state,
+) -> dict[str, Any]:
+    """The model-backed S13 arm (opt-in, never run by default): the grid search with the whole pipeline on the dev cases, reward = factor recall (M1) against the agreed G1.
+
+    It uses whatever backend `VS_LLM_BACKEND` names (`recall_evaluator`: the production agents, so a hosted run passes the pseudonymisation boundary and the spend ledger as every
+    driver run does). Guards: dev cases only; every configuration is stored as `<out_dir>/configs/<n>.json` the moment it finishes, so a rerun skips the finished ones (resume);
+    before each configuration the ledger is read and the search stops (`stopped_by: ledger`) when the remaining budget is below `min_remaining` or below 1.25 times the dearest configuration
+    so far (a hosted call over the cap would silently fall back to the local client, so the search must stop before it, not rely on the refusal); `max_tokens` and `max_configs` as in `search`.
+    Writes `<out_dir>/MANIFEST.json` (backend, models, code, cases, grid, ledger before and after) and `<out_dir>/search_report.json` (same shape as `search`, plus `backend` and `resumed`).
+
+    Args:
+        cases: dev cases (T1 dev rows with `gold`); a non-dev case raises
+        out_dir: output folder
+        evaluator: `(switches, cases) -> {"score", "tokens"}`; default `recall_evaluator()`
+        min_remaining: least ledger budget (USD or INR by backend) to start a configuration
+        state_fn: `backend -> (spent, remaining, unit) | None`; replaced in tests
+
+    Raises:
+        WorkflowSearchError: a non-dev case, an unknown mode, an empty grid.
+    """
+    import os
+
+    from vakeel_sahayak.eval.runners.driver import git_sha, models_stamp
+
+    assert_dev_only(cases)
+    if mode not in ("grid", "random"):
+        raise WorkflowSearchError(f"unknown mode {mode!r}: use 'grid' or 'random'")
+    out = Path(out_dir)
+    (out / "configs").mkdir(parents=True, exist_ok=True)
+    evaluate = evaluator or recall_evaluator()
+    backend = (os.environ.get("VS_LLM_BACKEND") or "offline").lower()
+    points = enumerate_grid(grid) if mode == "grid" else sample_grid(max_configs, grid, seed)
+    before = state_fn(backend)
+    case_ids = [str(c.get("case_id")) for c in cases]
+    results: list[dict[str, Any]] = []
+    spent_tokens, resumed, dearest, stopped = 0, 0, 0.0, "exhausted"
+    for n, point in enumerate(points):
+        if len(results) >= max_configs:
+            stopped = "max_configs"
+            break
+        saved = out / "configs" / f"{n:03d}.json"
+        if saved.is_file():
+            try:
+                row = json.loads(saved.read_text(encoding="utf-8"))
+            except ValueError:
+                row = None
+            if row and row.get("fields") == point and row.get("cases") == case_ids:
+                results.append(row["result"])
+                spent_tokens += int(row["result"].get("tokens", 0))
+                dearest = max(dearest, float(row.get("ledger_cost") or 0.0))
+                resumed += 1
+                continue
+        if max_tokens is not None and spent_tokens >= max_tokens:
+            stopped = "max_tokens"
+            break
+        state = state_fn(backend)
+        if state is not None and state[1] < max(min_remaining, 1.25 * dearest):
+            stopped = "ledger"
+            break
+        switches = valid_point(point)
+        assert switches is not None
+        out_row = evaluate(switches, cases)
+        after = state_fn(backend)
+        cost = round(after[0] - state[0], 6) if state is not None and after is not None else 0.0
+        dearest = max(dearest, cost)
+        tokens = int(out_row.get("tokens", 0))
+        spent_tokens += tokens
+        result = {"fields": point, "variant": switches.variant(), "score": float(out_row["score"]), "tokens": tokens,
+                  **{k: v for k, v in out_row.items() if k not in ("score", "tokens")}}
+        results.append(result)
+        saved.write_text(json.dumps({"fields": point, "cases": case_ids, "result": result, "ledger_cost": cost}, sort_keys=True, indent=1) + "\n", encoding="utf-8")
+    ranked = sorted(results, key=lambda r: (-r["score"], r["tokens"], config_key(r["fields"])))
+    for i, r in enumerate(ranked, start=1):
+        r["rank"] = i
+    after_all = state_fn(backend)
+    report = {"mode": mode, "seed": seed, "backend": backend, "cases": case_ids, "evaluated": len(ranked), "resumed": resumed, "stopped_by": stopped, "tokens": spent_tokens,
+              "ranking": ranked, "winner": ranked[0]["fields"] if ranked else None, "test": "pending"}
+    manifest = {"arm": "S13", "kind": "model-backed workflow search", "backend": backend, "models": models_stamp(), "git_sha": git_sha(), "cases": case_ids, "mode": mode, "seed": seed,
+                "grid": grid or DEFAULT_GRID, "max_configs": max_configs, "max_tokens": max_tokens, "min_remaining": min_remaining, "reward": "factor recall (M1) vs agreed G1 on dev",
+                "ledger_before": before, "ledger_after": after_all, "stopped_by": stopped, "test": "pending"}
+    (out / "search_report.json").write_text(json.dumps(report, sort_keys=True, indent=1) + "\n", encoding="utf-8")
+    (out / "MANIFEST.json").write_text(json.dumps(manifest, sort_keys=True, indent=1, default=str) + "\n", encoding="utf-8")
+    return report
+
+
 def main(argv: list[str] | None = None) -> int:
     """`python -m vakeel_sahayak.eval.runners.workflow_search --cases <dev.jsonl> --n 3 --evaluator recall|slot_fill --max-configs 4 --out <report.json> [--mode grid|random] [--seed 0] [--grid small]`.
 
@@ -245,7 +360,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--grid", choices=["default", "small"], default="default")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--model-backed", action="store_true", help="the model-backed S13 arm (opt-in): the pipeline under VS_LLM_BACKEND, ledger-capped, resumable; --out is then a folder")
+    ap.add_argument("--min-remaining", type=float, default=0.5, help="model-backed: least ledger budget (USD for openai, INR for sarvam) to start a configuration")
     a = ap.parse_args(argv)
+    if a.model_backed:
+        return _main_model_backed(a)
     try:
         assert_offline()
     except NotImplementedError as exc:
@@ -260,6 +379,28 @@ def main(argv: list[str] | None = None) -> int:
     for r in report["ranking"]:
         print(f"{r['rank']:>2}  score={r['score']:.3f}  tokens={r['tokens']}  {config_key(r['fields'])}")
     print(f"evaluated {report['evaluated']} (stopped by {report['stopped_by']}); winner {report['winner']}; test pending; report {a.out}")
+    return 0
+
+
+def _main_model_backed(a: Any) -> int:
+    """The `--model-backed` path of `main`: a hosted backend needs its cap variable set (the ledger is then the budget); the offline stand-in runs without one (tests, smoke)."""
+    import os
+    import sys
+
+    backend = (os.environ.get("VS_LLM_BACKEND") or "offline").lower()
+    if backend in CAP_ENVS and not os.environ.get(CAP_ENVS[backend]):
+        print(f"REFUSED: set {CAP_ENVS[backend]} first (the search stops by itself when the ledger's remaining budget runs out); backend {backend!r}", file=sys.stderr)
+        return 2
+    rows = [json.loads(ln) for ln in Path(a.cases).read_text(encoding="utf-8").splitlines() if ln.strip()][: a.n]
+    grid = {"stopping": ["rules", "rules_llm"], "topology": ["orchestrated", "sequential"]} if a.grid == "small" else None
+    try:
+        report = model_backed_search(rows, a.out, grid=grid, mode=a.mode, max_configs=a.max_configs, max_tokens=a.max_tokens, seed=a.seed, min_remaining=a.min_remaining)
+    except WorkflowSearchError as exc:
+        print(f"REFUSED: {exc}", file=sys.stderr)
+        return 2
+    for r in report["ranking"]:
+        print(f"{r['rank']:>2}  score={r['score']:.3f}  tokens={r['tokens']}  {config_key(r['fields'])}")
+    print(f"evaluated {report['evaluated']} ({report['resumed']} resumed; stopped by {report['stopped_by']}); winner {report['winner']}; test pending; report {a.out}/search_report.json")
     return 0
 
 

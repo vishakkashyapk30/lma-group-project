@@ -7,6 +7,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from vakeel_sahayak.api.auth import BearerTokenMiddleware
 from vakeel_sahayak.api.routers import cases, chat, desk, events, export, gates, library, upload
 
 ROUTERS = (cases, upload, chat, events, gates, export, desk, library)
@@ -37,6 +38,7 @@ def create_app(config_dir: str | None = None) -> FastAPI:
         app.include_router(module.router)
     for module in ROUTERS:
         app.router.routes.extend(module.router.routes)
+    app.add_middleware(BearerTokenMiddleware)  # opt-in (VS_API_TOKEN); added first so CORS stays outermost and 401/403 answers carry the CORS headers
     app.add_middleware(
         CORSMiddleware, allow_origins=_origins(), allow_methods=["*"], allow_headers=["*"], allow_credentials=False
     )
