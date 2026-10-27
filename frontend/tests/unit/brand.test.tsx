@@ -89,3 +89,23 @@ describe("<Footer /> (fails until implemented)", () => {
     for (const img of container.querySelectorAll("img")) expect(img.getAttribute("src") ?? "").not.toMatch(FORBIDDEN);
   });
 });
+
+describe("the mark", () => {
+  it("draws the full scales from 24 px and the small V and beam below", async () => {
+    const { BandsMark } = await import("@/components/common/Logo");
+    const { container: big } = render(<BandsMark size={28} />);
+    expect(big.querySelector("svg")?.getAttribute("data-mark")).toBe("full");
+    expect(big.querySelectorAll("path")).toHaveLength(4);
+    const { container: small } = render(<BandsMark size={16} />);
+    expect(small.querySelector("svg")?.getAttribute("data-mark")).toBe("small");
+    expect(small.querySelectorAll("path")).toHaveLength(2);
+  });
+
+  it("the brand files carry the same geometry as the component", () => {
+    for (const f of ["public/brand/mark.svg", "app/icon.svg", "public/brand/lockup.svg"]) {
+      const text = fs.readFileSync(path.join(FRONTEND_ROOT, f), "utf8");
+      expect(text, f).toContain("M10.4 9.5 16 24.5 21.6 9.5");
+      expect(text, f).toContain("M7.2 9.5v3.6M24.8 9.5v3.6");
+    }
+  });
+});

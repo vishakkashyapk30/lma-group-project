@@ -105,7 +105,7 @@ White text on maroon is 10.7:1. Status colours always travel with an icon and a 
 
 ## Logo and icons
 
-Mark: a V whose arms carry a balance beam, so the letter and the scales are one stroke, white on a maroon square (6/32 radius). Two strokes, no fill shapes, no dots, no gradient. It holds at 16 px (checked at 16, 32, 64, 128 and 256 px) and in one colour.
+Mark: a V whose arms meet a balance beam that carries two short hangers and pans, so the letter and the scales are one figure, white on a maroon square (6/32 radius). Strokes for the V, beam and hangers, two small half-round pans; no dots, no gradient. From 24 px the full mark is used (checked at 24, 28, 64, 128 and 512 px: it reads as scales at the 28 px of the sidebar); below 24 px (the 16 px favicon) the hangers and pans would blur, so the small mark keeps only the V and the beam, joined. One colour throughout. The previous mark (a beam floating above the V) read as a V with a macron at 28 px.
 
 Files (hand-authored SVG) in `public/brand/`: `mark.svg` (maroon tile, white glyph), `mark-mono.svg` (maroon with the glyph cut out, one colour, for print and stamps), `mark-reversed.svg` (cream tile, glyph cut out, for dark backgrounds), `mark-square.svg` (full-bleed, source for the app icons), `lockup.svg` and `lockup-reversed.svg` (mark plus the wordmark). The lockup SVGs name Newsreader in `font-family`; they render correctly where the font is installed and fall back to Georgia elsewhere. In the app the `Logo` component draws the same geometry inline and sets the wordmark in the self-hosted Newsreader, so use the component, not the lockup files, inside the product.
 
@@ -114,7 +114,7 @@ Rules:
 - Minimum size: mark 16 px; lockup 24 px high. Below 24 px use the mark alone.
 - Colour: maroon `#7A1626` with white or cream. One-colour use is `mark-mono.svg`. On dark backgrounds use `mark-reversed.svg`. Never recolour, outline, rotate, add effects, or place on busy imagery.
 - No Devanagari line under the wordmark: at the sizes the product uses it was not legible beside the Latin. The motto appears only in the landing footer.
-- Icons: `app/icon.svg` (the mark), `app/favicon.ico` (16, 32 and 48 px, rasterised from the mark), `app/apple-icon.png` (180 px, full-bleed), `public/icon-192.png` and `public/icon-512.png` (full-bleed, used by `app/manifest.ts`; theme `#7A1626`, background `#F7F5F0`).
+- Icons: `app/icon.svg` (the mark), `app/favicon.ico` (16, 32 and 48 px PNGs; the 16 px one from the small mark), `app/apple-icon.png` (180 px, full-bleed), `public/icon-192.png` and `public/icon-512.png` (full-bleed, used by `app/manifest.ts`; theme `#7A1626`, background `#F7F5F0`).
 
 ## Spacing, radius, elevation
 
