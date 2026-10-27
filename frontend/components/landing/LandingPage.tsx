@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { sampleCaseHref } from "@/lib/sampleCase";
 import { ContinueCase } from "./ContinueCase";
 import { Footer } from "./Footer";
-import { HeroLoop } from "./HeroLoop";
+import { FileDemo } from "./demos/FileDemo";
 import { Reveal } from "./Reveal";
 
 const STEPS = [
@@ -48,7 +48,6 @@ export function LandingPage(): ReactElement {
             <a href="#how" className="link-draw hidden px-3 py-2 text-sm text-ink-soft hover:text-ink md:block">How it works</a>
             <a href="#control" className="link-draw hidden px-3 py-2 text-sm text-ink-soft hover:text-ink md:block">Safeguards</a>
             <Link href="/help" className="link-draw hidden px-3 py-2 text-sm text-ink-soft hover:text-ink md:block">Help</Link>
-            <Link href={sampleCaseHref("#how")} data-testid="try-sample-link" className="link-draw hidden px-3 py-2 text-sm text-ink-soft hover:text-ink lg:block">Try the sample case</Link>
             <ContinueCase />
           </nav>
         </header>
@@ -62,11 +61,12 @@ export function LandingPage(): ReactElement {
               Upload the case papers and Vakeel-Sahayak reads them, checks bail rights against the dates, and drafts an application for you to review.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Button asChild size="lg" className="lift"><Link href="/cases" data-testid="open-case-button" className="no-underline">Open workspace <ArrowRight aria-hidden className="arrow" /></Link></Button>
+              <Button asChild size="lg" className="lift"><Link href={sampleCaseHref("/cases")} data-testid="open-case-button" className="no-underline">Try the sample case <ArrowRight aria-hidden className="arrow" /></Link></Button>
               <Button asChild size="lg" variant="secondary" className="lift"><a href="#how" className="no-underline">See how it works</a></Button>
             </div>
+            <p className="mt-4 max-w-[34rem] text-sm text-ink-muted">The sample case holds the papers of a bail file with the names replaced: an FIR in Hindi, two remand orders, two bail orders and an order sheet. No sign-in.</p>
           </div>
-          <HeroLoop className="enter min-w-0 pr-3 sm:pr-4" />
+          <FileDemo className="enter min-w-0" />
         </section>
       </div>
 

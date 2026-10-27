@@ -5,5 +5,6 @@ export { VelocityTracker } from "./velocity";
 export { SpringValue } from "./value";
 export { useDrag, type DragOptions, type DragRelease } from "./useDrag";
 export { useDragToClose, type DragToCloseOptions } from "./useDragToClose";
+export { useDrag2D, type Drag2DOptions, type Drag2DRelease } from "./useDrag2D";
 export { prefersReducedMotion, useReducedMotion } from "../useReducedMotion";
 

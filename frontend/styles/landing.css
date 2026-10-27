@@ -93,82 +93,14 @@
   background-size: 48px 48px;
 }
 
-/* ── Hero product loop ──────────────────────────────────────────────────────────────────────────────────────────── */
-@keyframes hl-rise {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes hl-slide {
-  from { opacity: 0; transform: translateX(-16px); }
-  to { opacity: 1; transform: none; }
-}
-@keyframes hl-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes hl-fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
-@keyframes hl-sweep {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
-}
-@keyframes hl-draw {
-  from { stroke-dashoffset: 18; }
-  to { stroke-dashoffset: 0; }
-}
-
-/* Delays come from --d (enter) and --o (leave), set inline per element. */
-.hl-rise { animation: hl-rise var(--dur-slow) var(--ease) var(--d, 0s) both; }
-.hl-slide { animation: hl-slide var(--dur-slow) var(--ease) var(--d, 0s) both; }
-.hl-fade { animation: hl-fade-in var(--dur-base) var(--ease) var(--d, 0s) both; }
-.hl-leave { animation: hl-fade-out var(--dur-base) var(--ease) var(--o, 0s) both; }
-.hl-phase { animation: hl-fade-in var(--dur-base) var(--ease) var(--d, 0s) both, hl-fade-out var(--dur-base) var(--ease) var(--o, 0s) forwards; }
-.hl-mark::before { animation: hl-sweep var(--dur-slow) var(--ease) var(--d, 0s) both; }
-.hl-check path { stroke-dasharray: 18; animation: hl-draw var(--dur-slow) var(--ease) var(--d, 0s) both; }
-
-.hl-mark {
-  position: relative;
-  isolation: isolate;
-  white-space: nowrap; /* the highlight box is one rectangle: a wrapped phrase broke it into slivers at 390 px */
-}
-.hl-mark::before {
-  content: "";
-  position: absolute;
-  inset: -1px -3px;
-  z-index: -1;
-  border-radius: 2px;
-  background: var(--color-indigo-pale);
-  transform-origin: left center;
-}
-
-/* Resting (final) state of elements that change during the run. */
-.hl-phase { opacity: 0; }
-.hl-leave { opacity: 0; }
-.hl-final { opacity: 1; }
-
-/* Paused while the tab is hidden. */
-.hl-root[data-paused="true"] *,
-.hl-root[data-paused="true"] *::before {
-  animation-play-state: paused !important;
-}
-
-/* Reduced motion (system setting or the in-app switch): no animation at all, final frame only. */
+/* Reduced motion (system setting or the in-app switch): content shows in its final state, nothing animates. */
 @media (prefers-reduced-motion: reduce) {
-  .hl-root *, .hl-root *::before { animation: none !important; }
   [data-rv-state="pending"] [data-rv] { opacity: 1; transform: none; }
   [data-rv-state="pending"] .sweep::before { transform: none; }
   [data-rv-state="pending"] .check-draw path { stroke-dashoffset: 0; }
   .lift:hover { transform: none; }
 }
-:root[data-motion="reduce"] .hl-root *,
-:root[data-motion="reduce"] .hl-root *::before { animation: none !important; }
 :root[data-motion="reduce"] [data-rv-state="pending"] [data-rv] { opacity: 1; transform: none; }
 :root[data-motion="reduce"] [data-rv-state="pending"] .sweep::before { transform: none; }
 :root[data-motion="reduce"] [data-rv-state="pending"] .check-draw path { stroke-dashoffset: 0; }
 :root[data-motion="reduce"] .lift:hover { transform: none; }
-
-/* Nothing to replay when motion is off. */
-@media (prefers-reduced-motion: reduce) { .hl-replay { display: none; } }
-:root[data-motion="reduce"] .hl-replay { display: none; }
