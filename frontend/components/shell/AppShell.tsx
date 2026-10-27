@@ -7,6 +7,7 @@ import { PageTransition } from "@/components/motion/PageTransition";
 import { ToastProvider } from "@/components/ui/toast";
 import { CommandPalette } from "./CommandPalette";
 import { MobileDrawer } from "./MobileDrawer";
+import { useRouteFocus } from "./routeFocus";
 import { ShellProvider } from "./ShellProvider";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
@@ -14,6 +15,7 @@ import { TopBar } from "./TopBar";
 export function AppShell({ children }: { children: ReactNode }): ReactElement {
   const path = usePathname() ?? "/";
   const isLanding = path === "/";
+  useRouteFocus();
   return (
     <ToastProvider>
       {isLanding ? (

@@ -9,6 +9,7 @@ import { Logo } from "@/components/common/Logo";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS, isActive } from "./nav";
+import { markRouteFocus } from "./routeFocus";
 import { useShell } from "./ShellProvider";
 
 export function NavList({ collapsed = false, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }): ReactElement {
@@ -21,7 +22,10 @@ export function NavList({ collapsed = false, onNavigate }: { collapsed?: boolean
         const link = (
           <Link
             href={item.href}
-            onClick={onNavigate}
+            onClick={() => {
+              markRouteFocus();
+              onNavigate?.();
+            }}
             aria-current={active ? "page" : undefined}
             aria-label={collapsed ? item.label : undefined}
             className={cn(
@@ -57,7 +61,7 @@ export function Sidebar(): ReactElement {
       )}
     >
       <div className={cn("flex h-[var(--nav-h)] shrink-0 items-center border-b border-line", collapsed ? "justify-center" : "px-4")}>
-        <Link href="/" aria-label="Vakeel-Sahayak home" data-testid="brand-home" className="rounded-sm no-underline">
+        <Link href="/" aria-label="Vakeel-Sahayak home" data-testid="brand-home" onClick={markRouteFocus} className="rounded-sm no-underline">
           <Logo markOnly={collapsed} />
         </Link>
       </div>

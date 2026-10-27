@@ -10,6 +10,7 @@ import { listCases } from "@/lib/api";
 import { toggleReducedMotion } from "@/lib/useReducedMotion";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS } from "./nav";
+import { markRouteFocus } from "./routeFocus";
 import { useShell } from "./ShellProvider";
 
 interface Entry {
@@ -53,7 +54,10 @@ export function CommandPalette(): ReactElement {
   }, [paletteOpen]);
 
   const entries = useMemo<Entry[]>(() => {
-    const go = (href: string) => () => router.push(href);
+    const go = (href: string) => () => {
+      markRouteFocus();
+      router.push(href);
+    };
     return [
       { id: "new-case", group: "Actions", label: "New case", hint: "Start a matter and upload the file", icon: Plus, keywords: "create add start", run: () => setNewCaseOpen(true) },
       {
