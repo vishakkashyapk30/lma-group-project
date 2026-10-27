@@ -142,7 +142,9 @@ def test_the_repo_spec_file_holds_500_scenarios_straddling_every_threshold():
     scenarios = yaml.safe_load(SPEC_FILE.read_text(encoding="utf-8"))["scenarios"]
     if not scenarios:
         pytest.skip("rights_scenarios.yaml is still empty: the specs are written by a team member who does not write the Radar (plan §15.2)")
-    assert len(scenarios) == 500
+    # RECONCILED: the original 500 keep their ids and inputs; the HA-03 check (docs/qa/rights-verification.md) added scenarios for the special-act limits, s.479(2), the Antil list and the narrowed statutory bar
+    original = [s for s in scenarios if s["id"].split("-")[0] in ("db", "ut", "na", "pr")]
+    assert len(original) == 500 and len(scenarios) > 500
     rules = {s["rule"] for s in scenarios}
     assert {"default_bail", "undertrial_limit"} <= rules
     assert {59, 60, 61} <= {s["inputs"].get("day") for s in scenarios if s["rule"] == "default_bail"}

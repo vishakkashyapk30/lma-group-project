@@ -9,15 +9,17 @@ from datetime import date, timedelta
 import pytest
 
 from vakeel_sahayak.rights.inputs import RuleInputs
+from vakeel_sahayak.rights.rules.antil_category import AntilCategoryRule
 from vakeel_sahayak.rights.rules.default_bail import DefaultBailRule
 from vakeel_sahayak.rights.rules.notice_of_appearance import NoticeOfAppearanceRule
 from vakeel_sahayak.rights.rules.production_24h import Production24hRule
+from vakeel_sahayak.rights.rules.statutory_bar import StatutoryBarRule
 from vakeel_sahayak.rights.rules.undertrial_limit import UndertrialLimitRule
 from vakeel_sahayak.testsets import rights_spec_writer as writer
 from vakeel_sahayak.testsets.t4_rights_scenarios import load_scenario_specs
 
 RULES = {"default_bail": DefaultBailRule, "undertrial_limit": UndertrialLimitRule, "notice_of_appearance": NoticeOfAppearanceRule,
-         "production_24h": Production24hRule}
+         "production_24h": Production24hRule, "antil_category": AntilCategoryRule, "statutory_bar": StatutoryBarRule}
 
 
 def radar_inputs(spec: dict) -> RuleInputs:
@@ -25,10 +27,13 @@ def radar_inputs(spec: dict) -> RuleInputs:
     if rule == "default_bail":
         as_of = (date.fromisoformat(i["first_remand"]) + timedelta(days=i["day"] - 1)).isoformat()
         return RuleInputs(as_of=as_of, first_remand=i["first_remand"], max_punishment=i["max_punishment"],
-                          charge_sheet_date=i["charge_sheet"], charge_sheet_filed=bool(i["charge_sheet"]))
+                          charge_sheet_date=i["charge_sheet"], charge_sheet_filed=bool(i["charge_sheet"]), sections=i.get("sections") or [])
     if rule == "undertrial_limit":
         return RuleInputs(as_of=i["as_of"], max_punishment=i["max_punishment"], custody_days=i["custody_days"], arrest_date=i["arrest_date"],
-                          antecedents_known=i["first_time"] is not None, first_time_offender=i["first_time"])
+                          antecedents_known=i["first_time"] is not None, first_time_offender=i["first_time"],
+                          sections=i.get("sections") or [], other_pending_cases=i.get("other_pending"), fir_date=i.get("fir_date"))
+    if rule in ("antil_category", "statutory_bar"):
+        return RuleInputs(as_of="2025-12-01", max_punishment=i["max_punishment"] or None, sections=i["sections"])
     if rule == "notice_of_appearance":
         return RuleInputs(as_of=i["arrest_date"], max_punishment=i["max_punishment"], arrest_memo_present=i["arrest_memo"], arrest_date=i["arrest_date"])
     return RuleInputs(as_of=i["production_date"], arrest_date=i["arrest_date"], arrest_time=i["arrest_time"], production_date=i["production_date"],
@@ -68,3 +73,19 @@ def test_boundary_days_of_the_default_bail_window():
 def test_undertrial_thresholds_for_seven_years(first, days, want):
     assert writer.undertrial_thresholds(7) == (852, 1278)
     assert writer.designed_undertrial({"custody_days": days, "max_punishment": "7 years", "first_time": first}) == want
+
+
+def test_the_radar_agrees_with_the_spec_on_every_scenario_added_after_the_ha03_check():
+    """The corrected rules and the independently written spec give the same answer on every HA-03 scenario (the five reproduced wrong inputs included)."""
+    specs = [s for s in load_scenario_specs(str(writer.SPEC_PATH)) if s["id"].split("-")[0] in ("dbs", "uts", "ac", "sb")]
+    assert len(specs) > 100
+    diffs = [(s["id"], s["designed_answer"], RULES[s["rule"]]().evaluate(radar_inputs(s)).status.value) for s in specs]
+    assert not [d for d in diffs if d[1] != d[2]], [d for d in diffs if d[1] != d[2]]
+
+
+def test_the_five_reproduced_wrong_inputs_are_scenarios_with_the_corrected_answers():
+    specs = {s["id"]: s for s in load_scenario_specs(str(writer.SPEC_PATH))}
+    notes = {s["note"].split("reproduced wrong input: ")[1][:20]: s for s in specs.values() if "reproduced wrong input" in s["note"]}
+    assert len(notes) == 5
+    answers = {(s["rule"], s["designed_answer"]) for s in specs.values() if "reproduced wrong input" in s["note"]}
+    assert answers == {("default_bail", "NOT_YET"), ("undertrial_limit", "CHECK"), ("antil_category", "A"), ("statutory_bar", "NOT_APPLICABLE")}

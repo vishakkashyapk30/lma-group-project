@@ -40,6 +40,12 @@ N_T1, N_T4 = 200, 100
 WINDOW_DAYS = 7
 
 
+def _ha03_scenario(spec: dict[str, Any]) -> bool:
+    """True for a T4 scenario added after the HA-03 check (special-act sections, pending-case flag, or a rule T5 does not plant)."""
+    inputs = spec["inputs"]
+    return spec["rule"] in ("antil_category", "statutory_bar") or "sections" in inputs or "other_pending" in inputs
+
+
 def _plant_default_bail(spec: dict[str, Any], k: int, as_of: date) -> dict[str, Any] | None:
     kind, years, floor = parse_max_punishment(str(spec["inputs"]["max_punishment"]))
     if kind == "unknown" or (kind == "years" and years == 10 and not floor) or spec["inputs"].get("charge_sheet"):
@@ -82,7 +88,7 @@ def build_t5(t1_dir: str, t4_dir: str, out_dir: str) -> TestSetManifest:
     t1 = load_t1_cases(t1_dir, open_only=False)  # the plan's "200 T1 cases": all of them run; nothing here scores the sealed slice
     if len(t1) < N_T1:
         raise ValueError(f"T5 needs {N_T1} T1 cases, found {len(t1)}")
-    scenarios = rows_from_file(Path(t4_dir) / "scenarios.jsonl")
+    scenarios = [s for s in rows_from_file(Path(t4_dir) / "scenarios.jsonl") if not _ha03_scenario(s)]  # the original 500 only: the HA-03 additions never carry a planted deadline
     if len(scenarios) < N_T4:
         raise ValueError(f"T5 needs {N_T4} T4 scenarios, found {len(scenarios)}")
     as_of = date.fromisoformat(AS_OF)

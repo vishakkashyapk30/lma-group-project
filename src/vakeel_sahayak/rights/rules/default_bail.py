@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from vakeel_sahayak.rights.acts import SpecialLimit, special_default_bail_limit
 from vakeel_sahayak.rights.base import Rule
 from vakeel_sahayak.rights.day_count import add_days, count_days, format_dmy
 from vakeel_sahayak.rights.inputs import RuleInputs
@@ -14,7 +15,7 @@ class DefaultBailRule(Rule):
     """Rights Radar rule: default_bail (plan §7.3, Appendix C)."""
 
     rule_id = RightsCheckName.DEFAULT_BAIL
-    rule_text = "Release if no charge sheet within 90 days (death, life or 10+ years) or 60 days (other offences), counted from first remand as day 1. Right lapses if the charge sheet is filed before an application. 'May extend to ten years' returns CHECK."
+    rule_text = "Release if no charge sheet within 90 days (death, life or 10+ years) or 60 days (other offences), counted from first remand as day 1. The right is lost if the charge sheet is filed before the accused applies for default bail after the right accrued (M. Ravindran), not by any charge sheet. 'May extend to ten years' returns CHECK. UAPA (s.43D(2)): 90 days, extendable to 180; NDPS (s.36A(4)) for s.19, s.24, s.27A and commercial quantity: 180 days, extendable to one year; between the base limit and the extended maximum the answer is CHECK (was the period extended?), never ELIGIBLE."
     sources = ["BNSS s.187(3) (CrPC s.167(2))", "ED v. Kapil Wadhawan (2023)", "M. Ravindran v. DRI (2020)"]
     rule_cite = "BNSS s.187(3)"
     last_verified = None  # TODO: date of week-0 check against the bare act
@@ -35,23 +36,32 @@ class DefaultBailRule(Rule):
                 RightsStatus.CHECK, "First remand date is not on record, so days cannot be counted.", uses
             )
         punishment = parse_punishment(inputs.max_punishment)
-        if punishment.kind == PunishmentKind.UNKNOWN:
-            return self.result(
-                RightsStatus.CHECK, "Maximum punishment is not on record, so the 60 or 90 day limit is unknown.", uses
-            )
-        if punishment.is_ten_years:
-            return self.result(
-                RightsStatus.CHECK,
-                f"Maximum punishment is {punishment.text}. Whether 'may extend to ten years' takes the 90-day or the 60-day limit is unsettled.",
-                uses,
-                {"first_remand": inputs.first_remand},
-            )
-        limit = 90 if punishment.ninety_day else 60
+        special = special_default_bail_limit(inputs)
+        if special is not None and special.certain:
+            limit, extended, how = special.base, special.extended_max, f"{special.label} limit"
+        else:
+            if punishment.kind == PunishmentKind.UNKNOWN:
+                return self.result(
+                    RightsStatus.CHECK, "Maximum punishment is not on record, so the 60 or 90 day limit is unknown.", uses
+                )
+            if punishment.is_ten_years:
+                return self.result(
+                    RightsStatus.CHECK,
+                    f"Maximum punishment is {punishment.text}. Whether 'may extend to ten years' takes the 90-day or the 60-day limit is unsettled (the Kerala and Karnataka High Courts take 60 days, the Orissa High Court is reported to take 90; no Supreme Court ruling on the BNSS wording was found).",
+                    uses,
+                    {"first_remand": inputs.first_remand},
+                )
+            limit, extended, how = (90 if punishment.ninety_day else 60), None, "limit"
+            if special is not None:  # an NDPS section whose quantity is not on record: the limit may be 180 days
+                extended = special.extended_max
         try:
             as_of_day = count_days(inputs.first_remand, inputs.as_of)
         except ValueError:
             return self.result(RightsStatus.CHECK, "The as-of date is before the first remand.", uses)
-        head = f"{limit}-day limit (maximum {punishment.text}). Day 1 is the first remand, {format_dmy(inputs.first_remand)}."
+        maximum = f" (maximum {punishment.text})" if punishment.text else ""
+        head = f"{limit}-day {how}{maximum}. Day 1 is the first remand, {format_dmy(inputs.first_remand)}."
+        if special is not None:
+            head += _special_note(special, limit)
         dates = {
             "first_remand": inputs.first_remand,
             "as_of": inputs.as_of,
@@ -67,11 +77,18 @@ class DefaultBailRule(Rule):
         if cs_date and cs_date > inputs.as_of:
             cs_date = None  # not yet filed as of the as-of date
         if cs_date:
-            return self._with_charge_sheet(inputs, head, limit, cs_date, uses, dates)
-        return self._without_charge_sheet(inputs, head, limit, as_of_day, uses, dates)
+            return self._with_charge_sheet(inputs, head, limit, extended, cs_date, uses, dates)
+        return self._without_charge_sheet(inputs, head, limit, extended, as_of_day, uses, dates)
 
     def _with_charge_sheet(
-        self, inputs: RuleInputs, head: str, limit: int, cs_date: str, uses: list[str], dates: dict[str, str | None]
+        self,
+        inputs: RuleInputs,
+        head: str,
+        limit: int,
+        extended: int | None,
+        cs_date: str,
+        uses: list[str],
+        dates: dict[str, str | None],
     ) -> RightsCheckResult:
         """Status when a charge sheet was filed on or before the as-of date."""
         assert inputs.first_remand
@@ -83,6 +100,13 @@ class DefaultBailRule(Rule):
             and count_days(inputs.first_remand, inputs.application_date) > limit
         ):
             app_day = count_days(inputs.first_remand, inputs.application_date)
+            if extended and app_day <= extended:
+                return self.result(
+                    RightsStatus.CHECK,
+                    f"{head} An application was made on day {app_day}, within the period the Court may extend to {extended} days; check whether it was extended before treating the right as accrued.",
+                    uses + ["application_date"],
+                    dates,
+                )
             detail = f"{head} {filed} A default-bail application was made on day {app_day}, before the charge sheet, so the right was exercised in time."
             return self.result(RightsStatus.ELIGIBLE, detail, uses + ["application_date"], dates)
         if cs_day <= limit:
@@ -95,7 +119,14 @@ class DefaultBailRule(Rule):
         return self.result(RightsStatus.WINDOW_CLOSED, f"{head} {filed} {window}", uses, dates)
 
     def _without_charge_sheet(
-        self, inputs: RuleInputs, head: str, limit: int, as_of_day: int, uses: list[str], dates: dict[str, str | None]
+        self,
+        inputs: RuleInputs,
+        head: str,
+        limit: int,
+        extended: int | None,
+        as_of_day: int,
+        uses: list[str],
+        dates: dict[str, str | None],
     ) -> RightsCheckResult:
         """Status when no charge sheet is on record as of the as-of date."""
         assert inputs.first_remand
@@ -105,6 +136,13 @@ class DefaultBailRule(Rule):
             return self.result(
                 RightsStatus.NOT_YET,
                 f"{head} As of {format_dmy(inputs.as_of)} it is day {as_of_day}. The right arises on day {limit + 1} ({opens}), {left} day(s) from now, if no charge sheet is filed.",
+                uses,
+                dates,
+            )
+        if extended and as_of_day <= extended:
+            return self.result(
+                RightsStatus.CHECK,
+                f"{head} It is day {as_of_day}, past the base limit but within the {extended} days to which the Court may extend it (UAPA s.43D(2) or NDPS s.36A(4)); check whether the period was extended or the quantity is commercial before relying on default bail.",
                 uses,
                 dates,
             )
@@ -121,3 +159,13 @@ class DefaultBailRule(Rule):
             uses,
             dates,
         )
+
+
+def _special_note(special: SpecialLimit, limit: int) -> str:
+    """Names the special-act limit, its extension, and the open points."""
+    if special.certain:
+        return f" The special-act limit replaces 60/90 days and the Court may extend it to {special.extended_max} days."
+    return (
+        f" An NDPS section is charged whose quantity is not on record: for commercial quantity the limit is {special.base} days "
+        f"(NDPS s.36A(4)), extendable to {special.extended_max} days."
+    )

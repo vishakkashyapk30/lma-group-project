@@ -2,11 +2,20 @@
 
 from __future__ import annotations
 
+from vakeel_sahayak.rights.acts import special_acts
 from vakeel_sahayak.rights.base import Rule
 from vakeel_sahayak.rights.inputs import RuleInputs
 from vakeel_sahayak.rights.punishment import PunishmentKind, parse_punishment
 from vakeel_sahayak.schemas.enums import RightsCheckName, RightsStatus
 from vakeel_sahayak.schemas.rights_report import RightsCheckResult
+
+# Acts with stringent bail provisions, from the judgment's own list (Antil, category C: "NDPS (S.37), PMLA (S.45), UAPA (S.43D(5), Companies Act, 212(6), etc.")
+# as reviewed in docs/qa/rights-verification.md. The judgment's list ends "etc.", so this short list is a reviewed minimum, not a closed set.
+STRINGENT_BAIL_ACTS = {"NDPS": "NDPS s.37", "PMLA": "PMLA s.45", "UAPA": "UAPA s.43D(5)", "COMPANIES": "Companies Act s.212(6)"}
+SCOPE_NOTE = (
+    " Antil's categories decide how an accused who was not arrested during investigation and cooperated is treated after the charge sheet; "
+    "for a client in custody this is context, not a bail entitlement."
+)
 
 # Sections that often carry an economic-offence argument (category D). Our reading, not in the plan: confirm in week 0.
 ECONOMIC_SECTIONS = [
@@ -19,7 +28,11 @@ class AntilCategoryRule(Rule):
     """Rights Radar rule: antil_category (plan §7.3, Appendix C)."""
 
     rule_id = RightsCheckName.ANTIL_CATEGORY
-    rule_text = "A: up to 7 years (not B or D). B: death, life, or more than 7 years. C: special acts with strict bail conditions. D: economic offences not under special acts."
+    rule_text = (
+        "A: up to 7 years (not B or D). B: death, life, or more than 7 years. C: only special acts with stringent bail provisions (NDPS s.37, PMLA s.45, UAPA s.43D(5), Companies Act s.212(6)); "
+        "any other special act falls through to A or B by punishment. D: economic offences not under special acts. "
+        "The categories are Antil's for an accused not arrested during investigation; shown as context for a client in custody."
+    )
     sources = ["Satender Kumar Antil v. CBI (2022)"]
     rule_cite = "Satender Kumar Antil v. CBI (2022)"
     last_verified = None  # TODO: date of week-0 check against the bare act
@@ -37,21 +50,29 @@ class AntilCategoryRule(Rule):
         uses = ["sections", "special_act"]
         punishment = parse_punishment(inputs.max_punishment)
         dates: dict[str, str | None] = {}
-        if inputs.special_act:
+        stringent = [STRINGENT_BAIL_ACTS[a] for a in special_acts(inputs) if a in STRINGENT_BAIL_ACTS]
+        if stringent:
             return self.result(
                 RightsStatus.C,
-                f"Charged under a special act ({inputs.special_act}) with strict bail conditions: category C.",
+                f"Charged under a special act with stringent bail provisions ({', '.join(stringent)}): category C.{SCOPE_NOTE}",
                 uses,
                 dates,
             )
+        others = [a for a in special_acts(inputs)]
+        unlisted = (
+            f" The {', '.join(others)} charge is under a special act that is not on the reviewed list of acts with stringent bail provisions "
+            "(the judgment's list ends 'etc.'); confirm that it has none."
+            if others
+            else ""
+        )
         if punishment.kind == PunishmentKind.UNKNOWN:
             return self.result(
-                RightsStatus.CHECK, "Maximum punishment is not on record, so the category cannot be set.", uses, dates
+                RightsStatus.CHECK, "Maximum punishment is not on record, so the category cannot be set." + unlisted + SCOPE_NOTE, uses, dates
             )
         if punishment.capital_or_life or (punishment.years or 0) > 7:
             return self.result(
                 RightsStatus.B,
-                f"Maximum punishment is {punishment.text}: category B (death, life or more than 7 years).",
+                f"Maximum punishment is {punishment.text}: category B (death, life or more than 7 years).{unlisted}{SCOPE_NOTE}",
                 uses,
                 dates,
             )
@@ -59,12 +80,15 @@ class AntilCategoryRule(Rule):
         if any(_normalise(s) in {_normalise(h) for h in hints} for s in inputs.sections):
             return self.result(
                 RightsStatus.CHECK,
-                f"Category A (up to {punishment.text}), unless treated as an economic offence (D).",
+                f"Category A (up to {punishment.text}), unless treated as an economic offence (D).{unlisted}{SCOPE_NOTE}",
                 uses,
                 dates,
             )
         return self.result(
-            RightsStatus.A, f"Maximum punishment is {punishment.text}: category A (up to 7 years).", uses, dates
+            RightsStatus.A,
+            f"Maximum punishment is {punishment.text}: category A (up to 7 years).{unlisted}{SCOPE_NOTE}",
+            uses,
+            dates,
         )
 
 

@@ -347,7 +347,7 @@ PLAN_STATUSES = {
     "grounds_of_arrest": ["FLAG", "OK", "UNKNOWN", "CHECK"],
     "production_24h": ["FLAG", "OK", "CHECK"],
     "antil_category": ["A", "B", "C", "D", "CHECK"],
-    "statutory_bar": ["BAR_APPLIES", "NOT_APPLICABLE"],
+    "statutory_bar": ["BAR_APPLIES", "NOT_APPLICABLE", "CHECK"],  # RECONCILED: docs/qa/rights-verification.md (open question 7) adds CHECK when the section, quantity or chapter is not known
 }
 
 

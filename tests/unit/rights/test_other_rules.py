@@ -168,7 +168,7 @@ class TestStatutoryBar:
     def test_metadata(self):
         """Statuses BAR_APPLIES / NOT_APPLICABLE only; the three provisions are the sources."""
         assert self.rule.rule_id == RightsCheckName.STATUTORY_BAR
-        assert set(self.rule.allowed_statuses) == {S.BAR_APPLIES, S.NOT_APPLICABLE}
+        assert set(self.rule.allowed_statuses) == {S.BAR_APPLIES, S.NOT_APPLICABLE, S.CHECK}  # RECONCILED: CHECK added (rights-verification.md, open question 7)
         joined = " ".join(self.rule.sources)
         assert "NDPS" in joined and "43D(5)" in joined and "PMLA" in joined
 
@@ -179,11 +179,16 @@ class TestStatutoryBar:
         rule_text = res.rule or ""
         assert "NDPS s.37" in rule_text and "UAPA s.43D(5)" in rule_text and "PMLA s.45" in rule_text
 
-    @pytest.mark.parametrize("act", ["NDPS", "UAPA", "PMLA"])
-    def test_bar_applies(self, make_rule_inputs, act):
-        """NDPS s.37, UAPA s.43D(5) and PMLA s.45: the twin conditions apply -> BAR_APPLIES."""
-        res = self.rule.evaluate(make_rule_inputs(special_act=act, sections=[f"{act} 1"]))
-        assert res.status == S.BAR_APPLIES
+    @pytest.mark.parametrize(("act", "section", "expected"), [
+        ("PMLA", "PMLA 4", S.BAR_APPLIES),  # PMLA s.45(1): any offence under the Act
+        ("NDPS", "NDPS 27A", S.BAR_APPLIES),  # RECONCILED: NDPS s.37(1)(b) reaches s.19, 24, 27A and commercial quantity only
+        ("NDPS", "NDPS 1", S.CHECK),  # RECONCILED: section and quantity unknown -> CHECK, not BAR_APPLIES
+        ("UAPA", "UAPA 1", S.CHECK),  # RECONCILED: s.43D(5) reaches Chapters IV and VI only; chapter unknown -> CHECK
+    ])
+    def test_bar_applies(self, make_rule_inputs, act, section, expected):
+        """PMLA s.45 applies to any offence under the Act; NDPS and UAPA need the section, quantity or chapter."""
+        res = self.rule.evaluate(make_rule_inputs(special_act=act, sections=[section]))
+        assert res.status == expected
 
     def test_no_special_act(self, make_rule_inputs):
         """No special act -> NOT_APPLICABLE."""

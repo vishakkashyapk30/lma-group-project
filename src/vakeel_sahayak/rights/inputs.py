@@ -25,3 +25,7 @@ class RuleInputs(BaseModel):
     arrest_memo_present: bool | None = None
     grounds_communicated: bool | None = None
     special_act: str | None = None
+    # HA-03 (docs/qa/rights-verification.md): None means not on record
+    other_pending_cases: bool | None = None  # BNSS s.479(2): another investigation, inquiry or trial pending against the person
+    fir_date: str | None = None  # the date the case was registered (before or after 1 July 2024 decides which act applies)
+    grounds_in_writing: bool | None = None  # were the grounds of arrest given in writing (Mihir Rajesh Shah)

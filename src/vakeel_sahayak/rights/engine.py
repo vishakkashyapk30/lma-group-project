@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from vakeel_sahayak.rights.base import Rule
 from vakeel_sahayak.rights.day_count import DateRule, count_days
 from vakeel_sahayak.rights.inputs import RuleInputs
@@ -51,6 +53,14 @@ def _value(field: TrackedField, only_stated: bool = True):
     return field.value
 
 
+_PENDING = re.compile(r"pending|under\s+(?:investigation|trial|inquiry)|trial\s+in\s+progress", re.IGNORECASE)
+
+
+def _pending_cases(antecedents: list[str]) -> bool:
+    """BNSS s.479(2): True if an antecedent entry says another case is pending. Only called when the antecedents are on record."""
+    return any(_PENDING.search(str(entry)) for entry in antecedents)
+
+
 class RightsEngine:
     """Runs all rules over the dossier and timeline; also runs on a clock because custody grows daily (plan §7.4)."""
 
@@ -86,6 +96,8 @@ class RightsEngine:
             custody = count_days(arrest_date, as_of, DateRule.CALENDAR_DAYS_BETWEEN)
         ante = _value(f.antecedents)
         known = ante is not None
+        pending = _pending_cases(ante) if known else None
+        fir = _value(f.fir)
         codes = [s.code.upper() for s in sections]
         special = next((s.code for s in sections if s.code.upper() not in _GENERAL_CODES), None)
         return RuleInputs(
@@ -101,6 +113,8 @@ class RightsEngine:
             antecedents_known=known,
             first_time_offender=(len(ante) == 0) if known else None,
             special_act=special if codes else None,
+            other_pending_cases=pending,
+            fir_date=fir.date if fir else None,
         )
 
     def run(self, dossier: CaseDossier, timeline: list[TimelineEvent], as_of: str) -> RightsReport:

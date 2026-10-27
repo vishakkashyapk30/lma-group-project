@@ -1,4 +1,4 @@
-# T4 rights-scenario specs (plan §15.2): 500 scenarios, designed answers derived from the bare-act rule text by
+# T4 rights-scenario specs (plan §15.2): the original 500 scenarios plus the HA-03 additions, designed answers derived from the bare-act rule text by
 # vakeel_sahayak.testsets.rights_spec_writer (which does not import the Rights Radar). Regenerate with
 #   python -m vakeel_sahayak.testsets.rights_spec_writer
 # Each scenario: id, rule, inputs, designed_answer (a RightsStatus value), note.
@@ -1951,7 +1951,7 @@ scenarios:
     first_time: null
     as_of: '2025-10-31'
     arrest_date: '2024-05-01'
-  designed_answer: ELIGIBLE
+  designed_answer: CHECK
   note: antecedents unknown at one-half
 - id: ut-016
   rule: undertrial_limit
@@ -1961,7 +1961,7 @@ scenarios:
     first_time: null
     as_of: '2026-06-05'
     arrest_date: '2024-12-03'
-  designed_answer: ELIGIBLE
+  designed_answer: CHECK
   note: antecedents unknown at just over one-half
 - id: ut-017
   rule: undertrial_limit
@@ -2111,7 +2111,7 @@ scenarios:
     first_time: null
     as_of: '2025-07-30'
     arrest_date: '2023-01-29'
-  designed_answer: ELIGIBLE
+  designed_answer: CHECK
   note: antecedents unknown at one-half
 - id: ut-032
   rule: undertrial_limit
@@ -2121,7 +2121,7 @@ scenarios:
     first_time: null
     as_of: '2025-12-01'
     arrest_date: '2023-06-01'
-  designed_answer: ELIGIBLE
+  designed_answer: CHECK
   note: antecedents unknown at just over one-half
 - id: ut-033
   rule: undertrial_limit
@@ -2271,7 +2271,7 @@ scenarios:
     first_time: null
     as_of: '2026-05-06'
     arrest_date: '2022-11-05'
-  designed_answer: ELIGIBLE
+  designed_answer: CHECK
   note: antecedents unknown at one-half
 - id: ut-048
   rule: undertrial_limit
@@ -2281,7 +2281,7 @@ scenarios:
     first_time: null
     as_of: '2026-08-30'
     arrest_date: '2023-02-28'
-  designed_answer: ELIGIBLE
+  designed_answer: CHECK
   note: antecedents unknown at just over one-half
 - id: ut-049
   rule: undertrial_limit
@@ -2431,7 +2431,7 @@ scenarios:
     first_time: null
     as_of: '2026-04-11'
     arrest_date: '2021-04-12'
-  designed_answer: ELIGIBLE
+  designed_answer: CHECK
   note: antecedents unknown at one-half
 - id: ut-064
   rule: undertrial_limit
@@ -2441,7 +2441,7 @@ scenarios:
     first_time: null
     as_of: '2026-02-27'
     arrest_date: '2021-02-27'
-  designed_answer: ELIGIBLE
+  designed_answer: CHECK
   note: antecedents unknown at just over one-half
 - id: ut-065
   rule: undertrial_limit
@@ -2591,7 +2591,7 @@ scenarios:
     first_time: null
     as_of: '2025-06-04'
     arrest_date: '2018-06-06'
-  designed_answer: ELIGIBLE
+  designed_answer: CHECK
   note: antecedents unknown at one-half
 - id: ut-080
   rule: undertrial_limit
@@ -2601,7 +2601,7 @@ scenarios:
     first_time: null
     as_of: '2025-06-29'
     arrest_date: '2018-06-30'
-  designed_answer: ELIGIBLE
+  designed_answer: CHECK
   note: antecedents unknown at just over one-half
 - id: ut-081
   rule: undertrial_limit
@@ -2611,7 +2611,7 @@ scenarios:
     first_time: false
     as_of: '2025-12-28'
     arrest_date: '2023-04-03'
-  designed_answer: NOT_APPLICABLE
+  designed_answer: CHECK
   note: 'death or life: not applicable'
 - id: ut-082
   rule: undertrial_limit
@@ -2621,7 +2621,7 @@ scenarios:
     first_time: true
     as_of: '2026-09-14'
     arrest_date: '2018-06-28'
-  designed_answer: NOT_APPLICABLE
+  designed_answer: CHECK
   note: 'death or life: not applicable'
 - id: ut-083
   rule: undertrial_limit
@@ -2641,7 +2641,7 @@ scenarios:
     first_time: true
     as_of: '2026-05-23'
     arrest_date: '2023-08-27'
-  designed_answer: NOT_APPLICABLE
+  designed_answer: CHECK
   note: 'death or life: not applicable'
 - id: ut-085
   rule: undertrial_limit
@@ -2651,7 +2651,7 @@ scenarios:
     first_time: false
     as_of: '2026-01-18'
     arrest_date: '2017-11-01'
-  designed_answer: NOT_APPLICABLE
+  designed_answer: CHECK
   note: 'death or life: not applicable'
 - id: ut-086
   rule: undertrial_limit
@@ -2671,7 +2671,7 @@ scenarios:
     first_time: false
     as_of: '2025-08-31'
     arrest_date: '2022-12-05'
-  designed_answer: NOT_APPLICABLE
+  designed_answer: CHECK
   note: 'death or life: not applicable'
 - id: ut-088
   rule: undertrial_limit
@@ -2681,7 +2681,7 @@ scenarios:
     first_time: true
     as_of: '2025-06-29'
     arrest_date: '2017-04-12'
-  designed_answer: NOT_APPLICABLE
+  designed_answer: CHECK
   note: 'death or life: not applicable'
 - id: ut-089
   rule: undertrial_limit
@@ -2701,7 +2701,7 @@ scenarios:
     first_time: true
     as_of: '2025-12-17'
     arrest_date: '2023-03-23'
-  designed_answer: NOT_APPLICABLE
+  designed_answer: CHECK
   note: 'death or life: not applicable'
 - id: ut-091
   rule: undertrial_limit
@@ -2711,7 +2711,7 @@ scenarios:
     first_time: false
     as_of: '2025-06-07'
     arrest_date: '2022-09-11'
-  designed_answer: NOT_APPLICABLE
+  designed_answer: CHECK
   note: 'death or life: not applicable'
 - id: ut-092
   rule: undertrial_limit
@@ -4653,3 +4653,1357 @@ scenarios:
     production_time: '19:16'
   designed_answer: FLAG
   note: produced 4000 minutes after arrest
+- id: dbs-001
+  rule: default_bail
+  inputs:
+    first_remand: '2025-02-16'
+    day: 62
+    max_punishment: 5 years
+    charge_sheet: null
+    sections:
+    - UAPA 18
+  designed_answer: NOT_YET
+  note: 'HA-03 UAPA: reproduced wrong input: UAPA, maximum 5 years, day 62: not yet
+    (s.43D(2): 90 days)'
+- id: dbs-002
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-14'
+    day: 100
+    max_punishment: 20 years
+    charge_sheet: null
+    sections:
+    - NDPS 21(c)
+  designed_answer: NOT_YET
+  note: 'HA-03 NDPS: reproduced wrong input: NDPS s.21(c), maximum 20 years, day 100:
+    not yet (s.36A(4): 180 days)'
+- id: dbs-003
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-06'
+    day: 1
+    max_punishment: may extend to ten years
+    charge_sheet: null
+    sections:
+    - UAPA 18
+  designed_answer: NOT_YET
+  note: 'HA-03 UAPA: UAPA s.43D(2), day 1'
+- id: dbs-004
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-31'
+    day: 60
+    max_punishment: 7 years
+    charge_sheet: null
+    sections:
+    - UAPA 18
+  designed_answer: NOT_YET
+  note: 'HA-03 UAPA: UAPA s.43D(2), day 60'
+- id: dbs-005
+  rule: default_bail
+  inputs:
+    first_remand: '2025-02-16'
+    day: 61
+    max_punishment: 5 years
+    charge_sheet: null
+    sections:
+    - UAPA 18
+  designed_answer: NOT_YET
+  note: 'HA-03 UAPA: UAPA s.43D(2), day 61'
+- id: dbs-006
+  rule: default_bail
+  inputs:
+    first_remand: '2025-03-18'
+    day: 62
+    max_punishment: may extend to ten years
+    charge_sheet: null
+    sections:
+    - UAPA 18
+  designed_answer: NOT_YET
+  note: 'HA-03 UAPA: UAPA s.43D(2), day 62'
+- id: dbs-007
+  rule: default_bail
+  inputs:
+    first_remand: '2025-10-26'
+    day: 89
+    max_punishment: life
+    charge_sheet: null
+    sections:
+    - UAPA 18
+  designed_answer: NOT_YET
+  note: 'HA-03 UAPA: UAPA s.43D(2), day 89'
+- id: dbs-008
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-14'
+    day: 90
+    max_punishment: life
+    charge_sheet: null
+    sections:
+    - UAPA 18
+  designed_answer: NOT_YET
+  note: 'HA-03 UAPA: UAPA s.43D(2), day 90'
+- id: dbs-009
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-19'
+    day: 91
+    max_punishment: 7 years
+    charge_sheet: null
+    sections:
+    - UAPA 18
+  designed_answer: CHECK
+  note: 'HA-03 UAPA: UAPA s.43D(2), day 91'
+- id: dbs-010
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-19'
+    day: 120
+    max_punishment: 3 years
+    charge_sheet: null
+    sections:
+    - UAPA 18
+  designed_answer: CHECK
+  note: 'HA-03 UAPA: UAPA s.43D(2), day 120'
+- id: dbs-011
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-06'
+    day: 179
+    max_punishment: 7 years
+    charge_sheet: null
+    sections:
+    - UAPA 18
+  designed_answer: CHECK
+  note: 'HA-03 UAPA: UAPA s.43D(2), day 179'
+- id: dbs-012
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-18'
+    day: 180
+    max_punishment: life
+    charge_sheet: null
+    sections:
+    - UAPA 18
+  designed_answer: CHECK
+  note: 'HA-03 UAPA: UAPA s.43D(2), day 180'
+- id: dbs-013
+  rule: default_bail
+  inputs:
+    first_remand: '2025-03-30'
+    day: 181
+    max_punishment: life
+    charge_sheet: null
+    sections:
+    - UAPA 18
+  designed_answer: ELIGIBLE
+  note: 'HA-03 UAPA: UAPA s.43D(2), day 181'
+- id: dbs-014
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-27'
+    day: 200
+    max_punishment: life
+    charge_sheet: null
+    sections:
+    - UAPA 18
+  designed_answer: ELIGIBLE
+  note: 'HA-03 UAPA: UAPA s.43D(2), day 200'
+- id: dbs-015
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-20'
+    day: 61
+    max_punishment: 20 years
+    charge_sheet: null
+    sections:
+    - NDPS 22(c)
+  designed_answer: NOT_YET
+  note: 'HA-03 NDPS: NDPS commercial quantity, day 61'
+- id: dbs-016
+  rule: default_bail
+  inputs:
+    first_remand: '2025-11-02'
+    day: 90
+    max_punishment: 10 years or more
+    charge_sheet: null
+    sections:
+    - NDPS 20(b)(ii)(C)
+  designed_answer: NOT_YET
+  note: 'HA-03 NDPS: NDPS commercial quantity, day 90'
+- id: dbs-017
+  rule: default_bail
+  inputs:
+    first_remand: '2025-11-01'
+    day: 91
+    max_punishment: 20 years
+    charge_sheet: null
+    sections:
+    - NDPS 22(c)
+  designed_answer: NOT_YET
+  note: 'HA-03 NDPS: NDPS commercial quantity, day 91'
+- id: dbs-018
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-01'
+    day: 100
+    max_punishment: 10 years or more
+    charge_sheet: null
+    sections:
+    - NDPS 20(b)(ii)(C)
+  designed_answer: NOT_YET
+  note: 'HA-03 NDPS: NDPS commercial quantity, day 100'
+- id: dbs-019
+  rule: default_bail
+  inputs:
+    first_remand: '2025-02-24'
+    day: 179
+    max_punishment: 20 years
+    charge_sheet: null
+    sections:
+    - NDPS 22(c)
+  designed_answer: NOT_YET
+  note: 'HA-03 NDPS: NDPS commercial quantity, day 179'
+- id: dbs-020
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-18'
+    day: 180
+    max_punishment: 20 years
+    charge_sheet: null
+    sections:
+    - NDPS 20(b)(ii)(C)
+  designed_answer: NOT_YET
+  note: 'HA-03 NDPS: NDPS commercial quantity, day 180'
+- id: dbs-021
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-31'
+    day: 181
+    max_punishment: 10 years or more
+    charge_sheet: null
+    sections:
+    - NDPS 21(c)
+  designed_answer: CHECK
+  note: 'HA-03 NDPS: NDPS commercial quantity, day 181'
+- id: dbs-022
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-22'
+    day: 300
+    max_punishment: 20 years
+    charge_sheet: null
+    sections:
+    - NDPS 20(b)(ii)(C)
+  designed_answer: CHECK
+  note: 'HA-03 NDPS: NDPS commercial quantity, day 300'
+- id: dbs-023
+  rule: default_bail
+  inputs:
+    first_remand: '2025-10-19'
+    day: 365
+    max_punishment: 10 years or more
+    charge_sheet: null
+    sections:
+    - NDPS 21(c)
+  designed_answer: CHECK
+  note: 'HA-03 NDPS: NDPS commercial quantity, day 365'
+- id: dbs-024
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-26'
+    day: 366
+    max_punishment: 10 years or more
+    charge_sheet: null
+    sections:
+    - NDPS 22(c)
+  designed_answer: ELIGIBLE
+  note: 'HA-03 NDPS: NDPS commercial quantity, day 366'
+- id: dbs-025
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-06'
+    day: 400
+    max_punishment: 20 years
+    charge_sheet: null
+    sections:
+    - NDPS 21(c)
+  designed_answer: ELIGIBLE
+  note: 'HA-03 NDPS: NDPS commercial quantity, day 400'
+- id: dbs-026
+  rule: default_bail
+  inputs:
+    first_remand: '2025-02-02'
+    day: 100
+    max_punishment: 10 years
+    charge_sheet: null
+    sections:
+    - NDPS 27A
+  designed_answer: NOT_YET
+  note: 'HA-03 NDPS: NDPS s.19, 24 or 27A, day 100'
+- id: dbs-027
+  rule: default_bail
+  inputs:
+    first_remand: '2025-10-04'
+    day: 180
+    max_punishment: life
+    charge_sheet: null
+    sections:
+    - NDPS 19
+  designed_answer: NOT_YET
+  note: 'HA-03 NDPS: NDPS s.19, 24 or 27A, day 180'
+- id: dbs-028
+  rule: default_bail
+  inputs:
+    first_remand: '2025-02-20'
+    day: 181
+    max_punishment: life
+    charge_sheet: null
+    sections:
+    - NDPS 19
+  designed_answer: CHECK
+  note: 'HA-03 NDPS: NDPS s.19, 24 or 27A, day 181'
+- id: dbs-029
+  rule: default_bail
+  inputs:
+    first_remand: '2025-02-11'
+    day: 366
+    max_punishment: 20 years
+    charge_sheet: null
+    sections:
+    - NDPS 19
+  designed_answer: ELIGIBLE
+  note: 'HA-03 NDPS: NDPS s.19, 24 or 27A, day 366'
+- id: dbs-030
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-29'
+    day: 59
+    max_punishment: 1 year
+    charge_sheet: null
+    sections:
+    - NDPS 20(b)(ii)(A)
+  designed_answer: NOT_YET
+  note: 'HA-03 NDPS: NDPS small quantity keeps the ordinary 60 days, day 59'
+- id: dbs-031
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-06'
+    day: 60
+    max_punishment: 1 year
+    charge_sheet: null
+    sections:
+    - NDPS 20(b)(ii)(A)
+  designed_answer: NOT_YET
+  note: 'HA-03 NDPS: NDPS small quantity keeps the ordinary 60 days, day 60'
+- id: dbs-032
+  rule: default_bail
+  inputs:
+    first_remand: '2025-10-05'
+    day: 61
+    max_punishment: 1 year
+    charge_sheet: null
+    sections:
+    - NDPS 20(b)(ii)(A)
+  designed_answer: ELIGIBLE
+  note: 'HA-03 NDPS: NDPS small quantity keeps the ordinary 60 days, day 61'
+- id: dbs-033
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-28'
+    day: 91
+    max_punishment: 1 year
+    charge_sheet: null
+    sections:
+    - NDPS 20(b)(ii)(A)
+  designed_answer: ELIGIBLE
+  note: 'HA-03 NDPS: NDPS small quantity keeps the ordinary 60 days, day 91'
+- id: dbs-034
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-31'
+    day: 59
+    max_punishment: may extend to ten years
+    charge_sheet: null
+    sections:
+    - NDPS 22(b)
+  designed_answer: CHECK
+  note: 'HA-03 NDPS: NDPS intermediate quantity: ordinary limit, day 59'
+- id: dbs-035
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-26'
+    day: 60
+    max_punishment: 10 years or more
+    charge_sheet: null
+    sections:
+    - NDPS 22(b)
+  designed_answer: NOT_YET
+  note: 'HA-03 NDPS: NDPS intermediate quantity: ordinary limit, day 60'
+- id: dbs-036
+  rule: default_bail
+  inputs:
+    first_remand: '2025-02-04'
+    day: 61
+    max_punishment: may extend to ten years
+    charge_sheet: null
+    sections:
+    - NDPS 22(b)
+  designed_answer: CHECK
+  note: 'HA-03 NDPS: NDPS intermediate quantity: ordinary limit, day 61'
+- id: dbs-037
+  rule: default_bail
+  inputs:
+    first_remand: '2025-03-16'
+    day: 91
+    max_punishment: 10 years or more
+    charge_sheet: null
+    sections:
+    - NDPS 22(b)
+  designed_answer: ELIGIBLE
+  note: 'HA-03 NDPS: NDPS intermediate quantity: ordinary limit, day 91'
+- id: dbs-038
+  rule: default_bail
+  inputs:
+    first_remand: '2025-03-24'
+    day: 92
+    max_punishment: 10 years or more
+    charge_sheet: null
+    sections:
+    - NDPS 22(b)
+  designed_answer: ELIGIBLE
+  note: 'HA-03 NDPS: NDPS intermediate quantity: ordinary limit, day 92'
+- id: dbs-039
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-29'
+    day: 60
+    max_punishment: 10 years or more
+    charge_sheet: null
+    sections:
+    - NDPS 21
+  designed_answer: NOT_YET
+  note: 'HA-03 NDPS: NDPS section with no quantity on record, day 60'
+- id: dbs-040
+  rule: default_bail
+  inputs:
+    first_remand: '2025-06-10'
+    day: 61
+    max_punishment: 10 years or more
+    charge_sheet: null
+    sections:
+    - NDPS 21
+  designed_answer: NOT_YET
+  note: 'HA-03 NDPS: NDPS section with no quantity on record, day 61'
+- id: dbs-041
+  rule: default_bail
+  inputs:
+    first_remand: '2025-02-10'
+    day: 90
+    max_punishment: 10 years or more
+    charge_sheet: null
+    sections:
+    - NDPS 21
+  designed_answer: NOT_YET
+  note: 'HA-03 NDPS: NDPS section with no quantity on record, day 90'
+- id: dbs-042
+  rule: default_bail
+  inputs:
+    first_remand: '2025-01-31'
+    day: 91
+    max_punishment: 10 years or more
+    charge_sheet: null
+    sections:
+    - NDPS 21
+  designed_answer: CHECK
+  note: 'HA-03 NDPS: NDPS section with no quantity on record, day 91'
+- id: dbs-043
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-09'
+    day: 100
+    max_punishment: 10 years or more
+    charge_sheet: null
+    sections:
+    - NDPS 21
+  designed_answer: CHECK
+  note: 'HA-03 NDPS: NDPS section with no quantity on record, day 100'
+- id: dbs-044
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-22'
+    day: 181
+    max_punishment: 10 years or more
+    charge_sheet: null
+    sections:
+    - NDPS 21
+  designed_answer: CHECK
+  note: 'HA-03 NDPS: NDPS section with no quantity on record, day 181'
+- id: dbs-045
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-09'
+    day: 366
+    max_punishment: 10 years or more
+    charge_sheet: null
+    sections:
+    - NDPS 21
+  designed_answer: ELIGIBLE
+  note: 'HA-03 NDPS: NDPS section with no quantity on record, day 366'
+- id: dbs-046
+  rule: default_bail
+  inputs:
+    first_remand: '2025-07-24'
+    day: 60
+    max_punishment: 7 years
+    charge_sheet: null
+    sections:
+    - IPC 420
+    - NDPS 21(c)
+  designed_answer: NOT_YET
+  note: 'HA-03 mixed: IPC 420 with NDPS commercial quantity, day 60'
+- id: dbs-047
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-16'
+    day: 61
+    max_punishment: 7 years
+    charge_sheet: null
+    sections:
+    - IPC 420
+    - NDPS 21(c)
+  designed_answer: NOT_YET
+  note: 'HA-03 mixed: IPC 420 with NDPS commercial quantity, day 61'
+- id: dbs-048
+  rule: default_bail
+  inputs:
+    first_remand: '2025-03-07'
+    day: 100
+    max_punishment: 7 years
+    charge_sheet: null
+    sections:
+    - IPC 420
+    - NDPS 21(c)
+  designed_answer: NOT_YET
+  note: 'HA-03 mixed: IPC 420 with NDPS commercial quantity, day 100'
+- id: dbs-049
+  rule: default_bail
+  inputs:
+    first_remand: '2025-09-21'
+    day: 60
+    max_punishment: 7 years
+    charge_sheet: null
+    sections:
+    - BNS 318(4)
+  designed_answer: NOT_YET
+  note: 'HA-03 control: BNS only: unchanged 60-day limit, day 60'
+- id: dbs-050
+  rule: default_bail
+  inputs:
+    first_remand: '2025-04-29'
+    day: 61
+    max_punishment: 7 years
+    charge_sheet: null
+    sections:
+    - BNS 318(4)
+  designed_answer: ELIGIBLE
+  note: 'HA-03 control: BNS only: unchanged 60-day limit, day 61'
+- id: dbs-051
+  rule: default_bail
+  inputs:
+    first_remand: '2025-08-20'
+    day: 85
+    max_punishment: 5 years
+    charge_sheet: '2025-11-07'
+    sections:
+    - UAPA 18
+  designed_answer: WINDOW_CLOSED
+  note: 'HA-03 charge sheet: charge sheet on day 80'
+- id: dbs-052
+  rule: default_bail
+  inputs:
+    first_remand: '2025-05-04'
+    day: 110
+    max_punishment: 5 years
+    charge_sheet: '2025-08-11'
+    sections:
+    - UAPA 18
+  designed_answer: WINDOW_CLOSED
+  note: 'HA-03 charge sheet: charge sheet on day 100'
+- id: dbs-053
+  rule: default_bail
+  inputs:
+    first_remand: '2025-03-17'
+    day: 160
+    max_punishment: 20 years
+    charge_sheet: '2025-08-13'
+    sections:
+    - NDPS 21(c)
+  designed_answer: WINDOW_CLOSED
+  note: 'HA-03 charge sheet: charge sheet on day 150'
+- id: dbs-054
+  rule: default_bail
+  inputs:
+    first_remand: '2025-02-08'
+    day: 210
+    max_punishment: 20 years
+    charge_sheet: '2025-08-26'
+    sections:
+    - NDPS 21(c)
+  designed_answer: WINDOW_CLOSED
+  note: 'HA-03 charge sheet: charge sheet on day 200'
+- id: uts-001
+  rule: undertrial_limit
+  inputs:
+    custody_days: 600
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-02-22'
+    arrest_date: '2024-07-02'
+    other_pending: true
+    sections:
+    - BNS 303
+  designed_answer: CHECK
+  note: 'HA-03 reproduced wrong input: BNS 303, maximum 3 years, 600 days, not first-time,
+    other case pending: CHECK (s.479(2))'
+- id: uts-002
+  rule: undertrial_limit
+  inputs:
+    custody_days: 364
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2026-01-08'
+    arrest_date: '2025-01-09'
+    other_pending: true
+    sections:
+    - BNS 303
+  designed_answer: NOT_YET
+  note: HA-03 3 years, first-time True, other pending True, threshold 365 -1
+- id: uts-003
+  rule: undertrial_limit
+  inputs:
+    custody_days: 364
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2026-03-20'
+    arrest_date: '2025-03-21'
+    other_pending: false
+    sections:
+    - BNS 303
+  designed_answer: NOT_YET
+  note: HA-03 3 years, first-time True, other pending False, threshold 365 -1
+- id: uts-004
+  rule: undertrial_limit
+  inputs:
+    custody_days: 364
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2026-01-13'
+    arrest_date: '2025-01-14'
+    other_pending: null
+    sections:
+    - BNS 303
+  designed_answer: NOT_YET
+  note: HA-03 3 years, first-time True, other pending None, threshold 365 -1
+- id: uts-005
+  rule: undertrial_limit
+  inputs:
+    custody_days: 365
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2026-05-26'
+    arrest_date: '2025-05-26'
+    other_pending: true
+    sections:
+    - BNS 303
+  designed_answer: CHECK
+  note: HA-03 3 years, first-time True, other pending True, threshold 365 +0
+- id: uts-006
+  rule: undertrial_limit
+  inputs:
+    custody_days: 365
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2026-03-14'
+    arrest_date: '2025-03-14'
+    other_pending: false
+    sections:
+    - BNS 303
+  designed_answer: ELIGIBLE
+  note: HA-03 3 years, first-time True, other pending False, threshold 365 +0
+- id: uts-007
+  rule: undertrial_limit
+  inputs:
+    custody_days: 365
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2026-03-05'
+    arrest_date: '2025-03-05'
+    other_pending: null
+    sections:
+    - BNS 303
+  designed_answer: ELIGIBLE
+  note: HA-03 3 years, first-time True, other pending None, threshold 365 +0
+- id: uts-008
+  rule: undertrial_limit
+  inputs:
+    custody_days: 366
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2026-06-16'
+    arrest_date: '2025-06-15'
+    other_pending: true
+    sections:
+    - BNS 303
+  designed_answer: CHECK
+  note: HA-03 3 years, first-time True, other pending True, threshold 365 +1
+- id: uts-009
+  rule: undertrial_limit
+  inputs:
+    custody_days: 366
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2026-05-09'
+    arrest_date: '2025-05-08'
+    other_pending: false
+    sections:
+    - BNS 303
+  designed_answer: ELIGIBLE
+  note: HA-03 3 years, first-time True, other pending False, threshold 365 +1
+- id: uts-010
+  rule: undertrial_limit
+  inputs:
+    custody_days: 366
+    max_punishment: 3 years
+    first_time: true
+    as_of: '2026-03-29'
+    arrest_date: '2025-03-28'
+    other_pending: null
+    sections:
+    - BNS 303
+  designed_answer: ELIGIBLE
+  note: HA-03 3 years, first-time True, other pending None, threshold 365 +1
+- id: uts-011
+  rule: undertrial_limit
+  inputs:
+    custody_days: 547
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-05-16'
+    arrest_date: '2024-11-15'
+    other_pending: true
+    sections:
+    - BNS 303
+  designed_answer: NOT_YET
+  note: HA-03 3 years, first-time False, other pending True, threshold 548 -1
+- id: uts-012
+  rule: undertrial_limit
+  inputs:
+    custody_days: 547
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-04-14'
+    arrest_date: '2024-10-14'
+    other_pending: false
+    sections:
+    - BNS 303
+  designed_answer: NOT_YET
+  note: HA-03 3 years, first-time False, other pending False, threshold 548 -1
+- id: uts-013
+  rule: undertrial_limit
+  inputs:
+    custody_days: 547
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-02-12'
+    arrest_date: '2024-08-14'
+    other_pending: null
+    sections:
+    - BNS 303
+  designed_answer: NOT_YET
+  note: HA-03 3 years, first-time False, other pending None, threshold 548 -1
+- id: uts-014
+  rule: undertrial_limit
+  inputs:
+    custody_days: 548
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-02-20'
+    arrest_date: '2024-08-21'
+    other_pending: true
+    sections:
+    - BNS 303
+  designed_answer: CHECK
+  note: HA-03 3 years, first-time False, other pending True, threshold 548 +0
+- id: uts-015
+  rule: undertrial_limit
+  inputs:
+    custody_days: 548
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2025-12-26'
+    arrest_date: '2024-06-26'
+    other_pending: false
+    sections:
+    - BNS 303
+  designed_answer: ELIGIBLE
+  note: HA-03 3 years, first-time False, other pending False, threshold 548 +0
+- id: uts-016
+  rule: undertrial_limit
+  inputs:
+    custody_days: 548
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-03-30'
+    arrest_date: '2024-09-28'
+    other_pending: null
+    sections:
+    - BNS 303
+  designed_answer: ELIGIBLE
+  note: HA-03 3 years, first-time False, other pending None, threshold 548 +0
+- id: uts-017
+  rule: undertrial_limit
+  inputs:
+    custody_days: 549
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-02-03'
+    arrest_date: '2024-08-03'
+    other_pending: true
+    sections:
+    - BNS 303
+  designed_answer: CHECK
+  note: HA-03 3 years, first-time False, other pending True, threshold 548 +1
+- id: uts-018
+  rule: undertrial_limit
+  inputs:
+    custody_days: 549
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2025-12-19'
+    arrest_date: '2024-06-18'
+    other_pending: false
+    sections:
+    - BNS 303
+  designed_answer: ELIGIBLE
+  note: HA-03 3 years, first-time False, other pending False, threshold 548 +1
+- id: uts-019
+  rule: undertrial_limit
+  inputs:
+    custody_days: 549
+    max_punishment: 3 years
+    first_time: false
+    as_of: '2026-06-04'
+    arrest_date: '2024-12-02'
+    other_pending: null
+    sections:
+    - BNS 303
+  designed_answer: ELIGIBLE
+  note: HA-03 3 years, first-time False, other pending None, threshold 548 +1
+- id: uts-020
+  rule: undertrial_limit
+  inputs:
+    custody_days: 547
+    max_punishment: 3 years
+    first_time: null
+    as_of: '2026-05-13'
+    arrest_date: '2024-11-12'
+    other_pending: true
+    sections:
+    - BNS 303
+  designed_answer: CHECK
+  note: HA-03 antecedents unknown, other pending True, at 547
+- id: uts-021
+  rule: undertrial_limit
+  inputs:
+    custody_days: 547
+    max_punishment: 3 years
+    first_time: null
+    as_of: '2026-01-05'
+    arrest_date: '2024-07-07'
+    other_pending: false
+    sections:
+    - BNS 303
+  designed_answer: CHECK
+  note: HA-03 antecedents unknown, other pending False, at 547
+- id: uts-022
+  rule: undertrial_limit
+  inputs:
+    custody_days: 547
+    max_punishment: 3 years
+    first_time: null
+    as_of: '2026-02-17'
+    arrest_date: '2024-08-19'
+    other_pending: null
+    sections:
+    - BNS 303
+  designed_answer: CHECK
+  note: HA-03 antecedents unknown, other pending None, at 547
+- id: uts-023
+  rule: undertrial_limit
+  inputs:
+    custody_days: 548
+    max_punishment: 3 years
+    first_time: null
+    as_of: '2025-12-14'
+    arrest_date: '2024-06-14'
+    other_pending: true
+    sections:
+    - BNS 303
+  designed_answer: CHECK
+  note: HA-03 antecedents unknown, other pending True, at 548
+- id: uts-024
+  rule: undertrial_limit
+  inputs:
+    custody_days: 548
+    max_punishment: 3 years
+    first_time: null
+    as_of: '2026-01-02'
+    arrest_date: '2024-07-03'
+    other_pending: false
+    sections:
+    - BNS 303
+  designed_answer: ELIGIBLE
+  note: HA-03 antecedents unknown, other pending False, at 548
+- id: uts-025
+  rule: undertrial_limit
+  inputs:
+    custody_days: 548
+    max_punishment: 3 years
+    first_time: null
+    as_of: '2026-03-24'
+    arrest_date: '2024-09-22'
+    other_pending: null
+    sections:
+    - BNS 303
+  designed_answer: CHECK
+  note: HA-03 antecedents unknown, other pending None, at 548
+- id: uts-026
+  rule: undertrial_limit
+  inputs:
+    custody_days: 549
+    max_punishment: 3 years
+    first_time: null
+    as_of: '2026-04-23'
+    arrest_date: '2024-10-21'
+    other_pending: true
+    sections:
+    - BNS 303
+  designed_answer: CHECK
+  note: HA-03 antecedents unknown, other pending True, at 549
+- id: uts-027
+  rule: undertrial_limit
+  inputs:
+    custody_days: 549
+    max_punishment: 3 years
+    first_time: null
+    as_of: '2026-05-05'
+    arrest_date: '2024-11-02'
+    other_pending: false
+    sections:
+    - BNS 303
+  designed_answer: ELIGIBLE
+  note: HA-03 antecedents unknown, other pending False, at 549
+- id: uts-028
+  rule: undertrial_limit
+  inputs:
+    custody_days: 549
+    max_punishment: 3 years
+    first_time: null
+    as_of: '2026-05-06'
+    arrest_date: '2024-11-03'
+    other_pending: null
+    sections:
+    - BNS 303
+  designed_answer: CHECK
+  note: HA-03 antecedents unknown, other pending None, at 549
+- id: uts-029
+  rule: undertrial_limit
+  inputs:
+    custody_days: 3000
+    max_punishment: life
+    first_time: true
+    as_of: '2026-06-11'
+    arrest_date: '2018-03-25'
+    other_pending: null
+    sections:
+    - IPC 302
+  designed_answer: CHECK
+  note: 'HA-03 life imprisonment, IPC section: a pre-BNSS case, CHECK'
+- id: uts-030
+  rule: undertrial_limit
+  inputs:
+    custody_days: 3000
+    max_punishment: imprisonment for life
+    first_time: false
+    as_of: '2026-06-12'
+    arrest_date: '2018-03-26'
+    other_pending: null
+    sections:
+    - BNS 103
+    fir_date: '2023-05-01'
+  designed_answer: CHECK
+  note: 'HA-03 life imprisonment, BNS section, arrest before 1 July 2024: CHECK'
+- id: uts-031
+  rule: undertrial_limit
+  inputs:
+    custody_days: 300
+    max_punishment: life
+    first_time: true
+    as_of: '2025-12-06'
+    arrest_date: '2025-02-09'
+    other_pending: null
+    sections:
+    - BNS 103
+    fir_date: '2025-01-15'
+  designed_answer: NOT_APPLICABLE
+  note: 'HA-03 life imprisonment, BNS section: NOT_APPLICABLE (case begun after 1
+    July 2024)'
+- id: uts-032
+  rule: undertrial_limit
+  inputs:
+    custody_days: 3000
+    max_punishment: death
+    first_time: true
+    as_of: '2026-05-19'
+    arrest_date: '2018-03-02'
+    other_pending: null
+    sections:
+    - IPC 302
+  designed_answer: NOT_APPLICABLE
+  note: 'HA-03 death: NOT_APPLICABLE whatever the era'
+- id: ac-001
+  rule: antil_category
+  inputs:
+    sections:
+    - Arms Act 25
+    max_punishment: 3 years
+  designed_answer: A
+  note: 'HA-03 reproduced wrong input: Arms Act s.25, maximum 3 years: A, not C (no
+    stringent bail provision)'
+- id: ac-002
+  rule: antil_category
+  inputs:
+    sections:
+    - NDPS 20(b)(ii)(A)
+    max_punishment: 1 year
+  designed_answer: C
+  note: HA-03 NDPS 20(b)(ii)(A), 1 year
+- id: ac-003
+  rule: antil_category
+  inputs:
+    sections:
+    - NDPS 21(c)
+    max_punishment: 20 years
+  designed_answer: C
+  note: HA-03 NDPS 21(c), 20 years
+- id: ac-004
+  rule: antil_category
+  inputs:
+    sections:
+    - UAPA 18
+    max_punishment: 5 years
+  designed_answer: C
+  note: HA-03 UAPA 18, 5 years
+- id: ac-005
+  rule: antil_category
+  inputs:
+    sections:
+    - PMLA 4
+    max_punishment: 7 years
+  designed_answer: C
+  note: HA-03 PMLA 4, 7 years
+- id: ac-006
+  rule: antil_category
+  inputs:
+    sections:
+    - Companies Act 447
+    max_punishment: 10 years
+  designed_answer: C
+  note: HA-03 Companies Act 447, 10 years
+- id: ac-007
+  rule: antil_category
+  inputs:
+    sections:
+    - Arms Act 25
+    max_punishment: 7 years
+  designed_answer: A
+  note: HA-03 Arms Act 25, 7 years
+- id: ac-008
+  rule: antil_category
+  inputs:
+    sections:
+    - Arms Act 27
+    max_punishment: life
+  designed_answer: B
+  note: HA-03 Arms Act 27, life
+- id: ac-009
+  rule: antil_category
+  inputs:
+    sections:
+    - Excise Act 9
+    max_punishment: 10 years
+  designed_answer: B
+  note: HA-03 Excise Act 9, 10 years
+- id: ac-010
+  rule: antil_category
+  inputs:
+    sections:
+    - IT Act 66
+    max_punishment: 3 years
+  designed_answer: A
+  note: HA-03 IT Act 66, 3 years
+- id: ac-011
+  rule: antil_category
+  inputs:
+    sections:
+    - BNS 115(2)
+    max_punishment: 1 year
+  designed_answer: A
+  note: HA-03 BNS 115(2), 1 year
+- id: ac-012
+  rule: antil_category
+  inputs:
+    sections:
+    - BNS 137(2)
+    max_punishment: 7 years
+  designed_answer: A
+  note: HA-03 BNS 137(2), 7 years
+- id: ac-013
+  rule: antil_category
+  inputs:
+    sections:
+    - BNS 124(1)
+    max_punishment: 10 years
+  designed_answer: B
+  note: HA-03 BNS 124(1), 10 years
+- id: ac-014
+  rule: antil_category
+  inputs:
+    sections:
+    - BNS 103
+    max_punishment: life
+  designed_answer: B
+  note: HA-03 BNS 103, life
+- id: ac-015
+  rule: antil_category
+  inputs:
+    sections:
+    - BNS 103
+    max_punishment: death
+  designed_answer: B
+  note: HA-03 BNS 103, death
+- id: ac-016
+  rule: antil_category
+  inputs:
+    sections:
+    - BNS 318(4)
+    max_punishment: 7 years
+  designed_answer: CHECK
+  note: HA-03 BNS 318(4), 7 years
+- id: ac-017
+  rule: antil_category
+  inputs:
+    sections:
+    - IPC 420
+    max_punishment: 7 years
+  designed_answer: CHECK
+  note: HA-03 IPC 420, 7 years
+- id: ac-018
+  rule: antil_category
+  inputs:
+    sections:
+    - Arms Act 25
+    - BNS 115(2)
+    max_punishment: 3 years
+  designed_answer: A
+  note: HA-03 Arms Act 25, 3 years
+- id: ac-019
+  rule: antil_category
+  inputs:
+    sections:
+    - BNS 303
+    max_punishment: ''
+  designed_answer: CHECK
+  note: HA-03 BNS 303, no punishment on record
+- id: sb-001
+  rule: statutory_bar
+  inputs:
+    sections:
+    - NDPS 20(b)(ii)(A)
+    max_punishment: 10 years
+  designed_answer: NOT_APPLICABLE
+  note: 'HA-03 reproduced wrong input: NDPS s.20(b)(ii)(A) small quantity: s.37(1)(b)
+    does not reach it'
+- id: sb-002
+  rule: statutory_bar
+  inputs:
+    sections:
+    - NDPS 19
+    max_punishment: 10 years
+  designed_answer: BAR_APPLIES
+  note: HA-03 NDPS 19
+- id: sb-003
+  rule: statutory_bar
+  inputs:
+    sections:
+    - NDPS 24
+    max_punishment: 10 years
+  designed_answer: BAR_APPLIES
+  note: HA-03 NDPS 24
+- id: sb-004
+  rule: statutory_bar
+  inputs:
+    sections:
+    - NDPS 27A
+    max_punishment: 10 years
+  designed_answer: BAR_APPLIES
+  note: HA-03 NDPS 27A
+- id: sb-005
+  rule: statutory_bar
+  inputs:
+    sections:
+    - NDPS 21(c)
+    max_punishment: 10 years
+  designed_answer: BAR_APPLIES
+  note: HA-03 NDPS 21(c)
+- id: sb-006
+  rule: statutory_bar
+  inputs:
+    sections:
+    - NDPS 22(c)
+    max_punishment: 10 years
+  designed_answer: BAR_APPLIES
+  note: HA-03 NDPS 22(c)
+- id: sb-007
+  rule: statutory_bar
+  inputs:
+    sections:
+    - NDPS 20(b)(ii)(C)
+    max_punishment: 10 years
+  designed_answer: BAR_APPLIES
+  note: HA-03 NDPS 20(b)(ii)(C)
+- id: sb-008
+  rule: statutory_bar
+  inputs:
+    sections:
+    - NDPS 21(a)
+    max_punishment: 10 years
+  designed_answer: NOT_APPLICABLE
+  note: HA-03 NDPS 21(a)
+- id: sb-009
+  rule: statutory_bar
+  inputs:
+    sections:
+    - NDPS 22(b)
+    max_punishment: 10 years
+  designed_answer: CHECK
+  note: HA-03 NDPS 22(b)
+- id: sb-010
+  rule: statutory_bar
+  inputs:
+    sections:
+    - NDPS 21
+    max_punishment: 10 years
+  designed_answer: CHECK
+  note: HA-03 NDPS 21
+- id: sb-011
+  rule: statutory_bar
+  inputs:
+    sections:
+    - NDPS 20(b)(ii)(B)
+    max_punishment: 10 years
+  designed_answer: CHECK
+  note: HA-03 NDPS 20(b)(ii)(B)
+- id: sb-012
+  rule: statutory_bar
+  inputs:
+    sections:
+    - UAPA 18
+    max_punishment: 10 years
+  designed_answer: CHECK
+  note: HA-03 UAPA 18
+- id: sb-013
+  rule: statutory_bar
+  inputs:
+    sections:
+    - UAPA 43D
+    max_punishment: 10 years
+  designed_answer: CHECK
+  note: HA-03 UAPA 43D
+- id: sb-014
+  rule: statutory_bar
+  inputs:
+    sections:
+    - PMLA 4
+    max_punishment: 10 years
+  designed_answer: BAR_APPLIES
+  note: HA-03 PMLA 4
+- id: sb-015
+  rule: statutory_bar
+  inputs:
+    sections:
+    - PMLA 3
+    max_punishment: 10 years
+  designed_answer: BAR_APPLIES
+  note: HA-03 PMLA 3
+- id: sb-016
+  rule: statutory_bar
+  inputs:
+    sections:
+    - BNS 318(4)
+    max_punishment: 10 years
+  designed_answer: NOT_APPLICABLE
+  note: HA-03 BNS 318(4)
+- id: sb-017
+  rule: statutory_bar
+  inputs:
+    sections:
+    - IPC 420
+    max_punishment: 10 years
+  designed_answer: NOT_APPLICABLE
+  note: HA-03 IPC 420
+- id: sb-018
+  rule: statutory_bar
+  inputs:
+    sections:
+    - Arms Act 25
+    max_punishment: 10 years
+  designed_answer: NOT_APPLICABLE
+  note: HA-03 Arms Act 25
+- id: sb-019
+  rule: statutory_bar
+  inputs:
+    sections:
+    - IPC 420
+    - NDPS 21(c)
+    max_punishment: 10 years
+  designed_answer: BAR_APPLIES
+  note: HA-03 IPC 420 + NDPS 21(c)
+- id: sb-020
+  rule: statutory_bar
+  inputs:
+    sections:
+    - NDPS 20(b)(ii)(A)
+    - NDPS 27A
+    max_punishment: 10 years
+  designed_answer: BAR_APPLIES
+  note: HA-03 NDPS 20(b)(ii)(A) + NDPS 27A
+- id: sb-021
+  rule: statutory_bar
+  inputs:
+    sections:
+    - NDPS 20(b)(ii)(A)
+    - UAPA 18
+    max_punishment: 10 years
+  designed_answer: CHECK
+  note: HA-03 NDPS 20(b)(ii)(A) + UAPA 18
+- id: sb-022
+  rule: statutory_bar
+  inputs:
+    sections:
+    - BNS 103
+    - PMLA 4
+    max_punishment: 10 years
+  designed_answer: BAR_APPLIES
+  note: HA-03 BNS 103 + PMLA 4

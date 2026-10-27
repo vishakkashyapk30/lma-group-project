@@ -77,8 +77,9 @@ def _documents(spec: dict[str, Any], names: tuple[str, str], i: int) -> tuple[di
     inp, rule = spec["inputs"], spec["rule"]
     accused, officer = names
     fir = _fir(i, inp)
-    punish = _punishment_phrase(str(inp.get("max_punishment", "up to 3 years")))
-    head = f"FIR No. {fir}, Police Station Kotwali. Accused: {accused}. The offence is punishable with {punish}."
+    punish = _punishment_phrase(str(inp.get("max_punishment", "up to 3 years"))) if inp.get("max_punishment", "x") else "a punishment that is not recorded in the file"
+    charged = f" Sections charged: {', '.join(inp['sections'])}." if inp.get("sections") else ""
+    head = f"FIR No. {fir}, Police Station Kotwali. Accused: {accused}.{charged} The offence is punishable with {punish}."
     docs: dict[str, str] = {}
     if rule == "default_bail":
         fr = inp["first_remand"]
@@ -102,9 +103,11 @@ def _documents(spec: dict[str, Any], names: tuple[str, str], i: int) -> tuple[di
             f"which is {inp['custody_days']} days as on {_dmy(as_of)}.\n"
         )
         ft = inp.get("first_time")
-        state = {True: "has no previous conviction and no other case: a first-time offender", False: "has previous convictions: not a first-time offender"}
+        pending = inp.get("other_pending")
+        state = {True: "has no previous conviction" + ("" if pending else " and no other case") + ": a first-time offender", False: "has previous convictions: not a first-time offender"}
+        pend_text = {True: " One other case is pending against the accused (an FIR under investigation in another police station).", False: " No other case is pending against the accused."}.get(pending, "")
         docs["03_antecedents_report.txt"] = (
-            f"ANTECEDENTS REPORT by {officer}.\n{accused} " + (state[ft] if ft is not None else "- the antecedents report is awaited and the record is not available") + ".\n"
+            f"ANTECEDENTS REPORT by {officer}.\n{accused} " + (state[ft] if ft is not None else "- the antecedents report is awaited and the record is not available") + f".{pend_text}\n"
         )
     elif rule == "notice_of_appearance":
         as_of = inp["arrest_date"]
@@ -114,6 +117,10 @@ def _documents(spec: dict[str, Any], names: tuple[str, str], i: int) -> tuple[di
                 False: "No notice of appearance was issued and no reasons for the arrest were recorded.",
                 None: "The file does not contain an arrest memo or a notice of appearance."}[memo]
         docs["02_arrest_note.txt"] = f"ARREST NOTE of {_dmy(as_of)}\n{accused} was arrested by {officer} on {_dmy(as_of)}. {text}\n"
+    elif rule in ("antil_category", "statutory_bar"):
+        as_of = "2025-12-01"
+        docs["01_fir_extract.txt"] = f"FIR EXTRACT\n{head}\n"
+        docs["02_charge_note.txt"] = f"CHARGE NOTE of {_dmy(as_of)}\n{accused} is charged by {officer} under: {', '.join(inp['sections'])}.\n"
     else:  # production_24h
         as_of = inp["production_date"]
         docs["01_arrest_memo.txt"] = (

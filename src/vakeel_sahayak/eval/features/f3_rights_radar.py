@@ -1,6 +1,6 @@
 """Feature evaluation F3: Rights Radar vs LLM-only and LLM + date_calc. Test set: T4; G7 on T1. Metrics: accuracy per rule; false-ELIGIBLE rate; CHECK rate; agreement with G7 (plan §15.6).
 
-Test set T4: 500 constructed scenarios (default bail, undertrial limit, notice of appearance, production within 24 hours) whose designed answer is derived from the
+Test set T4: constructed scenarios (default bail, undertrial limit, notice of appearance, production within 24 hours, and since HA-03 Antil category and statutory bar) whose designed answer is derived from the
 rule text by `testsets/rights_spec_writer.py`, independently of the Radar. Arms (one directory each under the output directory, one JSON file per scenario):
 
 - `radar`: the deterministic rules engine (`rights.rules.*`) on the scenario inputs.
@@ -48,15 +48,23 @@ def radar_status(scenario: dict[str, Any]) -> str:
     i, rule = scenario["inputs"], scenario["rule"]
     if rule == "default_bail":
         as_of = (date.fromisoformat(i["first_remand"]) + timedelta(days=i["day"] - 1)).isoformat()
-        inp = RuleInputs(as_of=as_of, first_remand=i["first_remand"], max_punishment=i["max_punishment"], charge_sheet_date=i["charge_sheet"], charge_sheet_filed=bool(i["charge_sheet"]))
+        inp = RuleInputs(as_of=as_of, first_remand=i["first_remand"], max_punishment=i["max_punishment"], charge_sheet_date=i["charge_sheet"], charge_sheet_filed=bool(i["charge_sheet"]),
+                         sections=i.get("sections") or [])
         return DefaultBailRule().evaluate(inp).status.value
     if rule == "undertrial_limit":
         inp = RuleInputs(as_of=i["as_of"], max_punishment=i["max_punishment"], custody_days=i["custody_days"], arrest_date=i["arrest_date"],
-                         antecedents_known=i["first_time"] is not None, first_time_offender=i["first_time"])
+                         antecedents_known=i["first_time"] is not None, first_time_offender=i["first_time"],
+                         sections=i.get("sections") or [], other_pending_cases=i.get("other_pending"), fir_date=i.get("fir_date"))
         return UndertrialLimitRule().evaluate(inp).status.value
     if rule == "notice_of_appearance":
         inp = RuleInputs(as_of=i["arrest_date"], max_punishment=i["max_punishment"], arrest_memo_present=i["arrest_memo"], arrest_date=i["arrest_date"])
         return NoticeOfAppearanceRule().evaluate(inp).status.value
+    if rule in ("antil_category", "statutory_bar"):
+        from vakeel_sahayak.rights.rules.antil_category import AntilCategoryRule
+        from vakeel_sahayak.rights.rules.statutory_bar import StatutoryBarRule
+
+        inp = RuleInputs(as_of="2025-12-01", max_punishment=i.get("max_punishment") or None, sections=i["sections"])
+        return (AntilCategoryRule() if rule == "antil_category" else StatutoryBarRule()).evaluate(inp).status.value
     inp = RuleInputs(as_of=i["production_date"], arrest_date=i["arrest_date"], arrest_time=i["arrest_time"], production_date=i["production_date"], production_time=i["production_time"])
     return Production24hRule().evaluate(inp).status.value
 

@@ -74,7 +74,7 @@ def test_thresholds_852_and_1278(custody, first_time, expected):
     [
         (167, RightsStatus.CHECK),  # the plan's own example
         (900, RightsStatus.CHECK),  # between the two thresholds: depends on antecedents we do not have
-        (1278, RightsStatus.ELIGIBLE),  # ASSUMPTION: past the half-way mark, eligible whatever the antecedents
+        (1278, RightsStatus.CHECK),  # RECONCILED: docs/qa/rights-verification.md: unknown antecedents also mean unknown pending cases (s.479(2)), so never ELIGIBLE
     ],
 )
 def test_unknown_antecedents_never_gives_a_false_eligible(custody, expected):
