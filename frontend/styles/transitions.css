@@ -1,0 +1,61 @@
+/*
+ * Route transitions (DESIGN.md "Route transitions"). Only what React names takes part: the document root is taken out
+ * so the sidebar, top bar and stepper are not captured and simply stay. Old content fades out in 120 ms; new content
+ * fades in with a 6 px rise over 220 ms on the spring curve. Pointer events pass through the transition layer.
+ */
+:root {
+  view-transition-name: none;
+}
+::view-transition {
+  pointer-events: none;
+}
+
+@keyframes vt-fade-out {
+  to { opacity: 0; }
+}
+@keyframes vt-rise-in {
+  from { opacity: 0; transform: translateY(6px); }
+}
+
+::view-transition-old(.vt-page-out) {
+  animation: vt-fade-out 120ms var(--ease) both;
+}
+::view-transition-new(.vt-page-in) {
+  animation: vt-rise-in 220ms var(--ease-spring) both;
+}
+/* Shared elements (the case title) move and resize; their snapshots crossfade underneath. */
+::view-transition-group(.vt-morph) {
+  animation-duration: 250ms;
+  animation-timing-function: var(--ease-spring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+:root[data-motion="reduce"]::view-transition-group(*),
+:root[data-motion="reduce"]::view-transition-old(*),
+:root[data-motion="reduce"]::view-transition-new(*) {
+  animation: none !important;
+}
+
+/* A step change inside a case: the new step slides 12 px from the side it comes from. */
+@keyframes step-in-forward {
+  from { opacity: 0; transform: translateX(12px); }
+}
+@keyframes step-in-back {
+  from { opacity: 0; transform: translateX(-12px); }
+}
+.step-enter[data-step-enter="forward"] {
+  animation: step-in-forward 200ms var(--ease-spring) both;
+}
+.step-enter[data-step-enter="back"] {
+  animation: step-in-back 200ms var(--ease-spring) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .step-enter[data-step-enter] { animation: none; }
+}
+:root[data-motion="reduce"] .step-enter[data-step-enter] { animation: none; }
