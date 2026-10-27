@@ -13,17 +13,17 @@ notice_of_appearance:
   rule: "Offences up to 7 years: notice of appearance is the norm; arrest needs recorded reasons"
   sources: ["BNSS s.35(3) (CrPC s.41A)", "Arnesh Kumar v. State of Bihar (2014)", "Satender Kumar Antil v. CBI (2022)"]
   statuses: [FLAG, OK, UNKNOWN]
-  last_verified: null
+  last_verified: "2026-10-27"  # docs/qa/rights-verification.md
 grounds_of_arrest:
   rule: "Grounds communicated; in writing, understood language, >=2 hours before production (Mihir Rajesh Shah); applicability to earlier arrests contested -> CHECK"
   sources: ["Art. 22(1)", "BNSS s.47 (CrPC s.50)", "Vihaan Kumar v. State of Haryana (2025)", "Mihir Rajesh Shah v. State of Maharashtra (2025)"]
   statuses: [FLAG, OK, UNKNOWN, CHECK]
-  last_verified: null
+  last_verified: "2026-10-27"  # docs/qa/rights-verification.md
 production_24h:
   rule: "Produce before a magistrate within 24 hours of arrest, excluding travel time"
   sources: ["Art. 22(2)", "BNSS s.58 (CrPC s.57)"]
   statuses: [FLAG, OK, CHECK]
-  last_verified: null
+  last_verified: "2026-10-27"  # docs/qa/rights-verification.md
 antil_category:
   rule: "A: up to 7 years (not B/D); B: death, life or >7 years; C: special acts with strict bail conditions; D: economic offences not under special acts"
   sources: ["Satender Kumar Antil v. CBI (2022)"]
