@@ -1,13 +1,13 @@
 # Vakeel-Sahayak.ai: Evaluation Plan
 
-Status: complete draft (written 24 October 2026). No results yet; every table in Section 6 is a template. Nothing in this file has been applied to `docs/plan.md`, `progress.md` or code.
+Status: complete draft (written 24 October 2026). No results yet; every table in Section 6 is a template. Nothing in this file has been applied to `docs/plan.md`, `progress.md` or code. Checked 2026-10-27: this header is outdated in two ways: `docs/plan.md` is now v6 (it applies the 25 literature edits and records what is built), and the scoring code, variants S1 to S18 and the dev-set sweep plan (`configs/eval/sweep_dev.yaml`) exist; the plan text and its thresholds are unchanged, and there are still no frozen results.
 
 ## 0. How to read this plan
 
 This is the evaluation plan for the final report and the project paper. It does not contain results. Every table in Section 6 is an empty template, and every number written as a threshold (for example "5 points") is a default that is fixed on the dev set and frozen in `docs/preregistration.md` before the first test run.
 
 Sources it rests on:
-- **Our own plan** (`docs/plan.md` v5: RQ1, RQ2, H1a-c, H2, T1-T9, G1-G7, B0-B4, A1-A10, P1-P6, F1-F8) and the minimum expectations in `docs/course/project_announcement.md` (a baseline, a controlled set with known ground truth, one metric per capability, an ablation per capability the research question depends on, tool-call accuracy and unsafe-action rate, qualitative examples, failure analysis, no sole reliance on an LLM judge).
+- **Our own plan** (`docs/plan.md` v5 at the time of writing, now v6: RQ1, RQ2, H1a-c, H2, T1-T9, G1-G7, B0-B4, A1-A10, P1-P6, F1-F8) and the minimum expectations in `docs/course/project_announcement.md` (a baseline, a controlled set with known ground truth, one metric per capability, an ablation per capability the research question depends on, tool-call accuracy and unsafe-action rate, qualitative examples, failure analysis, no sole reliance on an LLM judge).
 - **The course lectures**, cited as "L12" (Evaluation of language models, 28 Sep 2026), "Guest" (multilingual and Indian language models, 17 Sep 2026), "L14" (RAG, advanced and agentic, 12 Oct 2026), "L13" (RAG fundamentals), "L15/L16" (reasoning), "CME295-6" (Stanford CME295 lecture 6: pass@k and reasoning benchmarks) and "CE" (context engineering, Module 4 Lecture 8). The slide text is thin in places; where a slide only names an idea, the plan says so.
 - **The literature review** (`docs/literature-review-and-usage.md`, 145 papers). Every paper named here is in its catalogue with a link, except Barnett et al. (seven RAG failure points) and the pass@k source, which are cited on the L14 and CME295-6 slides and are not in the review. Venues marked "S" in the review's Check column were not re-fetched; re-check them before the final report.
 
@@ -606,7 +606,7 @@ A small addition needed: a `FORMAT` tag, since the plan's eleven classes have no
 
 ### 6.0 Where the numbers come from
 
-The runners in `src/vakeel_sahayak/eval/runners/` take an `out_dir` and save one JSON per case as it finishes. The output layout below is proposed here (the runners are stubs, so nothing fixes it yet) and is written into the pre-registration:
+The runners in `src/vakeel_sahayak/eval/runners/` take an `out_dir` and save one JSON per case as it finishes. The output layout below is proposed here (the runners were stubs when this was written; the layout is now fixed by `eval/runners/driver.py` and `eval/scoring`, see `docs/handoff/eval-infrastructure.md`) and is written into the pre-registration:
 
 - Raw outputs: `data/eval/runs/<job>/<system>/run<r>/<case_id>.json`, plus `MANIFEST.json` (Section 2.2). On Ada the same tree lives under `results/` (`configs/paths.yaml`) and is copied back.
 - Scored per-case files: `data/eval/scored/<job>/<system>.parquet` (one row per case and run, one column per metric).
@@ -922,7 +922,7 @@ Risk statement: with 180 usable node-hours the Tier A floor (about 229) does not
 
 Update 2026-10-27 (`docs/handoff/eval-complete.md`, `product-complete.md`): the stub inventory in 8.2 and 8.3 below is the state of the day the plan was written and is stale. Built since: `label_sensitivity.py` (M5), the citation and abstention metrics M9, M13, M15, M16, M17, M18, M33, M35 (`eval/metrics/citations.py`, `eval/scoring/citation_scores.py`), the studies S14b, S14c, S16, S16b, S4, S5 and M17 (`eval/studies/`), S15b (`orchestration/structured_output.py`), the S13 offline smoke, the order-splitter rescue (`rescue_with_non_qwen`, opt-in) and the `assemble_application` tool; `IMPLEMENTED_VARIANTS` equals the full variant table of 3.3. Caveats: M16, M33 and M35 are labelled "offline stand-in" unless MiniCheck or the DeBERTa NLI is installed; M33 risk is 0 at tau = cut by construction; M18 stopped-too-early (replay to the 16-call budget) is not computed; the S13 model-backed arm is planned; S6 and B5 need a trained store prior. The `NotImplementedError` of the order-splitter rescue named in 8.1 is gone.
 
-Method: each file under `src/vakeel_sahayak/eval/`, `testsets/` and `finetune/` was opened, and `raise NotImplementedError` was searched across the repository. In `eval/`, 56 of 64 Python files are stubs (the other 8 are empty `__init__.py` files); in `testsets/` 13 of 14; in `finetune/` 6 of 7. The tests are written but were not run for this plan (the team rule is not to run tests while modules are stubs). Per `progress.md` 5c, `tests/unit/eval` (about 148 test functions in 9 files) and `tests/unit/finetune` (about 77 test functions in 6 files, plus helpers) fail until the code exists; `tests/unit/testsets` has about 108 test functions in 10 files.
+(Checked 2026-10-27: this audit is from 2026-10-24 and no longer matches the code: the eval modules, runners, metrics, stats and scoring are implemented; use `docs/handoff/eval-complete.md` and `eval-infrastructure.md` for the current state.) Method: each file under `src/vakeel_sahayak/eval/`, `testsets/` and `finetune/` was opened, and `raise NotImplementedError` was searched across the repository. In `eval/`, 56 of 64 Python files are stubs (the other 8 are empty `__init__.py` files); in `testsets/` 13 of 14; in `finetune/` 6 of 7. The tests are written but were not run for this plan (the team rule is not to run tests while modules are stubs). Per `progress.md` 5c, `tests/unit/eval` (about 148 test functions in 9 files) and `tests/unit/finetune` (about 77 test functions in 6 files, plus helpers) fail until the code exists; `tests/unit/testsets` has about 108 test functions in 10 files.
 
 ### 8.1 What already exists and the evaluation can use
 

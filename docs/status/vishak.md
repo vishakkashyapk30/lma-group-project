@@ -20,4 +20,4 @@ Tasks from `split.md` (stream C and shared files). Updated 2026-10-27. Details a
 | VI-09 freeze and real runs | blocked | scoring and the rescoring loop now exist; waits for the pinned tag, real runs, Harshita's checks and preregistration hashes |
 | VI-11 fine-tuning | stretch | only if the freeze lands early |
 
-Budgets (2026-10-27): OpenAI ledger ceiling 4.90 USD (1.51 spent at the checkpoint); the owner's Sarvam key INR 30 in total; the large Sarvam block runs on Satvik's key. Data: private organisation dataset `Vakeel-Sahayak/vakeel-sahayak-data`.
+Budgets (2026-10-27): OpenAI ledger ceiling 4.90 USD (1.51 spent at the checkpoint; 2.2008 USD per `make openai-spend` later on 2026-10-27, Sarvam INR 5.4945 per `make sarvam-spend`); the "Dev-set sweep: on hold" row above is outdated: the baselines were rerun from the pinned tag `dev-sweep-v1` (`docs/handoff/sweep-dev.md`); the owner's Sarvam key INR 30 in total; the large Sarvam block runs on Satvik's key. Data: private organisation dataset `Vakeel-Sahayak/vakeel-sahayak-data`.

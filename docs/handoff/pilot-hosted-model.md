@@ -1,5 +1,7 @@
 # Hosted-model pilot (VI-08): the Full system on `gpt-6-luna`
 
+> Checked by Vishak 2026-10-27: the pilot numbers below (0.052 USD spent, "whole project 0.058 of the 4.50 cap", 172 s and 0.0078 USD per case, the single t1dev-017 refusal) are from 25 to 26 October and are not current. Later changes that supersede statements here: the pseudonymiser caption-name rules and the spotlight-tag fix (sections "Pseudonymiser: caption names" and "Update: spotlight-tag false positive"), so the boundary no longer refuses t1dev-017 and no longer takes a hash tag for a phone number; the baselines now send pseudonymised facts under a hosted backend (`dev-baselines.md`). Spend on 2026-10-27 (`make openai-spend`): 2.2008 USD of the 4.50 cap (hard maximum 5.00; the sweep ceiling is 4.90), `gpt-6-luna`; Sarvam (`make sarvam-spend`): INR 5.4945 of the cap 25. "What remains" below is partly outdated (the stub tests it lists now pass).
+
 Date 2026-10-25. Nothing is committed. OpenAI spend of this task: about 0.052 USD (whole project 0.058 of the 4.50 cap).
 
 ## What was fixed

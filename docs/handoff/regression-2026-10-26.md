@@ -1,5 +1,7 @@
 # Regression, 26 October 2026 (Vishak)
 
+> Checked by Vishak 2026-10-27: the failure counts below (4,288 passed, 315 failed, export and eval stubs, 43 integration failures) are from before the fixes; the current state is in `regression-2026-10-26-b.md` (unit 4,227 passed, 0 failed; integration 130; system 295; the last three red tests resolved on 2026-10-27). The `tests/unit/finetune` row was not re-run (unverified).
+
 ## Sutradhar bug behind the 2 failing `tests/unit/api` chat tests (fixed)
 Two causes, both found through `tests/unit/api/test_chat_router.py`:
 1. **Poisoned argument-model cache (`tools/registry.py`, co-fix; the file is not listed in the ownership table).** `_args_model(name)` is `@cache`d and built from `get_tool(name)`. The system harness (`tests/system/_helpers.Scenario._patch_wiring`) replaces `get_tool` with the fake toolbox, whose wrappers are `call(*args, **kwargs)`; the model built from them had no fields and `extra="forbid"`, so every real call to `date_calc` or `map_section` failed with "start: Extra inputs are not permitted" (this also cached the empty model for later tests in the same process). Fix: build the model from the discovered real function (`_discover()[1]`), not from `get_tool`. Default behaviour is unchanged.

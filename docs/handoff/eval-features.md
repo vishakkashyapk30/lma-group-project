@@ -5,7 +5,7 @@ Date 2026-10-26. Nothing committed. Update 2026-10-27: F4's scheduling compariso
 ## Files
 - New: `eval/ingestion/{common,munshi_family,rq2}.py`, `eval/feature_common.py`.
 - Filled: `eval/ingestion/{p1..p6,munshi_full}.py`, `eval/features/f1..f8`.
-- Local metric helpers (the metrics modules are stubs and not mine): `eval/ingestion/common.py` has `character_error_rate`, `boundary_f1`, `by_kind`, `escalation_rate`, `questions_asked` with the interface the tests expect from `eval.metrics.ingestion`. Harshita can re-export them from `eval/metrics/ingestion.py` (one import line each) and the 3 remaining failing tests pass.
+- Local metric helpers (the metrics modules were stubs when this was written; Harshita's metrics and statistics are implemented now, checked by Vishak 2026-10-27): `eval/ingestion/common.py` has `character_error_rate`, `boundary_f1`, `by_kind`, `escalation_rate`, `questions_asked` with the interface the tests expect from `eval.metrics.ingestion`. Harshita can re-export them from `eval/metrics/ingestion.py` (one import line each) and the 3 remaining failing tests pass.
 
 ## Hook-ins outside my scope (kept minimal)
 1. `agents/munshi/agent.py` (about 8 lines): P6 (`munshi_no_bundle_split`) now makes one document labelled OTHER without calling `split_bundle` or `classify_document` (before, the tool path labelled the file), and `_adopt` no longer relabels that document as FIR etc. Default behaviour unchanged (`test_variants_golden` and `tests/unit/agents/munshi` pass).
@@ -45,7 +45,7 @@ Features:
 ## Not done / blocked
 - P3 needs Docling; P4 needs Qwen3-VL (or Sarvam Vision under consent); P2 Hindi needs `tesseract-ocr-hin` and Surya. P4's 1,500-page subset and the oracle-route regret (M24) not run. Fine-tuned extractor not used (offline rule extractor).
 - F1 on 4 dev cases only; G4 is provisional. F2 recall/unsupported vs full regeneration need MiniCheck and metrics modules. F3 G7 agreement (G7 nearly empty). F4 stage 2 on 3 cases. F7 treatment kappa (no labeled treatments), T1 brief arms for overruled citations not run. F8: IndicConformer unavailable; dictation audio pending, so read-back errors are simulated; T2 Hindi bundles only 3 per kind.
-- F5, F6: export modules are stubs.
+- F5, F6: export modules were stubs when this was written; they are built now (SA-04, SA-05) and the F5 and F6 evaluations were run offline (SA-08, `0e5897b`).
 - No hosted-model arm was run; hosted use is by `VS_LLM_BACKEND` as for the other jobs.
 - `eval.metrics.ingestion` additions (3 tests) need the metrics owner.
 

@@ -16,6 +16,7 @@ My tasks (split.md stream B): SA-01 to SA-08. Updated 2026-10-26. All finished w
 | SA-07 onboarding, empty states, Hindi strings, axe audit | done, except a Hindi translation of the interface (see below) |
 
 ## Test results (Python 3.10 venv, offline models)
+_Checked by Vishak 2026-10-27: Python 3.11 is now the minimum (`docs/handoff/python-and-defaults.md`), and `make setup` (the "still a stub" line below) is real (`docs/handoff/fresh-clone-fixes.md`)._
 - Export, drafting tools, API, the gate and API-route integration tests and four system test files: 279 passed; the 41 remaining failures also fail on `main` (none new), and 67 that failed on `main` now pass.
 - Frontend: Vitest 244 passed (with SA-02); Playwright 64 passed twice on a production build (was 9 of 69).
 

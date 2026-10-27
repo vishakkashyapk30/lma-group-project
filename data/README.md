@@ -22,6 +22,8 @@ The owner shares a checksummed copy of every dataset the project uses, so nobody
 | `data.tar.gz.part-*` (gzip) | `interim` (with `hindi_native.jsonl`), `stores`, `testsets`, `gaps`, `eval`, `raw/MANIFEST.json`, the Kathbath transcripts and audio index, `bundle_manifest.json` | about 1.1 GB |
 | `raw.tar.part-*` (plain tar: parquet and m4a are already compressed) | `raw/open_india_law` (judgment shards, legislation, `sc_metadata.jsonl`, `SHA256SUMS.json`, fetch logs), `raw/ipc2bns_verify`, the full `raw/kathbath` (with the audio), `raw/MANIFEST.json` | about 1.8 GB |
 
+The dataset also has a `sweep-runs/` folder where teammates upload result tarballs of the dev-set sweep (`docs/handoff/sweep-satvik.md`); `make data` and `data_install.sh` never download it and `make data-publish` never overwrites or deletes it.
+
 The owner (an admin of the Hugging Face organisation `Vakeel-Sahayak`) adds you as a member, **write** for teammates and **read** for the evaluator. Then make a fine-grained token at https://huggingface.co/settings/tokens with read access to the organisation's repos (tick the org under Org permissions and save), and log in once with `hf auth login` or put
 `HF_TOKEN=...` in the untracked `.env`, and from the repository root:
 

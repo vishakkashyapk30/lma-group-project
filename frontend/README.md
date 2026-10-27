@@ -1,6 +1,6 @@
 # Frontend (Next.js App Router, TypeScript)
 
-Skeleton only: every component is a typed placeholder that renders `<section data-stub="..." />`. Plan §13.
+The app is built (shell, landing, guided workspace, desk, library, settings; real-API mode with a `demo` fallback, see `lib/api.ts`). Design rules: `DESIGN.md`; history: `docs/handoff/workspace-redesign.md`. The older placeholder-skeleton wording of this file was outdated (checked 2026-10-27). Plan §13.
 
 - Palette and fonts: `styles/tokens.css` ("Manuscript", plan §13.2).
 - Routes: `/`, `/cases`, `/case/[id]`, `/desk`, `/library`, `/about`.

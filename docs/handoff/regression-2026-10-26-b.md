@@ -36,7 +36,7 @@ Production fixes (small, each with its reason):
 
 RECONCILED tests (marked in the files): chat answers are composed from tool results (flow2), the uploaded bundle sits in `inbox/` (flow1, export checks), `SutradharAgent.run` stops at evidence packs so the tests call `delegate` too, discarded and kept objections are found by wording not id, export node records a blocked export instead of raising, page reads and the pseudonymiser are unlogged by design (privacy), Munshi probes one page past the end, translation shows as a route entry, "authority" scores are not probabilities, a few helper bugs. Goldens re-captured with reasons: `tests/unit/agents/{munshi,peshkar,pairokar}/golden_default_run.json`.
 
-## Still red (3 tests) and why
+## Still red (3 tests) and why (RESOLVED on 27 October: see the last section; the table is kept as the record of the diagnosis, and the diagnosis of the third test was corrected there)
 
 | Test | Owner | Cause |
 |---|---|---|

@@ -50,4 +50,4 @@ intakeScript/draftScript/..., MOCK_LIBRARY_RESULTS, MOCK_CITATION_GRAPH, MOCK_BR
 - `components/ui`: `Button` (variants primary, secondary, ghost, link, danger, pill, pill-dark, play, gold; sizes sm, md, lg, icon, round), `PlayButton`, `Card*`, `Badge`, `Tabs*`,
   `Dialog*`, `Tooltip`/`TooltipProvider`, `ScrollArea`, `Separator`, `Input`, `Textarea`, `Skeleton`, `SkeletonText`.
 - `components/common`: `StatusBadge({status, kind?, label?, detail?, size?, solid?})`, `StatusIcon`, `SourceChip({source})`, `AgentGlyph({agent, size?, title?})`, `Logo`, `BandsMark`, `TopNav`.
-- Pages in `app/*/page.tsx` are thin wrappers (`/`, `/cases`, `/case/[id]`, `/desk`, `/library`, `/about`); component bodies elsewhere are still stubs.
+- Pages in `app/*/page.tsx` are thin wrappers (`/`, `/cases`, `/case/[id]`, `/desk`, `/library`, `/about`); component bodies elsewhere are still stubs (outdated, checked by Vishak 2026-10-27: the components are built; see `frontend/README.md` and `docs/handoff/workspace-redesign.md`).

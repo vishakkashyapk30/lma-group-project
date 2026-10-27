@@ -1,5 +1,7 @@
 # Dev-set baseline runs on gpt-6-luna (operator note, 2026-10-26/27)
 
+> Checked by Vishak 2026-10-27: this note is a record of the first (unpinned) runs and is superseded in four points. (1) The t1dev-017 pseudonymiser miss in "Failure modes" item 1 is fixed (`4e40282`, `940488e`; `pilot-hosted-model.md`, "Pseudonymiser: caption names"; the strict boundary now refuses 1 of 250 T1 orders, t1-196, not t1dev-017). (2) The hosted `b0l` was a duplicate of `b0`; it is not rerun, and the real B0L is a Sarvam-105B single pass (`sweep-dev.md`). (3) The Qwen3-32B Ada plan is dropped (`ada-qwen32b.md`), so "Run it on Ada" and "Real B0L needs Qwen3-32B on Ada" no longer apply. (4) These runs (`719f741-dirty`) are in `data/eval/dev_runs_superseded/` and must not be scored; the baselines were rerun from the pinned tag `dev-sweep-v1` (`sweep-dev.md`). The OpenAI ledger total is no longer 1.51: `make openai-spend` on 2026-10-27 shows 2.2008 USD of the 4.50 cap (the sweep ceiling is 4.90).
+
 Status: the runs exist on disk but are of UNKNOWN CODE STATE (manifests say `719f741-dirty`, another agent was editing the working tree). No tables were copied to `docs/results/`; no numbers are claimed. The sweep operator reruns on a pinned commit. Nothing committed.
 
 ## G2 merge (done)

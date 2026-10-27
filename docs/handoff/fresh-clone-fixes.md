@@ -1,5 +1,7 @@
 # Fresh-clone fixes (2026-10-26)
 
+> Checked by Vishak 2026-10-27: the Python minimum is now 3.11, not 3.10+ (`python-and-defaults.md`), and the unit test count in this note (4,678 collected) is now 4,944 collected.
+
 Walked the "First day" block of `AGENTS.md` in a fresh `git clone` (scratch folder, deleted afterwards), as a new teammate would.
 
 ## Found and fixed

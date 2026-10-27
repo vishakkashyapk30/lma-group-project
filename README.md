@@ -13,7 +13,7 @@ Vakeel-Sahayak.ai helps a lawyer prepare a regular bail application in an Indian
 
 The lawyer approves the dossier and the final draft; nothing is exported without that approval, and this is enforced in code. The project combines all five course capabilities and is evaluated against simpler baselines (see `docs/evaluation-plan.md`).
 
-**Status (2026-10-27):** the agents, stores, Rights Radar, evaluation infrastructure (one driver entry for every variant, job plans, preregistration template), test sets T1 to T9, gold labels G1 to G7 by agreement with a non-Qwen labeler, the feature and ingestion arms, the LangGraph flow and the API routes (with Swagger) are built and tested on offline stand-ins; the hosted-model driver has run on three dev cases. Since then (2026-10-27): the scoring code (including label-source sensitivity and the citation and abstention metrics), S15b (the variant registry now equals the full table), the evaluation studies for scheduling, chunking and retrieval, and the dev-set sweep plan and runner are built; run manifests carry the code stamp and scoring refuses to mix code. Not yet built: DOCX export and the hearing card, the real-API frontend mode, a trained store prior for S6 and B5, the model-backed S13 arm, and any real-model result numbers (the dev-set sweep waits for a pinned code tag). The team data copy is a private Hugging Face dataset (`make data`). Start with `AGENTS.md`, then `split.md` (who does what) and `progress.md` (status of everything).
+**Status (2026-10-27):** the agents, stores, Rights Radar, evaluation infrastructure (one driver entry for every variant, job plans, preregistration template), test sets T1 to T9, gold labels G1 to G7 by agreement with a non-Qwen labeler, the feature and ingestion arms, the LangGraph flow and the API routes (with Swagger) are built and tested on offline stand-ins; the hosted-model driver has run on three dev cases. Since then (2026-10-27): the scoring code (including label-source sensitivity and the citation and abstention metrics), S15b (the variant registry now equals the full table), the evaluation studies for scheduling, chunking and retrieval, and the dev-set sweep plan and runner are built; run manifests carry the code stamp and scoring refuses to mix code. Not yet built: a trained store prior for S6 and B5, the model-backed S13 arm, and any real-model result numbers (the dev-set sweep waits for a pinned code tag). The team data copy is a private Hugging Face dataset (`make data`). Start with `AGENTS.md`, then `split.md` (who does what) and `progress.md` (status of everything).
 
 **Quick start:** `docker compose up`, then open http://localhost:3000 (the UI talks to the local API; Settings shows its model and privacy settings). See `DOCKER.md`.
 
@@ -54,10 +54,14 @@ The lawyer approves the dossier and the final draft; nothing is exported without
 │                                  lib/ (API client, SSE hook, types), styles/tokens.css ("Manuscript" palette)
 ├── scripts/                       Local helpers; scripts/ada/ holds interactive shard runners and the QLoRA sbatch
 ├── data/                          raw/ interim/ stores/ testsets/ cases/ (contents gitignored; see data/README.md)
+├── compose.yaml  DOCKER.md        One-command stack (backend + frontend), see DOCKER.md
 └── docs/
     ├── plan.md                    Working project plan (v6)
     ├── architecture/skeleton.md   Plan-section to module map and conventions for coding agents
     ├── proposal/                  Proposal for TA review (md, tex, pdf, build.sh, figures/)
+    ├── handoff/                   Per-workstream notes: done, not done, next steps, decisions (read before editing an area)
+    ├── status/                    One status note per teammate
+    ├── results/                   Dev-sweep result tables and manifests
     ├── research/                  Background research from the ideation phase
     └── course/                    Course project brief
 ```

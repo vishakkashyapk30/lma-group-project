@@ -1,5 +1,7 @@
 # Qwen3-32B-AWQ on Ada
 
+> Checked by Vishak 2026-10-27: the plan to serve Qwen3-32B-AWQ on Ada is DROPPED (see the decision section at the end; the job was cancelled). B0L is the Sarvam-105B single pass (about INR 3 to 5 for 50 cases per `sweep-dev.md`; the 1.15 INR per case figure below is the older estimate, unverified), A5 and the teacher dossiers wait for the fine-tuning stretch. The "Uses" bullet in the first section is therefore historical.
+
 Status 2026-10-26: the download is running on Ada (started from the laptop through the gateway). Not served yet.
 
 - **Access:** `ssh <user>@ada-gw1` (or `ada-gw2`). The old host `ada.iiit.ac.in` no longer accepts SSH; the laptop's `~/.ssh/config` still points at it, so update it to the gateways.

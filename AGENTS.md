@@ -6,7 +6,7 @@ Vakeel-Sahayak.ai is an agentic bail-preparation engine for Indian legal-aid law
 ```bash
 make setup         # needs Python 3.11+; creates .venv, upgrades pip, installs `.[dev,data,testsets]` (no torch, no GPU libraries), copies .env.example to .env, installs the git hooks. Safe to re-run.
                    # `make setup-full` (or EXTRAS=dev,data,eval make setup) adds the heavy extras (torch, docling, ...; several GB). `make help` lists every target
-make test-collect  # optional check: collection must be clean (about 4,700 tests); `.venv/bin/pytest tests/unit/scripts -q` checks the data scripts offline
+make test-collect  # optional check: collection must be clean (about 4,950 tests; 4,944 collected on 2026-10-27); `.venv/bin/pytest tests/unit/scripts -q` checks the data scripts offline
 make data          # data/ in place? skip. Else installs the team bundle (needs HF_TOKEN in .env or hf auth login, and membership of the Hugging Face organisation Vakeel-Sahayak), else tells you how to rebuild.
                    # It checks the token before the 1 GB download, retries 3 times, shows progress; tight disk: TMPDIR=/bigger/disk make data. A fresh clone needs no FORCE=1
                    # The bundle holds the raw source data too (Open India Law shards, IPC2BNS-Verify, Kathbath audio; about 1.8 GB): never refetch it from the web. RAW=0 skips it to save disk
@@ -31,13 +31,15 @@ Handoff notes (what is done, not done, next steps) are in `docs/handoff/*.md`; d
 | PDF intake, Munshi, citation index | `munshi-real-pdf-reading.md`, `data-and-models.md` |
 | eval switches and variants | `ev-01-switches.md`, `eval-infrastructure.md`, `literature-sweep-1.md` to `literature-sweep-4.md` |
 | test sets T2 to T9 | `testsets-t2-t9.md` |
+| the dev-set sweep, spend and ledgers, Satvik's Sarvam block | `sweep-dev.md`, `sweep-satvik.md`, `dev-baselines.md` |
+| gold labels and the label-source sweep | `gold-labeler.md`, `gold-source-sweep.md` |
 | frontend | `workspace-redesign.md`, `landing-colour-motion.md`, `frontend/DESIGN.md` |
 
 ## Hard rules (do not break these)
 - **No manual annotation or hand-made datasets.** Ground truth comes from court text, official tables, existing datasets, construction, or non-Qwen labeler agreement. No LLM-judge scores.
 - **No AI attribution anywhere**: no `Co-Authored-By` trailer, no "Generated with ..." line, no AI mention in commits, PRs or documents. Only the four teammates are contributors. Commit as yourself. Run `make hooks` once after cloning (it installs a hook that strips such lines) and `make check-commits` before opening a PR.
 - **Privacy:** raw client files stay on the user's machine. External model services (Sarvam, OpenAI) are OFF by default and gated by `VS_EXTERNAL=off|public|pseudonymised|consented` plus per-case consent; every external payload must pass the pseudonymisation boundary.
-- **API keys only in environment variables** (`SARVAM_API_KEY`, `OPENAI_API_KEY`) or an untracked `.env`. Never commit, print or log a key. OpenAI spend is capped at 5 USD in code (default 4.50); check with `make openai-spend`.
+- **API keys only in environment variables** (`SARVAM_API_KEY`, `OPENAI_API_KEY`) or an untracked `.env`. Never commit, print or log a key. OpenAI spend is capped at 5 USD in code (default 4.50; the dev-set sweep raises it to 4.90 with `VS_OPENAI_CAP_USD`, see `docs/handoff/sweep-dev.md`); check with `make openai-spend`. Sarvam is capped in INR by `VS_SARVAM_CAP_INR` (default 25); check with `make sarvam-spend`.
 - **Approvals only from counsel, enforced in code.** Export is impossible before Gate 2. No outcome predictions, no grant rates, no advice to the public.
 - **Every new variant is opt-in** (a field in `src/vakeel_sahayak/orchestration/switches.py`), with default behaviour byte-identical, a paper citation in its docstring, and a row in `docs/literature-to-code-map.md`.
 - **Frontend:** it must feel like a product. Follow `frontend/DESIGN.md` including "Things we do not do": no status dots, no stylised numerals, no eyebrow labels, no gradient or glow, short motion only (150 to 300 ms), no scroll-jacking, and none of the banned fonts.
@@ -50,8 +52,8 @@ Handoff notes (what is done, not done, next steps) are in `docs/handoff/*.md`; d
 - End to end offline: `make smoke` (case-0007 through the agents, Gate 1 approved, Gate 2 left closed, export blocked) and `make eval-smoke`.
 
 ## Tests (the full suite is slow; run by area)
-- Per-area commands are in `progress.md` section 5. The broad regression (about 12 minutes, last result 3,351 passed, 16 skipped) is the command in `docs/handoff/literature-sweep-3.md`.
-- Known failing until built (stubs): `tests/unit/export`, `tests/unit/eval/{test_metrics,test_stats}.py` (Harshita's metrics and statistics), 3 tests in `tests/unit/eval/test_ingestion_pipelines.py` that wait for helpers in `eval/metrics/ingestion.py`, parts of `tests/integration` and `tests/system` that still reach an export or API stub, and the old frontend tests (`frontend/tests`, `frontend/e2e`), which describe the earlier design.
+- Per-area commands are in `progress.md` section 5. The broad regression (about 12 minutes, last result 3,351 passed, 16 skipped; the per-file run of 2026-10-27 in `docs/handoff/regression-2026-10-26-b.md` gave unit 4,227 passed / 0 failed, integration 130, system 295, and its three red tests were resolved the same day) is the command in `docs/handoff/literature-sweep-3.md`.
+- Known failing: none of the earlier "stub" areas any more (checked 2026-10-27: `tests/unit/export`, `tests/unit/eval/{test_metrics,test_stats,test_ingestion_pipelines}.py` pass). `tests/unit/finetune` was not re-run (see `docs/handoff/finetune.md`; unverified). The frontend tests were reconciled with the redesign (`docs/status/satvik.md`; not re-run on 2026-10-27).
 - Each test gets its own data dir through `tests/conftest.py` (`VS_DATA_DIR`); do not make tests depend on `data/`.
 - Tests encode the plan. Fix the code first; change a test only if it contradicts the plan, and mark it `# RECONCILED: <reason>`. Never weaken or delete tests.
 

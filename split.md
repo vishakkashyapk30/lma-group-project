@@ -1,5 +1,7 @@
 # split.md: who does what from here (written 2026-10-25)
 
+> Checked by Vishak 2026-10-27: section 1 (state table) was corrected: DOCX export, hearing card, real-API frontend mode, metrics and statistics are built (commits `5dac4ed`, `b936931`, `0e5897b`, `de93b64`; `tests/unit/export` and `tests/unit/eval/test_{metrics,stats}.py` pass). The task tables in section 4 keep their original wording. Where `docs/api/contract.md`, `docs/api/openapi.json`, `docs/api/README.md`, `docs/qa/manual-test.md` and `docs/qa/rights-verification.md` are named as deliverables (SH-02, SH-06, HA-03, HA-06), those files do not exist yet (flagged). State of the VI tasks on 2026-10-27 (from `docs/status/vishak.md`): VI-01 to VI-08 and VI-10 done (VI-07 offline; P3, P4, F5, F6 were blocked when written), VI-09 (freeze and real runs) blocked on the real runs, Harshita's checks and the preregistration hashes, and the dev-set sweep is the work in progress (`docs/handoff/sweep-dev.md`); VI-11 stretch.
+
 This replaces the earlier team plan (the former `docs/team/` folder, now removed), because a lot has changed since it was written (hosted LLMs, the redesigned frontend, the literature variants, the eval infrastructure). The PR and review rules, history-sync steps, freeze and definition of done are in the appendices at the end of this file (copied from the old team plan, which has been removed).
 
 **Rules this split follows (the team's original instruction):**
@@ -21,9 +23,9 @@ Day 1 is the day all four of you have finished the history sync (Wave 0). Effort
 | Test sets and gold | T1 to T9 built (T7 safety, driver case rows for T2, T5, T7, native Hindi High Court set for T2); gold G1 to G7 by agreement (primary) with the rule-only gold as a declared secondary |
 | Features and ingestion | F1 to F4, F7, F8 and P1 to P6 arms run offline; F5, F6 need the export modules; P3, P4 need Docling and a vision model |
 | Graph and API | LangGraph flow and the API routes with Swagger built by Shravani (graph unit tests pass; her API tests pass except 2 traced to a Sutradhar bug) |
-| Frontend | Redesigned (shell, landing, guided workspace); old tests fail on purpose; real-API mode not done |
+| Frontend | Redesigned (shell, landing, guided workspace); tests reconciled with the redesign and real-API mode built (SA-01, SA-02, SA-06, SA-07 per `docs/status/satvik.md`; not re-run on 2026-10-27) |
 | Data | Stores rebuilt with the current T1 splits, SC metadata and SCC links; statutes (CrPC, NDPS, First Schedule flags) from official PDFs; Kathbath complete; HLDC and indictrans2 access pending; team copy is the private organisation dataset `Vakeel-Sahayak/vakeel-sahayak-data` (`make data`) |
-| **Not built** | DOCX export and hearing card, real-API frontend mode, metrics and statistics (Harshita), real-model result numbers, a trained store prior (S6, B5), the model-backed S13 arm, the M18 stopped-too-early replay, the Rights rule verification by Harshita (`last_verified`, PR-46); the rescoring loop of the gold sweep is part of `scoring score --gold-source both` |
+| **Not built** | real-model result numbers, a trained store prior (S6, B5), the model-backed S13 arm, the M18 stopped-too-early replay, the Rights rule verification by Harshita (`last_verified`, PR-46); the rescoring loop of the gold sweep is part of `scoring score --gold-source both` |
 
 ## 2. Streams and owners
 
