@@ -147,7 +147,7 @@
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
 
-  /* ── Motion: 100-250 ms, one easing, transform and opacity only ─────────────────────────────────────────────── */
+  /* ── Motion: time-based 100-250 ms, drag springs settle by 450 ms; transform and opacity only ───────────────────── */
   --dur-instant: 80ms;
   --dur-fast: 120ms;
   --dur-base: 180ms;
@@ -163,6 +163,10 @@
   --ease-exit: var(--ease);
   --ease-ink: var(--ease);
   --ease-settle: var(--ease);
+  /* A critically damped spring sampled for time-based motion (tab indicator 275 ms, route content 220 ms). */
+  --ease-spring: linear(0, 0.114, 0.32, 0.515, 0.67, 0.782, 0.859, 0.911, 0.944, 0.965, 0.979, 0.987, 1);
+  /* Longest settle of a spring released from a drag (DESIGN.md "Direct manipulation and springs"). */
+  --dur-gesture-max: 450ms;
 
   /* ── Layers ─────────────────────────────────────────────────────────────────────────────────────────────────── */
   --z-base: 0;

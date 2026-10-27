@@ -131,13 +131,42 @@ One easing: `--ease: cubic-bezier(0.2, 0, 0, 1)`. The older `--ease-*` names are
 | --- | --- | --- |
 | `--dur-fast` | 120 ms | hover, press, colour |
 | `--dur-base` | 180 ms | menus, dialogs, sidebar width |
-| `--dur-slow` | 250 ms | entrance, reveal, drawers (the ceiling) |
+| `--dur-slow` | 250 ms | entrance, reveal, drawers (the ceiling for time-based motion) |
+| `--dur-gesture-max` | 450 ms | longest settle of a spring released from a drag |
+| `--ease-spring` | `linear(...)` | time-based curve that looks like a critically damped spring (tab indicator, route content) |
 
 Motion budget:
 
 - Landing first paint (hero text): one fade and 6 px rise on the hero, 250 ms, no delay, no stagger. Total intro: 250 ms.
 - Landing sections: one fade and 6 px rise, 250 ms, once, only for sections that start below the fold. Content is visible without JavaScript and under reduced motion.
-- App: dialogs, menus, toasts and drawers 180 to 250 ms. No page transitions.
+- App: dialogs, menus, toasts and drawers 180 to 250 ms. Route changes crossfade (see "Route transitions" below).
+
+### Direct manipulation and springs
+
+Two kinds of motion, with different budgets:
+
+- **Time-based motion** (anything that plays without the user's hand: reveals, crossfades, route transitions, menus, the tab indicator) stays at 150 to 300 ms with `--ease` or `--ease-spring` (a `linear()` sampling of a critically damped spring). Decorative motion never exceeds 300 ms.
+- **Gesture-driven motion** (the user drags a panel, a sheet, a landing demo card, the gate button): the element follows the pointer 1:1 and is released into a spring that carries the gesture's velocity. These springs are critically damped or nearly so (bounce at most 0.15 in the app, 0.2 on the landing demos) and settle within 450 ms (`--dur-gesture-max`). Past a limit, a dragged element resists with the rubber-band curve `offset = (1 - 1 / (x * 0.55 / d + 1)) * d` (x = distance past the limit, d = the element's allowance) and springs back on release. Gestures can be interrupted: grabbing a moving element stops it where it is.
+
+Spring parameters (mass 1, stiffness `(2π/T)²`, damping `4π(1-b)/T` from a perceptual duration T and bounce b; helpers in `lib/motion`):
+
+| Use | T | bounce | Rubber-band allowance d | Release rule |
+| --- | --- | --- | --- | --- |
+| Button press | 0.15 s | 0 | none | scale 0.97 in 100 ms, back on release |
+| Tab and step indicator | time-based, 275 ms `--ease-spring` | | none | |
+| Side panel drag to close | 0.40 s | 0 | 48 px past fully open | closes past 50 % of its width or above 500 px/s |
+| Sheet drag to dismiss (below `lg`) | 0.35 s | 0.10 | 64 px upward | dismisses past 25 % of its height or above 800 px/s |
+| Gate that holds | 0.30 s | 0 | 12 px | always springs back and lists the open items |
+| Landing demo cards | 0.45 s | 0.15 | 80 px | snaps to the drop target when released over it or projected into it |
+
+Rules:
+
+- **Never** hijack or smooth the page scroll, rubber-band anything the user is not dragging (`overscroll-behavior` stays native, no scroll-linked scenes), glow, gradient, blur, or motion that delays input. `touch-action: none` only on drag handles, so page scroll stays native.
+- **Parity.** Every drag has a button and a keyboard path that does the same thing (Escape or a Close button closes a panel; a button adds the FIR in the landing demo; Enter opens a source). Dragging is an enhancement, never the only way. Focus stays visible on every handle.
+- **Reduced motion** (system or in-app): springs are replaced by an instant jump or a 100 ms opacity fade; rubber-banding is off (the element stops at its limit); route transitions do not animate.
+- **Press feedback.** Buttons and drag handles scale to 0.97 on press (100 ms) and come back on release; no lift on touch.
+- **Route transitions.** Content crossfades with a 6 px rise in at most 250 ms; the sidebar, the top bar and the case stepper do not move.
+
 Landing motion (styles/landing.css; every element rests in its final state, so reduced motion, no-JS and the end of a run look identical):
 
 - Band reveal: children marked `data-rv` rise 8 px and fade in, 250 ms (`--dur-slow`), 40 ms stagger, once, via IntersectionObserver; bands already on screen are left alone.
@@ -170,6 +199,7 @@ Keep these out of every screen, including future ones.
 - No rounded-everything cards with soft tinted shadows or tinted borders. Use neutral dividers and hairline borders, and avoid cards inside cards.
 - No mock-browser chrome with traffic-light dots in visuals.
 - No scroll-jacking, pinned or scrubbed scenes, smooth-scroll libraries, or intros over 600 ms.
+- No drag that is the only way to do something, and no physics on things the user is not touching.
 - No State Emblem, flag, court logos or gavel.
 
 Do instead: plain, specific, short copy a lawyer would write (Cases, New case, Review facts, Draft, Export); type hierarchy and spacing for structure; tabular numerals for dates and counts; one accent colour, for actions.
