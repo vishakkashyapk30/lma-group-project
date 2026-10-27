@@ -57,7 +57,7 @@ Installed motion and gesture libraries: none (no framer-motion, motion, @use-ges
 | Landing demo cards | hero specimen | 0.45 s | 0.15 (C: 0.2) | 195 | 23.7 (C: 22.3) | 80 px | snap to the drop target if within 120 px or projected inside it |
 | Route transition | `app/**/page.tsx` | not physics | | | | | 200 ms crossfade + 6 px rise, `--ease-spring` |
 
-Rubber band with d = 160 px gives 10, 24, 41, 65, 93 px for pulls of 20, 50, 100, 200, 400 px; with d = 48 px it gives 9, 18, 26, 33, 39 px. A critically damped spring is within 1.4 % of its target at t = T, so T = 0.45 s settles by about 450 ms, which is what the amendment allows.
+Rubber band with d = 160 px gives 10, 23, 41, 65, 93 px for pulls of 20, 50, 100, 200, 400 px; with d = 48 px it gives 9, 17, 26, 33, 39 px. A critically damped spring is within 1.4 % of its target at t = T, so T = 0.45 s settles by about 450 ms, which is what the amendment allows.
 
 CSS token for time-based spring-like motion (critically damped, sampled at 12 steps over 1.1 T):
 ```css
