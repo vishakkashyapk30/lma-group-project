@@ -6,7 +6,7 @@
 import { FileText, GripVertical } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { AnimatePresence, m, MotionProvider, PRESENCE } from "@/components/motion/MotionProvider";
+import { AnimatePresence, m, MotionProvider, usePresenceTransition } from "@/components/motion/MotionProvider";
 import { Button } from "@/components/ui/button";
 import { ALLOWANCE, SPRINGS, SpringValue, prefersReducedMotion, project, rubberClamp, useDrag2D } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,7 @@ function within(r: DOMRect, x: number, y: number, pad = 24): boolean {
 }
 
 export function FileDemo({ className }: { className?: string }): ReactElement {
+  const tr = usePresenceTransition();
   const [added, setAdded] = useState(false);
   const [over, setOver] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -154,7 +155,7 @@ export function FileDemo({ className }: { className?: string }): ReactElement {
                       key={p.page}
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ ...PRESENCE, delay: i * 0.06 }}
+                      transition={tr(i * 0.06)}
                       data-testid="demo-page"
                       data-status={p.status}
                       className={cn("rounded-sm border px-2 py-1 text-xs", p.status === "OK" ? "border-line text-ink-soft" : "border-saffron bg-saffron-wash text-saffron-ink")}
@@ -170,7 +171,7 @@ export function FileDemo({ className }: { className?: string }): ReactElement {
                         key={r.key}
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ ...PRESENCE, delay: 0.18 + i * 0.05 }}
+                        transition={tr(0.18 + i * 0.05)}
                         data-testid="demo-row"
                         data-status={r.status}
                         className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 gap-y-0.5 border-b border-line/70 py-2 last:border-b-0"

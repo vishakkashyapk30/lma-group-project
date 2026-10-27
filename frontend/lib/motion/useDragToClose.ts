@@ -78,7 +78,8 @@ export function useDragToClose(panel: RefObject<HTMLElement | null>, handle: Ref
           onClose();
         };
         // Leaving: never slower than the flick, and it does not bounce back into view.
-        v.to(size.current, { spring, velocity: Math.max(velocity, 0), reduced, onRest: close });
+        // It is leaving the screen, so it may close once it is visually there (within 6 px), not at full rest.
+        v.to(size.current, { spring: { ...spring, restDelta: 6, restSpeed: 400 }, velocity: Math.max(velocity, 0), reduced, onRest: close });
       } else {
         v.to(0, { spring, velocity, reduced });
       }

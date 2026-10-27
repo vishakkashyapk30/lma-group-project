@@ -3,7 +3,7 @@
 // names what it relies on. Writing a reply here marks the objection as answered by you; nothing is answered for you.
 import { useCallback, useState, type ReactElement } from "react";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { AnimatePresence, m, MotionProvider, PRESENCE } from "@/components/motion/MotionProvider";
+import { AnimatePresence, m, MotionProvider, usePresenceTransition } from "@/components/motion/MotionProvider";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ const ORDER = { UNANSWERED: 0, PARTLY: 1, ANSWERED: 2 } as Record<string, number
 const AGAINST: Record<string, string> = { G1: "Against ground A, parity", G4: "Against the gravity ground", general: "Against the application as a whole" };
 
 export function SparDemo({ className }: { className?: string }): ReactElement {
+  const tr = usePresenceTransition();
   const [replies, setReplies] = useState<Record<string, string>>({});
   const [writing, setWriting] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -49,7 +50,7 @@ export function SparDemo({ className }: { className?: string }): ReactElement {
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
-                      transition={PRESENCE}
+                      transition={tr()}
                       className="mt-3"
                       onSubmit={(e) => {
                         e.preventDefault();
@@ -67,7 +68,7 @@ export function SparDemo({ className }: { className?: string }): ReactElement {
                       </div>
                     </m.form>
                   ) : (
-                    <m.div key="btn" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={PRESENCE} className="mt-3">
+                    <m.div key="btn" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={tr()} className="mt-3">
                       <Button variant="secondary" size="sm" data-testid="spar-write" onClick={() => setWriting(o.id)}>Write a reply</Button>
                     </m.div>
                   )}

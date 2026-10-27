@@ -6,7 +6,7 @@
 import { Check } from "lucide-react";
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import { HoldButton } from "@/components/common/HoldButton";
-import { AnimatePresence, m, MotionProvider, PRESENCE } from "@/components/motion/MotionProvider";
+import { AnimatePresence, m, MotionProvider, usePresenceTransition } from "@/components/motion/MotionProvider";
 import { Button } from "@/components/ui/button";
 import { sampleCaseHref } from "@/lib/sampleCase";
 import { cn } from "@/lib/utils";
@@ -20,12 +20,13 @@ function OpenList({ id, title, items, onAcknowledge, focusFirst, footer }: {
   focusFirst: boolean;
   footer?: ReactElement;
 }): ReactElement {
+  const tr = usePresenceTransition();
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
     if (focusFirst) ref.current?.querySelector<HTMLElement>("li button, a")?.focus();
   }, [focusFirst]);
   return (
-    <m.section ref={ref} key={id} role="region" aria-labelledby={`${id}-t`} data-testid={`${id}-list`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={PRESENCE} className="mt-3 border-y border-line py-2">
+    <m.section ref={ref} key={id} role="region" aria-labelledby={`${id}-t`} data-testid={`${id}-list`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={tr()} className="mt-3 border-y border-line py-2">
       <h4 id={`${id}-t`} className="font-sans text-sm font-semibold text-ink">{title}</h4>
       <ul className="mt-1 divide-y divide-line">
         {items.map((i) => (
@@ -41,6 +42,7 @@ function OpenList({ id, title, items, onAcknowledge, focusFirst, footer }: {
 }
 
 export function HoldDemo({ className }: { className?: string }): ReactElement {
+  const tr = usePresenceTransition();
   const [acknowledged, setAcknowledged] = useState<string[]>([]);
   const [list1, setList1] = useState<"closed" | "open" | "focus">("closed");
   const [confirming, setConfirming] = useState(false);
@@ -67,7 +69,7 @@ export function HoldDemo({ className }: { className?: string }): ReactElement {
                   <OpenList id="gate1" title="Still open before you can confirm" items={open1} focusFirst={list1 === "focus"} onAcknowledge={(k) => { setAcknowledged((a) => [...a, k]); setList1("closed"); }} />
                 ) : null}
                 {confirming ? (
-                  <m.section key="confirm" role="region" aria-labelledby="gate1-confirm-t" data-testid="gate1-confirm" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={PRESENCE} className="mt-3 border-y border-line py-3">
+                  <m.section key="confirm" role="region" aria-labelledby="gate1-confirm-t" data-testid="gate1-confirm" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={tr()} className="mt-3 border-y border-line py-3">
                     <h4 id="gate1-confirm-t" className="font-sans text-sm font-semibold text-ink">Confirm these facts</h4>
                     <p className="mt-1 text-sm text-ink-soft">What this locks:</p>
                     <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-ink-soft">

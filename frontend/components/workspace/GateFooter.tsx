@@ -4,7 +4,7 @@
 // unknown), the same actions as the confirm dialog. The list takes focus; Escape closes it and returns focus.
 import { useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { HoldButton } from "@/components/common/HoldButton";
-import { AnimatePresence, m, MotionProvider, PRESENCE } from "@/components/motion/MotionProvider";
+import { AnimatePresence, m, MotionProvider, usePresenceTransition } from "@/components/motion/MotionProvider";
 import { Button } from "@/components/ui/button";
 import { plural } from "@/lib/format";
 import type { GateId } from "@/lib/types";
@@ -24,6 +24,7 @@ export interface GateFooterProps {
 }
 
 export function GateFooter({ gate, label, onApprove, testId, verb, next, secondary }: GateFooterProps): ReactElement {
+  const tr = usePresenceTransition();
   const ws = useWorkspace();
   const checklist = useGateChecklist(gate);
   const open = checklist.blocking;
@@ -72,7 +73,7 @@ export function GateFooter({ gate, label, onApprove, testId, verb, next, seconda
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 6 }}
-                transition={PRESENCE}
+                transition={tr()}
                 onKeyDown={(e) => {
                   if (e.key === "Escape") {
                     e.preventDefault();
