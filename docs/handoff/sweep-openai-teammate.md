@@ -2,7 +2,7 @@
 
 Same idea as `sweep-satvik.md` (read its steps 1, 2 and 6 for checkout, data and upload). The phase-2 OpenAI ablation arms (A2, A8, A9, A3, A1, A6, A7, b2, b3; 50 dev orders each, gpt-6-luna) can be run on YOUR key and YOUR ledger, so the owner's 5 USD ledger is not the limit. Preliminary dev-set work, no blind or test slice.
 
-1. `git fetch --tags && git checkout dev-sweep-v1` (pinned tag, clean `src/` and `configs/`; the script refuses otherwise, `ALLOW_OTHER_CODE=1` overrides and the owner will then refuse the results).
+1. `git fetch --tags && git checkout dev-sweep-v2` (pinned tag, clean `src/` and `configs/`; the script refuses otherwise, `ALLOW_OTHER_CODE=1` overrides and the owner will then refuse the results).
 2. `make setup`, `make data`; for the real DeBERTa checker `.venv/bin/pip install -e '.[nli]'` (as in `sweep-satvik.md`).
 3. Your key in your own untracked `.env`: `OPENAI_API_KEY=...`. Never the owner's, never committed or printed.
 4. `scripts/sweep_openai_block.sh plan` prints the arms and estimated USD (no key, no calls; the whole phase is under 3 USD).

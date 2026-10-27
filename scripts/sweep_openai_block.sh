@@ -24,7 +24,7 @@ if [ "$cmd" = run ]; then
   [ -f .env ] && { set -a; . ./.env; set +a; }
   [ -n "${OPENAI_API_KEY:-}" ] || { echo "OPENAI_API_KEY is not set: put it in your own untracked .env (never commit it)" >&2; exit 1; }
   [ -n "${VS_OPENAI_CAP_USD:-}" ] || { echo "set your own spend cap first, for example: VS_OPENAI_CAP_USD=2.50 $0 run   (the phase needs under 3 USD; the code clamps every cap to 5 USD)" >&2; exit 1; }
-  TAG=dev-sweep-v1
+  TAG=dev-sweep-v2
   if [ "${ALLOW_OTHER_CODE:-0}" != 1 ]; then
     [ "$(git rev-parse HEAD 2>/dev/null)" = "$(git rev-parse "$TAG^{commit}" 2>/dev/null || echo none)" ] || { echo "this checkout is not the pinned tag $TAG: run  git fetch --tags && git checkout $TAG  (ALLOW_OTHER_CODE=1 overrides; the owner will then refuse the results)" >&2; exit 1; }
     [ -z "$(git status --porcelain -- src configs)" ] || { echo "src/ or configs/ have local edits: use a clean checkout of $TAG" >&2; exit 1; }
