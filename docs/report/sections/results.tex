@@ -1,0 +1,21 @@
+\section{Preliminary Results}
+\label{sec:results}
+
+\paragraph{What this section is.} A template. Every number in it comes from a table written by the scoring pipeline (\texttt{python -m vakeel\_sahayak.eval.scoring score} then \texttt{report}), which writes LaTeX fragments to \texttt{docs/results/dev-sweep/tables/}. The document includes them when they exist and shows a placeholder when they do not. No number is typed in the text. Where a sentence needs one, a \todo{} marker names the table that holds it.
+
+\paragraph{What ran.} The baselines \texttt{full} (two runs), \texttt{b0}, \texttt{b1}, \texttt{b4} and \texttt{b6} were rerun on all 50 dev cases from a clean worktree of the tag \texttt{dev-sweep-v1} (commit \texttt{efd0ce4}); every manifest carries the code stamp, and the scorer refuses to mix commits. The backend is OpenAI \texttt{gpt-6-luna} behind the pseudonymisation boundary, with the real DeBERTa NLI as claim checker. A hosted stand-in for B0L duplicated B0 (same model and prompt) and was dropped; the real B0L is a Sarvam-105B single pass and has not run. Earlier runs carry a dirty-tree stamp and are not scored. The variants and studies of Appendix~\ref{app:arms} are planned; \todo{owner Vishak: which phases have run by the submission date}. Scoring is on the dev slice, agreed gold primary, rule-only gold secondary.
+
+\paragraph{Main comparison.} \resref{table1_main} compares Full with the baselines on factor recall, lenient precision, F1, unsupported-fact rate, recall@10 of court-cited precedents (undefined on dev, see Section~\ref{sec:eval}), objection recall, pass$^k$ and tokens. \todo{one sentence from table1\_main: Full vs.\ B0 to B4 on recall and unsupported-fact rate, with the 95\% interval and n; state whether the intervals overlap}. \todo{one sentence from table\_paired and table\_holm: which of the six recall comparisons survive Holm}.
+
+\resulttable{table1_main}{w}
+
+\paragraph{What each baseline shows.} B0 (single pass) isolates the effect of having no retrieval and no agents: \todo{from table1\_main}. B1 and B3 (one store, with or without naive chunking) isolate the effect of several typed stores against one: \todo{from table1\_main}. B2 (whole-order embeddings) isolates retrieval granularity: \todo{b2 has not run; owner Vishak}. B4 (every store, fused) isolates an agent choosing against querying everything, and its token cost against Full: \todo{table1\_main and table9\_cost}. B6 (expert rule list) gives the no-model floor and is scored on precision, unsupported-fact rate and the Rights checks only: \todo{from table1\_main and table\_rights}. B5 and B0L: \todo{not run}.
+
+
+\paragraph{Variants sweep.} Variants S1 to S18 and the ablations are compared with Full on the same backend and the same cases, so each comparison is paired. The offline studies (scheduling S14b and S14c, chunk strategies S16 and S16b, retrieval S4 and S5, removal M17) run at zero model cost. \todo{variants table and a sentence on which variants move M1 or M6 beyond their interval; table not yet generated, owner Satvik for the Sarvam block, Vishak for the OpenAI and offline phases}. S6 and B5 have no effect until a store prior is trained; the train-order labelling this needs is not done.
+
+\paragraph{Label-source sensitivity.} The same outputs are scored against the agreed gold and the rule-only gold. \resref{table_sweep_metrics} shows both and the difference; \todo{one sentence: does the ordering of systems change with the label source? from table\_sweep\_metrics and table\_sweep\_robustness}.
+
+
+\paragraph{Cost.} \resref{table9_cost} gives tokens, store calls, latency and USD per case. \todo{one sentence from table9\_cost: Full vs.\ B4 token ratio (plan expects about 1.0 to 1.6) and Full vs.\ B0}.
+

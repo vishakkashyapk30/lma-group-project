@@ -1,0 +1,101 @@
+\section{Reproducibility}
+\label{app:repro}
+
+\paragraph{Code and data.} The repository is the code of record; the pinned tag for the dev reruns is \texttt{dev-sweep-v1} (commit \texttt{efd0ce4}). Data (\texttt{interim}, stores, test sets, gold, and the raw sources: Open India Law shards, IPC2BNS-Verify, Kathbath) is not in the repository. It is a private dataset in the Hugging Face organisation \texttt{Vakeel-Sahayak}, \texttt{vakeel-sahayak-data}; access is granted by the owner. Helper models (BGE-M3, DeBERTa NLI, MiniCheck, Whisper small) are fetched by \texttt{make models}.
+
+{\footnotesize\begin{verbatim}
+make setup
+make data
+make models
+make smoke        # case-0007, offline
+make eval-smoke
+python -m vakeel_sahayak.eval.runners.driver \
+  plan --sweep
+python -m vakeel_sahayak.eval.scoring score \
+  --runs data/eval/dev_runs --slice dev \
+  --gold-source both --out data/eval/dev_scores
+python -m vakeel_sahayak.eval.scoring report \
+  --scores data/eval/dev_scores
+\end{verbatim}}
+
+\paragraph{Manifests.} Each run writes a manifest with the system id and variant, prompt hash, config hash, model names and modes, test-set and gold hashes, shard count, and the code stamp (\texttt{git\_sha}, \texttt{git\_dirty}, \texttt{code\_tree\_hash}). The scoring loader refuses runs from different commits unless told otherwise, and a dirty stamp is not admissible for frozen runs. The hosted-model settings are \texttt{VS\_MODELS=auto}, \texttt{VS\_LLM\_BACKEND=openai}, \texttt{VS\_EXTERNAL=pseudonymised}, with keys read from an untracked \texttt{.env}; offline stand-ins are the default and need neither a GPU nor a key. Agreed-gold hashes: \todo{owner Vishak: paste cases, dev and gold sha256 from the manifest at the report date}.
+
+\section{Arms}
+\label{app:arms}
+
+\begin{table*}[t]
+\centering\small\setlength\tabcolsep{3pt}
+\begin{tabular}{@{}lp{5.2cm}p{3.5cm}l@{}}
+\toprule
+Id & Idea (source) & Switch & Run so far \\
+\midrule
+B0, B1, B4, B6, Full & baselines (Section~\ref{sec:eval}) & driver system id & dev, pinned tag, not scored \\
+B0L, B2, B3, B5, B0S & baselines & driver system id & not run \\
+S1 & self-critique retrieval \citep{asai2024selfrag,yan2024crag} & \texttt{retrieval\_policy} & planned \\
+S2 & adaptive depth \citep{jeong2024adaptive} & \texttt{retrieval\_policy} & planned \\
+S3, S3b & sufficiency stopping \citep{joren2025sufficient} & \texttt{stopping} & planned \\
+S4 & score-skew weak signal & \texttt{weak\_signal} & offline study \\
+S5 & citation-graph expansion \citep{gutierrez2025hipporag2} & \texttt{graph\_expansion} & offline study \\
+S6 & learned store prior \citep{zhang2026agentrouter} & \texttt{store\_prior} & needs trained prior \\
+S7 & hierarchy re-reading for Munshi & \texttt{munshi\_gap\_policy} & planned (T2) \\
+S8 & self-critique repair \citep{gou2024critic,huang2024selfcorrect} & \texttt{repair\_mode} & planned \\
+S9, S10 & sampling critic; no isolation \citep{choi2025debate,wynn2025talk} & \texttt{critic\_mode}, \texttt{abhiyojak\_isolation} & planned \\
+S11 & three-role review, debate, vote \citep{kumar2025courtevel} & \texttt{critic\_mode}, \texttt{draft\_mode} & planned \\
+S12 & topology: sequential, single agent \citep{cemri2025mast} & \texttt{topology} & planned \\
+S13 & searched workflow (grid on dev) & none (grid over switches) & offline smoke \\
+S14, S14b--d & plan cache, scheduling, prefix signal \citep{zheng2024sglang} & \texttt{plan\_cache}, \texttt{urgency\_policy} & offline study \\
+S15, S15b & output format \citep{tam2024speak} & \texttt{output\_format} & planned \\
+S16, S16b & proposition units, late chunking \citep{chen2024densex} & \texttt{chunking} & offline study \\
+S17 & injection defences \citep{beurerkellner2025patterns} & defence flags & planned (T7) \\
+S18 & authority stance \citep{wachsmuth2018} & stance switch & planned \\
+P5--P8 & ingestion arms, image-only \citep{yu2025visrag,faysse2025colpali} & \texttt{munshi\_*} & planned (T2) \\
+A1--A10 & remove one part (dossier, repair, tools, filter, extractor, router, planner, sparring, a store) & \texttt{Switches} flags & planned \\
+\bottomrule
+\end{tabular}
+\caption{Arms and their state. ``Planned'' means the arm is implemented and offline-smoked, with a phase in the sweep plan, and has not produced scored results. Switch names follow \texttt{orchestration/switches.py}; \todo{owner Vishak: check the S18 and S3b switch names}.}
+\end{table*}
+
+\section{Metrics}
+\label{app:metrics}
+
+\begin{table*}[t]
+\centering\small
+\begin{tabular}{@{}llp{6.2cm}l@{}}
+\toprule
+Id & Metric & Definition and check & Set \\
+\midrule
+M1--M3 & factor recall, precision, F1 & set comparison with G1 (and G5 for lenient precision) on answerable factors; argue-all F1 as floor & T1 \\
+M4 & G5, G4, G6 recall & as M1 for court-discussed factors, objections, conditions & T1 \\
+M5 & label-source sensitivity & M1 to M4 on rules-only, labeler, agreed; $\kappa$ per factor & T1 \\
+M6 & unsupported-fact rate & share of factual sentences MiniCheck or the NLI finds unsupported & T1 \\
+M7 & factual error & wrong section, date, statute text, custody count against tools & T1 \\
+M9 & fabricated citation & id not in index, or span not found verbatim & T1 \\
+M10, M11 & recall@$k$, MRR, nDCG@10 & court-cited precedents, with coverage columns & T1 \\
+M12 & slot-fill rate & required slots filled; missing slots are open issues & T1 \\
+M13, M15 & authority quality, good-law violations & metadata and graph lookup; known-treatment share & T1 \\
+M16, M17 & citation precision, recall; removal & ALCE-style; claims unchanged when the paragraph is removed & T1 \\
+M18 & stopping quality & over-search and stopped-too-early & T1 \\
+M19 & weak-evidence AUROC & score skew predicts a top-10 gold hit & T1 \\
+M33 & coverage-risk & abstention curve & T1 \\
+Ingestion & CER, boundary F1, type and field accuracy & against construction truth; escalation, GPU seconds & T2 \\
+Rights & accuracy, false-ELIGIBLE & designed answers by construction; Wilson interval & T4 \\
+Safety & attack success, unapproved exports & bounded by the rule of three & T7 \\
+Cost & tokens, calls, latency, USD & from manifests and ledgers; cost-quality frontier & all \\
+\bottomrule
+\end{tabular}
+\caption{Metrics. Definitions are in the evaluation plan; none is an LLM-judge score.}
+\end{table*}
+
+\section{Further Generated Tables}
+
+\resulttable{table_paired}{w}
+\resulttable{table_holm}{w}
+\resulttable{table_sweep_metrics}{w}
+\resulttable{table9_cost}{w}
+\resulttable{table_label_coverage}{n}
+\resulttable{table_label_sensitivity}{w}
+\resulttable{table_label_kappa}{n}
+\resulttable{table_citations}{w}
+\resulttable{table_abstention}{w}
+\resulttable{table_rights}{n}
+\resulttable{table_sweep_robustness}{w}

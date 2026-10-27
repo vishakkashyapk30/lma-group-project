@@ -1,0 +1,8 @@
+\section{Threats to Validity}
+\label{sec:threats}
+
+\paragraph{Internal.} Small $n$ and a single run for most arms limit what can be resolved; an effect smaller than the interval is reported as not resolved. Thresholds fixed on 50 orders may be mis-set, so margins are rounded to whole points; the pass bar and NLI threshold are provisional until the freeze.
+
+\paragraph{Construct.} Gold from rules plus a non-Qwen LLM labeler, not humans, risks circularity: the system reads the facts part of an order while gold is read from other parts of the same order, and the tagger that builds paragraph metadata is of the same family as the rule labeler. Controls are an 8-word-overlap check, agreed labels, label-source sensitivity, and B6 not reusing the tagger. Because T1 facts are often only a caption, retrieved boilerplate can inflate recall; the answerable-factor rule and the faithful/corroborated table are guards, not a cure. Factor recall against G1 measures what the defence argued, not what a good lawyer should argue; lenient precision against G1 $\cup$ G5 corrects this in part. The NLI checker is a stand-in or a model validated on other domains, so subtle legal entailment errors may pass.
+
+\paragraph{External.} One legal domain (bail), one source of orders, one court for the Hindi native set, and constructed data for T2 to T5, T7 and T8 limit transfer. Only 5.9\% of orders split cleanly, so results hold for orders that split cleanly. Qwen3 and the hosted labeler may have seen public orders; the release date bounds the cutoff but does not measure it. There is no user study, and no claim about lawyer time or outcomes.

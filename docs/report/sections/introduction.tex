@@ -1,0 +1,20 @@
+\section{Introduction}
+
+\paragraph{Problem.} A legal-aid lawyer who prepares a regular bail application in an Indian High Court (CrPC s.439, now BNSS s.483) starts from a pile of documents: a born-digital High Court order, a scanned Sessions Court order, a phone photo of an FIR copy, remand orders and a custody certificate, often merged into one PDF and often in Hindi. The application needs exact statute text, a mapping from old to new sections since the 2024 change from IPC and CrPC to BNS and BNSS, court reasoning on each bail factor, the citation history of every authority, and the case's own timeline. No single vector index serves all of these. A model asked to write it from memory fabricates facts and case law, as studies of commercial legal research tools found \citep{magesh2025}.
+
+The problem is one of data engineering and decisions before it is one of text generation: the input is heterogeneous, the knowledge has several shapes, each factor needs evidence from different places, the case keeps moving, and an office has hundreds of files to triage.
+
+\paragraph{Why agentic.} Three of these steps involve a decision that depends on what was just found: how far down a parse ladder a page must go, which store to ask next for a given factor and whether the result is enough, and which part of a draft a new order has made stale. A fixed pipeline either does too much (every store, the vision model on every page) or too little. We built the decisions as agents with typed tools, typed hand-offs and budgets, and we measure each of them against a simpler alternative.
+
+\paragraph{Scope.} Users are panel lawyers, junior advocates and supervised legal-aid clinics. The system does not predict outcomes, show grant rates, or advise accused persons or the public.
+
+\paragraph{Contributions.} The research contribution is the harness and its evaluation, not a new model.
+\begin{enumerate}\setlength\itemsep{0pt}
+\item \textbf{The harness.} Six court-office agents over ten typed stores on four shelves; page-level agentic ingestion for ten input kinds; an orchestrator that plans retrieval per factor (Section~\ref{sec:system}).
+\item \textbf{Evidence contracts.} For each of twelve bail factors, a short declarative list of the evidence a ground needs and which stores may hold it. The contract fixes what is needed and where it may be; the orchestrator decides the order, the query, sufficiency and the stop.
+\item \textbf{Truth maintenance for drafts.} Each claim stores its dependencies. When counsel approves a change, only stale claims are redrafted and all other claims stay byte-identical, an idea from classical truth-maintenance systems \citep{doyle1979tms}.
+\item \textbf{Two gates in code.} Counsel approves the dossier (Gate~1) and the brief (Gate~2). Export is impossible before Gate~2, and approvals can only come from counsel.
+\item \textbf{Evaluation without manual annotation.} Seven kinds of gold label and nine test sets built from court text, official tables and construction; a sealed blind slice and a pre-registration; baselines B0 to B6; 18 single-switch variants from the recent agent and RAG literature, each with a switch, a paper and a test (Section~\ref{sec:eval}).
+\end{enumerate}
+
+This is a status report. The system, the test sets and the scoring pipeline are built. The dev-set runs on the pinned code tag exist on disk but are not scored, and no further paid runs are planned for now, so Section~\ref{sec:results} is a template that is filled from generated tables.

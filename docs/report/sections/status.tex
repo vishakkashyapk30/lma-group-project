@@ -1,0 +1,29 @@
+\section{Status and Plan}
+\label{sec:status}
+
+\paragraph{Done.} The six agents and the event log; the ten stores; the ingestion ladder; contracts and Sutradhar; Vakeel's check and repair; Abhiyojak; truth maintenance with the byte-identity test; Pairokar; the Rights Radar (rules unverified); both gates and the privacy boundary; the web interface and API routes. For evaluation: test sets T1 to T9, gold G1 to G7 (Table~\ref{tab:kappa}), baselines B0 to B6, every S/A/P variant as a switch (61 of 61 pass an offline end-to-end audit; 42 effect tests), the scoring pipeline (bootstrap, Wilcoxon, McNemar, cluster bootstrap, Holm), the label-source sweep, the offline studies, the code stamp in every manifest, and spend ledgers for both hosted providers. The suite has 4,514 passing unit tests with integration and system tests green; \todo{owner Vishak: final counts and the three open test-versus-design conflicts on the report date}.
+
+\begin{table}[t]
+\centering\small
+\begin{tabular}{@{}p{3.6cm}p{1.5cm}p{1.5cm}@{}}
+\toprule
+Item & State & Owner \\
+\midrule
+Score dev reruns at tag \texttt{dev-sweep-v1} & to do & Vishak \\
+OpenAI ablation arms (phase 2) & not run & Vishak \\
+Sarvam block, B0L on Sarvam-105B & not run & Satvik \\
+Ada phase (local 4B) & not run & Vishak \\
+Trained store prior (S6, B5) & not done & Vishak \\
+Rights rule verification & pending & Harshita \\
+Privacy root-cause fix & in review & Shravani \\
+Freeze tags, pre-registration & template & all \\
+Blind-slice run, once & after freeze & all \\
+\bottomrule
+\end{tabular}
+\caption{Work left. Owners follow the split of the project file.}
+\label{tab:status}
+\end{table}
+
+\paragraph{Next, to the freeze.} (1) Score the existing dev reruns, which needs no paid call. (2) Run the zero-cost offline phase, then, when the key arrangement allows it, the OpenAI ablations and the Sarvam block. (3) Fix thresholds on dev, fill the pre-registration, create \texttt{prereg-v1} and \texttt{eval-freeze-v1}, and run from a clean worktree of the freeze tag. (4) Open the blind slice once. (5) Case studies from the failure taxonomy. \todo{owner: dates for each step and the submission date}.
+
+\paragraph{Risks.} Budget: the plan needs more calls than the caps buy, so sample sizes shrink first and features never (cut order is in the plan). Compute: shared GPU nodes and a laptop with about 97\% disk use. Gated resources: HLDC and an Indic translation model are not yet available. Gold quality: low agreement on two factors may force a merge of confusable factors. A null result on any claim is reported as such.
