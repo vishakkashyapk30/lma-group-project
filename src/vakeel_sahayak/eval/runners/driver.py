@@ -15,10 +15,14 @@ Sequence for one case: Munshi (only when a bundle is given) -> Peshkar -> Gate 1
 * **Output layout** (README C6): `data/eval/runs/<run_id>/manifest.json` and `.../outputs/<system>/<case_id>.json`; see `run_dir_for`.
 * **Blind slice**: `testsets.blind.assert_may_score_blind` refuses to score blind ids without the freeze tag; the driver only RUNS cases.
 
-* **Hosted models** (`VS_LLM_BACKEND=openai|sarvam`, `VS_MODELS=auto`): run with `VS_EXTERNAL=pseudonymised`, not `public`. `_case_scope` puts a case in a public
-  scope, but every agent role declares client text, and the role's own declaration wins. So a text-only case is pseudonymised exactly as the production
-  intake does (`file_facts`: Munshi's `Filer`, the same alias map saved on the laptop so `assert_pseudonymised` knows the real names, plus the court-order
-  caption rule `learn_caption_names`); only the pseudonymised text is filed on the case shelf and passed on as `state.facts_text`. The boundary stays on.
+* **Hosted models** (`VS_LLM_BACKEND=openai|sarvam`, `VS_MODELS=auto`): run with `VS_EXTERNAL=pseudonymised`, not `public`. `_case_scope` declares each case
+  with `policy.public_source_scope`: the T1 and constructed cases come from published court orders, not from a client, so no counsel consent is asked for
+  and none is ever written. Every agent role still declares client text, and the role's own declaration wins, so the wire step (`privacy.quasi`: aliases
+  for FIR numbers, police stations, places and the other quasi-identifiers, the case's date shift, the reply turned back) and the wire-strength boundary
+  run exactly as in production. A text-only case is pseudonymised as the production intake does (`file_facts`: Munshi's `Filer`, the same alias map saved
+  on the laptop so `assert_pseudonymised` knows the real names, plus the court-order caption rule `learn_caption_names`; an evaluation case's date shift is
+  computed from its id, so reruns send the same text); only the pseudonymised text is filed on the case shelf and passed on as `state.facts_text`. A case
+  marked `data_class: client` gets no declaration and so needs counsel's consent like any client case. The manifest's `privacy` block records this.
 * **NLI** in `auto` mode is the real DeBERTa checker when `torch` and `transformers` are installed (`pip install .[nli]`), else the offline lexical checker
   with the reason recorded (`models.nli.nli_status()`): in the run manifest, in every case's `meta.nli`, and as an `nli_backend` event in the case log.
 
@@ -325,6 +329,8 @@ def file_facts(ctx: AgentContext, case: dict[str, Any], *, shelve: bool = True) 
     filer = Filer(case["case_id"], ctx.log, cases_dir=ctx.cases_dir, actor=AgentName.MUNSHI)
     try:
         raw = case_facts(case)
+        if _EVAL_CASE_ID.match(case["case_id"]):  # public-source evaluation case: a reproducible shift (same text on a rerun, so the cache answers); production cases draw a random one
+            filer.mapping.ensure_date_shift(case["case_id"])
         learn_caption_names(raw, filer.mapping)
         clean = filer.pseudonymise_batch([raw])[0]
         filer.save_map()
@@ -421,16 +427,42 @@ def save_json(path: Path, obj: Any) -> None:
     tmp.replace(path)
 
 
-def _case_scope(case: dict[str, Any], system: str) -> Any:
-    """The privacy scope for one evaluation case: the T1 and constructed sets are public or synthetic data, so hosted model
-    backends may be used (when `VS_EXTERNAL` allows it); a case marked `data_class: client` gets no public scope and stays local."""
+def _case_scope(case: dict[str, Any], system: str, ctx: AgentContext | None = None) -> Any:
+    """The privacy scope for one evaluation case: the T1 and constructed sets are public or synthetic data, declared as such with
+    `public_source_scope` (no counsel consent is needed or faked; agent calls keep the client-text wire step and boundary), so hosted model
+    backends may be used when `VS_EXTERNAL` allows it. A case marked `data_class: client` gets no declaration: its calls need counsel's consent."""
     import contextlib
 
-    if str(case.get("data_class", "public")).lower() == "client":
+    if case_data_class(case) == "client":
         return contextlib.nullcontext()
-    from vakeel_sahayak.models.sarvam.policy import public_scope
+    from vakeel_sahayak.models.sarvam.policy import public_source_scope
 
-    return public_scope(f"eval-{system}")
+    mapping = None
+    if ctx is not None:
+        from vakeel_sahayak.privacy.pseudonymise import load_map
+
+        def mapping() -> Any:  # the case's alias map as `file_facts` saved it (read when a hosted call needs it)
+            return load_map(case["case_id"], getattr(ctx, "cases_dir", None))
+
+    return public_source_scope(f"eval-{system}", mapping=mapping)
+
+
+def case_data_class(case: dict[str, Any]) -> str:
+    """'client' for a case marked `data_class: client`, else 'public' (published court orders or constructed data)."""
+    return "client" if str(case.get("data_class", "public")).lower() == "client" else "public"
+
+
+def privacy_manifest(cases_path: str | None) -> dict[str, Any]:
+    """The manifest's record of the data class used: how many cases ran under the public-source declaration and how many as client cases."""
+    counts = {"public": 0, "client": 0}
+    if cases_path and Path(cases_path).is_file():
+        try:
+            for row in read_cases(cases_path):
+                counts[case_data_class(row)] += 1
+        except (OSError, ValueError):
+            pass
+    return {"case_scope": "public_source (policy.public_source_scope)", "agent_data_class": "client_text", "consent": "not required for public-source cases; client cases need counsel's event",
+            "cases_by_data_class": counts}
 
 
 def _log_nli_fallback(ctx: AgentContext) -> None:
@@ -493,7 +525,7 @@ def run_cases(cases_path: str, out_dir: str, system: str, runner: Any, switches:
         t0 = time.monotonic()
         error = None
         try:
-            with _case_scope(case, system):
+            with _case_scope(case, system, ctx):
                 produced = runner(case, ctx)
         except Exception as exc:  # noqa: BLE001 - a crashed case is saved as an error record so the shard goes on
             produced, error = BailBrief(case_id=case["case_id"]), f"{type(exc).__name__}: {str(exc)[:300]}"
@@ -672,7 +704,7 @@ def write_run_manifest(out_dir: Path, *, system: str, switches: Any, seed: int, 
                     "tokens_per_factor": b.tokens_per_factor, "drafting_tokens_per_factor": b.drafting_tokens_per_factor, **(budgets or {})},
         "code_version": code_version(), "git_sha": git_sha(), "git_dirty": git_dirty(), "code_tree_hash": code_tree_hash(), "config_hash": config_hash(), "models": models_stamp(), "nli": _nli_manifest(),
         "cases_file": cases_path, "cases_hash": file_hash(cases_path) if cases_path else None, **_gold_manifest(cases_path),
-        "shard": shard, "n_shards": n_shards, **(extra or {}),
+        "shard": shard, "n_shards": n_shards, "privacy": privacy_manifest(cases_path), **(extra or {}),
     }
     save_json(out_dir / "MANIFEST.json", manifest)
     return manifest

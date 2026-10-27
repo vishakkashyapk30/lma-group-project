@@ -297,7 +297,7 @@ def test_public_mode_allows_public_only(monkeypatch):
 
 def test_pseudonymised_mode_checks_the_boundary_on_text(monkeypatch):
     monkeypatch.setenv("VS_SARVAM", "pseudonymised")
-    scope = SarvamScope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=EventLog())
+    scope = SarvamScope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=consented_log())  # RECONCILED: plan §16 and AGENTS.md require counsel's per-case consent for pseudonymised client text too, so the log carries the consent event
     authorize("translate", scope, text=CLEAN)
     with pytest.raises(PrivacyBoundaryError):
         authorize("translate", scope, text=RAW_NAME)
@@ -317,7 +317,7 @@ def test_pseudonymised_boundary_uses_the_case_alias_map(monkeypatch):
     monkeypatch.setenv("VS_SARVAM", "pseudonymised")
     mapping = PseudonymMap()
     mapping.alias_for("Sunil Verma", "accused")
-    scope = SarvamScope(DataClass.CLIENT_TEXT, case_id=CASE, mapping=mapping)
+    scope = SarvamScope(DataClass.CLIENT_TEXT, case_id=CASE, mapping=mapping, event_log=consented_log())  # RECONCILED: plan §16 and AGENTS.md require counsel's per-case consent for pseudonymised client text too, so the log carries the consent event
     with pytest.raises(PrivacyBoundaryError):
         authorize("chat", scope, text="Sunil Verma was arrested")
     authorize("chat", scope, text="Accused-1 was arrested")
@@ -535,7 +535,7 @@ def test_translator_splits_lines_over_the_model_limit(monkeypatch, calls):
 def test_translator_blocks_raw_text_before_any_request(monkeypatch, calls):
     monkeypatch.setenv("VS_SARVAM", "pseudonymised")
     api = api_with({"/translate": {"translated_text": "x"}}, calls)
-    with sarvam_scope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=EventLog()):
+    with sarvam_scope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=consented_log()):  # RECONCILED: plan §16 and AGENTS.md require counsel's per-case consent for pseudonymised client text too, so the log carries the consent event
         with pytest.raises(PrivacyBoundaryError):
             SarvamTranslator(api).translate("The accused Rajesh Kumar said")
         SarvamTranslator(api).translate("The accused Accused-1 said")
@@ -582,7 +582,7 @@ def test_llm_client_chat_boundary_usage_and_structured(monkeypatch, calls):
     api = api_with({"/v1/chat/completions": lambda r: chat_reply('{"label": "bail"}', 20, 5)}, calls)
     llm = SarvamLLMClient(api=api, where="ada", role="agents_14b")
     assert isinstance(llm, LLMClient) and llm.model_id == "sarvam-105b" and llm.where == "ada"
-    with sarvam_scope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=EventLog()):
+    with sarvam_scope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=consented_log()):  # RECONCILED: plan §16 and AGENTS.md require counsel's per-case consent for pseudonymised client text too, so the log carries the consent event
         out = llm.structured("Classify: " + CLEAN, {"type": "object", "properties": {"label": {"type": "string"}}, "required": ["label"]})
         assert out == {"label": "bail"}
         assert llm.usage.prompt_tokens == 20 and llm.usage.completion_tokens == 5
@@ -669,7 +669,7 @@ def test_fallback_llm_delegates_and_mirrors_usage(monkeypatch, calls):
 
     primary = SarvamLLMClient(api=api_with({"/v1/chat/completions": chat_reply("from sarvam", 7, 2)}, calls), where="ada")
     fb = FallbackLLM(primary, lambda: OfflineLLM(role="agents_14b", where="ada"), "ada")
-    with sarvam_scope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=EventLog()):
+    with sarvam_scope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=consented_log()):  # RECONCILED: plan §16 and AGENTS.md require counsel's per-case consent for pseudonymised client text too, so the log carries the consent event
         done = fb.complete(CLEAN)
         assert done.text == "from sarvam" and (done.prompt_tokens, done.completion_tokens) == (7, 2) and fb.name == "sarvam"
         fb.generate(RAW_NAME)
@@ -754,7 +754,7 @@ def test_agent_role_configured_sarvam_is_wrapped_ada_side_and_pseudonymised_only
     llm = factory.get_llm("agents_14b")
     assert isinstance(llm, FallbackLLM) and llm.where == "ada" and isinstance(llm.primary, SarvamLLMClient)
     assert llm.primary.data is DataClass.CLIENT_TEXT
-    with sarvam_scope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=EventLog()):
+    with sarvam_scope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=consented_log()):  # RECONCILED: plan §16 and AGENTS.md require counsel's per-case consent for pseudonymised client text too, so the log carries the consent event
         assert llm.chat([{"role": "user", "content": CLEAN}]) == "hi"
     assert len(calls) == 1
     monkeypatch.setenv("VS_MODELS", "offline")

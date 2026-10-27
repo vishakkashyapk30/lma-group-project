@@ -51,6 +51,13 @@ RAW_NAME = "The accused Rajesh Kumar was arrested on 20.08.2024."
 MSG = [{"role": "user", "content": "Say ok."}]
 
 
+def consented_log(provider: str = "openai") -> EventLog:
+    """An event log in which counsel granted `provider` access to CASE (plan §16: client text needs per-case consent)."""
+    log = EventLog()
+    record_consent(log, CASE, True, provider=provider)
+    return log
+
+
 @pytest.fixture(autouse=True)
 def _clean_env(monkeypatch):
     """No external-provider state leaks between tests; the real key (if any) is never used here."""
@@ -556,7 +563,7 @@ def test_public_mode_allows_public_only(monkeypatch):
 
 def test_pseudonymised_mode_checks_the_boundary(monkeypatch):
     monkeypatch.setenv("VS_EXTERNAL", "pseudonymised")
-    scope = SarvamScope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=EventLog())
+    scope = SarvamScope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=consented_log())  # RECONCILED: plan §16 and AGENTS.md require counsel's per-case consent for pseudonymised client text too, so the log carries the consent event
     authorize("chat", scope, payload={"messages": [{"role": "user", "content": CLEAN}]}, provider="openai")
     with pytest.raises(PrivacyBoundaryError):
         authorize("chat", scope, payload={"messages": [{"role": "user", "content": RAW_NAME}]}, provider="openai")
@@ -585,7 +592,7 @@ def test_consented_mode_needs_a_per_case_openai_consent_event(monkeypatch):
 
 def test_client_data_calls_are_audited_without_payload(monkeypatch):
     monkeypatch.setenv("VS_EXTERNAL", "pseudonymised")
-    log = EventLog()
+    log = consented_log()  # RECONCILED: plan §16 and AGENTS.md require counsel's per-case consent for pseudonymised client text too, so the log carries the consent event
     authorize("chat", SarvamScope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=log), payload={"messages": [{"role": "user", "content": CLEAN}]}, provider="openai")
     from vakeel_sahayak.schemas.enums import EventKind
 
@@ -611,7 +618,7 @@ def test_declared_scope_purpose_and_case_reach_the_ledger(monkeypatch, tmp_path,
     monkeypatch.setenv("VS_EXTERNAL", "pseudonymised")
     api = make_api(tmp_path, calls)
     llm = OpenAILLMClient(api=api, data=DataClass.CLIENT_TEXT, where="ada", role="agents_14b")
-    with sarvam_scope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=EventLog(), purpose="draft"):
+    with sarvam_scope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=consented_log(), purpose="draft"):  # RECONCILED: plan §16 and AGENTS.md require counsel's per-case consent for pseudonymised client text too, so the log carries the consent event
         llm.chat([{"role": "user", "content": CLEAN}])
     row = sqlite3.connect(tmp_path / "ledger.sqlite").execute("SELECT purpose, case_id FROM calls").fetchone()
     assert row == ("draft", CASE)
@@ -741,7 +748,7 @@ def test_env_backend_openai_wraps_agent_roles_with_fallback(monkeypatch, calls, 
 
     llm = factory.get_llm("agents_14b")
     llm._local = OfflineLLM(role="agents_14b", where="ada")  # no vLLM in the test environment
-    with sarvam_scope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=EventLog()):
+    with sarvam_scope(DataClass.CLIENT_TEXT, case_id=CASE, event_log=consented_log()):  # RECONCILED: plan §16 and AGENTS.md require counsel's per-case consent for pseudonymised client text too, so the log carries the consent event
         assert llm.chat(MSG) == "ok"
         assert llm.name == "openai"
         llm.chat([{"role": "user", "content": RAW_NAME}])  # raw name: boundary refuses, the local client answers

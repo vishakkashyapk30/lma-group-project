@@ -15,9 +15,11 @@ from vakeel_sahayak.models.sarvam.policy import (
     SarvamMode,
     SarvamScope,
     authorize,
+    case_text_scope,
     current_scope,
     has_consent,
     public_scope,
+    public_source_scope,
     record_consent,
     sarvam_mode,
     sarvam_scope,
@@ -25,6 +27,6 @@ from vakeel_sahayak.models.sarvam.policy import (
 
 __all__ = [
     "DataClass", "SarvamAuthError", "SarvamBudgetExceeded", "SarvamError", "SarvamHttpError", "SarvamMode", "SarvamPolicyError", "SarvamQuotaError",
-    "SarvamRateLimited", "SarvamScope", "SarvamUnavailable", "authorize", "current_scope", "has_consent", "public_scope",
-    "record_consent", "sarvam_mode", "sarvam_scope",
+    "SarvamRateLimited", "SarvamScope", "SarvamUnavailable", "authorize", "case_text_scope", "current_scope", "has_consent", "public_scope",
+    "public_source_scope", "record_consent", "sarvam_mode", "sarvam_scope",
 ]  # fmt: skip

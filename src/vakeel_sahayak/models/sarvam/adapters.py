@@ -35,7 +35,7 @@ from vakeel_sahayak.models.prompting import to_messages
 from vakeel_sahayak.models.sarvam.api import LidResult, SarvamApi, from_bcp47
 from vakeel_sahayak.models.sarvam.config import sarvam_config
 from vakeel_sahayak.models.sarvam.errors import SarvamError
-from vakeel_sahayak.models.sarvam.policy import DataClass, SarvamScope, authorize, current_scope
+from vakeel_sahayak.models.sarvam.policy import DataClass, SarvamScope, authorize, current_scope, wire_codec
 
 _OCR_LANG = {"hin": "hi", "eng": "en"}
 _SENTENCE_END = re.compile(r"(?<=[.!?।])\s+")
@@ -126,8 +126,13 @@ class SarvamTranslator(_Base, TranslationClient):
         return [*out, cur] if cur else out
 
     def translate(self, text: str, src: str = "hi", tgt: str = "en") -> str:
-        """Translate line by line (so layout survives); lines over the model's limit are split at sentence ends."""
-        self._gate("translate", text=text)
+        """Translate line by line (so layout survives); lines over the model's limit are split at sentence ends.
+
+        Client text goes through the wire step (`policy.wire_codec`) first and the translation is turned back."""
+        scope, codec = wire_codec(self._scope or current_scope())
+        if codec is not None:
+            text = codec.encode_text(text)
+        authorize("translate", scope, text=text)
         cfg = sarvam_config()["translate"]
         model = self.model or cfg["model"]
         limit = int(cfg["max_chars"].get(model, 1000))
@@ -135,7 +140,8 @@ class SarvamTranslator(_Base, TranslationClient):
         for i, ln in enumerate(lines):
             if ln.strip():
                 lines[i] = " ".join(self.api.translate(p, src, tgt, model=model).text.strip() for p in self._pieces(ln, limit))
-        return "\n".join(lines)
+        out = "\n".join(lines)
+        return codec.decode_text(out) if codec is not None else out
 
 
 def _split_wav(data: bytes, max_seconds: float) -> list[bytes]:
@@ -213,7 +219,9 @@ class SarvamLLMClient(_Base, LLMClient):
         self, messages: list[dict[str, str]], max_tokens: int = 1024, temperature: float = 0.0, json_schema: dict | None = None
     ) -> str:
         """Chat call. The whole message list is policy- and boundary-checked first; a schema asks for structured JSON."""
-        scope = self._chat_scope()
+        scope, codec = wire_codec(self._chat_scope())  # client text: quasi-identifiers aliased, dates shifted (privacy.quasi); the reply is turned back
+        if codec is not None:
+            messages = codec.encode(messages)
         authorize("chat", scope, payload={"messages": messages})
         res = self.api.chat(
             messages, model=self.model_id, max_tokens=max_tokens, temperature=temperature, json_schema=json_schema,
@@ -223,7 +231,7 @@ class SarvamLLMClient(_Base, LLMClient):
         text = strip_thinking(res.text)
         if not text.strip():
             raise SarvamError("Sarvam chat returned an empty answer")
-        return text
+        return codec.decode_text(text) if codec is not None else text
 
     def count_tokens(self, text: str) -> int:
         """Estimate (the API reports exact usage per call)."""

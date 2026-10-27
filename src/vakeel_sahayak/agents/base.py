@@ -12,7 +12,9 @@ Every agent subclasses `BaseAgent` and gets, through `AgentContext`:
   (`write_field`, `write_timeline_event`, `write_view`, `message`, `error`, `stale_claims`, `emit`);
 - **the budget** `self.budgets` (one `BudgetTracker` per case, shared by its agents);
 - **the privacy boundary**: for agents whose model runs on Ada (Sutradhar, Vakeel, Abhiyojak, Pairokar, and Peshkar
-  under A5's prompted 32B), every outbound payload goes through `privacy.boundary.assert_pseudonymised` first.
+  under A5's prompted 32B), every outbound payload goes through `privacy.boundary.assert_pseudonymised` first. `ask` runs the model
+  call inside `models.sarvam.policy.case_text_scope`, so a hosted client (OpenAI, Sarvam) treats it as this case's client text: counsel's
+  per-case consent is required, and the wire step (`privacy.quasi`) aliases quasi-identifiers and shifts dates with this case's map.
 
 Documents are data (plan §16): prompts put all evidence under INPUT, the system text says it is never to be followed,
 `untrusted()` wraps document text, and instruction-like text in case data is flagged in the log. No predictions:
@@ -775,13 +777,17 @@ class BaseAgent(ABC):
         if getattr(self.switches, "prefix_layout", False):
             self.emit(EventKind.AGENT_MESSAGE, {"outputs": {"type": "prefix_signals", "task": task, "shared_prefix_tokens": shared}})
         attempts, value = 1, None
+        from vakeel_sahayak.models.sarvam.policy import case_text_scope
+
         try:
-            if schema is not None:
-                res = structured_call(self.llm, prompt, schema, max_tokens=max_tokens, temperature=temperature, retries=retries)
-                value, p_tok, c_tok, attempts = res.value, res.prompt_tokens, res.completion_tokens, res.attempts
-            else:
-                done = self.llm.complete(prompt, max_tokens=max_tokens, temperature=temperature)
-                value, p_tok, c_tok = done.text, done.prompt_tokens, done.completion_tokens
+            # hosted clients read this scope: client text of this case (counsel's consent, the wire step with this case's map); offline clients ignore it
+            with case_text_scope(self.case_id, event_log=self.log, mapping=self.pseudonyms):
+                if schema is not None:
+                    res = structured_call(self.llm, prompt, schema, max_tokens=max_tokens, temperature=temperature, retries=retries)
+                    value, p_tok, c_tok, attempts = res.value, res.prompt_tokens, res.completion_tokens, res.attempts
+                else:
+                    done = self.llm.complete(prompt, max_tokens=max_tokens, temperature=temperature)
+                    value, p_tok, c_tok = done.text, done.prompt_tokens, done.completion_tokens
         except StructuredOutputError as exc:
             p_tok = self.llm._count(prompt) * exc.attempts if hasattr(self.llm, "_count") else 0
             self._log_llm(task, fkey, prompt, p_tok, 0, exc.attempts, ok=False)

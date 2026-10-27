@@ -4,6 +4,9 @@
 independent non-Qwen labeler/teacher option (public court orders only). With `data=None` the class comes from the caller's
 declared scope (`public_scope()` / `sarvam_scope(...)`), and a call with no declared scope is CLIENT_RAW, which needs counsel's
 consent for a case and is otherwise blocked. Token usage (incl. cached tokens and cost) is recorded per call.
+
+A CLIENT_TEXT call goes through the wire step first (`policy.wire_codec`, `privacy.quasi`): quasi-identifiers become the case's aliases
+and every date moves by the case's shift; the reply is turned back before it is returned, so the caller only ever sees real values.
 """
 
 from __future__ import annotations
@@ -14,7 +17,7 @@ from vakeel_sahayak.models.base import LLMClient, approx_tokens
 from vakeel_sahayak.models.openai.api import ChatResult, OpenAIApi
 from vakeel_sahayak.models.openai.config import openai_config
 from vakeel_sahayak.models.prompting import to_messages
-from vakeel_sahayak.models.sarvam.policy import DataClass, SarvamScope, authorize, current_scope
+from vakeel_sahayak.models.sarvam.policy import DataClass, SarvamScope, authorize, current_scope, wire_codec
 
 FAMILY = "openai"
 
@@ -66,7 +69,9 @@ class OpenAILLMClient(LLMClient):
             BudgetExceeded: the spending cap would be exceeded (nothing sent).
             OpenAIError: the API failed.
         """
-        scope = self._chat_scope()
+        scope, codec = wire_codec(self._chat_scope())
+        if codec is not None:
+            messages = codec.encode(messages)
         authorize("chat", scope, payload={"messages": messages}, provider="openai")
         purpose = scope.purpose or self.role or "chat"
         res = self.api.chat(messages, model=self.model_id, max_tokens=max_tokens, temperature=temperature, json_schema=json_schema, purpose=purpose, case_id=scope.case_id)
@@ -75,7 +80,7 @@ class OpenAILLMClient(LLMClient):
         self.cached_tokens += res.cached_tokens
         self.cost_micro += res.cost_micro
         self.cache_hits += int(res.from_cache)
-        return res.text
+        return codec.decode_text(res.text) if codec is not None else res.text
 
     def count_tokens(self, text: str) -> int:
         """Estimate (the API reports exact usage per call)."""
