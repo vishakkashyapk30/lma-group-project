@@ -15,7 +15,7 @@ arms:
   # ---- baselines already run on OpenAI (dev-baselines agent); reused, not rerun
   - {id: full,  tier: baseline, phase: 0, backend: openai, n: 50, runs: 2, ratio: 1.0,  claims: [C1, C2, C3], status: done}
   - {id: b0,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.07, claims: [C1, C2], status: done}
-  - {id: b0l,   tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.07, claims: [C1], status: done, note: "hosted stand-in for the prompted 32B (same gpt-6-luna)"}
+  - {id: b0l,   tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.07, claims: [C1], status: dropped, note: "the hosted stand-in was an exact duplicate of b0 (same gpt-6-luna and prompt); no larger model is available (the Qwen3-32B Ada plan was dropped), so B0L is reported as not run"}
   - {id: b1,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.1,  claims: [C4], status: done}
   - {id: b4,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 1.6,  claims: [C10], status: done}
   - {id: b6,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.0,  claims: [C1], status: done, note: "rule baseline, no model"}
@@ -48,7 +48,7 @@ arms:
   # ---- phase 3 (PACKAGE for Satvik, own key and cap; owner key runs only a 3-case smoke): Sarvam-105B, its own Full and B0 on the same cases; ordered by priority
   - {id: full, tier: baseline, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 1.0, claims: [], status: planned}
   - {id: b0,   tier: baseline, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 0.07, claims: [], status: planned}
-  - {id: b0l,  tier: could, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 0.07, claims: [C1], status: planned, note: "B0L on sarvam-105b (model id in the manifest as b0l_model); equals b0's model unless the base model differs: read `same_model_as_b0` in the case records before using it as a larger-model row"}
+  - {id: b0l,  tier: could, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 0.07, claims: [C1], status: dropped, note: "on Sarvam both b0 and b0l would be sarvam-105b (no larger Sarvam model is priced), so the row would duplicate b0; code path kept (VS_B0L_MODEL names a larger model if one becomes available)"}
   - {id: S3,   tier: must, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 1.0, claims: [C6], status: planned}
   - {id: S3b,  tier: must, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 1.0, claims: [C6], status: planned}
   - {id: S8,   tier: must, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 0.83, claims: [C13], status: planned}
