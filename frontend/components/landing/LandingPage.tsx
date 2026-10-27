@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { sampleCaseHref } from "@/lib/sampleCase";
 import { ContinueCase } from "./ContinueCase";
 import { Footer } from "./Footer";
+import { CheckDemo } from "./demos/CheckDemo";
 import { FileDemo } from "./demos/FileDemo";
 import { ReadDemo } from "./demos/ReadDemo";
 import { Reveal } from "./Reveal";
@@ -97,6 +98,21 @@ export function LandingPage(): ReactElement {
           </div>
           <div data-rv style={rv(2)}>
             <ReadDemo />
+          </div>
+        </Reveal>
+      </section>
+
+      {/* Check: saffron, the colour of "check this" */}
+      <section id="check" aria-labelledby="check-heading" className="scroll-mt-4 bg-saffron-tint">
+        <Reveal className="mx-auto grid max-w-[76rem] items-start gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16 lg:py-20">
+          <div>
+            <h2 id="check-heading" data-rv style={rv(0)} className="max-w-[18ch] font-display text-3xl font-semibold lg:text-4xl">Check bail rights against the dates</h2>
+            <p data-rv style={rv(1)} className="mt-4 max-w-[30rem] text-lg text-ink-soft">
+              The default-bail window and the undertrial limit, worked out from the arrest, the first remand and the charge sheet in the papers. Where a fact is missing it says Check. It does not say whether bail will be granted.
+            </p>
+          </div>
+          <div data-rv style={rv(2)}>
+            <CheckDemo />
           </div>
         </Reveal>
       </section>

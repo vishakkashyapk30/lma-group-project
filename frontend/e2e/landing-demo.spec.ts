@@ -90,6 +90,7 @@ for (const motion of ["no-preference", "reduce"] as const) {
       await MockBackend.install(page);
       await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto("/#read");
+      await page.waitForTimeout(500);
     });
 
     test("the first fact is open on its Hindi sentence and English line, the value marked in both", async ({ page }) => {
@@ -130,6 +131,78 @@ for (const motion of ["no-preference", "reduce"] as const) {
       await expect(row.getByTestId("read-quote")).toContainText("318(4), 316(2)");
       await page.keyboard.press("Space");
       await expect(head).toHaveAttribute("aria-expanded", "false");
+    });
+  });
+}
+
+for (const motion of ["no-preference", "reduce"] as const) {
+  test.describe(`check: rights against the dates (${motion})`, () => {
+    test.use({ reducedMotion: motion });
+    test.beforeEach(async ({ page }) => {
+      await MockBackend.install(page);
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto("/#check");
+      await page.waitForTimeout(500); // the band's 250 ms reveal moves it 8 px
+    });
+
+    test("starts on the next hearing: default bail closed by the charge sheet, the undertrial limit not yet reached", async ({ page }) => {
+      const demo = page.getByTestId("check-demo");
+      await expect(demo.getByTestId("hearing-date")).toHaveText("18.02.2025");
+      await expect(demo.getByTestId("custody-days")).toHaveText("182");
+      await expect(demo.getByTestId("word-default-bail")).toHaveText("Closed.");
+      await expect(demo.getByTestId("word-undertrial")).toHaveText("Not yet.");
+      await expect(demo).not.toContainText(/eligible|will be granted|likely/i);
+    });
+
+    test("keyboard alone: the hearing-date slider moves by a day, by 30 days, and to the end", async ({ page }) => {
+      const demo = page.getByTestId("check-demo");
+      const handle = demo.getByTestId("hearing-handle");
+      await tabTo(page, handle);
+      await page.keyboard.press("ArrowRight");
+      await expect(demo.getByTestId("hearing-date")).toHaveText("19.02.2025");
+      await page.keyboard.press("Shift+ArrowRight");
+      await expect(demo.getByTestId("hearing-date")).toHaveText("21.03.2025");
+      await page.keyboard.press("End");
+      await expect(demo.getByTestId("word-undertrial")).toHaveText("Check.");
+      await expect(handle).toHaveAttribute("aria-valuetext", /days in custody/);
+    });
+
+    test("the threshold button moves the date to one-third, where the limit reads Check because antecedents are unknown", async ({ page }) => {
+      const demo = page.getByTestId("check-demo");
+      await demo.getByRole("button", { name: /One-third of the maximum/ }).click();
+      await expect(demo.getByTestId("hearing-date")).toHaveText("20.12.2026", { timeout: 3000 });
+      await expect(demo.getByTestId("custody-days")).toHaveText("852");
+      await expect(demo.getByTestId("word-undertrial")).toHaveText("Check.");
+      await expect(demo.getByTestId("lane-undertrial")).toContainText("only to a first-time offender");
+    });
+
+    test("pointer: dragging the handle moves the date; past the end it resists and settles on the last day", async ({ page }) => {
+      const demo = page.getByTestId("check-demo");
+      const handle = demo.getByTestId("hearing-handle");
+      const h = (await handle.boundingBox())!;
+      await page.mouse.move(h.x + h.width / 2, h.y + h.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(h.x + h.width / 2 + 200, h.y + h.height / 2, { steps: 10 });
+      await page.waitForTimeout(150);
+      await page.mouse.up();
+      const mid = await demo.getByTestId("hearing-date").innerText();
+      expect(mid).not.toBe("18.02.2025");
+      const box = (await handle.boundingBox())!;
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(box.x + box.width / 2 + 1400, box.y + box.height / 2, { steps: 20 });
+      const track = (await demo.locator("[data-testid=hearing-handle]").locator("xpath=../..").boundingBox())!;
+      const pulled = (await handle.boundingBox())!;
+      if (motion === "reduce") {
+        expect(Math.round(pulled.x + pulled.width / 2)).toBe(Math.round(track.x + track.width)); // no rubber band: it stops at the end
+      } else {
+        expect(pulled.x + pulled.width / 2).toBeGreaterThan(track.x + track.width);
+        expect(pulled.x + pulled.width / 2).toBeLessThan(track.x + track.width + 32);
+      }
+      await page.waitForTimeout(150);
+      await page.mouse.up();
+      await expect(demo.getByTestId("word-undertrial")).toHaveText("Check.");
+      await expect.poll(async () => { const b = (await handle.boundingBox())!; return Math.round(b.x + b.width / 2 - (track.x + track.width)); }, { timeout: 2000 }).toBeLessThanOrEqual(1);
     });
   });
 }
