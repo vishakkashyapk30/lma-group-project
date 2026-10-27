@@ -2,6 +2,7 @@
 // What the top bar shows for the open case: pages publish it, the top bar reads it. A tiny external store, so the
 // case workspace (which sits below the shell) can tell the shell its title and stage without prop drilling.
 import { useEffect, useSyncExternalStore } from "react";
+import { writeLastCase } from "@/lib/lastCase";
 
 export interface CaseMeta {
   caseId: string;
@@ -28,10 +29,11 @@ export function useCaseMeta(): CaseMeta | null {
   return useSyncExternalStore(subscribe, () => current, () => null);
 }
 
-/** Publish the open case to the top bar; cleared on unmount. */
+/** Publish the open case to the top bar (cleared on unmount) and remember it for "Continue" on the landing page. */
 export function usePublishCaseMeta(caseId: string, title: string | null, stageLabel: string | null): void {
   useEffect(() => {
     set({ caseId, title, stageLabel });
+    writeLastCase(caseId, title, stageLabel);
   }, [caseId, title, stageLabel]);
   useEffect(() => () => set(null), []);
 }

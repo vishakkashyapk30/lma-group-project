@@ -39,3 +39,43 @@ test.describe("the logo goes to the landing page", () => {
     await expect(first).toHaveAttribute("href", "/cases");
   });
 });
+
+test.describe("continue the last case from the landing page", () => {
+  test.beforeEach(async ({ page }) => {
+    await MockBackend.install(page, { gate1Approved: true, draft: "done" });
+    await page.setViewportSize({ width: 1440, height: 900 });
+  });
+
+  test("a first visit offers the workspace, not a case", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("navigation", { name: "Landing" }).getByRole("link", { name: "Open workspace" })).toBeVisible();
+    await expect(page.getByTestId(TID.continueCase)).toHaveCount(0);
+  });
+
+  test("open a case, go home by the logo, and continue where you were", async ({ page }) => {
+    await page.goto("/case/case-0007");
+    await expect(page.getByTestId(TID.stageRail)).toBeVisible();
+    await expect(page.getByTestId("topbar-stage")).toBeVisible();
+    await page.getByTestId(TID.sidebar).getByTestId(TID.brandHome).click();
+    await expect(page).toHaveURL(/\/$/);
+    const cont = page.getByTestId(TID.continueCase);
+    await expect(cont).toBeVisible();
+    await expect(cont).toContainText("Continue: State v. Accused-1");
+    await expect(cont).toHaveAttribute("href", "/case/case-0007");
+    await expect(page.getByRole("link", { name: "All cases" })).toHaveAttribute("href", "/cases");
+    await cont.click();
+    await expect(page).toHaveURL(/\/case\/case-0007$/);
+    await expect(page.getByTestId(TID.stageRail)).toBeVisible();
+  });
+
+  test("the header does not shift when the label changes", async ({ page }) => {
+    await page.goto("/");
+    const before = await page.getByRole("navigation", { name: "Landing" }).boundingBox();
+    await page.evaluate(() => localStorage.setItem("vs:last-case", JSON.stringify({ id: "case-0007", title: "State v. Accused-1, FIR 112/2024, PS-1", stageLabel: "Draft grounds", at: "" })));
+    await page.reload();
+    await expect(page.getByTestId(TID.continueCase)).toBeVisible();
+    const after = await page.getByRole("navigation", { name: "Landing" }).boundingBox();
+    expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThan(1);
+    expect(after?.height).toBeCloseTo(before?.height ?? 0, 0);
+  });
+});

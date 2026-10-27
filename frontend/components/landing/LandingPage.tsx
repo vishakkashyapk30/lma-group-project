@@ -7,6 +7,7 @@ import type { ReactElement } from "react";
 import "@/styles/landing.css";
 import { Logo } from "@/components/common/Logo";
 import { Button } from "@/components/ui/button";
+import { ContinueCase } from "./ContinueCase";
 import { Footer } from "./Footer";
 import { HeroLoop } from "./HeroLoop";
 import { Reveal } from "./Reveal";
@@ -45,7 +46,7 @@ export function LandingPage(): ReactElement {
           <nav aria-label="Landing" className="flex items-center gap-1 sm:gap-3">
             <a href="#how" className="link-draw hidden px-3 py-2 text-sm text-ink-soft hover:text-ink sm:block">How it works</a>
             <a href="#control" className="link-draw hidden px-3 py-2 text-sm text-ink-soft hover:text-ink sm:block">Control</a>
-            <Button asChild className="lift"><Link href="/cases" className="no-underline">Open workspace</Link></Button>
+            <ContinueCase />
           </nav>
         </header>
 
