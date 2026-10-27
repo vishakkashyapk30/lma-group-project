@@ -50,5 +50,11 @@ for A in "${ATTEMPTS[@]}"; do
   kill $VP 2>/dev/null; wait $VP 2>/dev/null; sleep 10
 done
 [ $READY = 1 ] || { echo "no backend worked on this GPU; see the log above"; exit 1; }
-curl -s localhost:8000/v1/chat/completions -H 'Content-Type: application/json' -d '{"model":"qwen3-32b","messages":[{"role":"user","content":"Name one ground for bail under the BNSS in one sentence."}],"max_tokens":60}' | head -c 600; echo
+for q in "Name one ground for bail under the BNSS in one sentence." "What does section 479 BNSS say about undertrial detention? Two sentences." "Summarise in one line why parity with a co-accused can support bail."; do
+  curl -s -m 300 localhost:8000/v1/chat/completions -H 'Content-Type: application/json' \
+    -d "{\"model\":\"qwen3-32b\",\"messages\":[{\"role\":\"user\",\"content\":\"$q /no_think\"}],\"max_tokens\":120}" | head -c 900; echo
+done
+grep -E "backend|Backend" "$W/vllm.log" | head -5
+# SMOKE=1: stop after the sample answers (used by the batch smoke test); otherwise keep serving until the session ends.
+[ "${SMOKE:-0}" = 1 ] && { kill $VP; wait $VP 2>/dev/null; echo SMOKE_DONE; exit 0; }
 wait $VP; tail -20 "$W/vllm.log"

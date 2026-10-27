@@ -33,7 +33,7 @@ answer). What we took: reasoning-before-answer inside one constrained schema, so
 reasoning benchmarks; ours is claim drafting with ID markers, so the reasoning is stored in a log event (`reasoning_first`) and the agent's
 `reasoning_of`, and is never parsed for markers, cited, checked or shown: only the `argument` / `text` field is read as the claim. The token limit
 of a call grows by `REASONING_ROOM`. CRANE's switching between free and constrained decoding is not implemented (the field order does the job
-on a schema-constrained backend). Not implemented: `free_then_parse` (S15b).
+on a schema-constrained backend). `free_then_parse` (S15b) is built in `orchestration/structured_output.py`, not here.
 
 `redraft(claims, ...)` rewrites only the stale grounds and leaves the others word for word (plan §10). Switches: A1 (no
 dossier: the facts text), A2 and A9 (no check-and-repair), A3 (no rule tools: the model judges the transfer and the rights
