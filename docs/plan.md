@@ -807,7 +807,7 @@ The card makes no outcome prediction and shows no grant rates.
 2. `span_check` (NLI) tests whether each quote supports its value.
 3. Only orders where **every field passes** are kept, an estimated ≈2K pairs.
 4. **New:** for 30% of the kept pairs, the input is replaced by OCR output of a degraded rendering of the same text (Augraphy + Surya). The target dossier is unchanged, so the extractor learns to read OCR noise.
-5. QLoRA trains the 4B: r=16, 2 epochs, one 2080 Ti, FP16.
+5. QLoRA trains the 4B: r=16, 2 epochs, one 2080 Ti, FP16. (Owner decision 2026-10-27: the batch job uses all 4 GPUs of a node with DDP, effective batch unchanged; see `docs/handoff/finetune.md`.)
 
 **Fine-tuning claim we test.** The tuned 4B comes close to the prompted 32B on dossier accuracy, on clean and noisy input, and runs locally at a fraction of the memory and latency.
 
@@ -1294,7 +1294,7 @@ Also reported here:
 
 | Work | Where it runs | How |
 |---|---|---|
-| QLoRA training | Ada **batch job** (1 GPU per run, ≤1.5 days each, well inside the 4-day limit) | Checkpoints every epoch; this is training, not inference serving |
+| QLoRA training | Ada **batch job** (4 GPUs per run with `torchrun` DDP since the owner decision of 2026-10-27, originally 1; ≤1.5 days each, well inside the 4-day limit) | Checkpoints every epoch; this is training, not inference serving |
 | All LLM and vision-model inference: teacher dossiers, test runs, ablations | Ada **interactive sessions** of at most 6 hours (one 4-GPU session per account at a time) | vLLM runs **inside the experiment script**, with no long-lived server. Work is cut into **shards of about 5 hours**, and each case's output is saved as soon as it finishes, so a session that ends or fails resumes where it stopped. About 20–30 minutes per session go to loading the model from node `/scratch`. |
 | Embeddings, evaluation labels, MiniCheck, OCR and speech, the extractor on test files | **The 4060 laptop** | No time limit; runs overnight |
 | Live demo | Laptop (Munshi, Peshkar, the UI) plus an Ada interactive session for the 14B agents, reached through an SSH tunnel | Fallback: Qwen3-8B in 4-bit on the laptop, with lower quality |

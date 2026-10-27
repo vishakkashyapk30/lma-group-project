@@ -79,18 +79,59 @@ def test_train_default_config_path_is_the_qlora_yaml():
     assert (REPO / params["config_path"].default).exists()
 
 
-def test_sbatch_script_asks_for_one_gpu_and_at_most_one_and_a_half_days():
-    """One 2080 Ti per run, at most 1.5 days (well inside the 4-day batch limit)."""
-    text = (REPO / "scripts/ada/sbatch_qlora.sbatch").read_text(encoding="utf-8")
-    assert "#SBATCH --gres=gpu:1" in text
-    days, hh, mm, ss = (int(x) for x in re.search(r"#SBATCH --time=(\d+)-(\d+):(\d+):(\d+)", text).groups())
+SBATCH = REPO / "scripts/ada/sbatch_qlora.sbatch"
+
+
+def _directives() -> dict[str, str]:
+    return dict(re.findall(r"^#SBATCH --([\w-]+)=(\S+)", SBATCH.read_text(encoding="utf-8"), re.M))
+
+
+# RECONCILED: owner decision 2026-10-27, 4 GPUs for DDP QLoRA; plan section 17 said one
+def test_sbatch_script_asks_for_four_gpus_one_task_and_at_most_one_and_a_half_days():
+    """One node, one task (torchrun starts the 4 processes), exactly 4 x 2080 Ti, at most 1.5 days, modest CPUs and memory."""
+    d = _directives()
+    assert d["gres"] == "gpu:4" and d["constraint"] == "2080ti"
+    assert d["nodes"] == "1" and d["ntasks"] == "1"
+    assert d["account"] == "research" and d["qos"] == "medium" and d["partition"] == "u22"
+    assert int(d["cpus-per-task"]) <= 8 and d["mem"] == "64G"
+    t = d["time"]
+    days, hms = (int(t.split("-")[0]), t.split("-")[1]) if "-" in t else (0, t)
+    hh, mm, ss = (int(x) for x in hms.split(":"))
     assert days * 24 + hh + mm / 60 + ss / 3600 <= 36, "at most 1.5 days"
+
+
+def test_sbatch_script_excludes_the_broken_node_and_uses_scratch_not_home_caches():
+    text = SBATCH.read_text(encoding="utf-8")
+    assert _directives()["exclude"] == "gnode069"
+    assert _directives()["output"].startswith("slurm_logs/")
+    assert 'W="/scratch/$USER/vs-qlora' in text
+    for var in ("PIP_CACHE_DIR", "TMPDIR", "HF_HOME", "TRITON_CACHE_DIR", "TORCHINDUCTOR_CACHE_DIR"):
+        assert re.search(rf'{var}="\$W/', text), var
+    assert "PIP_NO_CACHE_DIR=1" in text
+    assert "$HOME/.cache" not in text and "~/.cache" not in text
+    assert "trap cleanup EXIT" in text and 'rm -rf "$W"' in text
+
+
+def test_sbatch_script_runs_torchrun_with_four_processes_and_installs_from_the_pytorch_index_first():
+    text = SBATCH.read_text(encoding="utf-8")
+    assert "--nproc_per_node=4" in text and "torchrun" in text and "vakeel_sahayak.finetune.train_qlora" in text
+    assert text.index("download.pytorch.org/whl/cu128") < text.index("qlora_requirements.txt")
+    assert "--export-dir" in text and "sha256sum" in text and "git clone" not in text  # the code arrives as a staged tarball
+    reqs = (REPO / "scripts/ada/qlora_requirements.txt").read_text(encoding="utf-8")
+    for lib in ("transformers", "peft", "bitsandbytes", "accelerate", "trl", "datasets"):
+        assert re.search(rf"^{lib}==\d", reqs, re.M), f"{lib} is not pinned"
+    assert not re.search(r"^torch\b", reqs, re.M), "torch comes from the PyTorch index, not this file"
+
+
+def test_config_world_size_matches_the_sbatch_and_keeps_the_effective_batch_of_16(qlora):
+    assert qlora["world_size"] == 4 == int(_directives()["gres"].split(":")[1])
+    assert qlora["effective_batch_size"] == 16 and qlora["per_device_batch_size"] == 1
 
 
 def test_qlora_is_the_only_sbatch_job():
     """Plan §17: inference runs in interactive sessions only; the one sbatch job is training."""
     offenders = [p.name for p in (REPO / "scripts").rglob("*") if p.is_file() and "#SBATCH" in p.read_text(encoding="utf-8", errors="ignore")]
-    assert offenders == ["sbatch_qlora.sbatch"]
+    assert offenders == ["sbatch_qlora.sbatch"]  # the stage and fetch scripts only mention the word in prose, never as a directive
 
 
 @pytest.mark.parametrize("path", sorted(FINETUNE_DIR.glob("*.py")), ids=lambda p: p.name)

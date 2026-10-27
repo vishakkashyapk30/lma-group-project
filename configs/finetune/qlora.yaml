@@ -1,4 +1,4 @@
-# QLoRA on Qwen3-4B (plan §12, §17). One 2080 Ti, FP16, checkpoint every epoch. Launched by scripts/ada/sbatch_qlora.sbatch.
+# QLoRA on Qwen3-4B (plan §12, §17). FP16, checkpoint every epoch; DDP over 4 x 2080 Ti since the owner decision of 2026-10-27 (was one). Launched by scripts/ada/sbatch_qlora.sbatch.
 base_model: Qwen/Qwen3-4B
 quantization: {bits: 4, type: nf4}
 lora: {r: 16, alpha: null, dropout: null, target_modules: null}  # TODO: set on dev
@@ -7,4 +7,7 @@ precision: fp16
 checkpoint_every: epoch
 data: {train: data/interim/finetune/train.jsonl, dev: data/interim/finetune/dev.jsonl, noisy_fraction: 0.3}
 runs: 3
+world_size: 4              # GPUs (torchrun processes); per_device * accumulation * world_size == effective_batch_size
+per_device_batch_size: 1
+effective_batch_size: 16   # unchanged from the single-GPU plan (1 x 16 accumulation); 4 GPUs accumulate 4 steps
 output: models/extractor-qlora

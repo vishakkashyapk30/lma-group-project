@@ -1,0 +1,14 @@
+# Pins for the QLoRA batch job (scripts/ada/sbatch_qlora.sbatch). torch is NOT here: the job installs it first from
+# https://download.pytorch.org/whl/cu128 (torch==2.8.0, cu128 wheels include sm_75 for the 2080 Ti); this file goes to PyPI after that.
+# NOT VERIFIED on Ada: nothing was installed when these were chosen (2026-10-27). They are the combination expected to work together with
+# torch 2.8: transformers 4.56 needs peft >= 0.17 and accelerate >= 1.x; bitsandbytes 0.47 ships CUDA 12.8 binaries with compute capability 7.5 kernels
+# (bitsandbytes < 0.43 would not). First job: read the install step and the "bnb smoke" line of the log, bump here if either fails.
+transformers==4.56.2
+peft==0.17.1
+accelerate==1.10.1
+bitsandbytes==0.47.0
+trl==0.23.0   # not used by train_qlora (plain HF Trainer); pinned so a later switch to SFTTrainer needs no new install
+datasets==4.0.0
+safetensors>=0.5
+pyyaml>=6
+numpy<2.3
