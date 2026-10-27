@@ -7,6 +7,7 @@ import type { ReactElement } from "react";
 import "@/styles/landing.css";
 import { Logo } from "@/components/common/Logo";
 import { Button } from "@/components/ui/button";
+import { sampleCaseHref } from "@/lib/sampleCase";
 import { ContinueCase } from "./ContinueCase";
 import { Footer } from "./Footer";
 import { HeroLoop } from "./HeroLoop";
@@ -44,8 +45,10 @@ export function LandingPage(): ReactElement {
         <header className="mx-auto flex h-16 max-w-[76rem] items-center justify-between px-4 sm:px-6">
           <Link href="/" aria-label="Vakeel-Sahayak home" className="rounded-sm no-underline"><Logo /></Link>
           <nav aria-label="Landing" className="flex items-center gap-1 sm:gap-3">
-            <a href="#how" className="link-draw hidden px-3 py-2 text-sm text-ink-soft hover:text-ink sm:block">How it works</a>
-            <a href="#control" className="link-draw hidden px-3 py-2 text-sm text-ink-soft hover:text-ink sm:block">Control</a>
+            <a href="#how" className="link-draw hidden px-3 py-2 text-sm text-ink-soft hover:text-ink md:block">How it works</a>
+            <a href="#control" className="link-draw hidden px-3 py-2 text-sm text-ink-soft hover:text-ink md:block">Safeguards</a>
+            <Link href="/help" className="link-draw hidden px-3 py-2 text-sm text-ink-soft hover:text-ink md:block">Help</Link>
+            <Link href={sampleCaseHref("#how")} data-testid="try-sample-link" className="link-draw hidden px-3 py-2 text-sm text-ink-soft hover:text-ink lg:block">Try the sample case</Link>
             <ContinueCase />
           </nav>
         </header>

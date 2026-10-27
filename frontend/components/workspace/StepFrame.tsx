@@ -56,7 +56,7 @@ export interface StepFooterProps {
 
 export function StepFooter({ label, onClick, disabled, busy, hint, testId, secondary, next = true }: StepFooterProps): ReactElement {
   return (
-    <div data-print-hide className="sticky bottom-0 z-raised -mx-5 mt-12 border-t border-line bg-parchment px-5 py-3 sm:-mx-8 sm:px-8">
+    <div data-print-hide data-step-footer className="sticky bottom-0 z-raised -mx-5 mt-12 border-t border-line-strong/50 bg-parchment px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:-mx-8 sm:px-8">
       <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
         {hint ? <p id="step-hint" className="mr-auto min-w-0 text-sm text-ink-soft">{hint}</p> : null}
         {secondary}

@@ -3,8 +3,8 @@
  *
  * Every colour exists twice: as a hex value (--color-*) for plain CSS and as an RGB channel triplet (--rgb-*) so that
  * Tailwind can apply opacity modifiers (bg-maroon/10). Contrast ratios are WCAG 2.1 figures computed for these hexes.
- * Font families are loaded in app/layout.tsx via next/font, which sets --font-fraunces, --font-tiro, --font-noto-deva,
- * --font-dm-sans and --font-plex-mono on <html>; the semantic --font-* tokens below point at them.
+ * Fonts are self-hosted through @fontsource (styles/fonts.css): Newsreader, Schibsted Grotesk, Spline Sans Mono, Noto Serif
+ * Devanagari and Hind. The semantic --font-* tokens below name them with system fallbacks. See DESIGN.md "Typography".
  */
 :root {
   /* ── Palette: warm neutrals, one accent (maroon) for actions, links and the active state ────────────────────── */

@@ -19,6 +19,7 @@
 .sweep {
   position: relative;
   isolation: isolate;
+  white-space: nowrap;
 }
 .sweep::before {
   content: "";
@@ -130,6 +131,7 @@
 .hl-mark {
   position: relative;
   isolation: isolate;
+  white-space: nowrap; /* the highlight box is one rectangle: a wrapped phrase broke it into slivers at 390 px */
 }
 .hl-mark::before {
   content: "";

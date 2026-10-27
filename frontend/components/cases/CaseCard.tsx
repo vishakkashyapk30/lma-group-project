@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight, BellRing, Clock } from "lucide-react";
 import type { ReactElement } from "react";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { STAGES, STAGE_BY_ID, stageIndex } from "@/lib/stages";
+import { STAGE_BY_ID, STEPPER_STAGES, stepOf } from "@/lib/stages";
 import { sortRightsChips } from "@/lib/status";
 import { plural } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -33,7 +33,10 @@ function activityLabel(iso: string | null | undefined): string {
 }
 
 export function CaseCard({ summary, className }: CaseCardProps): ReactElement {
-  const stage = STAGE_BY_ID[summary.stage];
+  // The stepper has six steps; Likely objections (SPAR) is shown inside Draft grounds, so a case there reads "Draft grounds".
+  const step = stepOf(summary.stage);
+  const stage = STAGE_BY_ID[step];
+  const stepNo = STEPPER_STAGES.findIndex((s) => s.id === step) + 1;
   const chips = sortRightsChips(summary.rights_chips ?? []);
   const shown = chips.slice(0, MAX_CHIPS);
   const more = chips.length - shown.length;
@@ -58,7 +61,7 @@ export function CaseCard({ summary, className }: CaseCardProps): ReactElement {
         </div>
         <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-sm text-ink-soft">
           <span className="font-medium text-ink">{stage.label}</span>
-          <span className="tabular text-xs">Stage {stageIndex(summary.stage) + 1} of {STAGES.length}</span>
+          <span className="tabular text-xs">Step {stepNo} of {STEPPER_STAGES.length}</span>
           <span className="inline-flex items-center gap-1 text-xs"><Clock aria-hidden className="size-3.5" />{activityLabel(summary.last_activity)}</span>
         </p>
         {shown.length > 0 ? (

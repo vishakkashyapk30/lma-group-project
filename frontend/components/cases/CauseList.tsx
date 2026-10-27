@@ -8,7 +8,7 @@ import { Button, EmptyState, Input, Skeleton } from "@/components/ui";
 import { fieldClasses } from "@/components/ui/input";
 import { listCases } from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
-import { STAGES } from "@/lib/stages";
+import { STEPPER_STAGES, stepOf } from "@/lib/stages";
 import { RIGHTS_URGENCY, parseRightsChip } from "@/lib/status";
 import { cn } from "@/lib/utils";
 import type { Stage } from "@/lib/types";
@@ -51,7 +51,7 @@ export function CauseList({ className }: CauseListProps): ReactElement {
     if (!cases) return [];
     const q = query.trim().toLowerCase();
     return cases
-      .filter((c) => (stage === "ALL" || c.stage === stage) && (!q || `${c.title} ${c.case_id} ${c.rights_chips.join(" ")}`.toLowerCase().includes(q)))
+      .filter((c) => (stage === "ALL" || stepOf(c.stage) === stage) && (!q || `${c.title} ${c.case_id} ${c.rights_chips.join(" ")}`.toLowerCase().includes(q)))
       .map((c, i) => ({ c, i }))
       .sort((a, b) => urgency(a.c) - urgency(b.c) || b.c.needs_attention - a.c.needs_attention || a.i - b.i)
       .map((x) => x.c);
@@ -79,7 +79,7 @@ export function CauseList({ className }: CauseListProps): ReactElement {
           Stage
           <select className={cn(fieldClasses, "h-9 w-auto min-w-[10rem]")} value={stage} onChange={(e) => setStage(e.target.value as Stage | "ALL")}>
             <option value="ALL">All stages</option>
-            {STAGES.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
+            {STEPPER_STAGES.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
         </label>
         <p className="text-sm text-ink-soft" role="status" aria-live="polite">
