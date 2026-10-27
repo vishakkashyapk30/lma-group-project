@@ -29,6 +29,16 @@ export function useCaseMeta(): CaseMeta | null {
   return useSyncExternalStore(subscribe, () => current, () => null);
 }
 
+/**
+ * Tell the top bar which case is about to open, before navigating to it, so the breadcrumb shows its title in the same
+ * render as the new page (the workspace renders in the browser a moment later). That lets the title morph from the
+ * case card into the breadcrumb.
+ */
+export function primeCaseMeta(caseId: string, title: string): void {
+  if (current?.caseId === caseId && current.title) return;
+  set({ caseId, title, stageLabel: null });
+}
+
 /** Publish the open case to the top bar (cleared on unmount) and remember it for "Continue" on the landing page. */
 export function usePublishCaseMeta(caseId: string, title: string | null, stageLabel: string | null): void {
   useEffect(() => {

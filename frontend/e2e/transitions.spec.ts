@@ -90,6 +90,33 @@ test.describe("route transitions, motion allowed", () => {
     expect(await page.getByTestId(TID.stageRail).boundingBox()).toEqual(rail);
   });
 
+  test("the case title carries over: from the card it moves into the top bar's breadcrumb", async ({ page }) => {
+    await page.goto("/cases");
+    const link = page.locator("article h3 a").first();
+    await expect(link).toBeVisible();
+    const href = (await link.getAttribute("href"))!;
+    const id = href.split("/").pop()!;
+    const title = (await link.innerText()).trim();
+    await page.evaluate(() => {
+      const w = window as unknown as { __morph: string[] };
+      w.__morph = [];
+      new MutationObserver(() => {
+        const el = document.querySelector<HTMLElement>("[data-morph][data-morphing]");
+        if (el) w.__morph.push(getComputedStyle(el).transform);
+      }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["data-morphing"] });
+    });
+    await link.click();
+    await expect(page).toHaveURL(new RegExp(`${href}$`));
+    const crumb = page.locator(`nav[aria-label=Breadcrumb] [data-morph='case-title-${id}']`);
+    await expect(crumb).toContainText(title);
+    const seen = await page.evaluate(() => (window as unknown as { __morph: string[] }).__morph);
+    expect(seen.length).toBeGreaterThan(0);
+    const ty = Number(/matrix\(([^)]+)\)/.exec(seen[0]!)?.[1]?.split(",")[5] ?? 0);
+    expect(ty).toBeGreaterThan(100); // it starts down where the card was
+    await page.waitForTimeout(400);
+    expect(await crumb.evaluate((el) => el.getAnimations().length)).toBe(0);
+  });
+
   test("the tab indicator sits under the chosen tab", async ({ page }) => {
     await page.goto("/case/case-0007");
     await page.getByTestId(TID.stage("II")).click();
@@ -115,6 +142,10 @@ test.describe("route transitions, prefers-reduced-motion: reduce", () => {
     await expect(page).toHaveURL(/\/library$/);
     await page.waitForTimeout(200);
     for (const t of await transitions(page)) for (const a of t.anims) expect(a.ms, a.pseudo).toBe(0);
+    await page.goto("/cases");
+    await page.locator("article a").first().click();
+    await expect(page).toHaveURL(/\/case\//);
+    expect(await page.locator("[data-morphing]").count()).toBe(0);
     await page.goto("/case/case-0007");
     await page.getByTestId(TID.stage("III")).click();
     const running = await page.evaluate(() => document.querySelector(".step-enter")?.getAnimations().filter((a) => a.playState === "running").length ?? 0);

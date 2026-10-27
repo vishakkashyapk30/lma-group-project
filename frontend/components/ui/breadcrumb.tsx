@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Fragment, type ReactElement } from "react";
+import { MorphTarget } from "@/components/motion/Morph";
 import { cn } from "@/lib/utils";
 
 export interface Crumb {
@@ -9,6 +10,8 @@ export interface Crumb {
   href?: string;
   /** Render in the mono face (ids). */
   mono?: boolean;
+  /** Morph name: a title recorded under this name before the navigation moves into this crumb (components/motion/Morph). */
+  share?: string;
 }
 
 export function Breadcrumb({ items, className }: { items: readonly Crumb[]; className?: string }): ReactElement {
@@ -26,9 +29,11 @@ export function Breadcrumb({ items, className }: { items: readonly Crumb[]; clas
                     {c.label}
                   </Link>
                 ) : (
-                  <span aria-current={last ? "page" : undefined} className={cn("truncate", last ? "font-semibold text-ink" : "text-ink-soft", c.mono && "font-mono text-xs")}>
-                    {c.label}
-                  </span>
+                  <MaybeShared name={c.share}>
+                    <span aria-current={last ? "page" : undefined} className={cn("block truncate", last ? "font-semibold text-ink" : "text-ink-soft", c.mono && "font-mono text-xs")}>
+                      {c.label}
+                    </span>
+                  </MaybeShared>
                 )}
               </li>
             </Fragment>
@@ -37,4 +42,8 @@ export function Breadcrumb({ items, className }: { items: readonly Crumb[]; clas
       </ol>
     </nav>
   );
+}
+
+function MaybeShared({ name, children }: { name?: string; children: ReactElement }): ReactElement {
+  return name ? <MorphTarget name={name} className="min-w-0 truncate align-bottom">{children}</MorphTarget> : children;
 }

@@ -19,8 +19,9 @@ function useCrumbs(): { crumbs: Crumb[]; stage: string | null } {
   const path = usePathname() ?? "";
   const meta = useCaseMeta();
   if (path.startsWith("/case/")) {
-    const id = path.split("/")[2] ?? "";
-    return { crumbs: [{ label: "Cases", href: "/cases" }, { label: meta?.title ?? id }], stage: meta?.stageLabel ?? null };
+    const id = decodeURIComponent(path.split("/")[2] ?? "");
+    const own = meta && meta.caseId === id ? meta : null;
+    return { crumbs: [{ label: "Cases", href: "/cases" }, { label: own?.title ?? id, share: `case-title-${id}` }], stage: own?.stageLabel ?? null };
   }
   if (path.startsWith("/about")) return { crumbs: [{ label: "Help", href: "/help" }, { label: "About" }], stage: null };
   const item = NAV_ITEMS.find((n) => path === n.href);

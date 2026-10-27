@@ -25,11 +25,3 @@ export function PageTransition({ routeKey, children }: { routeKey: string; child
   );
 }
 
-/** A shared element: the same `name` on two routes morphs one into the other during a navigation. */
-export function Shared({ name, children }: { name: string; children: ReactNode }): ReactElement {
-  return (
-    <ViewTransition name={name} share="vt-morph" default="none">
-      {children}
-    </ViewTransition>
-  );
-}

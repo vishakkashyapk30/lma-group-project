@@ -4,6 +4,8 @@ import Link from "next/link";
 import { ArrowRight, BellRing, Clock } from "lucide-react";
 import type { ReactElement } from "react";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { startMorph } from "@/components/motion/Morph";
+import { primeCaseMeta } from "@/components/shell/meta";
 import { STAGE_BY_ID, STEPPER_STAGES, stepOf } from "@/lib/stages";
 import { sortRightsChips } from "@/lib/status";
 import { plural } from "@/lib/format";
@@ -53,8 +55,16 @@ export function CaseCard({ summary, className }: CaseCardProps): ReactElement {
       <div className="min-w-0 space-y-1.5">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
           <h3 id={titleId} className="font-display text-[1.0625rem] font-semibold leading-snug text-ink">
-            <Link href={`/case/${summary.case_id}`} className="rounded-sm text-ink no-underline after:absolute after:inset-0 after:content-[''] group-hover:text-maroon">
-              {summary.title}
+            <Link
+              href={`/case/${summary.case_id}`}
+              onClick={(e) => {
+                primeCaseMeta(summary.case_id, summary.title);
+                startMorph(`case-title-${summary.case_id}`, e.currentTarget.querySelector("[data-title]"));
+              }}
+              className="rounded-sm text-ink no-underline after:absolute after:inset-0 after:content-[''] group-hover:text-maroon"
+            >
+              {/* The title moves into the top bar's breadcrumb when the case opens (components/motion/Morph). */}
+              <span data-title>{summary.title}</span>
             </Link>
           </h3>
           <span className="font-mono text-xs text-ink-muted">{summary.case_id}</span>

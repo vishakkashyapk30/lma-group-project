@@ -69,3 +69,8 @@
 .skeleton-delayed {
   animation: skeleton-show 150ms var(--ease) 150ms both;
 }
+
+/* The case title moving into the breadcrumb must not be clipped by the crumb's truncation while it flies. */
+nav[aria-label="Breadcrumb"] li:has(> [data-morphing]) {
+  overflow: visible;
+}
