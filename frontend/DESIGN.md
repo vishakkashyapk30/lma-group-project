@@ -25,7 +25,7 @@ A calm tool for a legal-aid lawyer who uses it daily. Dense where it should be, 
 
 App shell (every route except `/`):
 
-- Left sidebar: Cases, Batch desk, Precedent library, Help, Settings. Icons plus labels, active state (tint, maroon text, thin left mark), collapsible to an icon rail (remembered in localStorage, tooltips carry the labels). Inside a case it stays an icon rail so the step gets the width. Below `lg` it becomes a drawer opened from the top bar.
+- Left sidebar: Cases, Batch desk, Precedent library, Help, Settings. Icons plus labels, active state (tint, maroon text, thin left mark), collapsible to an icon rail (remembered in localStorage, tooltips carry the labels). Inside a case it stays an icon rail so the step gets the width. Below `lg` it becomes a drawer opened from the top bar. The logo at its top (and in the drawer) goes to the landing page `/` from every route; Cases stays the first item, one click away.
 - Top bar: breadcrumb (page title, or `Cases > case title` with `Stage: <name>` inside a case), search field that opens the command palette (Ctrl/Cmd+K), mode chip, primary New case button, settings and help menu.
 - Mode chip: `Local · Sample data` in demo mode (built-in sample cases, changes stay in the browser), `Local · Connected` when the API answers, and `Local · Not connected` when a live server stops answering. It links to Settings and never claims more. Product builds are live: an unreachable server is an error on the page, never the sample case (`NEXT_PUBLIC_API_MODE`).
 - Command palette: Actions (New case, Reduce motion, Collapse sidebar), Pages, and Cases (fetched when opened). Combobox plus listbox semantics, arrows, Enter, Esc.

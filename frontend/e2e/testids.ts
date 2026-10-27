@@ -52,6 +52,9 @@
  */
 export const TID = {
   siteFooter: "site-footer",
+  sidebar: "sidebar",
+  brandHome: "brand-home", // the logo link in the sidebar and the mobile drawer; goes to the landing page
+  continueCase: "continue-case", // landing: "Continue: <last case title>" (only once a case was opened)
   openCaseButton: "open-case-button",
 
   stageRail: "stage-rail",

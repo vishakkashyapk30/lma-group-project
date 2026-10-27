@@ -20,7 +20,7 @@ export function MobileDrawer(): ReactElement {
         >
           <DialogPrimitive.Title className="sr-only">Menu</DialogPrimitive.Title>
           <div className="flex h-[var(--nav-h)] items-center justify-between border-b border-line px-4">
-            <Link href="/cases" onClick={() => setDrawerOpen(false)} className="rounded-sm no-underline"><Logo /></Link>
+            <Link href="/" aria-label="Vakeel-Sahayak home" data-testid="brand-home" onClick={() => setDrawerOpen(false)} className="rounded-sm no-underline"><Logo /></Link>
             <DialogPrimitive.Close className="grid size-8 place-items-center rounded-md text-ink-soft hover:bg-ink/[0.06]">
               <X aria-hidden className="size-4" />
               <span className="sr-only">Close menu</span>

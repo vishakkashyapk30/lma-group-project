@@ -57,7 +57,7 @@ export function Sidebar(): ReactElement {
       )}
     >
       <div className={cn("flex h-[var(--nav-h)] shrink-0 items-center border-b border-line", collapsed ? "justify-center" : "px-4")}>
-        <Link href="/cases" aria-label="Vakeel-Sahayak, go to Cases" className="rounded-sm no-underline">
+        <Link href="/" aria-label="Vakeel-Sahayak home" data-testid="brand-home" className="rounded-sm no-underline">
           <Logo markOnly={collapsed} />
         </Link>
       </div>
