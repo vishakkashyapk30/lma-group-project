@@ -59,7 +59,16 @@ def _factual_sentences(brief: BailBrief) -> list[str]:
     return out
 
 
-def unsupported_fact_rate(brief: BailBrief, input_text: str) -> float:
+def unsupported_fact_counts(brief: BailBrief, input_text: str) -> tuple[int, int]:
+    """(factual sentences, unsupported sentences) of the brief. The count, not the rate, is the null-agent-safe companion of M6 (a silent brief has 0 of 0)."""
+    sentences = _factual_sentences(brief)
+    if not sentences:
+        return 0, 0
+    _, score, cut = _scorer()
+    return len(sentences), sum(1 for s in sentences if score(input_text, s) < cut)
+
+
+def unsupported_fact_rate(brief: BailBrief, input_text: str) -> float | None:
     """Share of the brief's factual sentences that the input does not support.
 
     Args:
@@ -67,13 +76,12 @@ def unsupported_fact_rate(brief: BailBrief, input_text: str) -> float:
         input_text: the facts the system was given (the reference point, plan §15.9)
 
     Returns:
-        Unsupported sentences / factual sentences (0.0 when the brief has none).
+        Unsupported sentences / factual sentences, or None when the brief has no factual sentence ("no claims", plan 5.7). It is never 0.0 for an empty brief:
+        a system that says nothing would otherwise earn a perfect M6. Callers exclude None from the mean, count the cases that have claims, and read the
+        unsupported-fact count and the answerable-factor coverage beside the rate.
     """
-    sentences = _factual_sentences(brief)
-    if not sentences:
-        return 0.0
-    _, score, cut = _scorer()
-    return sum(1 for s in sentences if score(input_text, s) < cut) / len(sentences)
+    n, bad = unsupported_fact_counts(brief, input_text)
+    return None if n == 0 else bad / n
 
 
 def sentence_support(brief: BailBrief, input_text: str) -> list[dict[str, object]]:

@@ -143,6 +143,23 @@ def coverage_of(record: dict[str, Any]) -> float:
     return len(emitted) / len(grounds)
 
 
+def answerable_coverage(brief: dict[str, Any], answerable: list[Factor]) -> float | None:
+    """Share of the answerable factors with a supported argument: a ground that is not the placeholder and whose check is not a decline (NEEDS_REVIEW, UNANSWERED,
+    REFUSED). None when the case has no answerable factor. A silent brief scores 0.0, which is what keeps a null system from winning M6 (plan 5.7)."""
+    if not answerable:
+        return None
+    declined = {"NEEDS_REVIEW", "UNANSWERED", "REFUSED"}
+    covered: set[Factor] = set()
+    for g in (brief or {}).get("grounds") or []:
+        if str(g.get("argument") or "").startswith(NO_GROUND_PREFIX) or str(getattr(g.get("check"), "value", g.get("check"))).split(".")[-1] in declined:
+            continue
+        try:
+            covered.add(Factor(g.get("factor")))
+        except ValueError:
+            continue
+    return len(covered & set(answerable)) / len(set(answerable))
+
+
 def case_cost(tokens: float, manifest: dict[str, Any], cfg: ScoreConfig) -> float | None:
     """USD of a case: 0.0 on the offline stand-ins, tokens times the measured blended price on OpenAI, None where there is no price (Ada models, Sarvam in INR)."""
     backend = str((manifest.get("models") or {}).get("llm_backend") or "")
@@ -189,11 +206,17 @@ def score_case(case: dict[str, Any], record: dict[str, Any], manifest: dict[str,
     tokens = float(meta.get("tokens") or 0)
     errors = list(record.get("errors") or []) + ([record["error"]] if record.get("error") else [])
     unsupported: float | None = None
+    n_claims: float | None = None
+    n_unsupported: float | None = None
     try:
-        from vakeel_sahayak.eval.metrics.unsupported_fact import unsupported_fact_rate
+        from vakeel_sahayak.eval.metrics.unsupported_fact import _factual_sentences, unsupported_fact_rate
         from vakeel_sahayak.schemas.bail_brief import BailBrief
 
-        unsupported = float(unsupported_fact_rate(BailBrief.model_validate(brief), str(case.get("facts_text") or case.get("facts") or "")))
+        parsed = BailBrief.model_validate(brief)
+        rate = unsupported_fact_rate(parsed, str(case.get("facts_text") or case.get("facts") or ""))  # None: no factual sentence, "no claims" (plan 5.7)
+        n_claims = float(len(_factual_sentences(parsed)))
+        n_unsupported = 0.0 if rate is None else float(round(rate * n_claims))
+        unsupported = None if rate is None else float(rate)
     except NotImplementedError as exc:
         if cfg.strict:
             raise NotImplementedError(f"{UNSUPPORTED_FN} is not implemented (unsupported-fact rate, MiniCheck)") from exc
@@ -201,6 +224,7 @@ def score_case(case: dict[str, Any], record: dict[str, Any], manifest: dict[str,
     return {
         "case_id": case["case_id"], "factor_recall": recall, "factor_precision_strict": precision_strict, "factor_precision_lenient": precision_lenient,
         "factor_f1": f1, "court_discussed_recall": g5_recall, "factor_items": items, "unsupported_fact_rate": unsupported,
+        "n_claims": n_claims, "unsupported_fact_count": n_unsupported, "answerable_coverage": answerable_coverage(brief, ans),
         "recall_at_10": recall_at_k(retrieved, g2_labels, cfg.k) if g2_labels else None, "retrieved_source": rsource,
         "g2_gold_n": len(g2_labels), "g2_raw_n": len(g2.get("raw") or []), "g2_unresolved_n": len(g2.get("unresolved") or []),
         "objection_recall": obj_recall, "objection_precision": obj_precision, "n_objections": len(obj), "g4_n": len(set(g4)),

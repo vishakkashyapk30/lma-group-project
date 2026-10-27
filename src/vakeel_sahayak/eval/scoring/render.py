@@ -109,11 +109,18 @@ def _pending(res: dict[str, Any], metric: str) -> bool:
 
 
 # ---------------------------------------------------------------------------------------------------------------- tables
+def _claims_cases(s: dict[str, Any]) -> str:
+    """`k / n`: cases where the system made at least one factual claim (the cases M6 is averaged over) of all cases it was scored on."""
+    u = s["metrics"]["unsupported_fact_rate"]
+    return f"{u.get('n_claims_cases', u['n'])} / {u.get('n_cases', s['n_cases'])}"
+
+
 def table_main(res: dict[str, Any]) -> Table:
     """Table 1 (plan 6.1): the headline metrics per system."""
     meta, systems = res["meta"], res["systems"]
     rights = (res.get("rights") or {}).get("arms") or {}
     cols = ["System", "Evaluated object", "n / runs", "Factor recall (M1)", "Precision, lenient (M2)", "F1 (M3)", "Unsupported-fact rate (M6)",
+            "Cases with claims (M6)", "Claims/case", "Unsupported sentences/case", "Answerable-factor coverage",
             "Recall@10 G2 (M10) [coverage]", "Objection recall G4", "pass^k", "Tokens/case"]
     rows = []
     for name in order_systems(list(systems), meta["reference"]):
@@ -125,8 +132,12 @@ def table_main(res: dict[str, Any]) -> Table:
         pk = "n/a" if passed["pass_hat_k"] is None else f"pass^{passed['k']}={passed['pass_hat_k']:.2f} (n={passed['n']})"
         rows.append([name, str(s["manifest"].get("variant") or ""), f"{s['n_cases']} / {len(s['runs'])}", cell(m["factor_recall"]), cell(m["factor_precision_lenient"]),
                      cell(m["factor_f1"]), cell(m["unsupported_fact_rate"], pending=_pending(res, "unsupported_fact_rate")),
+                     _claims_cases(s), cell(m["n_claims"], digits=1, show_n=False), cell(m["unsupported_fact_count"], digits=2, show_n=False),
+                     cell(m["answerable_coverage"]),
                      cell(m["recall_at_10"]) + f" [{cov}]", cell(m["objection_recall"]), pk, cell(m["tokens"], digits=0, show_n=False)])
-    notes = [f"Label source: {meta['gold_source']} (hash {str(meta['gold_sha256'])[:12]}). n beside a metric is the number of orders where it is defined: M1 needs an agreed answerable "
+    notes = ["Cases with no claims are excluded from M6 and counted in coverage: M6 is the mean over the cases with claims (k / n above); the unsupported-sentence count per case "
+             "and the share of answerable factors with a supported argument are shown beside it, so a system that says nothing cannot win on M6.",
+             f"Label source: {meta['gold_source']} (hash {str(meta['gold_sha256'])[:12]}). n beside a metric is the number of orders where it is defined: M1 needs an agreed answerable "
              "factor, recall@10 a resolved court-cited precedent, objection recall an agreed objection. Runs are averaged within a case; the interval resamples cases.",
              f"pass^k bar: factor recall >= {meta['config']['pass_bar']} with no stage error (provisional; the bar is frozen in the pre-registration)."]
     if meta["pending"]:
@@ -166,7 +177,7 @@ def table_paired(res: dict[str, Any]) -> Table:
         fam = "exploratory (uncorrected)" if p["family"] is None else f"{p['family']}: " + ("reject" if p["holm_reject"] else "not rejected")
         rows.append([label, p["metric"], str(p["n"]), ci, f"{p['p']:.4f} ({p['p_source']})", eff, fam])
     notes = [f"Difference is {ref} minus the comparator; for the unsupported-fact rate, tokens and store calls lower is better. Binary rows: exact McNemar on discordant pairs; "
-             "pooled factor hits: cluster bootstrap over cases. Holm only inside the registered primary families (plan 5.3), on this gold; everything else is exploratory."]
+             "pooled factor hits: cluster bootstrap over cases. n is the number of paired cases; for the unsupported-fact rate only cases where both systems made claims are paired. Holm only inside the registered primary families (plan 5.3), on this gold; everything else is exploratory."]
     return Table("table_paired", "Paired comparisons with the reference (preliminary)", caption_prefix(res), cols, rows, notes)
 
 

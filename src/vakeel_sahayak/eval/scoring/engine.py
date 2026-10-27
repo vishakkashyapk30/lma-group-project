@@ -33,6 +33,9 @@ METRICS: dict[str, tuple[str, bool]] = {
     "factor_f1": ("Factor F1 (M3)", True),
     "court_discussed_recall": ("Court-discussed factor recall, G5 (M4)", True),
     "unsupported_fact_rate": ("Unsupported-fact rate (M6)", False),
+    "n_claims": ("Factual sentences per case", True),
+    "unsupported_fact_count": ("Unsupported factual sentences per case (count, null-agent safe)", False),
+    "answerable_coverage": ("Answerable factors with a supported argument", True),
     "recall_at_10": ("Recall@10, G2 (M10)", True),
     "objection_recall": ("Objection recall, G4 (M4)", True),
     "objection_precision": ("Objection precision, G4 (M4)", True),
@@ -193,6 +196,9 @@ def summarise_systems(rows: list[dict[str, Any]], runs: list[RunSet], n_cases: i
     for system, per_case in means.items():
         srows = [r for r in rows if r["system"] == system]
         metrics = {m: _summary([v[m] for v in per_case.values() if v[m] is not None]) for m in METRICS}
+        claim_cases = [v for v in per_case.values() if (v["n_claims"] or 0) > 0]  # cases where the system made at least one factual claim
+        metrics["unsupported_fact_rate"]["n_claims_cases"] = len(claim_cases)
+        metrics["unsupported_fact_rate"]["n_cases"] = len(per_case)
         tok = [v["tokens"] for v in per_case.values() if v["tokens"] is not None]
         metrics["tokens"]["p90"] = float(sorted(tok)[min(len(tok) - 1, int(0.9 * len(tok)))]) if tok else None
         g2_cases = {r["case_id"]: r for r in srows if r["g2_gold_n"]}
@@ -235,7 +241,7 @@ def _p_value(ref: list[float], other: list[float]) -> tuple[float, str]:
 
 
 def paired_comparisons(rows: list[dict[str, Any]], reference: str) -> list[dict[str, Any]]:
-    """Reference minus each other system on every paired metric, over the cases both define: mean difference with its paired bootstrap interval, Wilcoxon p
+    """Reference minus each other system on every paired metric, over the cases both define (for M6 that is the cases where both systems made claims; `n` is the paired n): mean difference with its paired bootstrap interval, Wilcoxon p
     (or the labelled fallback), d_z; plus, for the pass^k flag and for the pooled gold-factor hits, the exact McNemar test and the cluster bootstrap."""
     means = case_means(rows)
     ref_key = next((s for s in means if s.lower() == reference.lower()), None)
@@ -250,7 +256,12 @@ def paired_comparisons(rows: list[dict[str, Any]], reference: str) -> list[dict[
             common = sorted(c for c in means[ref_key] if c in means[other] and means[ref_key][c][metric] is not None and means[other][c][metric] is not None)
             rec: dict[str, Any] = {"reference": ref_key, "comparator": other, "metric": metric, "n": len(common), "higher_is_better": METRICS[metric][1]}
             if len(common) < 2:
-                out.append({**rec, "status": "pending" if metric == "unsupported_fact_rate" and not common else "too few cases"})
+                status = "too few cases"
+                if metric == "unsupported_fact_rate" and not common:
+                    # scorer not implemented (n_claims never computed) is pending; a system that made no claims in any paired case is not
+                    unknown = any(means[s][c]["n_claims"] is None for s in (ref_key, other) for c in means[s])
+                    status = "pending" if unknown else "no paired cases with claims"
+                out.append({**rec, "status": status})
                 continue
             a = [means[ref_key][c][metric] for c in common]
             b = [means[other][c][metric] for c in common]

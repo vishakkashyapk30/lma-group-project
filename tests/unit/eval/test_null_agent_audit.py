@@ -47,7 +47,7 @@ def test_empty_brief_has_zero_recall():
     assert _factor_scores(_brief([]))[0] == 0.0
 
 
-@pytest.mark.xfail(strict=True, reason="unsupported_fact_rate returns 0.0 for a brief with no sentences; plan 5.7 says report 'no claims', not 0")
+# RECONCILED: plan 5.7 says an empty brief reports 'no claims' (None), not a perfect 0.0; the xfail marker is removed now that the metric does so.
 def test_empty_brief_is_no_claims_not_a_perfect_unsupported_rate():
     assert unsupported_fact_rate(_brief([]), FACTS) is None
 
