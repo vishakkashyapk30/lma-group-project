@@ -10,9 +10,6 @@ const nextConfig = {
   reactStrictMode: true,
   // NEXT_DIST_DIR lets a build run beside a dev server in the same checkout (default .next, which the Docker image uses).
   distDir: process.env.NEXT_DIST_DIR || ".next",
-  // React's <ViewTransition> for route crossfades and the case-title morph (components/motion/PageTransition.tsx).
-  // Next 15 ships it behind this flag; browsers without the View Transitions API swap pages instantly.
-  experimental: { viewTransition: true },
   // Self-contained server bundle for the Docker image (copies only the traced node_modules).
   output: "standalone",
   // gzip in Next's server would buffer the proxied SSE event stream, so it is off in proxy mode (put a CDN/proxy in front if needed).

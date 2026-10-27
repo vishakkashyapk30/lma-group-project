@@ -16,10 +16,10 @@ Satvik's `feat/frontend-flow` was not pushed when this branch was built, so the 
 | `components/workspace/WorkspaceShellLazy.tsx` | Skeleton markup | Take this branch's skeleton. |
 | `components/shell/meta.ts`, `TopBar.tsx` | `primeCaseMeta`, `writeLastCase`; breadcrumb uses meta only for the same case id; crumb `share` name | Additive. |
 | `components/cases/CaseCard.tsx`, `CauseList.tsx` | Step n of 6, step names, title prime and morph | If he reworked the card, keep `onClick` (prime + startMorph) and the `data-title` span. |
-| `components/shell/Sidebar.tsx`, `MobileDrawer.tsx`, `CommandPalette.tsx`, `AppShell.tsx` | Logo to `/`, `markRouteFocus`, `useRouteFocus`, PageTransition around `main`'s children | Additive. |
+| `components/shell/Sidebar.tsx`, `MobileDrawer.tsx`, `CommandPalette.tsx`, `AppShell.tsx` | Logo to `/`, `markRouteFocus`, `useRouteFocus` | Additive. |
 | `components/ui/button.tsx`, `tabs.tsx`, `breadcrumb.tsx` | `.press`; sliding tab bar; MorphTarget in the last crumb | Shared primitives: take this branch's versions. |
 | `e2e/testids.ts`, `e2e/landing.spec.ts`, `e2e/a11y.spec.ts`, `e2e/reduced-motion.spec.ts` | Landing contract, RECONCILED notes, tests added | If his flow specs click a gate while it is held, use `{ force: true }` or resolve first: held gates are `aria-disabled` (Playwright's `toBeDisabled` still passes). |
-| `next.config.mjs`, `playwright.config.ts` | `experimental.viewTransition`, `distDir` from `NEXT_DIST_DIR`; `E2E_PORT` | Additive. |
+| `next.config.mjs`, `playwright.config.ts` | `distDir` from `NEXT_DIST_DIR`; `E2E_PORT` (no experimental flags) | Additive. |
 
 ## Behaviour he should know about
 - Gate buttons are no longer `disabled` while items are open; they are `aria-disabled`, pressable, and open the hold list instead of the dialog. Any code that relied on a native `disabled` attribute must check `aria-disabled` or `data-held`.

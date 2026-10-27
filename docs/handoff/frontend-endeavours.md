@@ -1,6 +1,6 @@
 # Frontend endeavours: build (phase 2)
 
-Branch `frontend-endeavours` (from main 4c9f6ad; not merged). Direction B "Walk the file" from `frontend-endeavours-ideation.md`, with the owner's decisions: physics on the landing demos, drag-to-close panels and sheets, and the gate hold (no list reorder, no attach-source-to-claim, no swipe-to-commit); the `motion` library; the new close band; the refined logo; the logo to `/` and "Continue: <last case>". Only `frontend/` and this folder changed; no Python, no API calls, no URLs.
+Branch `frontend-endeavours` (from main 4c9f6ad; not merged). Direction B "Walk the file" from `frontend-endeavours-ideation.md`, with the owner's decisions (later also: no route transitions, the close band names the four members, sample-case links go to /cases in a strict live build): physics on the landing demos, drag-to-close panels and sheets, and the gate hold (no list reorder, no attach-source-to-claim, no swipe-to-commit); the `motion` library; the new close band; the refined logo; the logo to `/` and "Continue: <last case>". Only `frontend/` and this folder changed; no Python, no API calls, no URLs.
 
 ## What was built, per commit
 
@@ -12,7 +12,7 @@ Branch `frontend-endeavours` (from main 4c9f6ad; not merged). Direction B "Walk 
 | 3 | 0f4834c | Audit fixes: "Step n of 6" and step names on case cards and the stage filter (SPAR reads "Draft grounds"); sticky step footer edge and safe-area padding, `scroll-pb-24` on the step pane; `.hl-mark`/`.sweep` no longer wrap into slivers; header "Safeguards", Help, Try the sample case; stale FOUNDATION_NOTES.md and tokens.css notes. |
 | 5 | ab0371f | `lib/motion`: `fromPerceptual`, `SPRINGS`, `ALLOWANCE`, `rubberband`, `rubberClamp`, `project`, `simulate`, `runSpring`, `SpringValue` (interruptible, writes to the element, jumps under reduced motion), `VelocityTracker`, `useDrag`. Vitest of the maths. Corrected two rubber-band values in the ideation note (23 and 17 px). |
 | 6 | 4720f16 | `.press` (scale 0.97 on press, spring curve back) on every Button; sliding tab indicator in `ui/tabs.tsx` (transform only, 275 ms). |
-| 7 | e4fd2a1 | `experimental.viewTransition` + `components/motion/PageTransition` (keyed by path: old fades 120 ms, new rises 6 px over 220 ms); root not captured, so sidebar and top bar stay; step changes slide 12 px by direction. `NEXT_DIST_DIR`. |
+| 7 | e4fd2a1 | Step changes slide 12 px by direction (CSS) and `NEXT_DIST_DIR`. The route crossfade added here (`experimental.viewTransition`) was removed later by the owner's decision, see the last row. |
 | 8 | afe468d | `loading.tsx` skeletons for /cases, /desk, /library and a workspace skeleton that matches the stepper row and the 48 rem column; shown after 150 ms. Focus to the page h1 after sidebar, drawer, palette or logo navigation (`components/shell/routeFocus.ts`). |
 | 9 | a659232 | Drag to close: source and chat panel (right), its phone sheet (now rises from the bottom, down to close, grabber), Details drawer. `lib/motion/useDragToClose.ts`. |
 | 10 | ad4be16 | Gate hold: `components/common/HoldButton.tsx`, `components/workspace/GateFooter.tsx`. Held gates are `aria-disabled`, show a lock and "(n open)", move at most 12 px, and list the open items (Mark as unknown, Go to it). First use of `motion` (presence, LazyMotion + domAnimation on demand). |
@@ -27,6 +27,7 @@ Branch `frontend-endeavours` (from main 4c9f6ad; not merged). Direction B "Walk 
 | 19 | 2f2b0f5 | `e2e/timing-budget.spec.ts`; reduced-motion checks for demos, panels, gates; presence instant under reduced motion; leaving panels close within 6 px of off screen. |
 | 20 | 76d6784 | Logo: V meets the beam, short hangers and pans from 24 px, V and beam only below; all brand SVGs, icon.svg, favicon.ico (16/32/48), apple-icon, icon-192/512; DESIGN.md "Logo and icons". |
 | - | 99e667b | Bundle: `m` from `motion/react-m`; `lib/sampleCase` no longer imports `lib/api` (which carries the demo server). |
+| - | (this commit) | Owner decisions: `experimental.viewTransition` and the route crossfade removed (Next back on the stable React channel); route changes are instant; the step slide (CSS) and the case-title FLIP stay, as neither needs the flag. The close band names the four members. |
 
 ## How to run and test
 
@@ -39,11 +40,11 @@ npx playwright install chromium        # once; only chromium
 E2E_PORT=3100 npx playwright test      # starts `next dev -p 3100` if nothing listens there
 rm -rf test-results
 ```
-Last full run (2026-10-27): vitest 299 passed; tsc and lint clean; `next build` passes; Playwright 168 passed, 1 skipped (`live_flow.spec.ts`, needs `E2E_LIVE_API=1`), chromium and reduced-motion projects.
+Last full run (2026-10-27, after the owner's decisions): vitest 299 passed; tsc and lint clean; `next build` passes; Playwright 167 passed, 1 skipped (`live_flow.spec.ts`, needs `E2E_LIVE_API=1`), chromium and reduced-motion projects.
 
-New specs: `navigation`, `transitions`, `gestures` (panels, sheet by finger through CDP, gate hold, workspace timeline), `landing-demo` (each demo by pointer and by keyboard alone, both motion modes, 390 px), `timing-budget`. Changed specs (each change is in its commit message and marked RECONCILED): `landing.spec.ts` (hero loop tests became "rests until touched", band order, #walk, hero action is the sample case), `testids.ts` (landing contract), `a11y.spec.ts` and `reduced-motion.spec.ts` (tests added only).
+New specs: `navigation`, `transitions`, `gestures` (panels, sheet by finger through CDP, gate hold, workspace timeline), `landing-demo` (each demo by pointer and by keyboard alone, both motion modes, 390 px), `timing-budget`. Changed specs (each change is in its commit message and marked RECONCILED): `transitions.spec.ts` and `timing-budget.spec.ts` (route changes are instant: they assert no view transition starts and the sidebar and top bar do not move), `landing.spec.ts` (hero loop tests became "rests until touched", band order, #walk, hero action is the sample case), `testids.ts` (landing contract), `a11y.spec.ts` and `reduced-motion.spec.ts` (tests added only).
 
-Bundle (`next build`, route `/`): 3.63 kB route / 122 kB first load before; 38.5 kB / 195 kB now. About 12 kB of the shared growth is the experimental React that `viewTransition` switches on (every route); the rest is the five demos and their sample data. The animation features of `motion` load on demand (not in first load).
+Bundle (`next build`, route `/`): 3.63 kB route / 122 kB first load before; 38.6 kB / 183 kB now (shared first-load JS 104 kB before, 103 kB now). The growth is the five demos and their sample data; the animation features of `motion` load on demand (not in first load).
 
 ## Screenshots (`docs/handoff/frontend-endeavours-shots/`, dev server, reduced motion so frames are at rest; the round "N" is Next's dev indicator)
 1. `1-landing-hero-1440.png` hero after filing the FIR. 2. `2-landing-hero-390.png`. 3. `3-landing-check-1440.png` rights timeline. 4. `4-landing-hold-1440.png` gate held with its list. 5. `5-workspace-rights-timeline-1440.png` Check rights step. 6. `6-workspace-source-sheet-390.png` the source sheet with its grabber. Before/after shots of every step were taken in the session scratchpad only.
@@ -53,11 +54,11 @@ Bundle (`next build`, route `/`): 3.63 kB route / 122 kB first load before; 38.5
 - Pull-to-open on touch in the Read demo: a vertical pull would take over page scrolling; a finger taps instead.
 - J/K navigation in the landing's batch-desk band: the band is a static ranking with a link to the real desk, which has the keyboard path.
 - Privacy "swap names" toggle from the ideation: the sample case is already pseudonymised and inventing real-looking names would be made-up data, so the demo shows the four VS_EXTERNAL settings and the FIR line as it would be sent.
+- Route transitions: instant by the owner's decision. A crossfade needs Next's `experimental.viewTransition`, which runs the app on the experimental React channel and added about 12 kB to every route.
 - React's shared `<ViewTransition name>` for the title: it did not pair between the top bar and the page in Next 15's experimental React, so the morph is a measured FLIP (`components/motion/Morph.tsx`).
 
 ## Known issues
 - `loading.tsx` skeletons rarely show: the static pages are prefetched whole in production; they exist for slow first navigations. The workspace skeleton (dynamic import) is the one users see; the a11y spec measures it against the real layout.
-- `experimental.viewTransition` runs Next on the experimental React channel. If that is unwanted, remove the flag: `PageTransition` falls back to a fragment and everything else still works (route crossfades stop).
 - Specs that open the landing with a `#hash` wait 500 ms for hydration and the band reveal before pointer work; without it Tab or drag can land before handlers attach.
 - In a strict live build (`NEXT_PUBLIC_API_MODE=live`, the product default) case-0007 may not exist on the server, so "Try the sample case" and the close go to `/cases` (and "Resolve them in the sample case" to the walk); the demos themselves always work.
 - main moved to 42c2f0f (Rights API `verification` field, optional `VS_API_TOKEN`): not merged here; the UI does not send a token, as asked.

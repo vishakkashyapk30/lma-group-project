@@ -133,19 +133,19 @@ One easing: `--ease: cubic-bezier(0.2, 0, 0, 1)`. The older `--ease-*` names are
 | `--dur-base` | 180 ms | menus, dialogs, sidebar width |
 | `--dur-slow` | 250 ms | entrance, reveal, drawers (the ceiling for time-based motion) |
 | `--dur-gesture-max` | 450 ms | longest settle of a spring released from a drag |
-| `--ease-spring` | `linear(...)` | time-based curve that looks like a critically damped spring (tab indicator, route content) |
+| `--ease-spring` | `linear(...)` | time-based curve that looks like a critically damped spring (tab indicator, step slide) |
 
 Motion budget:
 
 - Landing first paint (hero text): one fade and 6 px rise on the hero, 250 ms, no delay, no stagger. Total intro: 250 ms.
 - Landing sections: one fade and 6 px rise, 250 ms, once, only for sections that start below the fold. Content is visible without JavaScript and under reduced motion.
-- App: dialogs, menus, toasts and drawers 180 to 250 ms. Route changes crossfade (see "Route transitions" below).
+- App: dialogs, menus, toasts and drawers 180 to 250 ms. Route changes are instant (see "Route transitions" below).
 
 ### Direct manipulation and springs
 
 Two kinds of motion, with different budgets:
 
-- **Time-based motion** (anything that plays without the user's hand: reveals, crossfades, route transitions, menus, the tab indicator) stays at 150 to 300 ms with `--ease` or `--ease-spring` (a `linear()` sampling of a critically damped spring). Decorative motion never exceeds 300 ms.
+- **Time-based motion** (anything that plays without the user's hand: reveals, crossfades, menus, the tab indicator, the step slide) stays at 150 to 300 ms with `--ease` or `--ease-spring` (a `linear()` sampling of a critically damped spring). Decorative motion never exceeds 300 ms.
 - **Gesture-driven motion** (the user drags a panel, a sheet, a landing demo card, the gate button): the element follows the pointer 1:1 and is released into a spring that carries the gesture's velocity. These springs are critically damped or nearly so (bounce at most 0.15 in the app, 0.2 on the landing demos) and settle within 450 ms (`--dur-gesture-max`). Past a limit, a dragged element resists with the rubber-band curve `offset = (1 - 1 / (x * 0.55 / d + 1)) * d` (x = distance past the limit, d = the element's allowance) and springs back on release. Gestures can be interrupted: grabbing a moving element stops it where it is.
 
 Spring parameters (mass 1, stiffness `(2π/T)²`, damping `4π(1-b)/T` from a perceptual duration T and bounce b; helpers in `lib/motion`):
@@ -165,7 +165,7 @@ Rules:
 - **Parity.** Every drag has a button and a keyboard path that does the same thing (Escape or a Close button closes a panel; a button adds the FIR in the landing demo; Enter opens a source). Dragging is an enhancement, never the only way. Focus stays visible on every handle.
 - **Reduced motion** (system or in-app): springs are replaced by an instant jump or a 100 ms opacity fade; rubber-banding is off (the element stops at its limit); route transitions do not animate.
 - **Press feedback.** Buttons and drag handles scale to 0.97 on press (100 ms) and come back on release; no lift on touch.
-- **Route transitions.** Content crossfades with a 6 px rise in at most 250 ms; the sidebar, the top bar and the case stepper do not move.
+- **Route transitions.** Instant, by decision: a crossfade needed Next's `experimental.viewTransition`, which runs the app on the experimental React channel and adds about 12 kB to every route. The sidebar, the top bar and the case stepper never move. Inside a case a step change slides 12 px by direction (CSS, 200 ms), and the case title still moves from its card into the top bar (a measured FLIP, `components/motion/Morph.tsx`), neither of which needs the flag.
 
 Landing motion (styles/landing.css; every element rests in its final state, so reduced motion, no-JS and the end of a run look identical):
 
@@ -181,7 +181,7 @@ Landing motion (styles/landing.css; every element rests in its final state, so r
 `components/shell`: AppShell, Sidebar, MobileDrawer, TopBar (with ModeChip and help menu), CommandPalette, ShellProvider (palette, new-case, drawer, collapsed state, Ctrl/Cmd+K), `meta.ts` (case title and stage published to the top bar), `nav.ts` (single list of destinations).
 `components/common`: Logo (mark, mark only, reversed), PageHeader, StatusBadge (icon and word, no pill), SourceChip, AgentGlyph.
 `components/agents/AgentSignature`: a quiet one-line status with a small glyph that breathes while the agent runs.
-`components/landing`: LandingPage, `demos/` (FileDemo, ReadDemo, CheckDemo, HoldDemo, DraftDemo, SparDemo, PrivacyDemo), DeskBand, CloseBand, ContinueCase, Footer, Reveal, `sample.ts`. `components/rights/RightsTimeline` (shared with the Check rights step), `components/common/HoldButton`, `components/motion` (PageTransition, Morph, MotionProvider).
+`components/landing`: LandingPage, `demos/` (FileDemo, ReadDemo, CheckDemo, HoldDemo, DraftDemo, SparDemo, PrivacyDemo), DeskBand, CloseBand, ContinueCase, Footer, Reveal, `sample.ts`. `components/rights/RightsTimeline` (shared with the Check rights step), `components/common/HoldButton`, `components/motion` (Morph, MotionProvider).
 `components/workspace`: WorkspaceShell (stepper row, step, side panel, drawers), StageRail, StepView and `tabs/*` (one view per step), StepFrame and StepFooter, NeedsYou, SidePanel and SourcePanel, ChatPane, TraceDrawer, GateModal (confirm dialog), DocumentsMenu, ProgressLine, ChangeBanner.
 `components/settings`: SettingsPage (server address, live/demo mode, connection, the server's model, privacy and data settings).
 

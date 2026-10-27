@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import type { ReactElement, ReactNode } from "react";
 import { NewCaseDialog } from "@/components/cases/NewCaseDialog";
-import { PageTransition } from "@/components/motion/PageTransition";
 import { ToastProvider } from "@/components/ui/toast";
 import { CommandPalette } from "./CommandPalette";
 import { MobileDrawer } from "./MobileDrawer";
@@ -19,14 +18,14 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
   return (
     <ToastProvider>
       {isLanding ? (
-        <main id="main" tabIndex={-1} className="outline-none"><PageTransition routeKey={path}>{children}</PageTransition></main>
+        <main id="main" tabIndex={-1} className="outline-none">{children}</main>
       ) : (
         <ShellProvider>
           <div className="flex min-h-dvh">
             <Sidebar />
             <div className="flex min-w-0 flex-1 flex-col">
               <TopBar />
-              <main id="main" tabIndex={-1} className="min-w-0 flex-1 outline-none"><PageTransition routeKey={path}>{children}</PageTransition></main>
+              <main id="main" tabIndex={-1} className="min-w-0 flex-1 outline-none">{children}</main>
             </div>
           </div>
           <MobileDrawer />

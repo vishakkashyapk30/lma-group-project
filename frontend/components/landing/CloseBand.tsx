@@ -39,7 +39,7 @@ export function CloseBand(): ReactElement {
       </div>
       <div data-rv style={rv(3)} className="mt-12 grid gap-6 border-t border-cream/20 pt-6 text-sm text-gold-pale md:grid-cols-2">
         <p>
-          <span className="font-semibold text-cream">Who built it.</span> A team of four at IIIT Hyderabad, as the LMA Group Project 2026: a bail-preparation tool for legal-aid counsel, not a service for the public.
+          <span className="font-semibold text-cream">Who built it.</span> Vishak Kashyap K, Shravani K, Satvik Rao and Harshita Kumari, IIIT Hyderabad, as the LMA Group Project 2026. It is a bail-preparation tool for legal-aid counsel, not a service for the public.
         </p>
         <p>
           <span className="font-semibold text-cream">How it is tested.</span> Each part is measured against simpler baselines on test sets drawn from court text, official tables and existing datasets. No hand-made labels, and no model grades its own work.{" "}

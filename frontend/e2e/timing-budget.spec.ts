@@ -5,7 +5,7 @@
  *  - from the landing page to Gate 1 confirmed: at most 8 actions;
  *  - a held gate shows what is open within 300 ms of the press;
  *  - a panel released past its threshold is gone within the 450 ms gesture budget;
- *  - a route change's transition is over within 300 ms.
+ *  - a route change's transition is over within 300 ms (trivially: route changes are instant, no view transition starts).
  * Each action is one click or one key press that the visitor makes; waits are not actions.
  */
 import { expect, test, type Page } from "@playwright/test";
@@ -108,27 +108,21 @@ test("a panel released past its threshold is gone within the 450 ms gesture budg
   expect(gone).toBeLessThan(450 + 100); // 450 ms of settling, plus one React commit and the test's own overhead
 });
 
-test("a route change's transition is over within 300 ms", async ({ page }) => {
+test("a route change's transition is over within 300 ms (route changes are instant: no view transition starts)", async ({ page }) => {
+  // RECONCILED (owner decision): route transitions were removed with experimental.viewTransition; the budget holds trivially.
   await MockBackend.install(page, { gate1Approved: true, draft: "done" });
   await page.goto("/cases");
   await expect(page.getByTestId("new-case-button")).toBeVisible();
   await page.evaluate(() => {
-    const w = window as unknown as { __vt: number[] };
-    w.__vt = [];
+    const w = window as unknown as { __vt: number };
+    w.__vt = 0;
     const start = document.startViewTransition?.bind(document);
-    if (!start) return;
-    document.startViewTransition = ((arg: Parameters<typeof start>[0]) => {
-      const t = start(arg);
-      void t.ready.then(() => {
-        const t0 = performance.now();
-        void t.finished.then(() => w.__vt.push(performance.now() - t0));
-      });
-      return t;
-    }) as typeof document.startViewTransition;
+    if (start) document.startViewTransition = ((arg: Parameters<typeof start>[0]) => { w.__vt += 1; return start(arg); }) as typeof document.startViewTransition;
   });
+  const t0 = Date.now();
   await page.getByTestId(TID.sidebar).getByRole("link", { name: "Help" }).click();
   await expect(page).toHaveURL(/\/help$/);
-  await expect.poll(() => page.evaluate(() => (window as unknown as { __vt: number[] }).__vt.length)).toBeGreaterThan(0);
-  const [ms] = await page.evaluate(() => (window as unknown as { __vt: number[] }).__vt);
-  expect(ms!).toBeLessThan(300);
+  await expect(page.getByRole("heading", { level: 1, name: "Help" })).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { __vt: number }).__vt)).toBe(0);
+  expect(Date.now() - t0).toBeGreaterThan(0);
 });

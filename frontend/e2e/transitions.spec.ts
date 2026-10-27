@@ -1,7 +1,11 @@
 /**
- * Route and step transitions (DESIGN.md "Route transitions"; docs/handoff/frontend-endeavours-ideation.md section 6): page
- * content crossfades in at most 250 ms while the sidebar and the top bar stay put; nothing animates under reduced motion; a
- * step change slides from the side it comes from; the tab indicator follows the chosen tab.
+ * Route and step transitions (DESIGN.md "Route transitions"; docs/handoff/frontend-endeavours-ideation.md section 6): a step
+ * change slides from the side it comes from; the tab indicator follows the chosen tab; the case title carries over.
+ *
+ * RECONCILED (owner decision, 2026-10-27): route changes are instant. The crossfade needed Next's experimental.viewTransition
+ * (the experimental React channel and about 12 kB on every route), so the flag was removed. What the crossfade tests protected
+ * is kept: the sidebar and the top bar do not move during a navigation, nothing animates under reduced motion; and the tests
+ * now also assert that no view transition is started at all.
  */
 import { expect, test, type Page } from "@playwright/test";
 import { MockBackend } from "./mockBackend";
@@ -37,7 +41,7 @@ test.describe("route transitions, motion allowed", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
   });
 
-  test("navigating crossfades the content within 250 ms and the sidebar and top bar do not move", async ({ page }) => {
+  test("navigating swaps the page at once: no view transition, and the sidebar and top bar do not move", async ({ page }) => {
     await page.goto("/cases");
     await expect(page.getByTestId("new-case-button")).toBeVisible();
     await recordTransitions(page);
@@ -52,29 +56,8 @@ test.describe("route transitions, motion allowed", () => {
       await page.waitForTimeout(40);
     }
     await expect(page).toHaveURL(/\/desk$/);
-    await expect.poll(async () => (await transitions(page)).length).toBeGreaterThan(0);
-    await expect.poll(async () => (await transitions(page))[0]!.anims.length).toBeGreaterThan(0);
-    const [first] = await transitions(page);
-    const longest = Math.max(...first!.anims.map((a) => a.ms));
-    expect(longest).toBeLessThanOrEqual(250);
-    expect(first!.anims.some((a) => a.pseudo.startsWith("::view-transition-new"))).toBe(true);
-    // Nothing of the transition is left running shortly after.
     await page.waitForTimeout(300);
-    const left = await page.evaluate(() => document.getAnimations().filter((a) => (a.effect as KeyframeEffect | null)?.pseudoElement?.startsWith("::view-transition") && a.playState === "running").length);
-    expect(left).toBe(0);
-  });
-
-  test("clicks during a transition are not lost (the transition layer ignores the pointer)", async ({ page }) => {
-    await page.goto("/cases");
-    const pe = await page.evaluate(() => {
-      for (const sheet of [...document.styleSheets]) {
-        try {
-          for (const r of [...sheet.cssRules]) if (r.cssText.startsWith("::view-transition {") && r.cssText.includes("pointer-events: none")) return true;
-        } catch { /* cross-origin sheet */ }
-      }
-      return false;
-    });
-    expect(pe).toBe(true);
+    expect(await transitions(page)).toEqual([]);
   });
 
   test("a step change slides from the side it comes from", async ({ page }) => {
@@ -141,7 +124,7 @@ test.describe("route transitions, prefers-reduced-motion: reduce", () => {
     await page.getByTestId(TID.sidebar).getByRole("link", { name: "Precedent library" }).click();
     await expect(page).toHaveURL(/\/library$/);
     await page.waitForTimeout(200);
-    for (const t of await transitions(page)) for (const a of t.anims) expect(a.ms, a.pseudo).toBe(0);
+    expect(await transitions(page)).toEqual([]);
     await page.goto("/cases");
     await page.locator("article a").first().click();
     await expect(page).toHaveURL(/\/case\//);
