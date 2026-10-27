@@ -3,7 +3,9 @@
 import { MOCK_BRIEF, MOCK_DOSSIER, MOCK_INGESTION, MOCK_RIGHTS, MOCK_SPAR, MOCK_TIMELINE } from "@/lib/mock/case0007";
 import { MOCK_DESK_TITLES, MOCK_TRIAGE_CARDS } from "@/lib/mock/desk";
 import { MOCK_LIBRARY_RESULTS } from "@/lib/mock/library";
+import { dossierEntries } from "@/lib/fields";
 import type { SourceRef } from "@/lib/types";
+import { rawChecklistItems } from "@/lib/workspace/checklist";
 
 export const SAMPLE_TITLE = "State v. Accused-1, FIR 112/2024, PS-1";
 
@@ -122,3 +124,13 @@ export const DESK_CARDS = MOCK_TRIAGE_CARDS.slice(0, 6).map((c) => ({
   reason: c.reasons[0] ?? "",
   missing: c.missing_docs,
 }));
+
+/** The sample's two gates, listed by the same code the workspace uses (lib/workspace/checklist.ts). */
+const CHECK_INPUT = { dossier: MOCK_DOSSIER, brief: MOCK_BRIEF, spar: MOCK_SPAR };
+export const GATE1_ITEMS = rawChecklistItems("GATE_1_DOSSIER", CHECK_INPUT);
+export const GATE2_ITEMS = rawChecklistItems("GATE_2_EXPORT", CHECK_INPUT).filter((i) => i.kind !== "UNSUPPORTED");
+export const GATE1_LOCKS = [
+  `${dossierEntries(MOCK_DOSSIER).length} facts as shown. Changing one later asks you to confirm again.`,
+  `The List of Dates, ${MOCK_TIMELINE.length} events.`,
+  "Drafting starts from these facts.",
+];

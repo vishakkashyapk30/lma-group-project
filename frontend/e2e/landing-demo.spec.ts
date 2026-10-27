@@ -206,3 +206,60 @@ for (const motion of ["no-preference", "reduce"] as const) {
     });
   });
 }
+
+for (const motion of ["no-preference", "reduce"] as const) {
+  test.describe(`hold: the gates (${motion})`, () => {
+    test.use({ reducedMotion: motion });
+    test.beforeEach(async ({ page }) => {
+      await MockBackend.install(page);
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto("/#hold");
+      await page.waitForTimeout(500);
+    });
+
+    test("pointer: pulling the held gate moves it at most 12 px (none under reduced motion) and lists what is open; resolve, confirm, then export holds", async ({ page }) => {
+      const demo = page.getByTestId("hold-demo");
+      const gate = demo.getByTestId("gate1-demo-button");
+      await expect(gate).toContainText("(1 open)");
+      const b = (await gate.boundingBox())!;
+      await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(b.x + b.width / 2 + 200, b.y + b.height / 2, { steps: 12 });
+      const off = await gate.evaluate((el) => Number((el as HTMLElement).dataset.holdOffset ?? 0));
+      if (motion === "reduce") expect(off).toBe(0);
+      else { expect(off).toBeGreaterThan(3); expect(off).toBeLessThan(12); }
+      await page.mouse.up();
+      const list = demo.getByTestId("gate1-list");
+      await expect(list).toBeVisible();
+      await expect(list.getByTestId("gate1-item")).toHaveCount(1);
+      await expect(list).toContainText("Antecedents");
+      await list.getByRole("button", { name: "Mark as unknown" }).click();
+      await expect(gate).toBeEnabled();
+      await gate.click();
+      await expect(demo.getByTestId("gate1-confirm")).toContainText("What this locks");
+      await demo.getByTestId("gate1-confirm-button").click();
+      await expect(demo.getByTestId("gate1-confirmed")).toBeVisible();
+      const gate2 = demo.getByTestId("gate2-demo-button");
+      await expect(gate2).toBeDisabled();
+      await gate2.click({ force: true });
+      await expect(demo.getByTestId("gate2-item")).toHaveCount(4);
+      await expect(page.getByRole("button", { name: /export as/i })).toHaveCount(0);
+    });
+
+    test("keyboard alone: Enter on the held gate opens the list with focus on its action, and the whole flow completes", async ({ page }) => {
+      const demo = page.getByTestId("hold-demo");
+      await tabTo(page, demo.getByTestId("gate1-demo-button"));
+      await page.keyboard.press("Enter");
+      await expect(demo.getByTestId("gate1-list").getByRole("button", { name: "Mark as unknown" })).toBeFocused();
+      await page.keyboard.press("Enter");
+      await tabTo(page, demo.getByTestId("gate1-demo-button"), 10);
+      await page.keyboard.press("Enter");
+      await expect(demo.getByTestId("gate1-confirm-button")).toBeFocused();
+      await page.keyboard.press("Enter");
+      await expect(demo.getByTestId("gate1-confirmed")).toBeVisible();
+      await tabTo(page, demo.getByTestId("gate2-demo-button"), 10);
+      await page.keyboard.press("Enter");
+      await expect(demo.getByTestId("gate2-list").getByRole("link", { name: /sample case/ })).toBeFocused();
+    });
+  });
+}

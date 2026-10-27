@@ -12,6 +12,7 @@ import { ContinueCase } from "./ContinueCase";
 import { Footer } from "./Footer";
 import { CheckDemo } from "./demos/CheckDemo";
 import { FileDemo } from "./demos/FileDemo";
+import { HoldDemo } from "./demos/HoldDemo";
 import { ReadDemo } from "./demos/ReadDemo";
 import { Reveal } from "./Reveal";
 
@@ -113,6 +114,21 @@ export function LandingPage(): ReactElement {
           </div>
           <div data-rv style={rv(2)}>
             <CheckDemo />
+          </div>
+        </Reveal>
+      </section>
+
+      {/* Hold: cream, maroon actions */}
+      <section id="hold" aria-labelledby="hold-heading" className="scroll-mt-4 border-y border-line bg-cream">
+        <Reveal className="mx-auto grid max-w-[76rem] items-start gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16 lg:py-20">
+          <div>
+            <h2 id="hold-heading" data-rv style={rv(0)} className="max-w-[18ch] font-display text-3xl font-semibold lg:text-4xl">Nothing goes ahead until you confirm it</h2>
+            <p data-rv style={rv(1)} className="mt-4 max-w-[30rem] text-lg text-ink-soft">
+              Two approvals belong to counsel and the server enforces them: the facts before drafting, and the draft before export. A gate that is not ready shows what is still open when you try it.
+            </p>
+          </div>
+          <div data-rv style={rv(2)}>
+            <HoldDemo />
           </div>
         </Reveal>
       </section>

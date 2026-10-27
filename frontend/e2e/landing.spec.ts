@@ -19,7 +19,7 @@ import { seriousAxeViolations } from "./helpers";
 import { TEXT, TID } from "./testids";
 
 /** The band headings of DESIGN.md "Landing band order", top to bottom. */
-const BANDS = ["How it works", "Open a fact and see the words behind it", "Check bail rights against the dates", "What you stay in control of", "Justice, social, economic and political."];
+const BANDS = ["How it works", "Open a fact and see the words behind it", "Check bail rights against the dates", "Nothing goes ahead until you confirm it", "What you stay in control of", "Justice, social, economic and political."];
 
 const hero = (page: Page) => page.locator("section[aria-labelledby='hero-heading']");
 const heroDemo = (page: Page) => page.getByTestId("file-demo");
