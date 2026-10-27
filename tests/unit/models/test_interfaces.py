@@ -244,8 +244,20 @@ def test_factory_does_not_expose_labeler_or_teacher_getter():
     from vakeel_sahayak.models import factory
 
     public = {n for n in vars(factory) if n.startswith("get_")}
-    # RECONCILED: get_tts (Sarvam Bulbul, test-set construction) and get_langid (Sarvam /text-lid) are not labeler/teacher getters.
-    assert public == {"get_llm", "get_vision", "get_ocr", "get_asr", "get_translator", "get_nli", "get_embedder", "get_tts", "get_langid"}
+    # RECONCILED: get_tts (Sarvam Bulbul, test-set construction) and get_langid (Sarvam /text-lid) are not labeler/teacher getters;
+    # get_llm_model builds the client of an AGENT role with an explicit model id (the B0L baseline), not a labeler or a teacher.
+    assert public == {
+        "get_llm",
+        "get_llm_model",
+        "get_vision",
+        "get_ocr",
+        "get_asr",
+        "get_translator",
+        "get_nli",
+        "get_embedder",
+        "get_tts",
+        "get_langid",
+    }
 
 
 # ---------------------------------------------------------------------------------------------------------------------
