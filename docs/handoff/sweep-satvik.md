@@ -16,13 +16,14 @@ Arms on Sarvam-105B over the 50 T1 dev cases (25 for the last three), in priorit
 | S10 (no Abhiyojak isolation) | 50 | 48 | C8 |
 | S1 (retrieval self-critique) | 25 | 34 | C10 |
 | S15 (reasoning-first output) | 25 | 29 | C26, C27 |
+| S15b (free text then parse) | 25 | 29 | C26, C27 (could) |
 | S11 (three-role review) | 25 | 29 | C7 (could) |
-| total | | about 410 | |
+| total | | about 440 | |
 
 You decide how much to spend. Full + b0 + S3 is about INR 120, the first seven rows about INR 320. An arm that does not fit the cap is stopped by the ledger (it refuses the call that would pass your cap), and the arm stays partial: run it again later or leave it. `scripts/sweep_sarvam_block.sh plan` prints this table from the config.
 
 ## Steps
-1. `git fetch && git checkout <TAG>` where `<TAG>` is the code tag the owner gives you (all runs must come from the same code: the manifest records the commit and the collect step refuses a different one).
+1. `git fetch --tags && git checkout dev-sweep-v1`. The pinned code tag is **`dev-sweep-v1`** (commit efd0ce4; all runs must come from exactly this code: every manifest records `git_sha` and `git_dirty`, and the collect step refuses a different commit). Use a clean checkout: `git checkout dev-sweep-v1` with no local edits to `src/` or `configs/` (the run records `git_dirty`).
 2. `make setup`, then `make data` (you need `data/testsets/t1` and `data/stores`; `RAW=0 make data` skips the raw 1.8 GB). For the real DeBERTa claim checker, which the owner's runs use: `.venv/bin/pip install -e '.[nli]'` (needs torch; without it the run falls back to an offline NLI and records that, and the unsupported-fact rates are then not comparable: say so when you send the results).
 3. Put your key in your own untracked `.env`: `SARVAM_API_KEY=...` (never commit or print it). Do not copy the owner's `.env`.
 4. Choose your cap and run (resumable: Ctrl-C any time and run the same command again; finished cases are skipped):

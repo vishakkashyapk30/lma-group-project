@@ -57,7 +57,9 @@ def jobs_for(cfg: dict, args: argparse.Namespace) -> list[dict]:
     jobs = []
     wanted = {a.lower() for a in args.arms.split(",")} if args.arms else None
     for arm in cfg["arms"]:
-        if arm["phase"] != args.phase or arm.get("status") == "done":
+        cap = getattr(args, "n", None)
+        arm = dict(arm, **({"n": min(int(arm["n"]), cap)} if cap else {}))
+        if arm["phase"] != args.phase or (arm.get("status") == "done" and not getattr(args, "include_done", False)):
             continue
         if args.backend and arm["backend"] != args.backend:
             continue
@@ -96,6 +98,7 @@ def launch_study(job: dict, cfg: dict, args: argparse.Namespace) -> list[subproc
     shards = args.shards if job["study"] == "m17" else 1
     env = dict(os.environ)
     env.update({k: str(v) for k, v in cfg["backends"][arm["backend"]]["env"].items()})
+    env["OMP_NUM_THREADS"] = env["MKL_NUM_THREADS"] = "2"
     env["PYTHONPATH"] = str(REPO / "src") + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
     logs = root / "logs"
     logs.mkdir(parents=True, exist_ok=True)
@@ -128,6 +131,7 @@ def launch(job: dict, cfg: dict, args: argparse.Namespace) -> list[subprocess.Po
         return []
     env = dict(os.environ)
     env.update({k: str(v) for k, v in cfg["backends"][arm["backend"]]["env"].items()})
+    env["OMP_NUM_THREADS"] = env["MKL_NUM_THREADS"] = "2"
     env["PYTHONPATH"] = str(REPO / "src") + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")  # run THIS checkout's code (a pinned git worktree), not another editable install
     logs = root / "logs"
     logs.mkdir(parents=True, exist_ok=True)
@@ -157,6 +161,8 @@ def main() -> int:
     r.add_argument("--shard-index", type=int, default=None, help="run only this shard of --shards (one Ada session per shard: scripts/ada/run_sweep_ada.sh); default: all shards here")
     r.add_argument("--parallel", type=int, default=1, help="arms running at the same time (each with --shards processes)")
     r.add_argument("--dry-run", action="store_true")
+    r.add_argument("--include-done", action="store_true", help="also run arms marked done (the rerun of the baselines on the pinned code)")
+    r.add_argument("--n", type=int, default=None, help="cap the number of cases of every arm (budget-limited runs)")
     args = ap.parse_args()
     if args.shard_index is not None and not 0 <= args.shard_index < args.shards:
         ap.error(f"--shard-index {args.shard_index} is outside 0..{args.shards - 1}")
