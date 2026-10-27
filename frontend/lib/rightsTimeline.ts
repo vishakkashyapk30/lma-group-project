@@ -38,24 +38,50 @@ export function courtDate(iso: string): string {
 
 const n = (x: number) => x.toLocaleString("en-IN");
 
-/** Read the timeline's dates from a Rights Radar report; null when the arrest date is missing. */
-export function timelineFromReport(report: RightsReport, antecedentsKnown: boolean): TimelineInput | null {
+/** Dates the dossier gives, used when a report carries no `dates` of its own. */
+export interface DossierDates {
+  arrest?: string | null;
+  firstRemand?: string | null;
+  chargeSheet?: string | null;
+}
+
+const num = (s: string) => Number(s.replace(/,/g, ""));
+
+/**
+ * Read the timeline's dates from a Rights Radar report; null when the arrest date is missing. A report without `dates`
+ * (the API may omit them) falls back to the dossier's dates and to the day counts the Radar states in its own detail
+ * ("60-day limit", "852 days ... and 1,278 days"); nothing is worked out from the law here.
+ */
+export function timelineFromReport(report: RightsReport, antecedentsKnown: boolean, dossier: DossierDates = {}): TimelineInput | null {
   const def = report.checks.find((c) => c.check === "default_bail");
   const ut = report.checks.find((c) => c.check === "undertrial_limit");
-  const arrest = ut?.dates?.arrest_date ?? def?.dates?.arrest_date ?? null;
+  const arrest = ut?.dates?.arrest_date ?? def?.dates?.arrest_date ?? dossier.arrest ?? null;
   if (!arrest) return null;
-  const d60 = def?.dates?.day_60 ?? null;
-  const d90 = def?.dates?.day_90 ?? null;
+  const firstRemand = def?.dates?.first_remand ?? dossier.firstRemand ?? null;
+  let limitEnd = def?.dates?.day_60 ?? def?.dates?.day_90 ?? null;
+  let limitDays: 60 | 90 | null = def?.dates?.day_60 ? 60 : def?.dates?.day_90 ? 90 : null;
+  const stated = /\b(60|90)-day limit/.exec(def?.detail ?? "");
+  if (!limitEnd && stated && firstRemand) {
+    limitDays = Number(stated[1]) as 60 | 90;
+    limitEnd = addDays(firstRemand, limitDays - 1); // day 1 is the first remand
+  }
+  let oneThird = ut?.dates?.one_third ?? null;
+  let oneHalf = ut?.dates?.one_half ?? null;
+  const thresholds = /([\d,]+) days for a first-time offender.*?([\d,]+) days otherwise/.exec(ut?.detail ?? "");
+  if ((!oneThird || !oneHalf) && thresholds) {
+    oneThird = addDays(arrest, num(thresholds[1]!));
+    oneHalf = addDays(arrest, num(thresholds[2]!));
+  }
   return {
     arrest,
     asOf: report.as_of,
-    firstRemand: def?.dates?.first_remand ?? null,
-    limitEnd: d60 ?? d90,
-    limitDays: d60 ? 60 : d90 ? 90 : null,
-    chargeSheet: def?.dates?.charge_sheet ?? null,
+    firstRemand,
+    limitEnd,
+    limitDays,
+    chargeSheet: def?.dates?.charge_sheet ?? dossier.chargeSheet ?? null,
     defaultStatus: def?.status ?? "UNKNOWN",
-    oneThird: ut?.dates?.one_third ?? null,
-    oneHalf: ut?.dates?.one_half ?? null,
+    oneThird,
+    oneHalf,
     undertrialStatus: ut?.status ?? "UNKNOWN",
     antecedentsKnown,
   };

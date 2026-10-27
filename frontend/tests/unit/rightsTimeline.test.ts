@@ -62,3 +62,18 @@ describe("rights timeline on the sample case", () => {
     expect(fraction("2030-01-01", start, end)).toBe(1);
   });
 });
+
+describe("a report without dates (as the API may send it)", () => {
+  const bare = { ...MOCK_RIGHTS, checks: MOCK_RIGHTS.checks.map((c) => ({ ...c, dates: undefined })) };
+  it("falls back to the dossier's dates and the Radar's own day counts", () => {
+    const x = timelineFromReport(bare as typeof MOCK_RIGHTS, false, { arrest: "2024-08-20", firstRemand: "2024-08-21", chargeSheet: "2024-11-02" })!;
+    expect(x.limitDays).toBe(60);
+    expect(x.limitEnd).toBe("2024-10-19");
+    expect(x.oneThird).toBe("2026-12-20");
+    expect(x.oneHalf).toBe("2028-02-19");
+    expect(stateAt(x, "2025-02-18").defaultBail.word).toBe("Closed");
+  });
+  it("without an arrest date there is no timeline", () => {
+    expect(timelineFromReport(bare as typeof MOCK_RIGHTS, false, {})).toBeNull();
+  });
+});

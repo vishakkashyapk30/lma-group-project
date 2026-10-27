@@ -235,3 +235,28 @@ test.describe("the gate that holds, reduced motion", () => {
     await expect(page.getByTestId("gate-hold-list")).toBeVisible();
   });
 });
+
+test.describe("rights timeline in the Check rights step", () => {
+  test("it sits above the list, starts on the next date in the file, and the keyboard moves the hearing date", async ({ page }) => {
+    await MockBackend.install(page, { gate1Approved: true, draft: "done" });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/case/case-0007");
+    await page.getByTestId(TID.stage("III")).click();
+    const tl = page.getByTestId("workspace-rights-timeline");
+    await expect(tl).toBeVisible();
+    const before = await tl.getByTestId("hearing-date").innerText();
+    await tl.getByTestId("hearing-handle").focus();
+    await page.keyboard.press("Shift+ArrowRight");
+    await expect(tl.getByTestId("hearing-date")).not.toHaveText(before);
+    await expect(tl.getByTestId("word-default-bail")).not.toHaveText("Open.");
+    // The list stays the full record.
+    await expect(page.getByTestId(TID.rightsChip).first()).toBeVisible();
+    const calendarFirst = await page.evaluate(() => {
+      const cal = document.querySelector("[data-testid=rights-calendar]");
+      const chip = document.querySelector("[data-testid=rights-chip]");
+      return Boolean(cal && chip && cal.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+    expect(calendarFirst).toBe(true);
+    expect(await seriousAxeViolations(page)).toEqual([]);
+  });
+});
