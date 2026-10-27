@@ -10,8 +10,23 @@ The code with failing unit tests encoding the spec. All of `tests/unit/eval/test
 - **Dependency:** installed `numpy` + `scipy` into `.venv` (the full `.[eval]` extra pulls minicheck→torch, too heavy for this disk; only numpy/scipy are needed for the stats).
 - **Left as a stub (outdated, Checked by Vishak 2026-10-27: it was implemented afterwards, see `docs/handoff/regression-2026-10-26-b.md`):** `eval/metrics/unsupported_fact.py` — no test references it, so not implemented (implementing untested code risks the wrong spec).
 
+### HA-01 completed (2026-10-27, Harshita)
+- Vishak's 2026-10-27 commit `f114bca` added the unsupported-fact rate, `validate_checker` and the ingestion helpers (`by_kind`, `escalation_rate`, `questions_asked`); his versions are kept.
+- **Added here:** `mean_reciprocal_rank` and `ndcg_at_k` in `eval/metrics/retrieval.py` (document-level like `recall_at_k`; tests in `tests/unit/eval/test_ranking_metrics.py`), and the **null-agent audit** of plan 5.7 as a unit test (`tests/unit/eval/test_null_agent_audit.py`: empty brief, copy-the-facts, copy-the-checklist, argue-all-twelve, random citations, export without approval).
+- **Audit finding (xfail, strict):** `unsupported_fact_rate` returns 0.0 for a brief with no sentences; plan 5.7 says "no claims", not 0. For Vishak; the test flips when it is fixed.
+- **McNemar:** in Vishak's `eval/scoring/stats_extra.py` (`mcnemar_exact`); not duplicated into `eval/stats/`.
+- Not covered: the all-stores-removed abstention check (needs a real run).
+- Tests: `test_metrics`, `test_stats`, `test_null_agent_audit`, `test_ranking_metrics`: 62 passed, 1 xfailed; `ruff check src` clean.
+- **Open for Vishak:** `tool_call_accuracy.args_valid` requires an exact match to gold args (plan says "argument validity"); `false_eligible_rate` divides by all checks; empty-input conventions (recall/precision 1.0, slot fill 0.0); MiniCheck threshold to fix on dev.
+
 ## Still to do (not yet started)
-- **Statutes** (CrPC 1973, NDPS s.37, First Schedule): the store-build wiring exists but the PDF text must be fetched by a person (India Code blocks scripted access) — see AGENTS.md / progress.md §0f. Data task, not code.
+- **Statutes (HA-02):** the extraction was done by Vishak on 2026-10-26 (`scripts/extract_gap_statutes.py`, from official government PDFs; rows in the team data bundle under `data/gaps/statutes/`; see `data/README.md` "Gap-filling status"). Still missing (listed there): BNS/BNSS First Schedule flags, UAPA 43D(5) / PMLA 45 / BNS 318(4) text.
+
+### HA-02 review (2026-10-27, Harshita)
+- Installed the bundle (`RAW=0 make data-install`). Fixed `scripts/data_install.sh`: `sed -i` without a suffix fails on macOS (Vishak to review). The install's sanity check reports `gaps/: 14 files, manifest says 15` (about 4.6 KB missing, not one of the statute files); asked Vishak which file.
+- **Rows load:** `StatuteStore().open()` returns all 10 CrPC sections (41, 41A, 50, 57, 167, 436, 436A, 437, 438, 439) and NDPS 19, 24, 27A, 31A, 37; IPC 352/533 rows carry First Schedule flags. Spot checks right: IPC 302, 379, 420 and NDPS 37 cognisable and non-bailable.
+- **Tests:** `tests/unit/stores` + `tests/unit/tools_law_case` 221 passed.
+- **Text vs PDF:** every row has `source_url` and `retrieved`; 85-100% of each row's 8-word windows occur verbatim in `pdftotext` of its source PDF. The misses are the script's documented edits (footnote markers such as `1[may, and shall,` in CrPC 436, joined lines and list items), not changed wording.
 - **Rights Radar verification**: re-check the rule texts against the bare acts (review, not code).
 - **Proposal PDF + README/QA docs**: writing.
 

@@ -1,4 +1,4 @@
-"""Metrics: Recall@10 of court-cited precedents (G2), slot-fill rate, share of reasoning authorities, CHANGED used without qualification, overruled cited (plan §15.8)."""
+"""Metrics: Recall@10, MRR and nDCG@10 of court-cited precedents (G2), slot-fill rate, share of reasoning authorities, CHANGED used without qualification, overruled cited (plan §15.8)."""
 
 from __future__ import annotations
 
@@ -26,6 +26,51 @@ def recall_at_k(retrieved: list[str], gold: list[str], k: int = 10) -> float:
         return 1.0
     found = {_doc_id(item) for item in retrieved[:k]}
     return len(gold_set & found) / len(gold_set)
+
+
+def _doc_ranking(retrieved: list[str]) -> list[str]:
+    """Document ids in first-seen order (several paragraphs of one document are one entry, at its best rank)."""
+    return list(dict.fromkeys(_doc_id(item) for item in retrieved))
+
+
+def mean_reciprocal_rank(retrieved: list[str], gold: list[str]) -> float:
+    """Reciprocal rank of the first gold document (average it over queries for MRR).
+
+    Args:
+        retrieved: ranked items ('doc_id' or 'doc_id#para')
+        gold: gold document ids
+
+    Returns:
+        1 / rank of the first gold document in the document ranking, 0.0 when none is found (1.0 when there is no gold,
+        as in `recall_at_k`).
+    """
+    gold_set = set(gold)
+    if not gold_set:
+        return 1.0
+    for rank, doc in enumerate(_doc_ranking(retrieved), start=1):
+        if doc in gold_set:
+            return 1.0 / rank
+    return 0.0
+
+
+def ndcg_at_k(retrieved: list[str], gold: list[str], k: int = 10) -> float:
+    """Document-level nDCG@k with binary relevance.
+
+    Args:
+        retrieved: ranked items ('doc_id' or 'doc_id#para'); the first k items count, as in `recall_at_k`
+        gold: gold document ids
+
+    Returns:
+        DCG / ideal DCG, in [0, 1] (1.0 when there is no gold, as in `recall_at_k`).
+    """
+    import math
+
+    gold_set = set(gold)
+    if not gold_set:
+        return 1.0
+    dcg = sum(1.0 / math.log2(rank + 1) for rank, doc in enumerate(_doc_ranking(retrieved[:k]), start=1) if doc in gold_set)
+    ideal = sum(1.0 / math.log2(rank + 1) for rank in range(1, min(len(gold_set), k) + 1))
+    return dcg / ideal
 
 
 def slot_fill_rate(packs: list[EvidencePack]) -> float:
