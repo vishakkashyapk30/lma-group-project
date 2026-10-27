@@ -32,13 +32,23 @@ while read -r f oid; do
 done < "$M/.files.txt"
 echo "weights ready $(date +%T)"
 export HF_HUB_OFFLINE=1 VLLM_WORKER_MULTIPROC_METHOD=spawn
-"$W/venv/bin/vllm" serve "$M" --served-model-name qwen3-32b --quantization awq --dtype half --tensor-parallel-size 4 \
-  --max-model-len "${MAX_LEN:-8192}" --gpu-memory-utilization 0.90 --port 8000 --enforce-eager > "$W/vllm.log" 2>&1 &
-VP=$!
-for i in $(seq 1 120); do
-  if curl -s -m 5 localhost:8000/v1/models | grep -q qwen3-32b; then echo "READY node=$(hostname) $(date +%T)"; break; fi
-  kill -0 $VP 2>/dev/null || { echo "vllm exited"; tail -40 "$W/vllm.log"; exit 1; }
-  sleep 15
+# Turing (2080 Ti, compute capability 7.5) has no flash attention and no Marlin AWQ kernels, so the default backend may refuse to start. Try, in order:
+# the engine's own choice, the Triton attention backend, then the older xformers path (V0 engine). The first one that answers is kept; the log names it.
+ATTEMPTS=("" "VLLM_ATTENTION_BACKEND=TRITON_ATTN" "VLLM_USE_V1=0 VLLM_ATTENTION_BACKEND=XFORMERS")
+READY=0
+for A in "${ATTEMPTS[@]}"; do
+  echo "attempt: ${A:-default backend} $(date +%T)"
+  env $A "$W/venv/bin/vllm" serve "$M" --served-model-name qwen3-32b --quantization awq --dtype half --tensor-parallel-size 4 \
+    --max-model-len "${MAX_LEN:-8192}" --gpu-memory-utilization 0.90 --port 8000 --enforce-eager > "$W/vllm.log" 2>&1 &
+  VP=$!
+  for i in $(seq 1 120); do
+    if curl -s -m 5 localhost:8000/v1/models | grep -q qwen3-32b; then READY=1; echo "READY node=$(hostname) backend=${A:-default} $(date +%T)"; break; fi
+    kill -0 $VP 2>/dev/null || { echo "vllm exited with: ${A:-default}"; tail -15 "$W/vllm.log"; break; }
+    sleep 15
+  done
+  [ $READY = 1 ] && break
+  kill $VP 2>/dev/null; wait $VP 2>/dev/null; sleep 10
 done
+[ $READY = 1 ] || { echo "no backend worked on this GPU; see the log above"; exit 1; }
 curl -s localhost:8000/v1/chat/completions -H 'Content-Type: application/json' -d '{"model":"qwen3-32b","messages":[{"role":"user","content":"Name one ground for bail under the BNSS in one sentence."}],"max_tokens":60}' | head -c 600; echo
 wait $VP; tail -20 "$W/vllm.log"
