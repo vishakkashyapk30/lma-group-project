@@ -414,10 +414,17 @@ def test_rule_class_attributes_agree_with_yaml(load_yaml, rule_cls):
 
 
 @pytest.mark.parametrize("rule_cls", _rule_classes(), ids=lambda c: c.__name__)
-def test_rule_last_verified_is_unset_until_week_0(load_yaml, rule_cls):
-    """last_verified is None in both the class and the YAML until the week-0 check against the bare act sets it (plan §7.3)."""
+def test_rule_last_verified_is_null_or_a_past_date(load_yaml, rule_cls):
+    """last_verified is set only in the YAML (the class keeps None): null until the check against the bare act, then an ISO date that is not in the future (plan §7.3).
+
+    # RECONCILED: was "None in both until week 0"; the HA-03 check (docs/qa/rights-verification.md) set dates for three rules.
+    """
+    import datetime
+
     assert rule_cls.last_verified is None
-    assert load_yaml("rights_rules.yaml")[rule_cls.rule_id.value]["last_verified"] is None
+    value = load_yaml("rights_rules.yaml")[rule_cls.rule_id.value]["last_verified"]
+    if value is not None:
+        assert datetime.date.fromisoformat(str(value)) <= datetime.date.today()
 
 
 @pytest.mark.parametrize(
