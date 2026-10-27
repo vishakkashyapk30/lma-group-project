@@ -11,9 +11,11 @@ import { sampleCaseHref } from "@/lib/sampleCase";
 import { ContinueCase } from "./ContinueCase";
 import { Footer } from "./Footer";
 import { CheckDemo } from "./demos/CheckDemo";
+import { DraftDemo } from "./demos/DraftDemo";
 import { FileDemo } from "./demos/FileDemo";
 import { HoldDemo } from "./demos/HoldDemo";
 import { ReadDemo } from "./demos/ReadDemo";
+import { SparDemo } from "./demos/SparDemo";
 import { Reveal } from "./Reveal";
 
 const STEPS = [
@@ -129,6 +131,34 @@ export function LandingPage(): ReactElement {
           </div>
           <div data-rv style={rv(2)}>
             <HoldDemo />
+          </div>
+        </Reveal>
+      </section>
+
+      {/* Draft: parchment, document type */}
+      <section id="draft" aria-labelledby="draft-heading" className="scroll-mt-4 bg-parchment">
+        <Reveal className="mx-auto max-w-[76rem] px-4 py-16 sm:px-6 lg:py-20">
+          <h2 id="draft-heading" data-rv style={rv(0)} className="max-w-[24ch] font-display text-3xl font-semibold lg:text-4xl">Every ground cites its authority, word for word</h2>
+          <p data-rv style={rv(1)} className="mt-4 max-w-[40rem] text-lg text-ink-soft">
+            Each ground is drafted from the confirmed facts and quotes the paragraph of the judgment it relies on. A ground that fails its check stays in the draft, marked for you, instead of being dropped.
+          </p>
+          <div data-rv style={rv(2)} className="mt-8">
+            <DraftDemo />
+          </div>
+        </Reveal>
+      </section>
+
+      {/* Spar: cream */}
+      <section id="spar" aria-labelledby="spar-heading" className="scroll-mt-4 border-y border-line bg-cream">
+        <Reveal className="mx-auto grid max-w-[76rem] items-start gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16 lg:py-20">
+          <div>
+            <h2 id="spar-heading" data-rv style={rv(0)} className="max-w-[18ch] font-display text-3xl font-semibold lg:text-4xl">Hear the prosecution&apos;s objections first</h2>
+            <p data-rv style={rv(1)} className="mt-4 max-w-[30rem] text-lg text-ink-soft">
+              The draft is argued against with objections courts have recorded in similar cases, the unanswered one first. A reply names what it relies on, and only you can mark an objection answered.
+            </p>
+          </div>
+          <div data-rv style={rv(2)}>
+            <SparDemo />
           </div>
         </Reveal>
       </section>

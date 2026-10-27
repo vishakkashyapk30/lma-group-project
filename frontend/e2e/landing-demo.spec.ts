@@ -263,3 +263,64 @@ for (const motion of ["no-preference", "reduce"] as const) {
     });
   });
 }
+
+for (const motion of ["no-preference", "reduce"] as const) {
+  test.describe(`draft and spar (${motion})`, () => {
+    test.use({ reducedMotion: motion });
+    test.beforeEach(async ({ page }) => {
+      await MockBackend.install(page);
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto("/#draft");
+      await page.waitForTimeout(500);
+    });
+
+    test("draft: a numbered authority opens its paragraph word for word; the ground that failed its check stays, marked", async ({ page }) => {
+      const demo = page.getByTestId("draft-demo");
+      await expect(demo.getByTestId("draft-paragraph")).toContainText("Parity is attracted.");
+      await demo.getByTestId("draft-cite").nth(1).click();
+      await expect(demo.getByTestId("draft-paragraph")).toContainText("SC-2014-0463");
+      await expect(demo.getByTestId("draft-paragraph")).toContainText("Consistency in the exercise of discretion");
+      const flagged = demo.locator("[data-testid=draft-ground][data-check=NEEDS_REVIEW]");
+      await expect(flagged).toHaveCount(1);
+      await expect(flagged.getByTestId("draft-needs-check")).toHaveText(/Needs your check/);
+      await flagged.getByTestId("draft-cite").click();
+      await expect(demo.getByTestId("draft-good-law")).toHaveText(/Distinguished/);
+    });
+
+    test("draft, keyboard alone: Tab to an authority, Enter opens it, Enter again closes it", async ({ page }) => {
+      const demo = page.getByTestId("draft-demo");
+      const second = demo.getByTestId("draft-cite").nth(1);
+      await tabTo(page, second, 120);
+      await page.keyboard.press("Enter");
+      await expect(second).toHaveAttribute("aria-expanded", "true");
+      await page.keyboard.press("Enter");
+      await expect(demo.getByTestId("draft-paragraph")).toHaveCount(0);
+    });
+
+    test("spar: the unanswered objection comes first; writing a reply marks it answered by you", async ({ page }) => {
+      const demo = page.getByTestId("spar-demo");
+      const first = demo.getByTestId("spar-card").first();
+      await expect(first).toHaveAttribute("data-verdict", "UNANSWERED");
+      await first.getByTestId("spar-write").click();
+      await expect(first.getByTestId("spar-reply-input")).toBeFocused();
+      await expect(first.getByTestId("spar-reply-save")).toBeDisabled();
+      await page.keyboard.type("The applicant will not contact the complainant and will report to the police station weekly.");
+      await first.getByTestId("spar-reply-save").click();
+      await expect(first).toHaveAttribute("data-verdict", "ANSWERED");
+      await expect(first.getByTestId("spar-verdict")).toHaveText(/Answered by you/);
+      await expect(first.getByTestId("spar-mine")).toContainText("will not contact");
+    });
+
+    test("spar, keyboard alone: Tab to 'Write a reply', type, submit with the keyboard", async ({ page }) => {
+      const demo = page.getByTestId("spar-demo");
+      await tabTo(page, demo.getByTestId("spar-write"), 140);
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("No-contact condition offered.");
+      await page.keyboard.press("Tab");
+      await page.keyboard.press("Tab");
+      await expect(demo.getByTestId("spar-reply-save")).toBeFocused();
+      await page.keyboard.press("Enter");
+      await expect(demo.getByTestId("spar-card").first()).toHaveAttribute("data-verdict", "ANSWERED");
+    });
+  });
+}
