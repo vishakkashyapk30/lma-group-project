@@ -1,11 +1,12 @@
-// Button: maroon is the one accent and is reserved for the primary action. Everything else is quiet.
+// Button: maroon is the one accent and is reserved for the primary action. Everything else is quiet. Pressing scales it to
+// 0.97 in 100 ms and it springs back on release (`.press`, app/globals.css; DESIGN.md "Press feedback").
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { forwardRef, type ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 export const buttonVariants = cva(
-  "inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-md font-sans font-medium transition-[transform,opacity,background-color,color,border-color] duration-fast ease-standard focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 active:translate-y-px [&_svg]:size-4 [&_svg]:shrink-0",
+  "press inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-md font-sans font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {

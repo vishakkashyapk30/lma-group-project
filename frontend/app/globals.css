@@ -164,6 +164,18 @@
     transition: opacity var(--dur-slow) var(--ease), transform var(--dur-slow) var(--ease);
   }
 
+  /* Press feedback (DESIGN.md): 0.97 in 100 ms on press, back with the spring curve on release. Uses the individual
+     `scale` property so it composes with any transform (the landing's 1 px lift, drag offsets). */
+  .press {
+    transition: scale 220ms var(--ease-spring), opacity var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease),
+      color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+  }
+  .press:active:not(:disabled):not([aria-disabled="true"]) {
+    scale: 0.97;
+    transition-duration: 100ms;
+    transition-timing-function: var(--ease);
+  }
+
   /* Entrance on first paint: one quick fade and rise */
   .enter {
     animation: rise-in var(--dur-slow) var(--ease) both;
@@ -238,6 +250,8 @@
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
 }
+:root[data-motion="reduce"] .press:active { scale: none; }
+@media (prefers-reduced-motion: reduce) { .press:active { scale: none !important; } }
 :root[data-motion="reduce"] [data-reveal="pending"] {
   opacity: 1;
   transform: none;
