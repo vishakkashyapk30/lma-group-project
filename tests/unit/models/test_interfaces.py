@@ -132,6 +132,10 @@ def test_every_models_module_defines_a_known_client_or_is_a_known_helper():
         "vakeel_sahayak.models.openai",
         # RECONCILED: the paid-provider lock (owner decision 2026-10-28); a guard, not a client.
         "vakeel_sahayak.models.paid_lock",
+        # RECONCILED: providers by configuration (owner decision 2026-10-28): the registry reads configs/models.yaml `providers:`, and the hosted
+        # package's HostedLLMClient implements LLMClient for any configured provider (Gemini free tier first).
+        "vakeel_sahayak.models.registry",
+        "vakeel_sahayak.models.hosted",
     }
     assert set(_model_modules()) == known
 

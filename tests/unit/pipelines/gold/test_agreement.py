@@ -329,3 +329,31 @@ def test_run_report_and_apply_for_g4_to_g7(tmp_path):
     stats = ag.apply_to_testset(out, ts, tmp_path / "dest", "openai-x")
     assert stats["replaced_g4"] == 1 and stats["replaced_g6"] == 1 and stats["replaced_g7"] == 1
     assert "per_label" not in ag.render_markdown({"G4": rep}) and "label:" in ag.render_markdown({"G4": rep})
+
+
+def test_run_labeler_stops_on_a_free_tier_daily_quota_and_resumes(tmp_path):
+    from vakeel_sahayak.models.hosted.errors import HostedQuotaExceeded
+
+    orders = {f"q{i}": {OrderPart.DEFENSE: DEFENSE} for i in range(30)}
+    raw = tmp_path / "raw.jsonl"
+    state = {"n": 0}
+
+    def quota(prompt, schema):
+        state["n"] += 1
+        if state["n"] > 3:
+            raise HostedQuotaExceeded("gemini/gemini-3.1-flash-lite: the daily request cap is reached; 0 remain", "gemini", "m")
+        return g1_reply(prompt, schema)
+
+    logs: list[str] = []
+    first = Fake(quota)
+    ag.run_labeler("g1", orders, first, raw, workers=1, log=logs.append)
+    assert first.calls < 30 and any("still to label" in m for m in logs)
+    done_ok = {d for d, o in ag.load_raw(raw).items() if o.error is None}
+    assert 1 <= len(done_ok) <= 3
+    second = Fake(g1_reply)  # the next day: the same command resumes, redoing only what failed or was never sent
+    res = ag.run_labeler("g1", orders, second, raw, workers=1, log=lambda m: None)
+    assert second.calls == 30 - len(done_ok) and all(o.error is None for o in res.values())
+
+
+def test_labeler_slug_of_a_configured_provider():
+    assert ag.labeler_slug("gemini", None) == "gemini-gemini-3.1-flash-lite"

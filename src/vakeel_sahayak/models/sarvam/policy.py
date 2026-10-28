@@ -25,6 +25,12 @@ Sarvam is an EXTERNAL service, and raw client files never leave counsel's machin
 A violation raises `SarvamPolicyError` (mode/consent) or `PrivacyBoundaryError` (text that is not pseudonymised). The factory
 wrappers catch both and fall back to the local implementation.
 
+**Configured providers** (models/registry.py, `providers:` in configs/models.yaml): `authorize(..., provider=<name>)` reads the entry's
+`data_class_allowed` first and applies it in every mode: `public_only` (free tiers such as Gemini's, which may use prompts to improve the
+provider's products) takes PUBLIC data and the evaluation driver's public-source cases only and refuses client text and raw client data even
+with counsel's consent; `pseudonymised` never takes raw client data. The mode variable is the entry's `mode_env` (e.g. `VS_GEMINI`), else
+`VS_EXTERNAL`; the consent event is `<name>_consent`. A paid provider is refused first while locked (`models.paid_lock`).
+
 **One gate for every external provider.** `authorize(..., provider="openai")` runs the very same checks for OpenAI (mode,
 data class, boundary, per-case consent event `openai_consent`, audit event without payload). The mode of a provider is,
 in order: its own variable (`VS_SARVAM` for Sarvam, kept as an alias), the shared `VS_EXTERNAL`, the provider's yaml
@@ -82,7 +88,32 @@ def _provider_cfg(provider: str) -> dict[str, Any]:
         from vakeel_sahayak.models.openai.config import openai_config
 
         return openai_config()
+    if provider != "sarvam":
+        spec = _registry_spec(provider)
+        return {"enabled": bool(spec.enabled), "mode": spec.mode} if spec is not None else {"enabled": False, "mode": "off"}
     return sarvam_config()
+
+
+def _registry_spec(provider: str) -> Any:
+    """The configured generic provider (models/registry.py), or None."""
+    if provider in ("sarvam", "openai"):
+        return None
+    from vakeel_sahayak.models.registry import get_provider
+
+    return get_provider(provider)
+
+
+def provider_label(provider: str) -> str:
+    """Display name of a provider ('OpenAI', 'Sarvam', else the configured name)."""
+    return PROVIDER_LABEL.get(provider, provider)
+
+
+def _mode_var(provider: str) -> str | None:
+    """The provider's own mode variable: VS_SARVAM for Sarvam, the registry entry's `mode_env` (e.g. VS_GEMINI), else None (VS_EXTERNAL applies)."""
+    if provider in PROVIDER_ENV:
+        return PROVIDER_ENV[provider]
+    spec = _registry_spec(provider)
+    return (spec.mode_env or None) if spec is not None else None
 
 
 def provider_mode(provider: str = "sarvam") -> SarvamMode:
@@ -91,7 +122,7 @@ def provider_mode(provider: str = "sarvam") -> SarvamMode:
     Raises:
         ValueError: for an unknown mode value.
     """
-    var = PROVIDER_ENV.get(provider)
+    var = _mode_var(provider)
     raw = os.environ.get(var) if var else None
     if raw is None or not raw.strip():
         var = SHARED_ENV
@@ -302,7 +333,35 @@ def _policy_error(provider: str) -> type[Exception]:
         from vakeel_sahayak.models.openai.errors import OpenAIPolicyError
 
         return OpenAIPolicyError
+    if provider != "sarvam":
+        from vakeel_sahayak.models.hosted.errors import HostedPolicyError
+
+        return HostedPolicyError
     return SarvamPolicyError
+
+
+def _check_data_class_allowed(provider: str, scope: SarvamScope, err: type[Exception], label: str) -> None:
+    """The provider's `data_class_allowed` (configs/models.yaml `providers:`), applied in EVERY mode, consent included.
+
+    - `public_only` (free tiers, which may use prompts to improve the provider's products): PUBLIC data, and the evaluation driver's
+      public-source cases (`public_source_scope`: published court orders, still pseudonymised and boundary-checked); client text and raw
+      client data are refused, whatever the mode or counsel's consent.
+    - `pseudonymised`: never raw client data.
+    - `consented`: what the mode and consent allow (as for OpenAI and Sarvam).
+    """
+    from vakeel_sahayak.models.registry import data_class_allowed
+
+    level = data_class_allowed(provider)
+    if level is None and provider not in ("sarvam", "openai"):
+        level = "public_only"  # an unconfigured provider name gets the strictest rule
+    if level == "public_only":
+        if scope.data is DataClass.CLIENT_RAW or (scope.data is DataClass.CLIENT_TEXT and scope.basis != PUBLIC_SOURCE):
+            raise err(
+                f"{label} may receive public data only (data_class_allowed: public_only; a free tier may use prompts to improve the provider's "
+                f"products), so {scope.data.value} is refused in every mode, consent cannot unlock it; client text stays on local models. Nothing was sent"
+            )
+    elif level == "pseudonymised" and scope.data is DataClass.CLIENT_RAW:
+        raise err(f"{label} may receive pseudonymised text at most (data_class_allowed: pseudonymised); raw client data is refused. Nothing was sent")
 
 
 def authorize(
@@ -317,7 +376,8 @@ def authorize(
         text: text bound for Sarvam (boundary-checked for CLIENT_TEXT)
         nbytes: size of binary content (image or audio); binary content is never allowed as CLIENT_TEXT
         payload: the whole outbound structure when it is more than one string (chat messages); checked instead of `text`
-        provider: 'sarvam' or 'openai' (selects the mode variable, consent event and error class)
+        provider: 'sarvam', 'openai' or a configured provider name (selects the mode variable, consent event, error class and the
+            provider's `data_class_allowed` from configs/models.yaml `providers:`)
 
     Returns:
         The scope that applied.
@@ -335,11 +395,12 @@ def authorize(
 
     assert_unlocked(provider)  # a paid provider (OpenAI, Sarvam) is locked unless VS_ALLOW_PAID names it (models/paid_lock.py)
     scope = scope or current_scope()
+    label = provider_label(provider)
+    err = _policy_error(provider)
+    _check_data_class_allowed(provider, scope, err, label)  # what the provider may ever receive (registry), before the mode
     mode = provider_mode(provider)
     need = _REQUIRED_MODE[scope.data]
-    label = PROVIDER_LABEL.get(provider, provider)
-    err = _policy_error(provider)
-    off_var = PROVIDER_ENV.get(provider) or SHARED_ENV
+    off_var = _mode_var(provider) or SHARED_ENV
     if mode is SarvamMode.OFF:
         raise err(f"{label} is off ({off_var}=off); nothing was sent")
     if mode.rank < need.rank:

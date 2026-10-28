@@ -39,7 +39,16 @@ def _yaml_runtime() -> str | None:
     from vakeel_sahayak.config import load_config
 
     runtime = str((((load_config().models.get("llm") or {}).get("teacher")) or {}).get("runtime") or "")
-    return runtime if runtime in ("openai", "sarvam") else None
+    return runtime if runtime in ("openai", "sarvam") or _is_hosted(runtime) else None
+
+
+def _is_hosted(name: str | None) -> bool:
+    """True for a configured generic provider (models/registry.py), e.g. 'gemini'."""
+    if not name or name in ("vllm", "mistral", "sarvam", "openai", "offline"):
+        return False
+    from vakeel_sahayak.models.registry import is_hosted
+
+    return is_hosted(name)
 
 
 def _openai_default() -> str:
@@ -122,20 +131,31 @@ class TeacherClient:
                 backend = "offline"
             else:
                 backend = os.environ.get("VS_TEACHER") or _yaml_runtime() or ("mistral" if MistralApiClient.available() else "vllm")
-        if backend not in ("vllm", "mistral", "sarvam", "openai", "offline"):
+        if backend not in ("vllm", "mistral", "sarvam", "openai", "offline") and not _is_hosted(backend):
             raise ValueError(f"unknown teacher backend {backend!r}")
+        hosted_model = None
+        if _is_hosted(backend):
+            from vakeel_sahayak.models.registry import get_provider
+
+            spec = get_provider(backend)
+            hosted_model = spec.model_for("teacher") if spec else None
         self.backend = backend
         self._client = client
-        self.model_id = model or (
+        self.model_id = model or hosted_model or (
             DEFAULT_MISTRAL if backend == "mistral" else DEFAULT_SARVAM if backend == "sarvam" else _openai_default() if backend == "openai"
             else DEFAULT_TEACHER if backend == "vllm" else "offline-template"
         )  # fmt: skip
-        self.where = "api" if backend in ("mistral", "sarvam", "openai") else "ada" if backend == "vllm" else "laptop"
+        self.where = "api" if backend in ("mistral", "sarvam", "openai") or hosted_model else "ada" if backend == "vllm" else "laptop"
         self.is_offline = backend == "offline"
 
     @property
     def family(self) -> str:
         """Model family of the teacher ('qwen' for vLLM Qwen3, 'mistral', 'sarvam', 'openai', 'offline')."""
+        if _is_hosted(self.backend):
+            from vakeel_sahayak.models.registry import get_provider
+
+            spec = get_provider(self.backend)
+            return spec.family_of(self.model_id) if spec else model_family(self.model_id)
         return "offline" if self.backend == "offline" else self.backend if self.backend in ("sarvam", "openai") else model_family(self.model_id)
 
     @property
@@ -146,7 +166,14 @@ class TeacherClient:
                 from vakeel_sahayak.models.paid_lock import assert_unlocked
 
                 assert_unlocked(self.backend)  # paid provider locked unless VS_ALLOW_PAID names it
-            if self.backend == "mistral":
+            if _is_hosted(self.backend):
+                from vakeel_sahayak.models.hosted.client import HostedLLMClient
+                from vakeel_sahayak.models.paid_lock import assert_unlocked
+                from vakeel_sahayak.models.sarvam.policy import DataClass
+
+                assert_unlocked(self.backend)
+                self._client = HostedLLMClient(self.backend, self.model_id, data=DataClass.PUBLIC, where="api", role="teacher")
+            elif self.backend == "mistral":
                 self._client = MistralApiClient(self.model_id)
             elif self.backend == "sarvam":
                 from vakeel_sahayak.models.sarvam.adapters import SarvamLLMClient

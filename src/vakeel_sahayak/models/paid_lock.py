@@ -45,9 +45,17 @@ def _paid_set() -> set[str]:
     return names
 
 
+_NEVER_PAID = ("", "offline", "local", "vllm", "mistral")  # local runtimes (mistral: the teacher's own API option, outside this lock's scope)
+
+
 def is_paid(provider: str) -> bool:
     """True when `provider` costs money (and therefore sits behind the lock)."""
-    return (provider or "").strip().lower() in _paid_set()
+    p = (provider or "").strip().lower()
+    if p in PAID_PROVIDERS:
+        return True
+    if p in _NEVER_PAID:
+        return False
+    return p in _paid_set()
 
 
 def unlocked() -> set[str]:

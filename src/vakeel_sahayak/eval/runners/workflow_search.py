@@ -239,6 +239,13 @@ def ledger_state(backend: str) -> tuple[float, float, str] | None:
 
         rep = sarvam_report()
         return float(rep["spent_inr"]), float(rep["remaining_inr"]), "INR"
+    from vakeel_sahayak.models.registry import is_hosted
+
+    if backend not in ("offline", "local") and is_hosted(backend):  # a free tier: requests today and requests left (all keys)
+        from vakeel_sahayak.models.hosted.quota import provider_report
+
+        rep = provider_report(backend)
+        return float(rep["requests"]), float(rep["remaining"]), "requests"
     return None
 
 

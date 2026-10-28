@@ -116,6 +116,60 @@ openai:
   ledger: {path: null, cache_path: null}   # null = <data dir>/openai/ledger.sqlite and cache.sqlite (data/ is untracked)
   use: {llm: true}
 
+# HOSTED PROVIDERS BY CONFIGURATION (models/registry.py; docs/handoff/adding-an-llm-provider.md). To add a provider: add a block here (or in the
+# untracked configs/providers.local.yaml, or the file named by VS_PROVIDERS_FILE), put its key in the env variable `key_env` (default: the
+# provider name in capitals plus the usual key suffix, see .env.example), and select it with
+# VS_LLM_BACKEND=<name> (agent roles), VS_LABELER=<name>, VS_TEACHER=<name>. No code change. Protocols: openai_compat (any /chat/completions
+# service: OpenRouter, Groq, Together, Mistral, a local vLLM, Gemini's OpenAI-compatible endpoint) and gemini_native (generateContent).
+# data_class_allowed is read by the privacy gate (sarvam/policy.py authorize): public_only (free tiers: public court text and constructed data,
+# plus the evaluation driver's public-source cases; client text and raw data refused in every mode), pseudonymised, consented.
+# paid: true puts a provider behind the paid lock (VS_ALLOW_PAID). Limits (rpm, rpd, tpm) belong to a MODEL and apply per key (= per project).
+providers:
+  openai: {protocol: builtin, paid: true, data_class_allowed: consented}   # own adapter (models/openai); LOCKED (owner decision 2026-10-28)
+  sarvam: {protocol: builtin, paid: true, data_class_allowed: consented}   # own adapter (models/sarvam); LOCKED (owner decision 2026-10-28)
+  # Google Gemini API, FREE tier. Google's free-tier terms allow it to use prompts and answers to improve its products: PUBLIC DATA ONLY.
+  # Keys: the GEMINI key variable named in .env.example, or its pool forms (comma list, or _1.._N); ONE KEY PER PROJECT (limits are per project).
+  # Auth: header x-goog-api-key (never the URL). Mode: VS_GEMINI, else VS_EXTERNAL (public is enough for public data; the eval driver needs
+  # pseudonymised, as its agent calls carry pseudonymised public-source text). Daily quota resets at midnight Pacific (ledger day: quota_day_tz).
+  # LIMITS: RPM / TPM / RPD as shown in Google AI Studio on 2026-10-28 for one free-tier project (re-check there; they change). Model ids are
+  # written from the AI Studio display names and are NOT verified: `make gemini-models` lists the exact ids the key can use.
+  gemini:
+    protocol: gemini_native
+    base_url: https://generativelanguage.googleapis.com
+    api_version: v1beta
+    auth_header: x-goog-api-key
+    auth_scheme: ""
+    mode_env: VS_GEMINI
+    free: true
+    paid: false
+    data_class_allowed: public_only
+    family: gemini
+    structured: schema          # responseMimeType application/json + responseSchema; a 400 degrades to JSON mode, then JSON in the prompt
+    system_instruction: true
+    thinking: {budget: 0}       # thinking off (tokens count against TPM); a model that rejects it is called without (learned per model)
+    max_tokens_cap: 4096
+    timeout_s: 120
+    retries: {max: 5, base_delay_s: 2.0, max_delay_s: 60.0, jitter_s: 1.0}   # 500/503 backoff; 429 rotates keys and lowers the learned rate
+    learn: {factor: 0.5, hold_s: 3600}
+    max_wait_s: 900
+    quota_day_tz: UTC           # Google resets at midnight Pacific (America/Los_Angeles); set that to follow Google's day exactly
+    default_model: gemini-3.1-flash-lite
+    roles: {agents: gemini-3.1-flash-lite, labeler: gemini-3.1-flash-lite, teacher: gemini-3.1-flash-lite, b0l: gemini-3-flash}   # b0l: the larger model of the B0L arm (20 RPD)
+    failover: [gemini-3.5-flash-lite, gemini-2.5-flash-lite, gemini-2.5-flash]   # used only with VS_HOSTED_FAILOVER=1 (never inside a paired comparison)
+    limits: {rpm: 5, rpd: 20, tpm: 250000}
+    models:
+      gemini-3.1-flash-lite: {rpm: 15, tpm: 250000, rpd: 500}
+      gemini-3.5-flash-lite: {rpm: 15, tpm: 250000, rpd: 500}
+      gemma-4-26b-it:        {rpm: 30, tpm: 16000, rpd: 14400, family: gemma, system_instruction: false, structured: prompt, thinking: {}}   # TPM 16K: one request may not exceed it
+      gemma-4-31b-it:        {rpm: 30, tpm: 16000, rpd: 14400, family: gemma, system_instruction: false, structured: prompt, thinking: {}}
+      gemini-2.5-flash-lite: {rpm: 10, tpm: 250000, rpd: 20}
+      gemini-2.5-flash:      {rpm: 5,  tpm: 250000, rpd: 20}
+      gemini-3-flash:        {rpm: 5,  tpm: 250000, rpd: 20}
+      gemini-3.6-flash:      {rpm: 5,  tpm: 250000, rpd: 20}
+      gemini-3.8-flash:      {rpm: 5,  tpm: 250000, rpd: 20}
+      # Pro models, Gemini 2 / 2 Flash Lite and Gemini 4 Argon show 0 on the free tier (unusable); embedding models are not needed (BGE-M3).
+  # The same Gemini API also has an OpenAI-compatible endpoint (protocol openai_compat): docs/handoff/adding-an-llm-provider.md has that block.
+
 # Weight tiers for scripts/download_models.sh (`make models`, `make models-dry-run`). Hosted backends (Sarvam, OpenAI) need no weights.
 # Sizes are the bytes of the files the script fetches (include globs), read from the Hugging Face model pages' file lists on 2026-10-24.
 # T0 = offline stand-ins (nothing to download); T1 = small helpers that fit an 8 GB laptop GPU; T2 = local LLMs for a laptop/GPU box;

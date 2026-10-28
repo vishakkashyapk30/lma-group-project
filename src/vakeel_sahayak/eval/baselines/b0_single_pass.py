@@ -81,6 +81,15 @@ def b0l_model_id() -> str | None:
         return explicit
     if os.environ.get("VS_LLM_BACKEND", "").lower() == "sarvam":
         return B0L_SARVAM_MODEL
+    backend = os.environ.get("VS_LLM_BACKEND", "").strip().lower()
+    if backend != "openai":  # a configured provider (models/registry.py): its `roles.b0l` model, a larger model than the agents' one
+        from vakeel_sahayak.models.registry import get_provider
+
+        spec = get_provider(backend)
+        larger = (spec.roles or {}).get("b0l") if spec else None
+        if larger and larger != spec.model_for("agents"):  # type: ignore[union-attr]
+            return str(larger)
+        raise NotImplementedError(f"B0L is unavailable on VS_LLM_BACKEND={backend}: set providers.{backend}.roles.b0l in configs/models.yaml (a model larger than the agents' one) or VS_B0L_MODEL")
     raise NotImplementedError("B0L is unavailable on VS_LLM_BACKEND=openai: no model larger than B0's gpt-6-luna is configured (running it would duplicate B0). "
                               "Set VS_B0L_MODEL to another OpenAI model id with a price in configs/models.yaml, or run B0L on VS_LLM_BACKEND=sarvam.")
 

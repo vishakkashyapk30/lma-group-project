@@ -1,7 +1,7 @@
 # `make help` lists the targets. Targets that run Python need .venv: `make setup` creates it (needs-venv says so instead of a stack trace).
 PY ?= .venv/bin/python
 
-.PHONY: help needs-venv setup-full data data-check data-bundle data-install data-publish models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all eval-score eval-report frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend hooks check-commits live-smoke sweep-plan sweep-smoke dev-score report-pdf
+.PHONY: help needs-venv setup-full data data-check data-bundle data-install data-publish models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all eval-score eval-report frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend gemini-usage gemini-models gemini-plan hooks check-commits live-smoke sweep-plan sweep-smoke dev-score report-pdf
 
 help:             ## list the targets
 	@grep -hE '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | sed -E 's/:[^#]*## /\t/' | sort | awk -F'\t' '{printf "  %-20s %s\n", $$1, $$2}'
@@ -63,6 +63,16 @@ eval-all: eval-rq1 eval-rq2 eval-ablations eval-features eval-safety
 
 openai-spend: needs-venv     ## OpenAI spend ledger: total spent, remaining, per model and per purpose
 	$(PY) -m vakeel_sahayak.models.openai.ledger
+
+gemini-usage: needs-venv     ## Gemini free tier: today's requests, tokens and remaining requests per key fingerprint and model (no call)
+	$(PY) -m vakeel_sahayak.models.hosted.quota --provider $${PROVIDER:-gemini}
+
+gemini-models: needs-venv    ## list the Gemini model ids each key can use (GET /v1beta/models); MODEL=<id> also sends ONE public smoke request
+	$(PY) -m vakeel_sahayak.models.hosted.probe models --provider $${PROVIDER:-gemini}
+	@if [ -n "$(MODEL)" ]; then VS_MODELS=auto VS_GEMINI=$${VS_GEMINI:-public} $(PY) -m vakeel_sahayak.models.hosted.probe smoke --provider $${PROVIDER:-gemini} --model $(MODEL); fi
+
+gemini-plan: needs-venv      ## days of free-tier quota a job needs: make gemini-plan ARGS="--n 250 --calls-per-item 6 --tokens-per-call 2500" (or ARGS=--sweep)
+	$(PY) scripts/gemini_quota_plan.py $(ARGS)
 
 api: needs-venv   ## FastAPI backend on :8000 (BACKEND_PORT to change)
 	$(PY) -m uvicorn vakeel_sahayak.api.asgi:app --port $${BACKEND_PORT:-8000}

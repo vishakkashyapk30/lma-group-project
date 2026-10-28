@@ -47,9 +47,20 @@ def test_every_yaml_under_configs_parses(configs_dir):
 
 def test_no_config_names_a_paid_api_provider(configs_dir):
     """Open-weight models only at run time, no paid APIs (plan ground rules): no OpenAI/Anthropic/Gemini in configs."""
-    text = "\n".join(p.read_text(encoding="utf-8").lower() for p in configs_dir.rglob("*.yaml"))
-    for banned in ("openai/gpt", "gpt-4", "claude", "gemini", "api_key"):
+    # RECONCILED: hosted APIs were allowed on 2026-10-24 and the Gemini FREE tier was added on 2026-10-28 (owner decisions; the paid providers
+    # are locked in code, models/paid_lock.py). 'gemini' may now appear only where it names a provider declared free and unpaid (models.yaml
+    # `providers:`) or the sweep backend that uses it (configs/eval/); every other ban is unchanged.
+    texts = {p: p.read_text(encoding="utf-8").lower() for p in configs_dir.rglob("*.yaml")}
+    text = "\n".join(texts.values())
+    for banned in ("openai/gpt", "gpt-4", "claude", "api_key"):
         assert banned not in text, banned
+    providers = (yaml.safe_load((configs_dir / "models.yaml").read_text(encoding="utf-8")) or {}).get("providers") or {}
+    for name, entry in providers.items():
+        if "gemini" in name.lower():
+            assert entry.get("free") is True and entry.get("paid") is False, name
+    for path, body in texts.items():
+        if path.name != "models.yaml" and path.parent.name != "eval":
+            assert "gemini" not in body, path
 
 
 # ----------------------------------------------------------------------------------------------------------------

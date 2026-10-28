@@ -437,15 +437,16 @@ def run_labeler(
                 done[doc_id] = out
                 fh.write(json.dumps(_out_to_json(doc_id, out), ensure_ascii=False) + "\n")
                 fh.flush()
-                if out.error and ("BudgetExceeded" in out.error or "Budget" in out.error):
-                    stopped = True
+                if out.error and ("BudgetExceeded" in out.error or "Budget" in out.error or "QuotaExceeded" in out.error):
+                    stopped = True  # a spend cap or a free tier's daily quota: stop; the next run resumes (failed orders are redone)
                 if queue and not stopped:
                     pending.add(pool.submit(work, queue.pop(0)))
                 if len(done) % 10 == 0:
                     log(f"{task}: {len(done)}/{len(orders)} orders, {time.time() - t0:.0f}s")
                 break
     if stopped:
-        log(f"{task}: stopped after a budget refusal; {len(orders) - len(done)} orders not labelled")
+        failed = sum(1 for o in done.values() if o.error and o.error != "no_input")
+        log(f"{task}: stopped after a budget or daily-quota refusal; {len(orders) - len(done) + failed} orders still to label (run the same command again to resume)")
     return done
 
 
@@ -474,6 +475,11 @@ def labeler_slug(backend: str, model: str | None) -> str:
     """File-name slug of a labeler ('openai-gpt-6-luna', 'sarvam-mimo-v2.6-flash')."""
     if model:
         return f"{backend}-{model}".replace("/", "_")
+    if backend not in ("openai", "sarvam"):
+        from vakeel_sahayak.models.registry import get_provider
+
+        spec = get_provider(backend)
+        return f"{backend}-{spec.model_for('labeler') if spec else 'default'}".replace("/", "_")
     from vakeel_sahayak.models.openai.config import openai_config
 
     return f"openai-{openai_config()['chat']['model']}" if backend == "openai" else "sarvam-sarvam-105b"
@@ -527,6 +533,10 @@ def cmd_run(args: argparse.Namespace) -> int:
     orders = load_parts(args.parts, {r["doc_id"] for r in rows})
     orders = {r["doc_id"]: orders[r["doc_id"]] for r in rows if r["doc_id"] in orders}
     print(f"{len(orders)} orders with parts of {len(rows)} requested")
+    from vakeel_sahayak.models.registry import provider_names
+
+    if args.labeler not in provider_names() and args.labeler not in ("openai", "sarvam"):
+        raise SystemExit(f"unknown labeler {args.labeler!r}: use openai, sarvam or a provider of configs/models.yaml providers: ({', '.join(provider_names())})")
     client = make_client(args.labeler, args.model)
     slug = labeler_slug(args.labeler, args.model)
     for task in args.task.split(","):
@@ -540,7 +550,13 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 def _spend_line(backend: str) -> None:
     try:
-        if backend == "openai":
+        if backend not in ("openai", "sarvam"):
+            from vakeel_sahayak.models.hosted.quota import provider_report
+
+            rep = provider_report(backend)
+            print(f"{backend} quota today ({rep['day']} {rep['day_tz']}): {rep['requests']} requests used, {rep['remaining']} remaining over {len(rep['keys'])} key(s); "
+                  f"tokens in/out {rep['input_tokens']}/{rep['output_tokens']} (make gemini-usage for the per-key table)")
+        elif backend == "openai":
             from vakeel_sahayak.models.openai.ledger import Ledger
 
             rep = Ledger().report()
@@ -600,7 +616,7 @@ def main(argv: list[str] | None = None) -> int:
 
     r = sub.add_parser("run", help="label with a hosted labeler (public text only; spend-capped)")
     common(r)
-    r.add_argument("--labeler", choices=["openai", "sarvam"], default="openai")
+    r.add_argument("--labeler", default="openai", help="openai | sarvam (paid, locked unless VS_ALLOW_PAID) | a configured provider such as gemini (public text only)")
     r.add_argument("--model", default=None, help="model id (default: the backend's configured model)")
     r.add_argument("--n", type=int, default=0, help="random sample of this many orders (0 = all 250)")
     r.add_argument("--seed", type=int, default=0)

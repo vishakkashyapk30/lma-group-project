@@ -117,9 +117,25 @@ def llm_backend() -> str | None:
     raw = (os.environ.get("VS_LLM_BACKEND") or "").strip().lower()
     if not raw:
         return None
-    if raw not in LLM_BACKENDS:
-        raise ValueError(f"VS_LLM_BACKEND must be one of {LLM_BACKENDS}, got {raw!r}")
+    if raw not in LLM_BACKENDS and not _is_hosted(raw):
+        raise ValueError(f"VS_LLM_BACKEND must be one of {LLM_BACKENDS} or a provider configured in configs/models.yaml providers:, got {raw!r}")
     return raw
+
+
+def _is_hosted(name: str | None) -> bool:
+    """True for a generic provider configured in configs/models.yaml `providers:` (not openai/sarvam, which have their own adapters)."""
+    if not name or name in LLM_BACKENDS or name in ("vllm",):
+        return False
+    from vakeel_sahayak.models.registry import is_hosted
+
+    return is_hosted(name)
+
+
+def _hosted_runtimes() -> tuple[str, ...]:
+    """Runtimes that are hosted APIs: sarvam, openai and every configured generic provider."""
+    from vakeel_sahayak.models.registry import hosted_names
+
+    return ("sarvam", "openai", *hosted_names())
 
 
 def effective_role_config(role: str) -> dict[str, object]:
@@ -138,7 +154,7 @@ def effective_role_config(role: str) -> dict[str, object]:
     if forced == "offline":
         return {**cfg, "runtime": "offline"}
     own = {k: v for k, v in cfg.items() if k not in ("fallback",)}
-    if cfg.get("runtime") in ("sarvam", "openai"):
+    if cfg.get("runtime") in ("sarvam", "openai") or _is_hosted(str(cfg.get("runtime") or "")):
         own = {**_ROLE_DEFAULTS[role], "where": where or _ROLE_DEFAULTS[role].get("where")}
     base = {k: v for k, v in cfg.items() if k not in ("fallback", "model")}
     return {**base, "runtime": forced, "fallback": own}
@@ -248,10 +264,13 @@ def get_llm(role: str) -> LLMClient:
     mode = models_mode()
     with _LOCK:
         cfg = effective_role_config(role)
-        key = (role, f"{mode}|{_sarvam_state()}|{_openai_state()}|{llm_backend()}")
+        runtime = str(cfg.get("runtime") or "")
+        key = (role, f"{mode}|{_sarvam_state()}|{_openai_state()}|{llm_backend()}|{_hosted_state(runtime) if _is_hosted(runtime) else ''}")
         if key in _LLM_CACHE:
             return _LLM_CACHE[key]
-        if cfg.get("runtime") == "sarvam":
+        if _is_hosted(runtime):
+            client = _resolve_hosted_role(role, cfg, mode)
+        elif cfg.get("runtime") == "sarvam":
             client = _resolve_sarvam_role(role, cfg, mode)
         elif cfg.get("runtime") == "openai":
             client = _resolve_openai_role(role, cfg, mode)
@@ -268,8 +287,12 @@ def get_llm_model(role: str, model: str) -> LLMClient:
         ValueError: the backend is not a hosted API, or the API is not active (no key, or `VS_EXTERNAL` off): an explicit model never falls back silently to another one.
     """
     forced = llm_backend()
+    if _is_hosted(forced):
+        if not _hosted_active(str(forced)):
+            raise ValueError(f"{forced} is not active (no key, VS_EXTERNAL off, or paid and locked): cannot build a client for model {model!r}")
+        return _resolve_hosted_role(role, {**effective_role_config(role), "model": model}, models_mode())
     if forced not in ("sarvam", "openai"):
-        raise ValueError(f"an explicit model id needs VS_LLM_BACKEND=sarvam or openai, got {forced!r}")
+        raise ValueError(f"an explicit model id needs VS_LLM_BACKEND=sarvam, openai or a configured provider, got {forced!r}")
     from vakeel_sahayak.models.paid_lock import assert_unlocked
 
     assert_unlocked(forced)  # a locked paid provider is refused with the lock message, never a silent local stand-in
@@ -339,10 +362,61 @@ def _resolve_openai_role(role: str, cfg: dict[str, object], mode: str) -> LLMCli
     return FallbackLLM(primary, lambda: _resolve(role, fallback, mode), "api" if public else where, errors=errors)
 
 
+def _hosted_active(name: str) -> bool:
+    """True when a configured provider should be tried: not forced offline, not a locked paid provider, mode not off, a key set, `use.llm` on."""
+    from vakeel_sahayak.models.hosted.keys import any_key
+    from vakeel_sahayak.models.paid_lock import paid_unlocked
+    from vakeel_sahayak.models.registry import get_provider
+    from vakeel_sahayak.models.sarvam.policy import SarvamMode, provider_mode
+
+    spec = get_provider(name)
+    if spec is None or models_mode() == "offline" or not paid_unlocked(name):
+        return False
+    return provider_mode(name) is not SarvamMode.OFF and any_key(spec.key_env)
+
+
+def _hosted_state(name: str) -> str:
+    from vakeel_sahayak.models.hosted.keys import pool
+    from vakeel_sahayak.models.registry import get_provider
+
+    spec = get_provider(name)
+    return f"{name}:{_hosted_active(name)}:{len(pool(spec.key_env)) if spec else 0}"
+
+
+def _resolve_hosted_role(role: str, cfg: dict[str, object], mode: str) -> LLMClient:
+    """A role on a configured provider (`VS_LLM_BACKEND=<name>` or `runtime: <name>`): the provider through the privacy gate, the key pool and the
+    request ledger, else the role's `fallback:`. Agent roles declare client text, so a `public_only` provider refuses product cases (the local client
+    answers) and serves only the evaluation driver's public-source cases; the teacher reads public orders only."""
+    runtime = str(cfg.get("runtime") or "")
+    where = str(cfg.get("where") or _ROLE_DEFAULTS.get(role, {}).get("where") or "ada")
+    fallback = {**_ROLE_DEFAULTS.get(role, {}), **dict(cfg.get("fallback") or {}), "where": where}  # type: ignore[call-overload]
+    if not _hosted_active(runtime):
+        return _resolve(role, fallback, mode)
+    from vakeel_sahayak.models.hosted.client import HostedLLMClient
+    from vakeel_sahayak.models.hosted.errors import HostedError
+    from vakeel_sahayak.models.paid_lock import PaidProviderLocked
+    from vakeel_sahayak.models.sarvam.fallback import FallbackLLM
+    from vakeel_sahayak.models.sarvam.policy import DataClass
+    from vakeel_sahayak.privacy.boundary import PrivacyBoundaryError
+
+    public = role == "teacher"
+    model = str(cfg["model"]) if cfg.get("model") and "/" not in str(cfg["model"]) and cfg.get("runtime") == runtime and cfg.get("model") != _ROLE_DEFAULTS.get(role, {}).get("model") else None
+    primary = HostedLLMClient(runtime, model, data=DataClass.PUBLIC if public else DataClass.CLIENT_TEXT, where="api" if public else where, role=role)
+    errors = (HostedError, PrivacyBoundaryError, PaidProviderLocked)  # incl. the daily quota: the local client answers
+    return FallbackLLM(primary, lambda: _resolve(role, fallback, mode), "api" if public else where, errors=errors)
+
+
 def llm_family(backend: str, model: str | None = None) -> str:
-    """Model family of a backend: 'sarvam' and 'openai' for those APIs, 'offline' for the deterministic client, else from the checkpoint name ('qwen', 'llama', ...)."""
+    """Model family of a backend: 'sarvam' and 'openai' for those APIs, 'offline' for the deterministic client, a configured provider's
+    family of the model (e.g. 'gemini', 'gemma'), else from the checkpoint name ('qwen', 'llama', ...)."""
     if backend in ("sarvam", "openai", "offline"):
         return backend
+    if _is_hosted(backend):
+        from vakeel_sahayak.models.registry import get_provider
+
+        spec = get_provider(backend)
+        if spec is not None:
+            return spec.family_of(model or spec.default_model)
     from vakeel_sahayak.models.base import model_family
 
     return model_family(model)
@@ -389,7 +463,13 @@ def _planned_backend(role: str) -> tuple[str, str | None]:
         from vakeel_sahayak.models.sarvam.config import sarvam_config
 
         return "sarvam", str(cfg.get("model") or sarvam_config()["chat"]["model"])
-    if runtime in ("openai", "sarvam"):
+    if _is_hosted(runtime) and _hosted_active(runtime):
+        from vakeel_sahayak.models.registry import get_provider
+
+        spec = get_provider(runtime)
+        own = str(cfg.get("model") or "")
+        return runtime, own if own and "/" not in own and own != _ROLE_DEFAULTS.get(role, {}).get("model") else (spec.model_for("agents") if spec else None)
+    if runtime in ("openai", "sarvam") or _is_hosted(runtime):
         fb = {**_ROLE_DEFAULTS.get(role, {}), **dict(cfg.get("fallback") or {})}  # type: ignore[call-overload]
         return str(fb.get("runtime") or "local"), str(fb.get("model") or "")
     return runtime, str(cfg.get("model") or "")
@@ -411,12 +491,15 @@ def describe_run_models() -> dict[str, object]:
     stamp = datetime.now(timezone.utc).date().isoformat()
     roles: dict[str, object] = {}
     used_openai: set[str] = set()
+    used_hosted: dict[str, set[str]] = {}
     for role in AGENT_ROLES:
         backend, model = _planned_backend(role)
         if backend == "openai" and model:
             used_openai.add(model)
+        if _is_hosted(backend) and model:
+            used_hosted.setdefault(backend, set()).add(model)
         roles[role] = {
-            "provider": "openai" if backend == "openai" else "sarvam" if backend == "sarvam" else "offline" if backend == "offline" else "local",
+            "provider": backend if backend in ("openai", "sarvam", "offline") or _is_hosted(backend) else "local",
             "runtime": backend, "model": model or "offline-template", "family": llm_family(backend, model),
             "version": _version_of(backend, model), "where": role_where(role), "date": stamp,
         }  # fmt: skip
@@ -425,6 +508,9 @@ def describe_run_models() -> dict[str, object]:
         used_openai.add(lab.model_name())
     if tea.backend == "openai":
         used_openai.add(tea.model_id)
+    for who, name, model in (("labeler", lab.backend(), lab.model_name()), ("teacher", tea.backend, tea.model_id)):
+        if _is_hosted(name):
+            used_hosted.setdefault(name, set()).add(model)
     out: dict[str, object] = {
         "date": stamp, "models_mode": models_mode(), "llm_backend": llm_backend() or "per-role",
         "roles": roles,
@@ -444,7 +530,34 @@ def describe_run_models() -> dict[str, object]:
         except Exception:  # noqa: BLE001 - the stamp must never fail a run
             spent = None
         out["openai"] = {"models": sorted(used_openai), "cap_usd": effective_cap_usd(), "spent_usd": spent, "priced": {m: price_of(m) is not None for m in sorted(used_openai)}}
+    if used_hosted:
+        out["hosted"] = {name: _hosted_stamp(name, sorted(models)) for name, models in sorted(used_hosted.items())}
+    if used_openai or used_hosted or "sarvam" in (lab.backend(), tea.backend) or any(isinstance(r, dict) and r.get("provider") == "sarvam" for r in roles.values()):
+        from vakeel_sahayak.models.paid_lock import UNLOCK_ENV, unlocked
+
+        out["paid_lock"] = {"unlock_env": UNLOCK_ENV, "unlocked": sorted(unlocked())}
     return out
+
+
+def _hosted_stamp(name: str, models: list[str]) -> dict[str, object]:
+    """The manifest block of a configured provider: models, limits, today's quota totals per key fingerprint, modes learned, models this run used."""
+    from vakeel_sahayak.models.registry import get_provider
+
+    spec = get_provider(name)
+    block: dict[str, object] = {"protocol": spec.protocol if spec else None, "free": bool(spec and spec.free), "data_class_allowed": spec.data_class_allowed if spec else None,
+                                "models": models, "limits": {m: spec.limits_for(m) for m in models} if spec else {}}  # fmt: skip
+    try:
+        from vakeel_sahayak.models.hosted.quota import QuotaLedger, provider_report
+
+        led = QuotaLedger()
+        rep = provider_report(name, led)
+        block["quota_today"] = {k: rep[k] for k in ("day", "day_tz", "requests", "remaining", "input_tokens", "output_tokens", "thinking_tokens", "keys")}
+        block["modes"] = {m: led.modes(name, m) for m in models}
+        block["run_models"] = led.run_models(name)  # settled calls per model in this run (a failover would show here)
+        block["run_id"] = led.run_id
+    except Exception:  # noqa: BLE001 - the stamp must never fail a run
+        block["quota_today"] = None
+    return block
 
 
 def _version_of(backend: str, model: str | None) -> str:
@@ -457,6 +570,14 @@ def _version_of(backend: str, model: str | None) -> str:
         except Exception:  # noqa: BLE001
             served = None
         return served or f"{model} (alias, snapshot not yet reported)"
+    if _is_hosted(backend) and model:
+        try:
+            from vakeel_sahayak.models.hosted.quota import QuotaLedger
+
+            served = QuotaLedger().last_served_model(backend, model)
+        except Exception:  # noqa: BLE001
+            served = None
+        return served or f"{model} (version not yet reported)"
     if backend == "offline" or not model:
         return "offline-template (deterministic)"
     return f"{model} (pinned by name)"

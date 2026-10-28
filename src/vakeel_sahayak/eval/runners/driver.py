@@ -511,11 +511,18 @@ def run_cases(cases_path: str, out_dir: str, system: str, runner: Any, switches:
     cache = shared_cache_for(switches)  # one retrieval cache for the whole run when a batch variant (S14, S14d) is on; None otherwise
     done = load_progress(out_dir)
     completed = 0
+    from vakeel_sahayak.models.hosted.quota import quota_stops
+
     for i, case in mine:
         if case["case_id"] in done:
             continue
         if deadline is not None and time.monotonic() >= deadline:
             break
+        left = hosted_quota_left()
+        if left == 0:
+            print(f"{system}: the hosted provider's daily quota is spent on every key; stopping before {case['case_id']} (resumable: run the same command after the reset)", flush=True)
+            break
+        stops_before = quota_stops()
         if limit is not None and completed >= limit:
             break
         if scenario and "scenario" not in case:
@@ -535,6 +542,10 @@ def run_cases(cases_path: str, out_dir: str, system: str, runner: Any, switches:
         record.update(case_id=case["case_id"], system=system, meta=run_metadata(ctx, seed + i, system, time.monotonic() - t0))
         if error:
             record["error"] = error
+        if quota_stops() > stops_before:  # a call of this case hit the daily quota and was answered by the local fallback: not a result of the backend
+            print(f"{system}: {case['case_id']} hit the hosted provider's daily quota; not saved (it reruns on resume); stopping. "
+                  f"Requests left today: {hosted_quota_left()}", flush=True)
+            break
         _log_nli_fallback(ctx)
         try:
             dump_events(ctx, out / "_events" / f"{case['case_id']}.jsonl")
@@ -951,6 +962,35 @@ def smoke_all(argv: list[str] | None = None) -> int:
     if args.json:
         Path(args.json).write_text(json.dumps(rows, indent=1), encoding="utf-8")
     return 1 if failed else 0
+
+
+def hosted_quota_left() -> int | None:
+    """Requests left today over every key for the model a configured provider (`VS_LLM_BACKEND=<name>`, e.g. gemini) serves the agents with;
+    None when the backend is not such a provider (or the ledger cannot be read)."""
+    import os
+
+    name = (os.environ.get("VS_LLM_BACKEND") or "").strip().lower()
+    if not name or name in ("offline", "local", "openai", "sarvam") or (os.environ.get("VS_MODELS") or "offline").lower() == "offline":
+        return None
+    try:
+        from vakeel_sahayak.models.hosted.keys import pool
+        from vakeel_sahayak.models.hosted.quota import QuotaLedger
+        from vakeel_sahayak.models.registry import get_provider
+
+        spec = get_provider(name)
+        if spec is None or spec.builtin:
+            return None
+        keys = pool(spec.key_env)
+        if not keys:
+            return None
+        led = QuotaLedger()
+        left = 0
+        for model in spec.failover_models(spec.model_for("agents")):
+            lim = spec.limits_for(model)
+            left += sum(led.remaining_today(spec.name, k.fp, model, lim, spec.quota_day_tz) for k in keys)
+        return left
+    except Exception:  # noqa: BLE001 - the check must never stop a run by itself
+        return None
 
 
 def paid_backend_locked() -> str | None:

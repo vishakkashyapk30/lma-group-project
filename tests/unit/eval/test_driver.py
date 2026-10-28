@@ -109,3 +109,38 @@ def test_vi07_jobs_are_dispatched_to_their_runners(job, monkeypatch, tmp_path):
             monkeypatch.setattr(mod, "run", lambda out, shard, n, _n=name: called.append(_n))
         jobs.run_job(job, {}, 0, 1, str(tmp_path), 0.0)
         assert called == jobs.FEATURE_JOBS[job]
+
+
+def test_a_case_that_hits_a_free_tier_daily_quota_is_not_saved_and_the_run_stops(tmp_path):
+    from vakeel_sahayak.models.hosted.quota import note_quota_stop
+    from vakeel_sahayak.orchestration.switches import Switches
+    from vakeel_sahayak.schemas.bail_brief import BailBrief
+
+    cases = tmp_path / "cases.jsonl"
+    cases.write_text("\n".join(json.dumps({"case_id": f"c-{i}", "facts": FACTS, "before": "2025-02-03"}) for i in range(3)) + "\n")
+    out = tmp_path / "out"
+    seen: list[str] = []
+
+    def runner(c, ctx):
+        seen.append(c["case_id"])
+        if c["case_id"] == "c-1":
+            note_quota_stop()  # a call of this case was refused for the daily quota (the local fallback answered)
+        return BailBrief(case_id=c["case_id"])
+
+    assert driver.run_cases(str(cases), str(out), "full", runner, Switches()) == 1
+    assert driver.load_progress(str(out)) == {"c-0"} and seen == ["c-0", "c-1"]  # c-1 is not saved; c-2 was not started
+    plain = lambda c, ctx: BailBrief(case_id=c["case_id"])  # noqa: E731 - after the reset
+    assert driver.run_cases(str(cases), str(out), "full", plain, Switches()) == 2
+    assert driver.load_progress(str(out)) == {"c-0", "c-1", "c-2"}
+
+
+def test_hosted_quota_left_is_none_off_a_configured_provider(monkeypatch):
+    monkeypatch.delenv("VS_LLM_BACKEND", raising=False)
+    assert driver.hosted_quota_left() is None
+    monkeypatch.setenv("VS_LLM_BACKEND", "gemini")
+    monkeypatch.setenv("VS_MODELS", "auto")
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    assert driver.hosted_quota_left() is None  # no key: the factory answers locally, the driver does not stop
+    monkeypatch.setenv("GEMINI_API_KEY", "AIzaFAKE-driver-test")
+    monkeypatch.setenv("VS_GEMINI_RPD", "4")
+    assert driver.hosted_quota_left() == 4

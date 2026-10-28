@@ -58,3 +58,4 @@ docs/proposal/build/
 *.log
 *.out
 *.toc
+configs/providers.local.yaml

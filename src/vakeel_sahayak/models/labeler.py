@@ -48,15 +48,52 @@ class EvalLabeler:
         Args:
             model: checkpoint (default configs/models.yaml `llm.eval_labeler.model`)
             llm: an LLMClient to use instead of loading Llama locally (e.g. a VllmClient serving Llama on Ada)
-            backend: 'openai' or 'sarvam' to pick a hosted labeler for this object (wins over `VS_LABELER` and the yaml); None keeps them
+            backend: 'openai', 'sarvam' or a configured provider name such as 'gemini' (models/registry.py) to pick a hosted labeler for this
+                object (wins over `VS_LABELER` and the yaml); None keeps them
         """
         self.model_id = model
         self._llm = llm
         self._backend = (backend or "").strip().lower() or None
 
+    def _selected(self) -> str:
+        """The backend asked for: the constructor's, else `VS_LABELER`, else yaml `llm.eval_labeler.runtime` ('' when none)."""
+        if self._backend:
+            return self._backend
+        raw = os.environ.get("VS_LABELER", "").strip().lower()
+        if raw:
+            return raw
+        from vakeel_sahayak.config import load_config
+
+        return str(((load_config().models.get("llm") or {}).get("eval_labeler") or {}).get("runtime") or "").strip().lower()
+
+    def _hosted(self) -> str | None:
+        """A configured generic provider as labeler (`VS_LABELER=<name>`, e.g. gemini; models/registry.py), or None. Public text only."""
+        name = self._selected()
+        if not name or name in ("openai", "sarvam", "local", "vllm"):
+            return None
+        from vakeel_sahayak.models.registry import is_hosted
+
+        return name if is_hosted(name) else None
+
+    def _hosted_client(self, name: str) -> LLMClient:
+        """Labelling of PUBLIC court text by a configured provider (a `public_only` free tier refuses anything else)."""
+        from vakeel_sahayak.models.hosted.client import HostedLLMClient
+        from vakeel_sahayak.models.sarvam.policy import DataClass
+
+        client = HostedLLMClient(name, self.model_id, data=DataClass.PUBLIC, where="api", role="eval_labeler")
+        if client.family == "qwen":
+            raise ValueError("the evaluation labeler must not be a Qwen model (plan §15.1: no Qwen gold)")
+        return client
+
     def _model_name(self) -> str:
         if self.model_id:
             return self.model_id
+        hosted = self._hosted()
+        if hosted:
+            from vakeel_sahayak.models.registry import get_provider
+
+            spec = get_provider(hosted)
+            return spec.model_for("labeler") if spec else hosted
         if self._use_openai():
             from vakeel_sahayak.models.openai.config import openai_config
 
@@ -73,12 +110,18 @@ class EvalLabeler:
         return self._model_name()
 
     def backend(self) -> str:
-        """'openai', 'sarvam' or 'local' (nothing is loaded)."""
-        return "openai" if self._use_openai() else "sarvam" if self._use_sarvam() else "local"
+        """'openai', 'sarvam', a configured provider name (e.g. 'gemini') or 'local' (nothing is loaded)."""
+        return self._hosted() or ("openai" if self._use_openai() else "sarvam" if self._use_sarvam() else "local")
 
     @property
     def family(self) -> str:
         """Model family of the labeler (for the rule that labeler, teacher and judged system differ in family)."""
+        hosted = self._hosted()
+        if hosted:
+            from vakeel_sahayak.models.registry import get_provider
+
+            spec = get_provider(hosted)
+            return spec.family_of(self._model_name()) if spec else model_family(self._model_name())
         return "openai" if self._use_openai() else "sarvam" if self._use_sarvam() else model_family(self._model_name())
 
     def _use_openai(self) -> bool:
@@ -133,6 +176,14 @@ class EvalLabeler:
             raise LabelerUnavailable("VS_MODELS=offline: the Llama evaluation labeler is not run; gold stays rule-only")
         from vakeel_sahayak.models.paid_lock import PaidProviderLocked, assert_unlocked
 
+        hosted = self._hosted()
+        if hosted:
+            try:
+                assert_unlocked(hosted)
+            except PaidProviderLocked as exc:
+                raise LabelerUnavailable(str(exc)) from exc
+            self._llm = self._hosted_client(hosted)
+            return self._llm
         if self._use_openai() or self._use_sarvam():  # a paid labeler is refused at once while locked (models/paid_lock.py)
             try:
                 assert_unlocked("openai" if self._use_openai() else "sarvam")

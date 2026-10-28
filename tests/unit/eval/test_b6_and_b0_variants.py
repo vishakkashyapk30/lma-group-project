@@ -78,7 +78,7 @@ def _hosted(monkeypatch, backend):
     factory._LLM_CACHE.clear()
 
 
-def test_b0l_and_b0_resolve_different_model_ids_under_sarvam(monkeypatch):
+def test_b0l_and_b0_resolve_different_model_ids_under_sarvam(monkeypatch, paid_unlocked):  # RECONCILED: paid providers are locked by default (owner decision 2026-10-28)
     _hosted(monkeypatch, "sarvam")
     from vakeel_sahayak.models import factory
     from vakeel_sahayak.models.sarvam import adapters

@@ -37,7 +37,14 @@ def hosted_backend() -> bool:
     """True when `VS_LLM_BACKEND` names a hosted API and models are not forced offline (then a baseline must send pseudonymised facts, as Full does)."""
     import os
 
-    return os.environ.get("VS_LLM_BACKEND", "offline").lower() in ("openai", "sarvam") and os.environ.get("VS_MODELS", "offline").lower() != "offline"
+    backend = os.environ.get("VS_LLM_BACKEND", "offline").lower()
+    if os.environ.get("VS_MODELS", "offline").lower() == "offline":
+        return False
+    if backend in ("openai", "sarvam"):
+        return True
+    from vakeel_sahayak.models.registry import is_hosted
+
+    return backend not in ("offline", "local") and is_hosted(backend)
 
 
 def facts_of(case: dict[str, Any]) -> str:
