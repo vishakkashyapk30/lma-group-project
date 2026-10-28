@@ -1,7 +1,7 @@
 #!/bin/bash
 # Laptop side of scripts/ada/embed_bge_m3.sbatch: pull every finished BGE-M3 shard from ~/vs_bge/outbox on Ada, check its sha256, then delete it
 # there (the job waits while the outbox holds 4 shards) and record it in ~/vs_bge/received.txt so a rerun of the job skips it.
-#   setsid nohup bash scripts/ada/pull_bge_shards.sh <job id> > /tmp/claude-1000/bge_pull.log 2>&1 < /dev/null &
+#   setsid nohup bash scripts/ada/pull_bge_shards.sh <job id> > "${TMPDIR:-/tmp}/bge_pull.log" 2>&1 < /dev/null &
 # Stops when the job wrote EMBED_DONE.json and the outbox is empty, or when the job left the queue without it (then resubmit: it resumes).
 # Never copies anything to Ada; needs the ssh alias `ada`. Free disk is checked before each pull (MIN_FREE_MB, default 600).
 set -uo pipefail
