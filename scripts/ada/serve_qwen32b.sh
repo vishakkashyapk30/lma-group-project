@@ -13,10 +13,11 @@ mkdir -p "$W" "$M" "$W/tmp" "$W/cache"; trap 'echo cleanup; rm -rf "$W"' EXIT
 # $HOME is NFS with about 2 GB free: pip would cache the 436 MB vLLM wheel there and hang. Keep every cache and temp file on node-local scratch.
 export PIP_CACHE_DIR="$W/cache/pip" PIP_NO_CACHE_DIR=1 TMPDIR="$W/tmp" XDG_CACHE_HOME="$W/cache" HF_HOME="$W/cache/hf" TRITON_CACHE_DIR="$W/cache/triton" VLLM_CACHE_ROOT="$W/cache/vllm" TORCHINDUCTOR_CACHE_DIR="$W/cache/inductor"
 echo "node=$(hostname) start=$(date +%T)"; nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
+# transformers is pinned below 5: vLLM 0.10.2 reads tokenizer.all_special_tokens_extended, which transformers 5 removed (the 28 Oct smoke job died on exactly that after a good install and download).
 # PyPI is slow from the compute nodes (about 5 MB/s; the 888 MB torch wheel did not finish in 150 s) while download.pytorch.org gives about 20 MB/s, so torch and the CUDA
 # libraries come from the PyTorch index (its +cu128 builds win the version comparison) and everything else from PyPI.
 python3 -m venv "$W/venv" && "$W/venv/bin/pip" -q install -U pip && \
-  "$W/venv/bin/pip" install --progress-bar off --index-url https://download.pytorch.org/whl/cu128 --extra-index-url https://pypi.org/simple "vllm==${VLLM_VERSION:-0.10.2}" 2>&1 | grep -E "^(Collecting torch|Successfully|ERROR)|error" | cut -c1-160 || { echo "vllm install failed"; exit 1; }
+  "$W/venv/bin/pip" install --progress-bar off --index-url https://download.pytorch.org/whl/cu128 --extra-index-url https://pypi.org/simple "vllm==${VLLM_VERSION:-0.10.2}" "transformers>=4.51,<5" 2>&1 | grep -E "^(Collecting torch|Successfully|ERROR)|error" | cut -c1-160 || { echo "vllm install failed"; exit 1; }
 "$W/venv/bin/python" -c "import vllm, torch; print('vllm', vllm.__version__, 'torch', torch.__version__)" || { echo "vllm import failed"; exit 1; }
 echo "vllm installed $(date +%T)"
 curl -s -m 60 "https://huggingface.co/api/models/$R/tree/main" > "$M/.tree.json"
