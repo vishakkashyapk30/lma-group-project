@@ -277,3 +277,35 @@ def test_install_verifies_checksums_of_the_raw_archive(tmp_path):
     assert q.returncode == 1 and "checksum verification FAILED" in q.stderr and not (target / "interim").exists()
     # without the raw archive the damaged raw part is not needed
     assert run(["bash", "scripts/data_install.sh", "--no-raw", str(out)], {"VS_DATA_DIR": str(target)}).returncode == 0
+
+
+def test_bge_side_vectors_are_an_optional_third_archive(tmp_path):
+    """The opt-in BGE-M3 side files (VS_STORES=bge) never enter the data archive; they get their own plain tar, installed only with BGE=1 or --only-bge."""
+    data = make_data(tmp_path)
+    side = data / "stores" / "caselaw" / "reasoning.bge.sqlite"
+    side.parent.mkdir(parents=True, exist_ok=True)
+    side.write_bytes(b"fp16" * 100)
+    (data / "stores" / "BGE_MANIFEST.json").write_text('{"embedder": "bge-m3"}', encoding="utf-8")
+    out = tmp_path / "bundle"
+    env = {"VS_DATA_DIR": str(data), "VS_MODELS_DIR": str(tmp_path / "nomodels")}
+    p = run(["bash", "scripts/data_bundle.sh", str(out)], env)
+    assert p.returncode == 0, p.stderr
+    assert "bge.sqlite" not in _names(out, "data.tar.gz.part-*", "-tzf") and "BGE_MANIFEST" not in _names(out, "data.tar.gz.part-*", "-tzf")
+    bge_names = _names(out, "bge.tar.part-*")
+    assert "stores/caselaw/reasoning.bge.sqlite" in bge_names and "stores/BGE_MANIFEST.json" in bge_names
+    m = json.loads((out / "bundle_manifest.json").read_text())
+    assert m["bge"]["parts"] == 1 and m["bge"]["files"]["stores/caselaw/reasoning.bge.sqlite"] == 400
+    assert "bge.tar.part-000" in (out / "SHA256SUMS").read_text()
+    plain = tmp_path / "plain"  # default install: no side files
+    q = run(["bash", "scripts/data_install.sh", "--no-raw", str(out)], {"VS_DATA_DIR": str(plain)})
+    assert q.returncode == 0, q.stderr + q.stdout
+    assert (plain / "stores").is_dir() and not list((plain / "stores").rglob("*.bge.sqlite"))
+    q = run(["bash", "scripts/data_install.sh", "--only-bge", str(out)], {"VS_DATA_DIR": str(plain)})  # added later
+    assert q.returncode == 0, q.stderr + q.stdout
+    assert (plain / "stores" / "caselaw" / "reasoning.bge.sqlite").read_bytes() == b"fp16" * 100
+    full = tmp_path / "full"
+    q = run(["bash", "scripts/data_install.sh", "--no-raw", str(out)], {"VS_DATA_DIR": str(full), "BGE": "1"})
+    assert q.returncode == 0, q.stderr + q.stdout
+    assert (full / "stores" / "BGE_MANIFEST.json").is_file()
+    p = run(["bash", "scripts/data_bundle.sh", str(out)], {**env, "BGE": "0"})
+    assert p.returncode == 0 and not list(out.glob("bge.tar.part-*"))

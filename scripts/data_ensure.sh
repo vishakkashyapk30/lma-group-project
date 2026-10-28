@@ -5,6 +5,7 @@
 #   2. else, with a Hugging Face token (HF_TOKEN in the environment or the untracked .env, or `hf auth login`): install the team bundle
 #      (scripts/data_install.sh hf:Vakeel-Sahayak/vakeel-sahayak-data; FORCE=1 overwrites a partial data/).
 #      Slow link or tight disk: HF_HUB_DOWNLOAD_TIMEOUT (60), HF_HUB_ETAG_TIMEOUT (30), HF_MAX_WORKERS (2), HF_TRIES (3), TMPDIR, VS_DOWNLOAD_DIR, RAW=0.
+#   BGE=1 also installs the optional BGE-M3 side vectors of the vector stores (about 0.8 GB, used only with VS_STORES=bge), or adds them when data/ is in place.
 #   3. else print the two options and exit 1: ask the owner for access to the private dataset, or rebuild (make datasets interim stores).
 #
 # VS_DATA_DIR, PY, ENV_FILE (default .env) and BUNDLE_REPO (default Vakeel-Sahayak/vakeel-sahayak-data) are honoured. The token is never printed.
@@ -18,6 +19,12 @@ DATA="${VS_DATA_DIR:-data}"
 REPO="${BUNDLE_REPO:-Vakeel-Sahayak/vakeel-sahayak-data}"
 
 if [ -d "$DATA/stores" ] && "$PY" scripts/_data_check.py --data "$DATA" >/dev/null 2>&1; then
+  if [ "${BGE:-0}" = 1 ] && [ -z "$(find "$DATA/stores" -name '*.bge.sqlite' -print -quit 2>/dev/null)" ]; then
+    # BGE=1 make data: the derived data is in place, add only the optional BGE-M3 side vectors (VS_STORES=bge)
+    export ENV_FILE="${ENV_FILE:-.env}"
+    hf_load_token "$ENV_FILE"
+    exec scripts/data_install.sh --only-bge "hf:$REPO"
+  fi
   echo "data is in place ($DATA/stores exists and make data-check passes): nothing to do."
   exit 0
 fi

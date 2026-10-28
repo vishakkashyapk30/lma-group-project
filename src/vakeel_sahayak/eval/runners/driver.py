@@ -692,6 +692,15 @@ def _system_manifest_extra(system: str) -> dict[str, Any] | None:
     return None
 
 
+def _store_vectors_manifest() -> dict[str, Any]:
+    """`store_embedder` (hashed-ngram by default, bge-m3 with the opt-in VS_STORES=bge) and `store_vectors` (mode and per-store side-file stamps), see `stores.hybrid.store_vectors_manifest`;
+    B2/B3 and the retrieval metrics are reported per store embedder."""
+    from vakeel_sahayak.stores.hybrid import store_vectors_manifest
+
+    info = store_vectors_manifest()
+    return {"store_embedder": info["store_embedder"], "store_vectors": info}
+
+
 def write_run_manifest(out_dir: Path, *, system: str, switches: Any, seed: int, budgets: dict[str, int] | None = None,
                        cases_path: str | None = None, shard: int = 0, n_shards: int = 1, extra: dict[str, Any] | None = None) -> dict[str, Any]:
     """Write `MANIFEST.json`: code version, config hash, model/version/date stamp, seed, switches, budgets, the case-file hash."""
@@ -704,7 +713,7 @@ def write_run_manifest(out_dir: Path, *, system: str, switches: Any, seed: int, 
                     "tokens_per_factor": b.tokens_per_factor, "drafting_tokens_per_factor": b.drafting_tokens_per_factor, **(budgets or {})},
         "code_version": code_version(), "git_sha": git_sha(), "git_dirty": git_dirty(), "code_tree_hash": code_tree_hash(), "config_hash": config_hash(), "models": models_stamp(), "nli": _nli_manifest(),
         "cases_file": cases_path, "cases_hash": file_hash(cases_path) if cases_path else None, **_gold_manifest(cases_path),
-        "shard": shard, "n_shards": n_shards, "privacy": privacy_manifest(cases_path), **(extra or {}),
+        "shard": shard, "n_shards": n_shards, "privacy": privacy_manifest(cases_path), **_store_vectors_manifest(), **(extra or {}),
     }
     save_json(out_dir / "MANIFEST.json", manifest)
     return manifest

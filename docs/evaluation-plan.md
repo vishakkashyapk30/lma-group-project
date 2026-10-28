@@ -133,6 +133,7 @@ Hosted models change; ours are open weights, so we can pin them exactly (L12: "r
 | Models | Hugging Face repository and revision hash for Qwen3-4B, 14B (AWQ), 32B (AWQ), the QLoRA adapter (training run id), Qwen3-VL, BGE-M3, DeBERTa-v3 NLI, MiniCheck, Surya, IndicTrans2, Whisper large-v3-turbo or IndicConformer, Llama-3.1-8B (labeler) |
 | Serving | vLLM version, quantisation, `max_model_len`, sampling parameters, seed, whether prefix caching is on |
 | Data | Open India Law release (v2026.08.1), IPC2BNS-Verify commit (8d3e770), Kathbath subset size, HLDC or NLLB fallback, store build id and row counts, `splits.json` hash, hash of the blind-slice case ids |
+| Store embedder | `store_embedder` and `store_vectors` (written by the driver): `hashed-ngram` for the stores as built (default), or `bge-m3` with the opt-in `VS_STORES=bge`, then per store the side file's BGE-M3 revision, row count and corpus text hash (`data/stores/BGE_MANIFEST.json`, `docs/handoff/bge-vectors-2026-10-28.md`) |
 | Code | Git SHA, the switch set (`Switches.describe()`), `configs/*.yaml` hashes, the freeze tag |
 | Time | Date and time of each shard, node, GPU type, shard number |
 
@@ -655,6 +656,8 @@ File: `data/eval/tables/table2_retrieval.csv`. Source: `eval/retrieval_only.py` 
 | Knock-outs (A10) | Row 9 minus one store at a time: slot-fill rate (M12) instead of recall | | | | | | | slot-fill per store | | | | |
 
 Footer: external sanity check on IL-PCSR (recall and MRR) for rows 3 and 6, if the data is available and licensed.
+
+Store embedder: the four vector stores were built with the hashed n-gram embedder (laptop, no torch); an opt-in BGE-M3 vector set for the same rows lives in side files (`VS_STORES=bge`, default off, the stores themselves unchanged). Table 2 and the retrieval metrics (M10, MRR, nDCG@10), and B2 and B3 in Table 1, are reported under both embedders: one column group with `VS_STORES` unset (hashed-ngram) and one with `VS_STORES=bge` (BGE-M3 dense side, same BM25, filters and fusion). Each run's `MANIFEST.json` records `store_embedder`; results from the two embedders are never pooled. The dense document vectors are truncated at 512 tokens (queries likewise), so B2's "8K truncation" holds only for its own whole-order path, not for the side vectors.
 
 ### 6.3 Table 3: architecture variants
 

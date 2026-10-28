@@ -7,6 +7,8 @@
 #   scripts/data_install.sh --force <src>                         # overwrite what is already in data/
 #   RAW=0 scripts/data_install.sh <src>   (or --no-raw)           # skip the raw archive (public source data, about 2 GB) to save disk
 #   scripts/data_install.sh --only-raw <src>                      # add only the raw archive to a data/ that already has the derived data
+#   BGE=1 scripts/data_install.sh <src>   (or --bge)              # also install the optional BGE-M3 side vectors (bge.tar.part-*, about 0.8 GB; VS_STORES=bge)
+#   scripts/data_install.sh --only-bge <src>                      # add only the BGE-M3 side vectors to an installed data/
 #   VS_DATA_DIR=/scratch/data scripts/data_install.sh <src>        # another target folder (tests, trials)
 #
 # Both archives are installed by default: data.tar.gz.part-* (interim, stores, testsets, gaps, eval) and raw.tar.part-* (data/raw: Open India Law shards,
@@ -19,8 +21,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 PY="${PY:-.venv/bin/python}"
 command -v "$PY" >/dev/null 2>&1 || { echo "no $PY: run make setup first (it creates .venv and installs the Hugging Face CLI)" >&2; exit 1; }
-force="${FORCE:-0}"; src=""; raw="${RAW:-1}"; only_raw=0
-for a in "$@"; do case "$a" in --force) force=1;; --no-raw) raw=0;; --only-raw) only_raw=1; raw=1;; *) src="$a";; esac; done
+force="${FORCE:-0}"; src=""; raw="${RAW:-1}"; only_raw=0; bge="${BGE:-0}"; only_bge=0
+for a in "$@"; do case "$a" in --force) force=1;; --no-raw) raw=0;; --only-raw) only_raw=1; raw=1;; --bge) bge=1;; --only-bge) only_bge=1; bge=1; raw=0;; *) src="$a";; esac; done
 src="${src:-${SRC:-}}"
 [ -n "$src" ] || { echo "usage: scripts/data_install.sh [--force] [--no-raw | --only-raw] <dir | URL | hf:<repo>>   (make data-install SRC=...; RAW=0 skips the raw archive)" >&2; exit 2; }
 DATA="${VS_DATA_DIR:-data}"; mkdir -p "$DATA"; DATA="$(cd "$DATA" && pwd)"
@@ -49,7 +51,9 @@ case "$src" in
     need_mb=1500; [ "$raw" != 1 ] || need_mb=$((need_mb + 2000)); [ "$only_raw" != 1 ] || need_mb=2000
     free_mb=$(( $(df -Pk "$work" | awk 'NR==2 {print $4}') / 1024 ))
     [ "$free_mb" -gt "$need_mb" ] || echo "warning: only $free_mb MB free for the download in $work (about $need_mb MB needed). Point TMPDIR (or VS_DOWNLOAD_DIR) at a bigger disk, or use RAW=0." >&2
-    excl=(--exclude "sweep-runs/*"); [ "$raw" = 1 ] || excl+=(--exclude "raw.tar.part-*"); [ "$only_raw" != 1 ] || excl+=(--exclude "data.tar.gz.part-*")
+    [ "$bge" != 1 ] || need_mb=$((need_mb + 900)); [ "$only_bge" != 1 ] || need_mb=900
+    excl=(--exclude "sweep-runs/*"); [ "$raw" = 1 ] || excl+=(--exclude "raw.tar.part-*"); [ "$only_raw" != 1 ] && [ "$only_bge" != 1 ] || excl+=(--exclude "data.tar.gz.part-*")
+    [ "$bge" = 1 ] || excl+=(--exclude "bge.tar.part-*")
     echo "checking access to dataset $repo ..."
     hf_preflight "$repo" "$work" || exit 1
     echo "downloading dataset $repo into $work/bundle (resumable; a failed file is retried ${HF_TRIES:-3} times) ..."
@@ -64,7 +68,7 @@ case "$src" in
     scratch="$(mktemp -d "${TMPDIR:-/tmp}/vs-data-install.XXXXXX")"; bundle="$scratch/bundle"; mkdir -p "$bundle"; base="${src%/}"
     curl -fsSL "$base/SHA256SUMS" -o "$bundle/SHA256SUMS"
     awk '{print $2}' "$bundle/SHA256SUMS" | while read -r f; do
-      case "$f" in raw.tar.part-*) [ "$raw" = 1 ] || continue;; data.tar.gz.part-*) [ "$only_raw" != 1 ] || continue;; esac
+      case "$f" in raw.tar.part-*) [ "$raw" = 1 ] || continue;; data.tar.gz.part-*) [ "$only_raw" != 1 ] && [ "$only_bge" != 1 ] || continue;; bge.tar.part-*) [ "$bge" = 1 ] || continue;; esac
       echo "fetching $f"; curl -fSL --retry 3 -C - "$base/$f" -o "$bundle/$f"
     done;;
   *) bundle="$(cd "${src/#\~/$HOME}" && pwd)";;
@@ -75,16 +79,19 @@ esac
 sums="$(mktemp "${TMPDIR:-/tmp}/vs-sums.XXXXXX")"; trap 'rm -f "$sums"; cleanup' EXIT
 cp "$bundle/SHA256SUMS" "$sums"
 [ "$raw" = 1 ] || { sed -i.bak '/ raw\.tar\.part-/d' "$sums" && rm -f "$sums.bak"; }  # -i.bak: works with GNU and macOS sed
-[ "$only_raw" != 1 ] || { sed -i.bak '/ data\.tar\.gz\.part-/d' "$sums" && rm -f "$sums.bak"; }
+[ "$only_raw" != 1 ] && [ "$only_bge" != 1 ] || { sed -i.bak '/ data\.tar\.gz\.part-/d' "$sums" && rm -f "$sums.bak"; }
+[ "$bge" = 1 ] || { sed -i.bak '/ bge\.tar\.part-/d' "$sums" && rm -f "$sums.bak"; }
 echo "verifying checksums ..."
 (cd "$bundle" && sha256sum -c --quiet "$sums") || { echo "checksum verification FAILED: nothing was unpacked" >&2; exit 1; }
 
-data_parts=("$bundle"/data.tar.gz.part-*); raw_parts=("$bundle"/raw.tar.part-*)
-[ -e "${data_parts[0]}" ] || data_parts=(); [ -e "${raw_parts[0]}" ] || raw_parts=()
-[ "$only_raw" != 1 ] || data_parts=()
+data_parts=("$bundle"/data.tar.gz.part-*); raw_parts=("$bundle"/raw.tar.part-*); bge_parts=("$bundle"/bge.tar.part-*)
+[ -e "${data_parts[0]}" ] || data_parts=(); [ -e "${raw_parts[0]}" ] || raw_parts=(); [ -e "${bge_parts[0]}" ] || bge_parts=()
+[ "$only_raw" != 1 ] && [ "$only_bge" != 1 ] || data_parts=()
 [ "$raw" = 1 ] || raw_parts=()
+[ "$bge" = 1 ] || bge_parts=()
+[ "$bge" != 1 ] || [ "${#bge_parts[@]}" -gt 0 ] || echo "note: this bundle has no BGE-M3 side vectors (bge.tar.part-*); VS_STORES=bge needs them (docs/handoff/bge-vectors-2026-10-28.md)" >&2
 [ "$raw" != 1 ] || [ "${#raw_parts[@]}" -gt 0 ] || echo "note: this bundle has no raw archive (older bundle); installing the data archive only" >&2
-[ "${#data_parts[@]}" -gt 0 ] || [ "${#raw_parts[@]}" -gt 0 ] || { echo "nothing to install: no archive parts for these options in $bundle" >&2; exit 1; }
+[ "${#data_parts[@]}" -gt 0 ] || [ "${#raw_parts[@]}" -gt 0 ] || [ "${#bge_parts[@]}" -gt 0 ] || { echo "nothing to install: no archive parts for these options in $bundle" >&2; exit 1; }
 
 if [ "$force" != 1 ]; then
   clash=()
@@ -94,6 +101,7 @@ if [ "$force" != 1 ]; then
   if [ "${#raw_parts[@]}" -gt 0 ]; then
     for d in raw/open_india_law raw/ipc2bns_verify raw/kathbath/hindi/test_known/audio; do has_data "$DATA/$d" && clash+=("$d"); done
   fi
+  if [ "${#bge_parts[@]}" -gt 0 ] && [ -n "$(find "$DATA/stores" -name '*.bge.sqlite' -print -quit 2>/dev/null)" ]; then clash+=("stores/*.bge.sqlite"); fi
   if [ "${#clash[@]}" -gt 0 ]; then
     echo "refusing to overwrite existing ${clash[*]} in $DATA (use --force, or FORCE=1 with make; RAW=0 / --no-raw leaves data/raw alone)" >&2; exit 1
   fi
@@ -109,6 +117,12 @@ if [ "${#raw_parts[@]}" -gt 0 ]; then
     echo "not enough free disk in $DATA for the raw archive: $((free_kb / 1024)) MB free, about $((need_kb / 1024)) MB needed. Free some space, or skip it with RAW=0 / --no-raw (nothing was unpacked)" >&2; exit 1
   fi
 fi
+if [ "${#bge_parts[@]}" -gt 0 ]; then
+  need_kb=$(( $(du -Lck "${bge_parts[@]}" | tail -1 | cut -f1) + 65536 ))
+  if [ "$free_kb" -le "$need_kb" ]; then
+    echo "not enough free disk in $DATA for the BGE-M3 side vectors: $((free_kb / 1024)) MB free, about $((need_kb / 1024)) MB needed (nothing was unpacked)" >&2; exit 1
+  fi
+fi
 if [ "${#data_parts[@]}" -gt 0 ]; then
   echo "unpacking the data archive into $DATA ..."
   cat "${data_parts[@]}" | tar -xzf - -C "$DATA"
@@ -117,8 +131,12 @@ if [ "${#raw_parts[@]}" -gt 0 ]; then
   echo "unpacking the raw archive into $DATA ..."
   cat "${raw_parts[@]}" | tar -xf - -C "$DATA"
 fi
+if [ "${#bge_parts[@]}" -gt 0 ]; then
+  echo "unpacking the BGE-M3 side vectors into $DATA/stores ..."
+  cat "${bge_parts[@]}" | tar -xf - -C "$DATA"
+fi
 if [ "${#data_parts[@]}" -gt 0 ] || [ "$only_raw" = 1 ]; then
   [ -f "$bundle/bundle_manifest.json" ] && cp "$bundle/bundle_manifest.json" "$DATA/bundle_manifest.json"   # the bundle folder's copy also records the raw archive
 fi
-"$PY" scripts/_data_bundle.py check "$DATA" "$bundle/bundle_manifest.json" $([ "${#raw_parts[@]}" -gt 0 ] && echo raw)
+"$PY" scripts/_data_bundle.py check "$DATA" "$bundle/bundle_manifest.json" $([ "${#raw_parts[@]}" -gt 0 ] && echo raw) $([ "${#bge_parts[@]}" -gt 0 ] && echo bge)
 echo "installed. Models are not part of the bundle: see MODELS.txt in the bundle and \`make models\`."

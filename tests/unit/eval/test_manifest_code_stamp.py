@@ -27,3 +27,14 @@ def test_tree_hash_changes_with_a_source_edit(monkeypatch, tmp_path):
     driver.code_tree_hash.cache_clear()
     assert driver.code_tree_hash() != first
     driver.code_tree_hash.cache_clear()
+
+
+def test_manifest_records_the_store_embedder(tmp_path, monkeypatch):
+    """B2/B3 and the retrieval metrics are reported per store embedder: the manifest names it and the VS_STORES mode (default: the vectors inside the stores)."""
+    monkeypatch.delenv("VS_STORES", raising=False)
+    m = driver.write_run_manifest(tmp_path, system="full", switches=Switches(), seed=1)
+    assert m["store_vectors"]["mode"] == "default" and "store_embedder" in m
+    assert set(m["store_vectors"]["stores"]) == {"caselaw.reasoning", "caselaw.similar", "advocacy.arguments", "advocacy.objections"}
+    monkeypatch.setenv("VS_STORES", "bge")
+    m = driver.write_run_manifest(tmp_path, system="full", switches=Switches(), seed=1)
+    assert m["store_vectors"]["mode"] == "bge"

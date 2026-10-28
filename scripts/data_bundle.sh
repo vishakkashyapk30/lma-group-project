@@ -7,12 +7,15 @@
 #   PART_SIZE=2G  scripts/data_bundle.sh            # size of one part (default 4G; the Hugging Face limit is 50 GB per file)
 #   FORCE=1 scripts/data_bundle.sh                  # rebuild both archives even when nothing changed
 #   RAW=0 scripts/data_bundle.sh                    # build only the data archive
+#   BGE=0 scripts/data_bundle.sh                    # leave out the optional BGE-M3 side vectors even when data/stores has them
 #
-# Two archive families, each written straight into the bundle folder (no scratch copy):
+# Two archive families, plus an optional third, each written straight into the bundle folder (no scratch copy):
 #   data.tar.gz.part-NNN  (gzip)       derived data: interim (with hindi_native.jsonl), stores, testsets, gaps (statutes), eval, raw/MANIFEST.json,
 #                                      the Kathbath transcripts and audio index (about 1.5 MB), and bundle_manifest.json (unpacks to data/bundle_manifest.json).
 #   raw.tar.part-NNN      (plain tar)  public source data: raw/open_india_law (judgment shards, legislation, sc_metadata.jsonl, SHA256SUMS.json, fetch logs),
 #                                      raw/ipc2bns_verify, the full raw/kathbath (with the audio) and raw/MANIFEST.json. Not gzipped: parquet and m4a are already compressed.
+#   bge.tar.part-NNN      (plain tar)  optional: the BGE-M3 side vectors data/stores/**/*.bge.sqlite and data/stores/BGE_MANIFEST.json (opt-in VS_STORES=bge,
+#                                      about 0.8 GB of fp16, which gzip does not shrink). Built only when they exist; never inside the data archive; installed only with BGE=1.
 # Resumable: an archive whose parts exist and whose source list (path, size, mtime) is unchanged since it was built is kept, not rebuilt
 # (state files .state-data and .state-raw in the bundle folder; an older data archive without a state file is kept when every source is older than it).
 # Left out on purpose: models/ (public weights on their own repos: see MODELS.txt and `make models`), data/cases (private client data), data/openai (spend ledger and cache),
@@ -34,6 +37,7 @@ rm -f "$OUT"/SHA256SUMS "$OUT"/MODELS.txt "$OUT"/README.md
 
 mapfile -t data_paths < <("$PY" scripts/_data_bundle.py paths "$DATA" data)
 mapfile -t raw_paths < <("$PY" scripts/_data_bundle.py paths "$DATA" raw)
+mapfile -t bge_paths < <("$PY" scripts/_data_bundle.py paths "$DATA" bge)
 [ "${#data_paths[@]}" -gt 0 ] || { echo "nothing to bundle in $DATA" >&2; exit 1; }
 "$PY" scripts/_data_bundle.py manifest "$DATA" "$OUT/bundle_manifest.json.new"
 mv "$OUT/bundle_manifest.json.new" "$OUT/bundle_manifest.json"
@@ -58,8 +62,8 @@ build_archive() {
   echo "$fam archive: $* (about $((need_kb / 1024)) MB needed, $((free_kb / 1024)) MB free in $OUT)"
   [ "$free_kb" -gt "$need_kb" ] || { echo "not enough free disk in $OUT" >&2; exit 1; }
   rm -f "$state_file" "$OUT/$prefix"*
-  local extra=(); [ "$fam" = data ] && extra=(-C "$OUT" bundle_manifest.json)
-  tar -C "$DATA" --exclude='*.env' --exclude='*key*' --exclude='*token*' --exclude='*secret*' -cf - "$@" "${extra[@]}" \
+  local extra=() skip=(); [ "$fam" = data ] && extra=(-C "$OUT" bundle_manifest.json) && skip=(--exclude='*.bge.sqlite' --exclude='BGE_MANIFEST.json')
+  tar -C "$DATA" --exclude='*.env' --exclude='*key*' --exclude='*token*' --exclude='*secret*' ${skip[@]+"${skip[@]}"} -cf - "$@" ${extra[@]+"${extra[@]}"} \
     | $comp | split -b "$PART_SIZE" -d -a 3 - "$OUT/$prefix"
   echo "$now" > "$state_file"
 }
@@ -70,6 +74,11 @@ if [ "${RAW:-1}" != 0 ] && [ "${#raw_paths[@]}" -gt 0 ]; then
   build_archive raw raw.tar.part- cat "${raw_paths[@]}"
 else
   echo "raw archive: skipped (RAW=0 or no raw data in $DATA)"; rm -f "$OUT"/raw.tar.part-* "$OUT/.state-raw"
+fi
+if [ "${BGE:-1}" != 0 ] && [ "${#bge_paths[@]}" -gt 0 ]; then
+  build_archive bge bge.tar.part- cat "${bge_paths[@]}"
+else
+  echo "bge archive: skipped (BGE=0 or no BGE-M3 side vectors in $DATA/stores)"; rm -f "$OUT"/bge.tar.part-* "$OUT/.state-bge"
 fi
 "$PY" scripts/_data_bundle.py archives "$OUT/bundle_manifest.json" "$OUT"
 MODEL_IDS="$("$PY" -c "import sys; sys.path.insert(0, 'scripts'); import _data_check as c; print(', '.join(c.model_ids(c.ROOT / 'configs' / 'models.yaml')))" 2>/dev/null || true)"
@@ -85,6 +94,7 @@ tags: [legal, india, bail, retrieval]
 A private team copy of every dataset the LMA group project repository uses, so that no teammate has to refetch from the web. Two archive families (tar parts of at most 4 GB):
 
 - \`data.tar.gz.part-*\` (gzip): the data that is slow to rebuild: \`data/interim\`, \`data/stores\`, \`data/testsets\`, \`data/gaps\`, \`data/eval\`, \`data/raw/MANIFEST.json\` and the Kathbath transcripts.
+- \`bge.tar.part-*\` (plain tar, optional, only when present): the opt-in BGE-M3 side vectors of the four vector stores (\`data/stores/**/*.bge.sqlite\`, \`data/stores/BGE_MANIFEST.json\`), used only with \`VS_STORES=bge\`; installed with \`BGE=1\`.
 - \`raw.tar.part-*\` (plain tar; parquet and m4a are already compressed): the public source data under \`data/raw\`: \`open_india_law\` (judgment shards, legislation, \`sc_metadata.jsonl\`, \`SHA256SUMS.json\`, fetch logs), \`ipc2bns_verify\`, the full \`kathbath\` (with the audio) and \`MANIFEST.json\`.
 
 Install (from the repository root): \`make data-install SRC=<this folder>\` or \`make data-install SRC=hf:<repo>\`; it verifies \`SHA256SUMS\`, unpacks into \`data/\`
@@ -108,5 +118,5 @@ Install (from the repository root): \`make data-install SRC=<this folder>\` or \
 
 This repository is private and for the four team members of the project only. Licences of the sources apply to the derived and raw files.
 CARD
-(cd "$OUT" && sha256sum $(ls data.tar.gz.part-* raw.tar.part-* 2>/dev/null) bundle_manifest.json MODELS.txt README.md > SHA256SUMS)
+(cd "$OUT" && sha256sum $(ls data.tar.gz.part-* raw.tar.part-* bge.tar.part-* 2>/dev/null) bundle_manifest.json MODELS.txt README.md > SHA256SUMS)
 echo "bundle written to $OUT:"; (cd "$OUT" && ls -lh && du -sh .)

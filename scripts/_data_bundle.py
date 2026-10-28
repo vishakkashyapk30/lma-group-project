@@ -1,10 +1,13 @@
 """Helpers of scripts/data_bundle.sh and scripts/data_install.sh: count rows of the bundled files, write the bundle manifest, check an install.
 
 python scripts/_data_bundle.py manifest <data_dir> <out.json>     # row counts and sizes of what the bundle holds
-python scripts/_data_bundle.py check <data_dir> <bundle_manifest.json> [raw]   # exit 1 when a count differs (raw: also the raw archive's file counts)
-python scripts/_data_bundle.py paths <data_dir> data|raw         # the paths (relative to data/) that one archive holds, one per line
-python scripts/_data_bundle.py state <data_dir> data|raw         # sha256 of the sorted (path, size, mtime) list of one archive's files (resume key)
-python scripts/_data_bundle.py archives <bundle_manifest.json> <bundle_dir>   # record parts and bytes of both archive families in the manifest
+python scripts/_data_bundle.py check <data_dir> <bundle_manifest.json> [raw] [bge]   # exit 1 when a count differs (raw: also the raw archive's file counts; bge: the side files)
+python scripts/_data_bundle.py paths <data_dir> data|raw|bge     # the paths (relative to data/) that one archive holds, one per line
+python scripts/_data_bundle.py state <data_dir> data|raw|bge     # sha256 of the sorted (path, size, mtime) list of one archive's files (resume key)
+python scripts/_data_bundle.py archives <bundle_manifest.json> <bundle_dir>   # record parts and bytes of the archive families in the manifest
+
+The optional third family `bge` holds the opt-in BGE-M3 side vectors of the vector stores (data/stores/**/*.bge.sqlite and data/stores/BGE_MANIFEST.json,
+about 0.8 GB, used only with VS_STORES=bge); they are never part of the data archive and are installed only on request (BGE=1).
 python scripts/_data_bundle.py models <models_dir>                # names and sizes only (never the weights)
 """
 
@@ -26,6 +29,21 @@ RAW_DIRS = (
     "ipc2bns_verify",
     "kathbath",
 )  # data/raw folders of the second archive (raw.tar.part-*); data/raw/MANIFEST.json joins them
+BGE_MANIFEST = "stores/BGE_MANIFEST.json"
+
+
+def is_bge(p: Path) -> bool:
+    """A file of the optional bge family (a BGE-M3 side file or its manifest), kept out of the data archive."""
+    return p.name.endswith(".bge.sqlite") or p.name == "BGE_MANIFEST.json"
+
+
+def bge_paths(data: Path) -> list[str]:
+    """Paths (relative to data/) of the bge family: every side file under stores/, then BGE_MANIFEST.json."""
+    root = data / "stores"
+    side = sorted(str(p.relative_to(data)) for p in root.rglob("*.bge.sqlite") if p.is_file()) if root.is_dir() else []
+    return side + ([BGE_MANIFEST] if side and (data / BGE_MANIFEST).is_file() else [])
+
+
 COUNTED = (
     "interim/orders.jsonl",
     "interim/statutes.jsonl",
@@ -38,6 +56,8 @@ COUNTED = (
 
 def family_paths(data: Path, family: str) -> list[str]:
     """Paths (relative to data/) that the `data` archive (gzip, derived data) or the `raw` archive (plain tar, public source data) holds."""
+    if family == "bge":
+        return bge_paths(data)
     if family == "raw":
         return [f"raw/{d}" for d in RAW_DIRS if (data / "raw" / d).is_dir()] + (
             ["raw/MANIFEST.json"] if (data / "raw" / "MANIFEST.json").is_file() else []
@@ -74,7 +94,7 @@ def bundled(root: Path) -> list[Path]:
         [
             p
             for p in root.rglob("*")
-            if p.is_file() and not any(x in p.name.lower() for x in EXCLUDED) and not any(d in p.parts for d in SKIP_DIRS)
+            if p.is_file() and not any(x in p.name.lower() for x in EXCLUDED) and not any(d in p.parts for d in SKIP_DIRS) and not is_bge(p)
         ]
         if root.is_dir()
         else []
@@ -118,6 +138,9 @@ def manifest(data: Path) -> dict:
             if (data / "raw" / d).is_dir()
         },
     }
+    side = [data / rel for rel in bge_paths(data)]
+    if side:
+        out["bge"] = {"files": {str(p.relative_to(data)): p.stat().st_size for p in side}, "bytes": sum(p.stat().st_size for p in side)}
     raw = data / "raw" / "MANIFEST.json"
     out["raw_manifest_datasets"] = (
         sorted((json.loads(raw.read_text(encoding="utf-8")).get("datasets") or {}).keys()) if raw.is_file() else []
@@ -125,7 +148,7 @@ def manifest(data: Path) -> dict:
     return out
 
 
-def check(data: Path, expected: dict, raw: bool = False) -> list[str]:
+def check(data: Path, expected: dict, raw: bool = False, bge: bool = False) -> list[str]:
     """Problems found when comparing an installed data folder with the bundle manifest (empty list: all counts match)."""
     problems = []
     for rel, n in (expected.get("rows") or {}).items():
@@ -145,18 +168,27 @@ def check(data: Path, expected: dict, raw: bool = False) -> list[str]:
             got = len(bundled(data / "raw" / d))
             if got != info["files"]:
                 problems.append(f"raw/{d}/: {got} files, bundle manifest says {info['files']}")
+    if bge:
+        for rel, size in ((expected.get("bge") or {}).get("files") or {}).items():
+            got = (data / rel).stat().st_size if (data / rel).is_file() else None
+            if got != size:
+                problems.append(f"{rel}: {got} bytes, bundle manifest says {size}")
     return problems
 
 
 def archives(manifest_path: Path, bundle: Path) -> dict:
     """Record parts and bytes of the data (gzip) and raw (plain tar) archive families in the bundle manifest (existing keys are kept)."""
     m = json.loads(manifest_path.read_text(encoding="utf-8"))
-    fam = {"data": ("data.tar.gz.part-*", "gzip"), "raw": ("raw.tar.part-*", "none")}
+    fam = {"data": ("data.tar.gz.part-*", "gzip"), "raw": ("raw.tar.part-*", "none"), "bge": ("bge.tar.part-*", "none")}
     m["archives"] = {}
     for name, (pattern, comp) in fam.items():
         parts = sorted(bundle.glob(pattern))
         m["archives"][name] = {"parts": len(parts), "bytes": sum(p.stat().st_size for p in parts), "compression": comp}
     m.setdefault("raw", {})["parts"] = m["archives"]["raw"]["parts"]
+    if m["archives"]["bge"]["parts"]:
+        m.setdefault("bge", {})["parts"] = m["archives"]["bge"]["parts"]
+    else:
+        del m["archives"]["bge"]
     manifest_path.write_text(json.dumps(m, indent=1), encoding="utf-8")
     return m
 
@@ -182,7 +214,7 @@ def main(argv: list[str]) -> int:
         return 0
     if cmd == "check":
         problems = check(
-            Path(argv[2]), json.loads(Path(argv[3]).read_text(encoding="utf-8")), raw=len(argv) > 4 and argv[4] == "raw"
+            Path(argv[2]), json.loads(Path(argv[3]).read_text(encoding="utf-8")), raw="raw" in argv[4:], bge="bge" in argv[4:]
         )
         for p in problems:
             print("SANITY:", p)
