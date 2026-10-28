@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from vakeel_sahayak.models.base import ModelUnavailable
+from vakeel_sahayak.models.paid_lock import PaidProviderLocked
 
 
 class SarvamError(ModelUnavailable):
@@ -15,6 +16,10 @@ class SarvamUnavailable(SarvamError):
 
 class SarvamPolicyError(SarvamError):
     """The privacy policy forbids this call (mode, data class or missing counsel consent). Nothing was sent."""
+
+
+class SarvamLocked(SarvamPolicyError, PaidProviderLocked):
+    """Sarvam is a paid provider and is locked (`models.paid_lock`, unlock `VS_ALLOW_PAID=sarvam`). Nothing was sent or recorded."""
 
 
 class SarvamHttpError(SarvamError):

@@ -53,6 +53,11 @@ from vakeel_sahayak.privacy.boundary import PrivacyBoundaryError
 from vakeel_sahayak.record.event_log import EventLog
 from vakeel_sahayak.schemas.enums import EventKind
 
+# RECONCILED: paid providers are locked by default since the owner decision of 2026-10-28 (models/paid_lock.py); these tests exercise the
+# mocked OpenAI/Sarvam paths, so they run with the providers unlocked. The lock itself is tested in tests/unit/models/test_paid_lock.py.
+pytestmark = pytest.mark.usefixtures("paid_unlocked")
+
+
 KEY = "sk-test-SECRET-0123456789"
 CASE = "case-0007"
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32

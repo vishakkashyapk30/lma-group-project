@@ -73,6 +73,8 @@ sarvam:
 # Agent roles: set llm.agents_14b.runtime: sarvam to use Sarvam-105B for the Ada-side agents (pseudonymised text only; falls back
 # to the configured fallback runtime when Sarvam is off, blocked or unavailable).
 
+# PAID-PROVIDER LOCK (owner decision 2026-10-28): the OpenAI and Sarvam blocks below are LOCKED in code (models/paid_lock.py): no call is sent and no
+# ledger row is written unless env VS_ALLOW_PAID names the provider (openai, sarvam). Do not unlock without the owner.
 # OpenAI (external API; hosted LLM allowed since 2026-10-24, team budget 5.00 USD in total). OFF by default. Privacy gate: the same as
 # Sarvam's (vakeel_sahayak/models/sarvam/policy.py, `authorize(provider="openai")`). Mode: env VS_EXTERNAL=off|public|pseudonymised|consented
 # (VS_SARVAM is Sarvam's own alias); else `mode` applies when `enabled: true`; else off. A call with no declared data scope is blocked.

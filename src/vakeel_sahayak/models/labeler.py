@@ -131,6 +131,13 @@ class EvalLabeler:
 
         if models_mode() == "offline":
             raise LabelerUnavailable("VS_MODELS=offline: the Llama evaluation labeler is not run; gold stays rule-only")
+        from vakeel_sahayak.models.paid_lock import PaidProviderLocked, assert_unlocked
+
+        if self._use_openai() or self._use_sarvam():  # a paid labeler is refused at once while locked (models/paid_lock.py)
+            try:
+                assert_unlocked("openai" if self._use_openai() else "sarvam")
+            except PaidProviderLocked as exc:
+                raise LabelerUnavailable(str(exc)) from exc
         if self._use_openai():
             self._llm = self._openai_client()
             return self._llm

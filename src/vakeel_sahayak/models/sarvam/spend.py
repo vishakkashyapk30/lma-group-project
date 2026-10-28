@@ -413,6 +413,9 @@ class Meter:
             SarvamUnavailable: the model has no price (a call whose cost cannot be capped is refused).
             SarvamBudgetExceeded: over the cap.
         """
+        from vakeel_sahayak.models.paid_lock import assert_unlocked
+
+        assert_unlocked("sarvam")  # paid provider locked (models/paid_lock.py): no ledger row, no cache row, no request
         price = price_of(model, self.cfg)
         if price is None:
             raise SarvamUnavailable(f"no price for model {model!r} in configs/models.yaml sarvam.prices_inr_per_1m; refusing to call a model whose cost cannot be capped")
@@ -444,6 +447,9 @@ class Meter:
             SarvamUnavailable: the endpoint kind has no price.
             SarvamBudgetExceeded: over the cap.
         """
+        from vakeel_sahayak.models.paid_lock import assert_unlocked
+
+        assert_unlocked("sarvam")
         p = char_price(kind, self.cfg)
         if p is None:
             raise SarvamUnavailable(f"no character price for {kind!r} in configs/models.yaml sarvam.prices_inr_per_10k_chars; refusing the call")

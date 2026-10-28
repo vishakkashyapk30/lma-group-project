@@ -29,6 +29,8 @@ if [ "$cmd" = run ]; then
     [ -z "$(git status --porcelain -- src configs)" ] || { echo "src/ or configs/ have local edits: use a clean checkout of $TAG" >&2; exit 1; }
   fi
   [ -f data/testsets/t1/dev.jsonl ] || { echo "data/testsets/t1/dev.jsonl is missing: run make data" >&2; exit 1; }
+  # paid providers are LOCKED by the owner's decision of 2026-10-28 (src/vakeel_sahayak/models/paid_lock.py): fail fast unless VS_ALLOW_PAID names sarvam
+  PYTHONPATH=src $PY -m vakeel_sahayak.models.paid_lock check sarvam || exit 3
   export VS_MODELS=auto VS_LLM_BACKEND=sarvam VS_EXTERNAL=pseudonymised VS_SARVAM=pseudonymised VS_SARVAM_CAP_INR
   echo "cap INR $VS_SARVAM_CAP_INR (local ledger); spent so far:"; $PY -m vakeel_sahayak.models.sarvam.spend 2>/dev/null | head -3 || true
   $PY scripts/sweep_dev.py run --phase 3 --backend sarvam --shards "${SHARDS:-3}" --parallel 1 ${ARMS:+--arms "$ARMS"}

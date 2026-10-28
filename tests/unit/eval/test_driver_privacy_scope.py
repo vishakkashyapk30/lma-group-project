@@ -40,7 +40,7 @@ def test_driver_declares_public_source_cases_and_not_client_cases():
         assert current_scope().basis == "" and current_scope().data is DataClass.CLIENT_RAW
 
 
-def test_driver_public_eval_path_sends_without_consent_and_writes_none(monkeypatch, toolbox):
+def test_driver_public_eval_path_sends_without_consent_and_writes_none(monkeypatch, toolbox, paid_unlocked):  # RECONCILED: paid providers are locked by default (owner decision 2026-10-28); this exercises the mocked OpenAI path
     """A hosted agent call on a public-source case works without a consent event, uses the case's wire aliases, and writes no USER_ACTION."""
     monkeypatch.setenv("VS_EXTERNAL", "pseudonymised")
     case = {"case_id": "t1dev-900", "facts": ORDER, "before": toolbox.world.case_date}
@@ -56,7 +56,7 @@ def test_driver_public_eval_path_sends_without_consent_and_writes_none(monkeypat
     assert not [e for e in ctx.log.read(case["case_id"], kind=EventKind.USER_ACTION) if "consent" in str(e.tool)]
 
 
-def test_driver_client_case_needs_counsel_consent(monkeypatch, toolbox):
+def test_driver_client_case_needs_counsel_consent(monkeypatch, toolbox, paid_unlocked):  # RECONCILED: paid providers are locked by default (owner decision 2026-10-28); this exercises the mocked OpenAI path
     monkeypatch.setenv("VS_EXTERNAL", "pseudonymised")
     case = {"case_id": "t1dev-901", "facts": ORDER, "before": toolbox.world.case_date, "data_class": "client"}
     ctx = build_context(case, tools=toolbox.tools, llm=full_pipeline_llm())

@@ -191,7 +191,7 @@ class FakeApi:
         return ChatResult(text=self.answer, prompt_tokens=1, completion_tokens=1)
 
 
-def test_hosted_client_sends_the_wire_form_and_returns_real_values(monkeypatch):
+def test_hosted_client_sends_the_wire_form_and_returns_real_values(monkeypatch, paid_unlocked):  # RECONCILED: paid providers are locked by default (owner decision 2026-10-28)
     monkeypatch.setenv("VS_EXTERNAL", "pseudonymised")
     mapping = PseudonymMap()
     mapping.date_shift_days = SHIFT

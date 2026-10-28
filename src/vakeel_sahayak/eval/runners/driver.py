@@ -953,10 +953,31 @@ def smoke_all(argv: list[str] | None = None) -> int:
     return 1 if failed else 0
 
 
+def paid_backend_locked() -> str | None:
+    """The lock message when `VS_LLM_BACKEND` (or the labeler/teacher variables) name a paid provider that is locked (`models.paid_lock`), else None.
+
+    The driver refuses to start then, instead of letting every agent call fall back to the local client and producing a run that is not the
+    backend it claims to be."""
+    import os
+
+    from vakeel_sahayak.models.paid_lock import lock_message, paid_unlocked
+
+    for var in ("VS_LLM_BACKEND", "VS_LABELER", "VS_TEACHER"):
+        name = (os.environ.get(var) or "").strip().lower()
+        if name and not paid_unlocked(name):
+            return f"{var}={name}: " + lock_message(name)
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     """`python -m vakeel_sahayak.eval.runners.driver smoke|eval-smoke|smoke-all|run|plan`."""
     args = list(sys.argv[1:] if argv is None else argv)
     cmd = args.pop(0) if args else "smoke"
+    if cmd != "plan":
+        locked = paid_backend_locked()
+        if locked:
+            print(locked, file=sys.stderr)
+            return 3
     commands = {"smoke": smoke, "eval-smoke": eval_smoke, "smoke-all": smoke_all, "run": run_system, "plan": plan_command}
     if cmd in commands:
         return commands[cmd](args)

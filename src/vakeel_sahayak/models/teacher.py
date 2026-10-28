@@ -142,6 +142,10 @@ class TeacherClient:
     def client(self) -> LLMClient:
         """The backend client (built on first use)."""
         if self._client is None:
+            if self.backend in ("sarvam", "openai"):
+                from vakeel_sahayak.models.paid_lock import assert_unlocked
+
+                assert_unlocked(self.backend)  # paid provider locked unless VS_ALLOW_PAID names it
             if self.backend == "mistral":
                 self._client = MistralApiClient(self.model_id)
             elif self.backend == "sarvam":

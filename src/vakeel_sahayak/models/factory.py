@@ -26,6 +26,9 @@ role's own local/vLLM/offline client answers, so nothing leaves the machine and 
 use OpenAI or Sarvam (public data only) through `models.labeler` / `models.teacher`; `llm_family(...)`, `assert_independent_families()` and
 `describe_run_models()` support the evaluation's family rule and the per-run model stamp.
 
+**Paid-provider lock** (`models.paid_lock`, owner decision 2026-10-28): OpenAI and Sarvam are treated as off unless `VS_ALLOW_PAID` names them, so
+every role answers from its local client and no request leaves; do not unlock without the owner.
+
 **OpenAI** (external API, off by default, hard spending cap; `models.openai`): see `models/openai/ledger.py`. The same privacy gate as Sarvam
 (`VS_EXTERNAL`) applies; the key is `OPENAI_API_KEY` from the environment only.
 
@@ -180,7 +183,9 @@ def _sarvam_active(capability: str) -> bool:
     from vakeel_sahayak.models.sarvam.config import key_is_set, sarvam_config
     from vakeel_sahayak.models.sarvam.policy import SarvamMode, sarvam_mode
 
-    if models_mode() == "offline":
+    from vakeel_sahayak.models.paid_lock import paid_unlocked
+
+    if models_mode() == "offline" or not paid_unlocked("sarvam"):  # locked like off: the local client answers
         return False
     return sarvam_mode() is not SarvamMode.OFF and key_is_set() and bool(sarvam_config()["use"].get(capability, True))
 
@@ -189,7 +194,9 @@ def _sarvam_state() -> str:
     from vakeel_sahayak.models.sarvam.config import key_is_set
     from vakeel_sahayak.models.sarvam.policy import sarvam_mode
 
-    return f"{sarvam_mode().value}:{key_is_set()}"
+    from vakeel_sahayak.models.paid_lock import paid_unlocked
+
+    return f"{sarvam_mode().value}:{key_is_set()}:{paid_unlocked('sarvam')}"
 
 
 def _openai_active() -> bool:
@@ -197,7 +204,9 @@ def _openai_active() -> bool:
     from vakeel_sahayak.models.openai.config import key_is_set, openai_config
     from vakeel_sahayak.models.sarvam.policy import SarvamMode, provider_mode
 
-    if models_mode() == "offline":
+    from vakeel_sahayak.models.paid_lock import paid_unlocked
+
+    if models_mode() == "offline" or not paid_unlocked("openai"):  # locked like off: the local client answers
         return False
     return provider_mode("openai") is not SarvamMode.OFF and key_is_set() and bool(openai_config()["use"].get("llm", True))
 
@@ -206,7 +215,9 @@ def _openai_state() -> str:
     from vakeel_sahayak.models.openai.config import key_is_set
     from vakeel_sahayak.models.sarvam.policy import provider_mode
 
-    return f"{provider_mode('openai').value}:{key_is_set()}"
+    from vakeel_sahayak.models.paid_lock import paid_unlocked
+
+    return f"{provider_mode('openai').value}:{key_is_set()}:{paid_unlocked('openai')}"
 
 
 def _offline(role: str, cfg: dict[str, object]) -> LLMClient:
@@ -259,6 +270,9 @@ def get_llm_model(role: str, model: str) -> LLMClient:
     forced = llm_backend()
     if forced not in ("sarvam", "openai"):
         raise ValueError(f"an explicit model id needs VS_LLM_BACKEND=sarvam or openai, got {forced!r}")
+    from vakeel_sahayak.models.paid_lock import assert_unlocked
+
+    assert_unlocked(forced)  # a locked paid provider is refused with the lock message, never a silent local stand-in
     active = _sarvam_active("llm") if forced == "sarvam" else _openai_active()
     if not active:
         raise ValueError(f"{forced} is not active (key missing or VS_EXTERNAL off): cannot build a client for model {model!r}")

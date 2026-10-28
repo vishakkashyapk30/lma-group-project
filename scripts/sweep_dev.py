@@ -25,6 +25,7 @@ REPO = Path(__file__).resolve().parents[1]
 STORES = ["law.statutes", "law.concordance", "caselaw.reasoning", "caselaw.citations", "caselaw.similar", "advocacy.arguments", "advocacy.objections"]
 EXPAND = {"A10:*": [f"A10:{s}" for s in STORES], "S17*": ["S17", "S17b", "S17c", "S17d"], "P5-P8": ["P5", "P6", "P7", "P8"]}
 STUDY_OUT = "studies"  # <out_root>/studies/<study>/ ; M17 (`study: m17`) is a driver-style run under <out_root>/outputs/m17
+SKIP_STATUS = ("locked", "blocked", "moved")  # arms that wait for the owner (paid provider locked) or were moved to another backend: never launched
 TESTSET_FILES = {"T1": "data/testsets/t1/dev.jsonl", "T2": "data/testsets/t2/driver_cases.jsonl", "T5": "data/testsets/t5/driver_cases.jsonl", "T7": "data/testsets/t7/driver_cases.jsonl"}
 
 
@@ -62,6 +63,8 @@ def jobs_for(cfg: dict, args: argparse.Namespace) -> list[dict]:
         if arm["phase"] != args.phase or (arm.get("status") == "done" and not getattr(args, "include_done", False)):
             continue
         if args.backend and arm["backend"] != args.backend:
+            continue
+        if str(arm.get("status", "")).split(":")[0].strip() in SKIP_STATUS:
             continue
         if arm.get("kind") == "study":  # not a driver system: an offline study (one job per study, even when several arms name it)
             if wanted and arm["id"].lower() not in wanted and arm["study"].lower() not in wanted:
@@ -150,6 +153,19 @@ def launch(job: dict, cfg: dict, args: argparse.Namespace) -> list[subprocess.Po
     return procs
 
 
+def locked_backends(cfg: dict, jobs: list[dict]) -> list[str]:
+    """Lock messages for the jobs whose backend runs a paid provider that is locked (models/paid_lock.py; unlock VS_ALLOW_PAID, only with the owner's go-ahead)."""
+    sys.path.insert(0, str(REPO / "src"))
+    from vakeel_sahayak.models.paid_lock import lock_message, paid_unlocked
+
+    out: list[str] = []
+    for backend in sorted({j["arm"]["backend"] for j in jobs}):
+        env = (cfg["backends"].get(backend) or {}).get("env") or {}
+        names = {str(env.get(v, "")).strip().lower() for v in ("VS_LLM_BACKEND", "VS_LABELER", "VS_TEACHER")} - {""}
+        out += [f"backend {backend!r} ({n}): " + lock_message(n) for n in sorted(names) if not paid_unlocked(n)]
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -178,6 +194,11 @@ def main() -> int:
     cfg = load_cfg()
     jobs = jobs_for(cfg, args)
     print(f"{len(jobs)} job(s) in phase {args.phase}", flush=True)
+    locked = locked_backends(cfg, jobs)
+    if locked:
+        print("\n".join(locked), file=sys.stderr, flush=True)
+        if not args.dry_run:
+            return 3
     active: list[tuple[dict, list[subprocess.Popen]]] = []
     queue = list(jobs)
     t0 = time.time()

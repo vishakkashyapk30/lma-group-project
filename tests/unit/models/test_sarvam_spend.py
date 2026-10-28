@@ -15,6 +15,11 @@ from vakeel_sahayak.models.sarvam.errors import BudgetExhausted
 from vakeel_sahayak.models.sarvam.fallback import FALLBACK_ERRORS
 from vakeel_sahayak.models.sarvam.http import SarvamHttp
 
+# RECONCILED: paid providers are locked by default since the owner decision of 2026-10-28 (models/paid_lock.py); these tests exercise the
+# mocked OpenAI/Sarvam paths, so they run with the providers unlocked. The lock itself is tested in tests/unit/models/test_paid_lock.py.
+pytestmark = pytest.mark.usefixtures("paid_unlocked")
+
+
 MSG = [{"role": "user", "content": "x" * 400}]
 
 

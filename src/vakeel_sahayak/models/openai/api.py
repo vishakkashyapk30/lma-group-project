@@ -177,7 +177,10 @@ class OpenAIApi:
     # ------------------------------------------------------------------ the call
 
     def _begin(self, messages: list[dict[str, str]], model: str, max_tokens: int, temperature: float, json_schema: dict | None, purpose: str, case_id: str | None) -> tuple[ChatResult | None, Price, Reservation | None, str | None]:
-        """Cache lookup, then price and reserve. Returns (cached result, price, reservation, cache key)."""
+        """Cache lookup, then price and reserve. Returns (cached result, price, reservation, cache key). Refused first while OpenAI is locked (`paid_lock`)."""
+        from vakeel_sahayak.models.paid_lock import assert_unlocked
+
+        assert_unlocked("openai")  # no ledger row, no cache row, no request
         price = price_of(model, self.cfg)
         if price is None:
             raise OpenAIUnavailable(f"no price for model {model!r} in configs/models.yaml openai.prices; refusing to call a model whose cost cannot be capped")

@@ -87,6 +87,9 @@ class SarvamHttp:
     # ------------------------------------------------------------------ shared helpers
 
     def _headers(self) -> dict[str, str]:
+        from vakeel_sahayak.models.paid_lock import assert_unlocked
+
+        assert_unlocked("sarvam")  # paid provider: locked unless VS_ALLOW_PAID names it (models/paid_lock.py)
         if not self._key:
             raise SarvamUnavailable("SARVAM_API_KEY is not set in the environment, so the Sarvam API cannot be called")
         return {self.header: self._key}

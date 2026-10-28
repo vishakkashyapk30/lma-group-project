@@ -1,5 +1,7 @@
 # VI-04: non-Qwen gold labeler (G1, G3; G4 to G7 added in EV-05) and the Sarvam spend ledger (handoff)
 
+> **Paid providers locked by owner decision 2026-10-28; do not unlock without the owner.** Every OpenAI and Sarvam call is refused in code (`src/vakeel_sahayak/models/paid_lock.py`) unless the operator sets `VS_ALLOW_PAID=openai` / `sarvam` / `openai,sarvam`. A locked call sends nothing and writes no ledger row; the factory falls back to the local client; `driver`, `eval.studies`, the labeler, the teacher, `scripts/sweep_dev.py` and `scripts/sweep_{openai,sarvam}_block.sh` refuse at once with the message naming the unlock. Arms of `configs/eval/sweep_dev.yaml` with `status: locked`, `blocked` or `moved` are never launched.
+
 Date 2026-10-26. Nothing committed. Task A (Sarvam ledger) was the prerequisite; Task B is VI-04.
 
 ## Task A: Sarvam spend ledger (hard cap, INR)

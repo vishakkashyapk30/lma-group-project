@@ -130,6 +130,8 @@ def test_every_models_module_defines_a_known_client_or_is_a_known_helper():
         "vakeel_sahayak.models.sarvam",
         # RECONCILED: the OpenAI API package (external, off by default, hard spending cap); its adapter implements LLMClient.
         "vakeel_sahayak.models.openai",
+        # RECONCILED: the paid-provider lock (owner decision 2026-10-28); a guard, not a client.
+        "vakeel_sahayak.models.paid_lock",
     }
     assert set(_model_modules()) == known
 

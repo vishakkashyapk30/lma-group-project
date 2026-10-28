@@ -5,6 +5,7 @@ from vakeel_sahayak.models.sarvam.errors import (
     SarvamBudgetExceeded,
     SarvamError,
     SarvamHttpError,
+    SarvamLocked,
     SarvamPolicyError,
     SarvamQuotaError,
     SarvamRateLimited,
@@ -26,7 +27,7 @@ from vakeel_sahayak.models.sarvam.policy import (
 )
 
 __all__ = [
-    "DataClass", "SarvamAuthError", "SarvamBudgetExceeded", "SarvamError", "SarvamHttpError", "SarvamMode", "SarvamPolicyError", "SarvamQuotaError",
+    "DataClass", "SarvamAuthError", "SarvamBudgetExceeded", "SarvamError", "SarvamHttpError", "SarvamLocked", "SarvamMode", "SarvamPolicyError", "SarvamQuotaError",
     "SarvamRateLimited", "SarvamScope", "SarvamUnavailable", "authorize", "case_text_scope", "current_scope", "has_consent", "public_scope",
     "public_source_scope", "record_consent", "sarvam_mode", "sarvam_scope",
 ]  # fmt: skip

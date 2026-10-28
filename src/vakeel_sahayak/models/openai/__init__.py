@@ -6,6 +6,7 @@ from vakeel_sahayak.models.openai.errors import (
     OpenAIAuthError,
     OpenAIError,
     OpenAIHttpError,
+    OpenAILocked,
     OpenAIPolicyError,
     OpenAIQuotaError,
     OpenAIRateLimited,
@@ -14,6 +15,6 @@ from vakeel_sahayak.models.openai.errors import (
 from vakeel_sahayak.models.openai.ledger import Ledger, ResponseCache, report
 
 __all__ = [
-    "HARD_MAX_USD", "BudgetExceeded", "Ledger", "OpenAIAuthError", "OpenAIError", "OpenAIHttpError", "OpenAIPolicyError", "OpenAIQuotaError",
+    "HARD_MAX_USD", "BudgetExceeded", "Ledger", "OpenAIAuthError", "OpenAIError", "OpenAIHttpError", "OpenAILocked", "OpenAIPolicyError", "OpenAIQuotaError",
     "OpenAIRateLimited", "OpenAIUnavailable", "ResponseCache", "effective_cap_usd", "key_is_set", "openai_config", "report",
 ]  # fmt: skip

@@ -88,6 +88,9 @@ class OpenAIHttp:
         return bool(self._key)
 
     def _headers(self) -> dict[str, str]:
+        from vakeel_sahayak.models.paid_lock import assert_unlocked
+
+        assert_unlocked("openai")  # paid provider: locked unless VS_ALLOW_PAID names it (models/paid_lock.py)
         if not self._key:
             raise OpenAIUnavailable("OPENAI_API_KEY is not set in the environment, so the OpenAI API cannot be called")
         return {"Authorization": f"Bearer {self._key}"}

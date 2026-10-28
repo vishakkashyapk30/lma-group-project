@@ -30,6 +30,8 @@ if [ "$cmd" = run ]; then
     [ -z "$(git status --porcelain -- src configs)" ] || { echo "src/ or configs/ have local edits: use a clean checkout of $TAG" >&2; exit 1; }
   fi
   [ -f data/testsets/t1/dev.jsonl ] || { echo "data/testsets/t1/dev.jsonl is missing: run make data" >&2; exit 1; }
+  # paid providers are LOCKED by the owner's decision of 2026-10-28 (src/vakeel_sahayak/models/paid_lock.py): fail fast unless VS_ALLOW_PAID names openai
+  PYTHONPATH=src $PY -m vakeel_sahayak.models.paid_lock check openai || exit 3
   export VS_MODELS=auto VS_LLM_BACKEND=openai VS_EXTERNAL=pseudonymised VS_OPENAI_CAP_USD
   echo "cap USD $VS_OPENAI_CAP_USD (local ledger); spent so far:"; $PY -m vakeel_sahayak.models.openai.ledger 2>/dev/null | head -3 || true
   $PY scripts/sweep_dev.py run --phase 2 --backend openai --shards "${SHARDS:-3}" --parallel 1 ${ARMS:+--arms "$ARMS"}

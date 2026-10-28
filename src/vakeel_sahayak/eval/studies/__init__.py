@@ -47,6 +47,12 @@ def run_study(name: str, out_dir: str, n: int | None = None, seed: int = 0, **kw
 def main(argv: list[str] | None = None) -> int:
     """`python -m vakeel_sahayak.eval.studies <name> --out DIR [--n N] [--seed S]`; `m17` is forwarded to its own CLI."""
     argv = list(sys.argv[1:] if argv is None else argv)
+    from vakeel_sahayak.eval.runners.driver import paid_backend_locked
+
+    locked = paid_backend_locked()  # a paid provider named in VS_LLM_BACKEND is locked (models/paid_lock.py): refuse instead of a silent local stand-in
+    if locked:
+        print(locked, file=sys.stderr)
+        return 3
     if argv and argv[0] == "m17":
         from vakeel_sahayak.eval.runners.m17_removal import main as m17_main
 

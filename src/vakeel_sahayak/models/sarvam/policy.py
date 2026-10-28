@@ -327,9 +327,13 @@ def authorize(
     unless the scope is the evaluation driver's `public_source_scope`.
 
     Raises:
+        OpenAILocked, SarvamLocked: the provider is paid and locked (`models.paid_lock`, unlock `VS_ALLOW_PAID`); checked first.
         SarvamPolicyError: mode too low, no case, or no counsel consent.
         PrivacyBoundaryError: CLIENT_TEXT that is not pseudonymised, or binary content declared as text.
     """
+    from vakeel_sahayak.models.paid_lock import assert_unlocked
+
+    assert_unlocked(provider)  # a paid provider (OpenAI, Sarvam) is locked unless VS_ALLOW_PAID names it (models/paid_lock.py)
     scope = scope or current_scope()
     mode = provider_mode(provider)
     need = _REQUIRED_MODE[scope.data]
