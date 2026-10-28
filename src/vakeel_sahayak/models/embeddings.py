@@ -93,15 +93,19 @@ class Bgem3EmbeddingClient(EmbeddingClient):
     name = BGE_M3_NAME
     dim = 1024
 
-    def __init__(self, model_name: str = "BAAI/bge-m3", batch_size: int = 16, device: str | None = None) -> None:
+    def __init__(
+        self, model_name: str = "BAAI/bge-m3", batch_size: int = 16, device: str | None = None, max_seq_length: int | None = None
+    ) -> None:
         """Create the client; nothing is loaded yet.
 
         Args:
             model_name: Hugging Face model id (configs/models.yaml `embeddings.model`)
             batch_size: texts per forward pass
             device: 'cpu', 'cuda' or None for the library default
+            max_seq_length: token limit per text; None keeps the model's own (8192). The opt-in BGE-M3 store vectors were
+                embedded at 512 tokens, so their queries use 512 too (`stores.hybrid`)
         """
-        self.model_name, self.batch_size, self.device = model_name, batch_size, device
+        self.model_name, self.batch_size, self.device, self.max_seq_length = model_name, batch_size, device, max_seq_length
         self._model = None
 
     def _load(self):  # noqa: ANN202
@@ -117,6 +121,8 @@ class Bgem3EmbeddingClient(EmbeddingClient):
 
             # the copy `make models` put under models/hf wins over a second download into the Hugging Face cache
             self._model = SentenceTransformer(local_checkpoint(self.model_name) or self.model_name, device=self.device)
+            if self.max_seq_length:
+                self._model.max_seq_length = self.max_seq_length
         return self._model
 
     def embed(self, texts: list[str]) -> list[list[float]]:

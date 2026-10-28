@@ -8,6 +8,14 @@ file, so the stores run on a laptop without torch or LanceDB. LanceDB can hold t
 Search: metadata filters narrow the candidate set first (SQL), then BM25 and cosine rankings are fused by reciprocal rank
 fusion, and an authority prior can be blended in. The embedder that built an index is recorded in it and reused at query
 time, so query and document vectors always come from the same model.
+
+Opt-in BGE-M3 side vectors (`VS_STORES=bge`, default off): the four vector stores can carry a second vector set in a side
+file next to the store (`reasoning.sqlite` -> `reasoning.bge.sqlite`, built by `pipelines/store_builders/bge_vectors.py`)
+holding one fp16 BGE-M3 vector per item id. With the opt-in on, a store opened with `side_vectors="bge"` takes its dense
+ranking from the side file and embeds queries with BGE-M3 (the local copy under models/hf); BM25, filters and payloads
+still come from the main file, which is never modified. A missing side file, a side file that does not match the store,
+or missing BGE-M3 weights raise `SideVectorsError` naming the fix: the run never falls back to the hashed vectors.
+Without the opt-in nothing is read from the side file and every result is byte-identical to the default.
 """
 
 from __future__ import annotations
@@ -21,6 +29,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from vakeel_sahayak.models.embeddings import BGE_M3_NAME as BGE_M3_SIDE_NAME
 from vakeel_sahayak.models.embeddings import Embedder, get_embedder
 
 RRF_K = 60
@@ -82,6 +91,148 @@ def _norm(value: str | None) -> str | None:
     return value.strip().lower() if value else None
 
 
+STORES_ENV = "VS_STORES"
+SIDE_BGE = "bge"
+SIDE_SCHEMA = """
+CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE IF NOT EXISTS vectors (id INTEGER PRIMARY KEY, vec BLOB NOT NULL);
+"""
+BGE_MODEL_ID = "BAAI/bge-m3"
+
+
+class SideVectorsError(RuntimeError):
+    """The BGE-M3 side vectors were asked for (`VS_STORES=bge`) but cannot be used; the message names the fix."""
+
+
+def store_vectors_mode() -> str:
+    """Which vector set the shared vector stores search: 'default' (the vectors inside each store) or 'bge' (`VS_STORES=bge`).
+
+    Read from the environment only (never inferred from torch or sentence-transformers being installed).
+
+    Raises:
+        ValueError: for a value other than unset, '', 'default', 'hashed' or 'bge'.
+    """
+    import os
+
+    value = (os.environ.get(STORES_ENV) or "").strip().lower()
+    if value in ("", "default", "hashed", "hashed-ngram"):
+        return "default"
+    if value in (SIDE_BGE, "bge-m3", "bgem3"):
+        return SIDE_BGE
+    raise ValueError(f"{STORES_ENV}={value!r}: use 'bge' (opt-in BGE-M3 side vectors) or leave it unset")
+
+
+def side_vectors_path(store_path: str | Path, kind: str = SIDE_BGE) -> Path:
+    """The side file of a store file: `caselaw/reasoning.sqlite` -> `caselaw/reasoning.bge.sqlite`."""
+    p = Path(store_path)
+    return p.with_name(f"{p.stem}.{kind}.sqlite")
+
+
+def side_meta(side_path: str | Path) -> dict[str, str]:
+    """The meta table of a side file (empty when the file does not exist)."""
+    p = Path(side_path)
+    if not p.is_file():
+        return {}
+    conn = sqlite3.connect(f"file:{p}?mode=ro", uri=True)
+    try:
+        return {k: v for k, v in conn.execute("SELECT key, value FROM meta")}
+    finally:
+        conn.close()
+
+
+def write_side_vectors(side_path: str | Path, ids: Any, vectors: Any, meta: dict[str, Any], *, chunk: int = 20_000) -> int:
+    """Write a side file: one fp16 vector per item id, plus the meta table (`embedder`, `dim`, `dtype`, `rows` are set here).
+
+    The file is written next to its final name and renamed at the end, so a half-written side file never exists under it.
+
+    Args:
+        side_path: target file (replaced)
+        ids: item ids (int), any order; must be unique
+        vectors: array-like (n, dim); stored as float16
+        meta: extra meta entries (model revision, corpus text hash, ...)
+        chunk: rows per insert batch
+
+    Returns:
+        Rows written.
+    """
+    import numpy as np
+
+    ids_a = np.asarray(ids, dtype=np.int64)
+    vec_a = np.asarray(vectors, dtype=np.float16)
+    if vec_a.ndim != 2 or len(ids_a) != len(vec_a):
+        raise ValueError(f"ids ({len(ids_a)}) and vectors {vec_a.shape} do not line up")
+    if len(np.unique(ids_a)) != len(ids_a):
+        raise ValueError("side vector ids must be unique")
+    target = Path(side_path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    tmp = target.with_name(target.name + ".part")
+    tmp.unlink(missing_ok=True)
+    conn = sqlite3.connect(str(tmp))
+    try:
+        conn.executescript(SIDE_SCHEMA)
+        for start in range(0, len(ids_a), chunk):
+            conn.executemany(
+                "INSERT INTO vectors (id, vec) VALUES (?, ?)",
+                ((int(i), v.tobytes()) for i, v in zip(ids_a[start : start + chunk], vec_a[start : start + chunk], strict=True)),
+            )
+        full = {**{k: str(v) for k, v in meta.items()}, "embedder": str(meta.get("embedder", BGE_M3_SIDE_NAME)),
+                "dim": str(vec_a.shape[1]), "dtype": "float16", "rows": str(len(ids_a))}  # fmt: skip
+        conn.executemany("INSERT OR REPLACE INTO meta VALUES (?, ?)", sorted(full.items()))
+        conn.commit()
+    finally:
+        conn.close()
+    tmp.replace(target)
+    return len(ids_a)
+
+
+def read_side_vectors(side_path: str | Path) -> tuple[Any, Any]:
+    """(ids int64, vectors float32) of a side file in id order; the fp16 vectors are widened to float32 here."""
+    import numpy as np
+
+    meta = side_meta(side_path)
+    dim, n = int(meta["dim"]), int(meta["rows"])
+    conn = sqlite3.connect(f"file:{Path(side_path)}?mode=ro", uri=True)
+    try:
+        ids = np.empty(n, dtype=np.int64)
+        mat = np.empty((n, dim), dtype=np.float16)
+        i = -1
+        for i, (item_id, blob) in enumerate(conn.execute("SELECT id, vec FROM vectors ORDER BY id")):
+            if i >= n:
+                raise SideVectorsError(f"{side_path}: more vectors than its meta 'rows' ({n})")
+            ids[i] = item_id
+            mat[i] = np.frombuffer(blob, dtype=np.float16)
+        if i + 1 != n:
+            raise SideVectorsError(f"{side_path}: {i + 1} vectors, its meta says {n}")
+    finally:
+        conn.close()
+    return ids, mat.astype(np.float32)
+
+
+_BGE_QUERY: dict[int | None, Embedder] = {}  # one loaded BGE-M3 per process, shared by the four stores
+
+
+def _bge_query_embedder(max_length: int | None = None) -> Embedder:
+    """BGE-M3 for queries against the side vectors, truncated like the documents were (`max_length` from the side file's meta);
+    the local copy under models/hf is required (no silent Hub download)."""
+    from vakeel_sahayak.models.embeddings import bge_m3_available
+    from vakeel_sahayak.models.nli import local_checkpoint
+
+    if not bge_m3_available():
+        raise SideVectorsError(
+            f"{STORES_ENV}=bge embeds queries with BGE-M3, which needs sentence-transformers and torch: "
+            "pip install 'vakeel_sahayak[models]' (CPU torch is enough), or unset VS_STORES"
+        )
+    if local_checkpoint(BGE_MODEL_ID) is None:
+        raise SideVectorsError(
+            f"{STORES_ENV}=bge needs the BGE-M3 weights in models/hf/BAAI--bge-m3 (or VS_MODELS_DIR): run `make models`, or unset VS_STORES"
+        )
+    if max_length not in _BGE_QUERY:
+        from vakeel_sahayak.models.embeddings import Bgem3EmbeddingClient
+
+        _BGE_QUERY[max_length] = Bgem3EmbeddingClient(max_seq_length=max_length)
+    return _BGE_QUERY[max_length]
+
+
 BM25_PRUNE_MIN_ROWS = 20_000
 BM25_COMMON_SHARE = 0.15
 _DF_CACHE: dict[tuple[Any, str], int] = {}
@@ -99,6 +250,8 @@ class HybridIndex:
         *,
         dense_backend: str = "sqlite",
         lance_dir: str | Path | None = None,
+        side_vectors: str | None = None,
+        side_embedder: Embedder | None = None,
     ) -> None:
         """Open or create an index.
 
@@ -107,9 +260,13 @@ class HybridIndex:
             embedder: embedder for a new index; an existing index keeps the embedder recorded in it
             dense_backend: 'sqlite' (vectors in the file) or 'lancedb' (optional, lazy import)
             lance_dir: LanceDB directory when `dense_backend='lancedb'`
+            side_vectors: None (default) searches the vectors in the file; 'bge' searches the BGE-M3 side file
+                (`side_vectors_path`), read-only; the shared vector stores pass `store_vectors_mode()` here
+            side_embedder: query embedder for the side vectors (tests); None loads BGE-M3 from models/hf
 
         Raises:
             ValueError: when `embedder` differs from the one recorded in an existing, non-empty index.
+            SideVectorsError: with `side_vectors='bge'`, when the side file or the BGE-M3 weights are missing or the side file does not match.
         """
         in_memory = path is None or str(path) == ":memory:"
         if not in_memory:
@@ -122,8 +279,45 @@ class HybridIndex:
         self._lance_table = None
         self._matrix: tuple[Any, Any] | None = None  # (ids, vectors) of every row, loaded on the first dense search (see `_dense`)
         self._embedder = self._resolve_embedder(embedder)
+        self._side_path: Path | None = None
+        self._side_meta: dict[str, str] = {}
+        self._dense_embedder: Embedder = self._embedder
+        if side_vectors not in (None, "default"):
+            self._open_side(side_vectors, side_embedder)
 
     # setup ---------------------------------------------------------------------------------------------------------
+
+    def _open_side(self, kind: str, side_embedder: Embedder | None) -> None:
+        """Check and attach the side vector file (`side_vectors='bge'`); the matrix itself is read on the first dense search."""
+        if kind != SIDE_BGE:
+            raise ValueError(f"unknown side vector set {kind!r}: use 'bge'")
+        if self.path is None:
+            raise SideVectorsError(f"{STORES_ENV}=bge needs a file-backed store (an in-memory index has no side file)")
+        if self._dense_backend != "sqlite":
+            raise SideVectorsError(f"{STORES_ENV}=bge works with dense_backend='sqlite' only, not {self._dense_backend!r}")
+        side = side_vectors_path(self.path, kind)
+        fix = (
+            "build it with `python -m vakeel_sahayak.pipelines.store_builders.bge_vectors apply` (docs/handoff/bge-vectors-2026-10-28.md), "
+            "install it with `make data` (bundle part 'bge'), or unset VS_STORES"
+        )
+        if not side.is_file():
+            raise SideVectorsError(f"{STORES_ENV}=bge: no BGE-M3 side file {side} for store {self.path}: {fix}")
+        meta = side_meta(side)
+        if meta.get("embedder") != BGE_M3_SIDE_NAME:
+            raise SideVectorsError(f"{side} records embedder {meta.get('embedder')!r}, not {BGE_M3_SIDE_NAME!r}: {fix}")
+        rows = self.count()
+        if int(meta.get("rows") or -1) != rows:
+            raise SideVectorsError(f"{side} holds {meta.get('rows')} vectors but {self.path} has {rows} rows (stale side file): {fix}")
+        self._side_path, self._side_meta = side, meta
+        max_length = int(meta["max_length"]) if meta.get("max_length") else None
+        self._dense_embedder = side_embedder if side_embedder is not None else _bge_query_embedder(max_length)
+
+    @property
+    def store_embedder(self) -> str:
+        """Name of the embedder behind the dense ranking: the file's own, or 'bge-m3' with the side vectors."""
+        if self._side_path is not None:
+            return self._side_meta["embedder"]
+        return embedder_name_of(self._embedder)
 
     def _resolve_embedder(self, requested: Embedder | None) -> Embedder:
         """The index's embedder: the recorded one if present (checked against `requested`), else the requested or default.
@@ -162,6 +356,8 @@ class HybridIndex:
         Returns:
             Number of documents added.
         """
+        if self._side_path is not None:
+            raise SideVectorsError(f"{self.path} is open with the read-only BGE-M3 side vectors ({STORES_ENV}=bge): unset VS_STORES to write to it")
         added = 0
         self._matrix = None  # the cached vectors no longer cover every row
         batch: list[IndexRow] = []
@@ -341,11 +537,13 @@ class HybridIndex:
         """Item ids ranked by cosine similarity among the filtered rows."""
         if not query.strip():
             return []
-        qvec = self._embedder.embed([query])[0]
+        qvec = self._dense_embedder.embed([query])[0]
         if not any(qvec):
             return []
         if self._dense_backend == "lancedb":
             return self._lance_search(qvec, where, params, limit)
+        if self._side_path is not None:
+            return self._dense_cached(self._load_side_matrix(), qvec, where, params, limit)
         matrix = self._load_matrix()
         if matrix is not None:
             return self._dense_cached(matrix, qvec, where, params, limit)
@@ -382,6 +580,25 @@ class HybridIndex:
         if key is not None:
             _MATRICES[key] = self._matrix
         return self._matrix
+
+    def _load_side_matrix(self) -> tuple[Any, Any]:
+        """The side file's ids and vectors (fp16 on disk, float32 in memory), read once per process and checked against the store's ids."""
+        import numpy as np
+
+        assert self._side_path is not None
+        st = self._side_path.stat()
+        key = (str(self._side_path.resolve()), st.st_mtime_ns, st.st_size)
+        if key in _MATRICES:
+            return _MATRICES[key]
+        ids, mat = read_side_vectors(self._side_path)
+        own = np.fromiter((r[0] for r in self._conn.execute("SELECT id FROM items ORDER BY id")), dtype=np.int64)
+        if len(own) != len(ids) or not np.array_equal(own, ids):
+            raise SideVectorsError(
+                f"{self._side_path} does not cover the item ids of {self.path} (stale side file): rebuild it with "
+                "`python -m vakeel_sahayak.pipelines.store_builders.bge_vectors apply`, or unset VS_STORES"
+            )
+        _MATRICES[key] = (ids, mat)
+        return _MATRICES[key]
 
     def _file_key(self) -> tuple[str, int, int] | None:
         """(path, mtime, size) of a file-backed index, so a rebuilt store never reuses stale vectors; None in memory."""
@@ -479,3 +696,43 @@ def _cosine_rank(rows: list[tuple[int, bytes]], qvec: list[float]) -> list[tuple
         scored.append((item_id, sum(a * b for a, b in zip(vec, qvec, strict=True))))
     scored.sort(key=lambda t: (-t[1], t[0]))
     return scored
+
+
+VECTOR_STORES = ("caselaw.reasoning", "caselaw.similar", "advocacy.arguments", "advocacy.objections")
+
+
+def _main_embedder(path: Path) -> str | None:
+    """The embedder recorded in a store file (read-only), None when the file or the record is missing."""
+    if not path.is_file():
+        return None
+    try:
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        try:
+            row = conn.execute("SELECT value FROM meta WHERE key='embedder'").fetchone()
+        finally:
+            conn.close()
+    except sqlite3.Error:
+        return None
+    return row[0] if row else None
+
+
+def store_vectors_manifest() -> dict[str, Any]:
+    """What the run's dense retrieval searched, for the run manifest: `mode` ('default' or 'bge', from VS_STORES), `store_embedder`
+    (the one embedder behind the four vector stores, 'mixed' when they differ, None when no store is built) and, per store, the
+    embedder of the file and, with the opt-in, the side file's model revision, row count and corpus text hash. Reads meta tables only."""
+    from vakeel_sahayak.schemas.enums import StoreName
+    from vakeel_sahayak.stores.paths import resolve_shared_path
+
+    mode = store_vectors_mode()
+    stores: dict[str, Any] = {}
+    for name in VECTOR_STORES:
+        path = Path(resolve_shared_path(StoreName(name), None))
+        entry: dict[str, Any] = {"embedder": _main_embedder(path)}
+        if mode == SIDE_BGE:
+            meta = side_meta(side_vectors_path(path))
+            entry = {"embedder": meta.get("embedder"), "file_embedder": entry["embedder"], "side_file": side_vectors_path(path).name,
+                     "model_revision": meta.get("model_revision"), "rows": meta.get("rows"), "text_sha256": meta.get("text_sha256")}  # fmt: skip
+        stores[name] = entry
+    names = {e["embedder"] for e in stores.values() if e["embedder"]}
+    embedder = None if not names else (names.pop() if len(names) == 1 else "mixed")
+    return {"mode": mode, "store_embedder": embedder, "stores": stores}

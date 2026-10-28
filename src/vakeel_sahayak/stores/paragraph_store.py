@@ -13,7 +13,7 @@ from vakeel_sahayak.pipelines.concordance.refs import make_ref, split_ref
 from vakeel_sahayak.schemas.enums import Factor, OrderPart
 from vakeel_sahayak.schemas.store_rows import ParagraphRecord
 from vakeel_sahayak.stores.base import SharedStore
-from vakeel_sahayak.stores.hybrid import HybridIndex, IndexRow
+from vakeel_sahayak.stores.hybrid import HybridIndex, IndexRow, store_vectors_mode
 from vakeel_sahayak.stores.leakage_guard import apply_before_filter, assert_all_before
 from vakeel_sahayak.stores.paths import MEMORY, resolve_shared_path
 
@@ -80,7 +80,8 @@ class ParagraphStore(SharedStore):
         target = resolve_shared_path(self.name, path)
         self.built = target != MEMORY and Path(target).is_file()
         self.path = target
-        self._index = HybridIndex(target if self.built else None)
+        # VS_STORES=bge (opt-in) searches the BGE-M3 side vectors of the built file; unset keeps the vectors inside it
+        self._index = HybridIndex(target, side_vectors=store_vectors_mode()) if self.built else HybridIndex(None)
 
     def close(self) -> None:
         """Close."""
