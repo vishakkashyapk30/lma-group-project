@@ -94,7 +94,7 @@ def smoke(spec: ProviderSpec, model: str | None = None, **client_kw: Any) -> dic
 
     client = HostedLLMClient(spec, model, data=DataClass.PUBLIC, role="probe", **client_kw)
     with public_scope("probe-smoke"):
-        text = client.chat(SMOKE_MESSAGES, max_tokens=64, temperature=0.0, json_schema=SMOKE_SCHEMA)
+        text = client.chat(SMOKE_MESSAGES, max_tokens=256, temperature=0.0, json_schema=SMOKE_SCHEMA)
     obj = _json_object(text)
     return {"provider": spec.name, "model": client.model_id, "mode": client.last_mode, "served_model": client.version(),
             "json_ok": isinstance(obj, dict) and obj.get("word", "").strip().lower() == "bail"}  # fmt: skip

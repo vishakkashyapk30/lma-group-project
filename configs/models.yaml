@@ -154,17 +154,17 @@ providers:
     max_wait_s: 900
     quota_day_tz: UTC           # Google resets at midnight Pacific (America/Los_Angeles); set that to follow Google's day exactly
     default_model: gemini-3.1-flash-lite
-    roles: {agents: gemini-3.1-flash-lite, labeler: gemini-3.1-flash-lite, teacher: gemini-3.1-flash-lite, b0l: gemini-3-flash}   # b0l: the larger model of the B0L arm (20 RPD)
+    roles: {agents: gemini-3.1-flash-lite, labeler: gemini-3.1-flash-lite, teacher: gemini-3.1-flash-lite, b0l: gemini-3-flash-preview}   # b0l: the larger model of the B0L arm (20 RPD)
     failover: [gemini-3.5-flash-lite, gemini-2.5-flash-lite, gemini-2.5-flash]   # used only with VS_HOSTED_FAILOVER=1 (never inside a paired comparison)
     limits: {rpm: 5, rpd: 20, tpm: 250000}
     models:
       gemini-3.1-flash-lite: {rpm: 15, tpm: 250000, rpd: 500}
       gemini-3.5-flash-lite: {rpm: 15, tpm: 250000, rpd: 500}
-      gemma-4-26b-it:        {rpm: 30, tpm: 16000, rpd: 14400, family: gemma, system_instruction: false, structured: prompt, thinking: {}}   # TPM 16K: one request may not exceed it
-      gemma-4-31b-it:        {rpm: 30, tpm: 16000, rpd: 14400, family: gemma, system_instruction: false, structured: prompt, thinking: {}}
+      gemma-4-26b-a4b-it:        {rpm: 30, tpm: 16000, rpd: 14400, family: gemma, system_instruction: false, structured: prompt, thinking: {}, thinking_headroom: 2048}   # TPM 16K: one request may not exceed it
+      gemma-4-31b-it:        {rpm: 30, tpm: 16000, rpd: 14400, family: gemma, system_instruction: false, structured: prompt, thinking: {}, thinking_headroom: 2048}
       gemini-2.5-flash-lite: {rpm: 10, tpm: 250000, rpd: 20}
       gemini-2.5-flash:      {rpm: 5,  tpm: 250000, rpd: 20}
-      gemini-3-flash:        {rpm: 5,  tpm: 250000, rpd: 20}
+      gemini-3-flash-preview:        {rpm: 5,  tpm: 250000, rpd: 20}
       gemini-3.6-flash:      {rpm: 5,  tpm: 250000, rpd: 20}
       gemini-3.8-flash:      {rpm: 5,  tpm: 250000, rpd: 20}
       # Pro models, Gemini 2 / 2 Flash Lite and Gemini 4 Argon show 0 on the free tier (unusable); embedding models are not needed (BGE-M3).

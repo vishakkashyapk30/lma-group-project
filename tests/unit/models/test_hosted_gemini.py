@@ -136,7 +136,7 @@ def test_gemini_is_configured_public_only_free_and_per_model_limits():
     assert spec.limits_for("gemini-3.1-flash-lite") == {"rpm": 15, "rpd": 500, "tpm": 250000}
     assert spec.limits_for("gemma-4-31b-it") == {"rpm": 30, "rpd": 14400, "tpm": 16000}
     assert spec.limits_for("gemini-2.5-flash") == {"rpm": 5, "rpd": 20, "tpm": 250000}
-    assert spec.family_of("gemini-3.1-flash-lite") == "gemini" and spec.family_of("gemma-4-26b-it") == "gemma"
+    assert spec.family_of("gemini-3.1-flash-lite") == "gemini" and spec.family_of("gemma-4-26b-a4b-it") == "gemma"
 
 
 def test_env_overrides_limits(monkeypatch):
@@ -567,7 +567,7 @@ def test_b0l_uses_the_configured_larger_model(monkeypatch):
     from vakeel_sahayak.eval.baselines.b0_single_pass import b0l_model_id
 
     monkeypatch.setenv("VS_LLM_BACKEND", "gemini")
-    assert b0l_model_id() == "gemini-3-flash"
+    assert b0l_model_id() == "gemini-3-flash-preview"
 
 
 def test_paid_lock_does_not_touch_gemini():

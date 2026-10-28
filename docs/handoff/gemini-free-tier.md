@@ -19,7 +19,7 @@ Date 2026-10-28. No key was available while this was built: everything is tested
 - **Model ids are guesses from the AI Studio display names** (`gemini-3.1-flash-lite`, `gemma-4-31b-it`, ...). `make gemini-models` lists the exact ids each key can use (GET `/v1beta/models`) and names the configured ids that are missing.
 - **Modes**: Gemma on the Gemini API may refuse system instructions and JSON mode. Configured Gemma models start with the system text folded into the user turn and JSON in the prompt; for any model a 400 naming the feature switches the mode, which the ledger remembers per model and the manifest records (`hosted.gemini.modes`). `make gemini-models MODEL=<id>` sends ONE public smoke request (system instruction + JSON schema) and prints the mode that worked.
 - **Failover and the planner** (`models/hosted/planner.py`, `scripts/gemini_quota_plan.py`, `make gemini-plan`): days per model by RPD and by tokens per day (TPM x 1440), the model that finishes soonest, a day-by-day failover split, and warnings when a paired comparison mixes models. Failover is opt-in (`VS_HOSTED_FAILOVER=1`) and must not be used for paired arms; the ledger records the model of every call and the manifest has `hosted.gemini.run_models` (settled calls per model of the run).
-- **Wiring**: `VS_LLM_BACKEND=gemini` (agent roles), `VS_LABELER=gemini` (family `gemini`, so the family rule against an OpenAI system holds and against a Gemini system fails), `VS_TEACHER=gemini` (public orders), B0L on `roles.b0l` (`gemini-3-flash`), `--labeler gemini` in the gold agreement runner, `hosted_backend()` for the baselines, the workflow-search ledger state (requests). Run manifests: `roles.*.provider/model/family/version`, `hosted.gemini` (protocol, limits, quota today per key, modes, run models), `paid_lock`.
+- **Wiring**: `VS_LLM_BACKEND=gemini` (agent roles), `VS_LABELER=gemini` (family `gemini`, so the family rule against an OpenAI system holds and against a Gemini system fails), `VS_TEACHER=gemini` (public orders), B0L on `roles.b0l` (`gemini-3-flash-preview`), `--labeler gemini` in the gold agreement runner, `hosted_backend()` for the baselines, the workflow-search ledger state (requests). Run manifests: `roles.*.provider/model/family/version`, `hosted.gemini` (protocol, limits, quota today per key, modes, run models), `paid_lock`.
 - **Resumability**: the gold runner stops submitting after a `QuotaExceeded` error and prints how many orders remain; failed orders are redone on the next run. The driver checks the requests left before each case, stops when none are left, and never saves a case during which a call hit the daily quota (that case was partly answered by the local fallback); the next run resumes from it.
 - `make gemini-usage` (today's requests, tokens, remaining per key and model), `make gemini-models [MODEL=<id>]`, `make gemini-plan ARGS=...`. `.env.example` lists `GEMINI_API_KEY`, `VS_GEMINI`, `VS_ALLOW_PAID`.
 
@@ -36,7 +36,7 @@ make gemini-usage
 The driver needs `VS_GEMINI=pseudonymised`: its agent calls carry pseudonymised public-source text (class CLIENT_TEXT with the public-source basis), which needs that mode rank; the gate still refuses any product case.
 
 ## Sweep plan on Gemini (configs/eval/sweep_dev.yaml, phase 5)
-The OpenAI phase 2 and Sarvam phase 3 arms are `status: locked, moved_to: gemini`. Phase 5 runs them, with its own Full and baselines, on ONE model for every paired arm: `gemma-4-31b-it` (the model that finishes soonest; 16K TPM per request). B0L runs on `gemini-3-flash` by design (unpaired). Requests are estimated from the gpt-6-luna Full pilot (47 calls and 74,228 tokens a Full case, pilot-4f; one call x 1.3 for the single-call baselines), at the configured limits, ONE project (`scripts/gemini_quota_plan.py --sweep --phase 5`):
+The OpenAI phase 2 and Sarvam phase 3 arms are `status: locked, moved_to: gemini`. Phase 5 runs them, with its own Full and baselines, on ONE model for every paired arm: `gemma-4-31b-it` (the model that finishes soonest; 16K TPM per request). B0L runs on `gemini-3-flash-preview` by design (unpaired). Requests are estimated from the gpt-6-luna Full pilot (47 calls and 74,228 tokens a Full case, pilot-4f; one call x 1.3 for the single-call baselines), at the configured limits, ONE project (`scripts/gemini_quota_plan.py --sweep --phase 5`):
 
 | group | requests | tokens | gemma-4-31b-it, 1 project | 4 projects | gemini-3.1-flash-lite, 1 project | 4 projects |
 |---|---|---|---|---|---|---|
@@ -44,7 +44,7 @@ The OpenAI phase 2 and Sarvam phase 3 arms are `status: locked, moved_to: gemini
 | ex-phase-2 arms (A1, A2, A3, A6, A7, A8, A9, b2, b3) | 13,780 | 22.5 M | 1 day (about 23 h, TPD-bound) | 1 day | 28 days | 7 days |
 | ex-phase-3 arms (S1, S3, S3b, S8, S9, S10, S11, S15, S15b) | 15,450 | 24.4 M | 2 days | 1 day | 31 days | 8 days |
 | whole phase 5 (b2, b3 counted once) | 35,460 | 57 M | 3 days | 1 day | 71 days | 18 days |
-| b0l on gemini-3-flash | 65 | | 4 days (20 RPD) | 1 day | | |
+| b0l on gemini-3-flash-preview | 65 | | 4 days (20 RPD) | 1 day | | |
 
 These are planning figures, not measurements: Gemma's replies (JSON in the prompt, no system instruction) may need more repair calls, and a Full case of about 74K tokens takes at least 4.6 minutes at 16K TPM. The first real arm should be a 3-case smoke, then `make gemini-usage` for the real request count per case.
 
@@ -57,6 +57,6 @@ These are planning figures, not measurements: Gemma's replies (JSON in the promp
 
 ## The owner must supply
 1. One `GEMINI_API_KEY` per teammate project (in each person's untracked `.env`, or all in `GEMINI_API_KEYS` on the machine that runs).
-2. The exact model ids (`make gemini-models`) and confirmation of the chosen model (proposed: `gemma-4-31b-it` for the agent arms, `gemini-3.1-flash-lite` for the labeler, `gemini-3-flash` for B0L).
+2. The exact model ids (`make gemini-models`) and confirmation of the chosen model (proposed: `gemma-4-31b-it` for the agent arms, `gemini-3.1-flash-lite` for the labeler, `gemini-3-flash-preview` for B0L).
 3. The limits AI Studio shows for each project if they differ from 2026-10-28 (edit `providers.gemini.models` or set `VS_GEMINI_RPM/RPD/TPM`).
 4. The go-ahead to run phase 5, and whether to set `quota_day_tz: America/Los_Angeles`.

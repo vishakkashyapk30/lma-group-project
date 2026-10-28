@@ -228,7 +228,8 @@ class HostedLLMClient(LLMClient):
         """The answer limit to send, or raise when the prompt alone exceeds the model's tokens per minute."""
         tpm = int(self.spec.limits_for(model).get("tpm", 0))
         cap = int(self.spec.quirk(model, "max_tokens_cap", self.spec.max_tokens_cap) or 4096)
-        want = max(1, min(int(max_tokens), cap))
+        # a model that always thinks (Gemma, `thinking_headroom` in its config) spends part of the limit on thoughts: add room for them
+        want = max(1, min(int(max_tokens), cap)) + int(self.spec.quirk(model, "thinking_headroom", 0) or 0)
         if not tpm:
             return want
         if prompt_est + MIN_ANSWER_TOKENS > tpm:
