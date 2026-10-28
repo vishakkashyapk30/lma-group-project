@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import os
 import sys
 from pathlib import Path
 
@@ -79,18 +80,27 @@ def main() -> int:
         model = args.model or block.get("model") or spec.default_model
         total, weighted = 0, 0.0
         print(f"\nsweep arms on backend {args.provider!r} (model {model}); calls and tokens per case from {est.get('source', 'the Full pilot')}")
-        print(f"{'arm':<10}{'phase':>6}{'n':>5}{'runs':>5}{'requests':>10}{'tok/req':>9}  days on {model}")
+        print(f"{'arm':<10}{'phase':>6}{'n':>5}{'runs':>5}{'requests':>10}{'tok/req':>9}  days (on {model} unless the arm names its model)")
         by_phase: dict[int, int] = {}
+        own: dict[str, int] = {}
         for arm in rows:
             req, tok = arm_requests(arm, est)
-            p = planner.plan_model(spec, model, req, tok, keys=args.keys)
+            if arm.get("model") and arm["model"] != model:
+                own[arm["model"]] = own.get(arm["model"], 0) + req
+                print(f"{arm['id']:<10}{arm.get('phase', ''):>6}{arm.get('n', 0):>5}{arm.get('runs', 1):>5}{req:>10}{round(tok):>9}  "
+                      f"{planner.plan_model(spec, arm['model'], req, tok, keys=args.keys)['days']} on {arm['model']} (own model, not in the total below)")
+                continue
+            p = planner.plan_model(spec, arm.get("model") or model, req, tok, keys=args.keys)
             total += req
             weighted += req * tok
             by_phase[int(arm.get("phase", 0))] = by_phase.get(int(arm.get("phase", 0)), 0) + req
             print(f"{arm['id']:<10}{arm.get('phase', ''):>6}{arm.get('n', 0):>5}{arm.get('runs', 1):>5}{req:>10}{round(tok):>9}  {p['days'] if p['feasible'] else 'infeasible'}")
         print(f"\ntotal {total} requests ({', '.join(f'phase {k}: {v}' for k, v in sorted(by_phase.items()))}); mean {round(weighted / total) if total else 0} tokens per request")
         print(planner.format_plans(planner.rank_models(spec, total, weighted / total if total else 0, keys=args.keys)))
-        warns = planner.paired_warnings([{"id": a["id"], "backend": args.provider, "model": a.get("model") or model, "failover": bool(a.get("failover"))} for a in rows])
+        warns = planner.paired_warnings([{"id": a["id"], "backend": args.provider, "model": a.get("model") or model, "failover": bool(a.get("failover"))}
+                                         for a in rows if a.get("paired", True)])
+        if os.environ.get("VS_HOSTED_FAILOVER", "").strip().lower() in ("1", "true", "yes"):
+            warns.append("VS_HOSTED_FAILOVER is set: a model's daily cap would move the rest of an arm to another model; unset it for the sweep")
         for w in warns:
             print("WARNING: " + w)
         return 0

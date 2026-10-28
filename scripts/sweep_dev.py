@@ -64,8 +64,8 @@ def jobs_for(cfg: dict, args: argparse.Namespace) -> list[dict]:
             continue
         if args.backend and arm["backend"] != args.backend:
             continue
-        if str(arm.get("status", "")).split(":")[0].strip() in SKIP_STATUS:
-            continue
+        if str(arm.get("status", "")).split(":")[0].strip() in SKIP_STATUS and not getattr(args, "include_locked", False):
+            continue  # never launched; `dirs` still lists them so results produced before the lock can be packed
         if arm.get("kind") == "study":  # not a driver system: an offline study (one job per study, even when several arms name it)
             if wanted and arm["id"].lower() not in wanted and arm["study"].lower() not in wanted:
                 continue
@@ -185,7 +185,7 @@ def main() -> int:
     d.add_argument("--arms", default=None)
     args = ap.parse_args()
     if args.cmd == "dirs":
-        for j in jobs_for(load_cfg(), argparse.Namespace(phase=args.phase, backend=args.backend, arms=args.arms, n=None, include_done=False)):
+        for j in jobs_for(load_cfg(), argparse.Namespace(phase=args.phase, backend=args.backend, arms=args.arms, n=None, include_done=False, include_locked=True)):
             if "study" not in j:
                 print(dir_name(j["system"], j["run_index"]))
         return 0

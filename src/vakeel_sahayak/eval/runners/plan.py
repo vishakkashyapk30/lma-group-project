@@ -250,7 +250,7 @@ def sweep_rows(cfg: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     for arm in sweep["arms"]:
         k = int(arm["n"]) * int(arm.get("runs", 1))
         ratio = float(arm.get("ratio", 1.0))
-        done = arm.get("status") == "done"
+        done = arm.get("status") in ("done", "locked", "moved", "blocked")  # locked/moved arms are never run (paid providers locked 2026-10-28): nothing to pay
         usd = 0.0 if done or arm["backend"] != "openai" else k * per_usd * ratio
         inr = 0.0 if done or arm["backend"] != "sarvam" else k * per_inr * ratio
         rows.append({**arm, "case_runs": k, "est_usd": round(usd, 3), "est_inr": round(inr, 1)})
@@ -270,4 +270,8 @@ def format_sweep(rows: list[dict[str, Any]] | None = None) -> str:
     cap_oai, cap_owner = caps["openai_ledger_usd"], caps["sarvam_inr_owner_key"]
     out.append(f"still to pay: OpenAI {usd:.2f} USD (ledger total must stay <= {cap_oai} USD; check `make openai-spend`), "
                f"Sarvam block INR {inr:.0f} (Satvik runs it with his own key and cap; the owner key may spend INR {cap_owner})")
+    locked = [r for r in rows if r.get("status") in ("locked", "moved", "blocked")]
+    if locked:
+        out.append(f"locked or moved: {len(locked)} arm(s) need a paid provider (locked by the owner's decision of 2026-10-28; VS_ALLOW_PAID unlocks); "
+                   "free-tier arms cost no money but daily quota: scripts/gemini_quota_plan.py --sweep")
     return "\n".join(out)

@@ -707,3 +707,22 @@ def test_probe_smoke_detects_the_working_mode(ledger):
     rep = probe.smoke(get_provider("gemini"), "gemini-3.1-flash-lite", transport=server.transport, ledger=ledger, cache=_NoCache(), sleep=sleep, jitter=lambda: 0.0)
     assert rep["json_ok"] and rep["mode"].startswith("fold+")
     assert ledger.modes("gemini", "gemini-3.1-flash-lite")["system"] == "fold"
+
+
+def test_model_env_pins_one_model_for_the_agents(monkeypatch):
+    monkeypatch.setenv("VS_GEMINI_MODEL", "gemma-4-31b-it")
+    spec = get_provider("gemini")
+    assert spec.model_for("agents") == "gemma-4-31b-it" and spec.model_for("labeler") == "gemini-3.1-flash-lite"
+    monkeypatch.setenv("VS_LLM_BACKEND", "gemini")
+    assert factory.describe_run_models()["roles"]["agents_14b"]["model"] == "gemma-4-31b-it"
+
+
+def test_sweep_plan_has_a_gemini_block_with_one_model_and_locked_paid_phases():
+    import yaml
+
+    cfg = yaml.safe_load((REPO / "configs/eval/sweep_dev.yaml").read_text(encoding="utf-8"))
+    assert cfg["backends"]["gemini"]["env"]["VS_LLM_BACKEND"] == "gemini"
+    assert all(a["status"] in ("locked", "dropped", "done") for a in cfg["arms"] if a["backend"] in ("openai", "sarvam") and a["phase"] in (2, 3))
+    paired = [{"id": a["id"], "backend": "gemini", "model": a.get("model") or cfg["backends"]["gemini"]["model"]} for a in cfg["arms"]
+              if a["backend"] == "gemini" and a["id"] != "b0l"]
+    assert planner.paired_warnings(paired) == []

@@ -93,7 +93,19 @@ class ProviderSpec:
         return self.protocol == "builtin"
 
     def model_for(self, role: str | None = None) -> str:
-        """The model id for a role ('agents', 'labeler', 'teacher'), else the default model."""
+        """The model id for a role ('agents', 'labeler', 'teacher', 'b0l'), else the default model.
+
+        Env `VS_<NAME>_MODEL` (e.g. VS_GEMINI_MODEL) overrides the agents' model, `VS_<NAME>_LABELER_MODEL` the labeler's: a sweep block pins ONE
+        model for every arm without editing the yaml."""
+        env_name = self.name.upper().replace("-", "_")
+        if role in (None, "", "agents"):
+            env = (os.environ.get(f"VS_{env_name}_MODEL") or "").strip()
+            if env:
+                return env
+        if role == "labeler":
+            env = (os.environ.get(f"VS_{env_name}_LABELER_MODEL") or "").strip()
+            if env:
+                return env
         return str((self.roles or {}).get(role or "", "") or self.default_model)
 
     def model_cfg(self, model: str) -> dict[str, Any]:
