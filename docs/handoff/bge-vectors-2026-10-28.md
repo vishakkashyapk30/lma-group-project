@@ -38,6 +38,6 @@ Why: the design review (`design-review-2026-10-27.md`) found that the shared sto
 - `scripts/_data_check.py` does not list the side files (they are optional).
 
 ## State when I stopped
-- Job 44761: PENDING (`QOSMaxGRESPerUser`) at 15:19: the account's 4-GPU cap is held by job 44756 (`qwen_smoke_lean`, 4 GPUs on gnode058, started 14:41, time limit 4 h, not part of this work). 44761 starts by itself when 44756 ends; expected run time about 1 hour (10 to 15 minutes of install and download, then about 400K texts).
+- Job 44761 (gnode058, 4 GPUs not needed: one 2080 Ti) COMPLETED in 2 h 43 min (embedding 400 s for the biggest store; equivalence check on 32 texts: min cosine 0.99999, GPU fp16 against the local model).
 - Pull loop: running (log `/tmp/claude-1000/bge_pull.log`). If the laptop rebooted, restart it: `setsid nohup bash scripts/ada/pull_bge_shards.sh 44761 > /tmp/claude-1000/bge_pull.log 2>&1 < /dev/null &`.
-- No side file exists yet; `VS_STORES=bge` therefore fails with the "no BGE-M3 side file" message until `apply` has run.
+- `apply` ran on 2026-10-29: four side files written (caselaw.reasoning 161,708 rows, caselaw.similar 114,692, advocacy.arguments 70,880, advocacy.objections 55,161; 1.65 GB), self-rank check 0 failures in every store (the rest are identical-text duplicates), `data/stores/BGE_MANIFEST.json` written, shards deleted. Sanity: `VS_STORES=bge` search on `caselaw/reasoning` returns different, plausible neighbours from the hashed index (first hit the same). Ada's `~/vs_bge/{outbox,texts}` still to tidy. Retrieval metrics under BGE are not measured yet.
