@@ -9,7 +9,11 @@ Status as of 2026-10-14. Nothing is committed yet; all work below sits uncommitt
 
 ---
 
-## 0f. State on 2026-10-27 (newest; read first, then the 2026-10-26 block below)
+## 0g. State on 2026-10-29 (newest; read first)
+
+Full handoff: `docs/handoff/session-2026-10-29.md`. Paid providers (OpenAI, Sarvam) are locked until the owner says; every LLM call goes to the Gemini free tier (public data only), providers are added by configuration. Done: paid lock, provider registry, Gemini key pool and quota ledger, real Gemini ids, Gemma thinking headroom, BGE-M3 side vectors applied to the four vector stores (opt-in `VS_STORES=bge`; retrieval metrics not measured), consent policy and stronger pseudonymiser, design review (uncommitted). Measured: Gemma 4 31B free tier gives about 30 successful calls an hour with frequent 500 or 503 and about 1,000 thinking tokens a call, so the phase 5 plan is too optimistic and needs a re-plan. In flight: the 3-case Gemma smoke (scratch). Next: finish the smoke, tag `dev-sweep-v3`, re-plan the sweep, baselines on one model, score, fill the report. Nothing frontend goes to `main` (frontend-endeavours stays unmerged). Disk on the owner's laptop is at 97%.
+
+## 0f. State on 2026-10-27 (read after 0g, then the 2026-10-26 block below)
 
 Sources: `docs/handoff/eval-complete.md`, `product-complete.md`, `sweep-dev.md`, `dev-baselines.md`, `sweep-satvik.md`, `pilot-hosted-model.md`. No model result number is claimed here.
 

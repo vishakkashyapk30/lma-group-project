@@ -28,7 +28,8 @@ Handoff notes (what is done, not done, next steps) are in `docs/handoff/*.md`; d
 | If you work on | Read first |
 |---|---|
 | hosted models, driver, privacy boundary, token and cost numbers, BM25 pruning | `pilot-hosted-model.md` |
-| Gemini free tier, providers by configuration, paid lock, key pool, quota ledger | `gemini-free-tier.md`, `adding-an-llm-provider.md` |
+| Gemini free tier, providers by configuration, paid lock, key pool, quota ledger | `gemini-free-tier.md`, `adding-an-llm-provider.md`, `session-2026-10-29.md` (measured limits, next steps) |
+| BGE-M3 side vectors | `bge-vectors-2026-10-28.md` |
 | PDF intake, Munshi, citation index | `munshi-real-pdf-reading.md`, `data-and-models.md` |
 | eval switches and variants | `ev-01-switches.md`, `eval-infrastructure.md`, `literature-sweep-1.md` to `literature-sweep-4.md` |
 | test sets T2 to T9 | `testsets-t2-t9.md` |

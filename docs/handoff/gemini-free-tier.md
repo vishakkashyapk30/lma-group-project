@@ -1,6 +1,13 @@
 # Gemini free tier, the paid lock and the provider registry (handoff)
 
-Date 2026-10-28. No key was available while this was built: everything is tested offline against `httpx.MockTransport`; **no request has been sent to Google**, and no number below is measured on Gemini.
+Date 2026-10-28, updated 2026-10-29. The layer was built with no key, tested offline against `httpx.MockTransport`. On 2026-10-28/29 the owner's key was added and the first real requests were sent: the section **Measured on the first real calls** below overrides the planning figures further down (they were estimated, not measured). Ids and the Gemma thinking fix: `session-2026-10-29.md`.
+
+## Measured on the first real calls (2026-10-28/29, one project, `gemma-4-31b-it`)
+- Model ids: `gemini-3-flash-preview` and `gemma-4-26b-a4b-it` are the real ids (`make gemini-models`); the key lists 46 models.
+- Gemma answers a JSON smoke request in mode `fold+prompt+nothink`. It always thinks and the thinking budget cannot be set (HTTP 400 `Thinking budget is not supported`): about 200 thought tokens on a trivial prompt, about 1,000 per real agent call against about 126 answer tokens. Thought tokens count against the answer limit, so each Gemma model has `thinking_headroom: 2048` (added to the limit by `_fit`).
+- Google returned 500 or 503 on most calls: 69 x 500, 18 x 503, 4 x 429 against 29 successes in the first hour of a full-system smoke. The client retries; failed calls are counted against the daily ledger. The same happened on `gemini-3.1-flash-lite` (503 high demand) and `gemma-4-26b-a4b-it` (500) in a control test.
+- With a 16K tokens-per-minute limit a thinking Gemma allows about 3 calls a minute, so a Full case (about 47 calls) needs 15 minutes or more. **The phase 5 plan below (35,460 requests, about 3 days on one project) counted neither failures nor thinking tokens and is too optimistic**; re-plan from the measured per-call tokens and failure rate before the sweep.
+
 
 ## Why
 1. A third model family for the gold labeler, independent of the OpenAI system under test (design review 2026-10-27, finding 3: the labeler `gpt-6-luna` is the same model as the system).
@@ -49,7 +56,7 @@ The OpenAI phase 2 and Sarvam phase 3 arms are `status: locked, moved_to: gemini
 These are planning figures, not measurements: Gemma's replies (JSON in the prompt, no system instruction) may need more repair calls, and a Full case of about 74K tokens takes at least 4.6 minutes at 16K TPM. The first real arm should be a 3-case smoke, then `make gemini-usage` for the real request count per case.
 
 ## Not done / open
-- Nothing has been sent to Google. Model ids, the acceptance of `thinkingBudget: 0` by Gemini 3.x and Gemma, Gemma's JSON quality and the real limits are unverified.
+- Measured so far: model ids, Gemma's JSON mode and thinking (above). Still unverified: acceptance of `thinkingBudget: 0` by Gemini 3.x, `gemini-3.1-flash-lite` on the smoke cases, quality of Gemma's repaired JSON over a whole case, and the real limits (Google's 5xx rate was high on 2026-10-28/29; it may be time of day).
 - The generic client is sync only; no async bulk path.
 - `gemini` and an OpenAI-compatible Gemini entry would be counted apart although Google counts them together (use one per project).
 - The ledger cannot tell when two keys belong to one project.
