@@ -231,8 +231,12 @@ def test_the_four_corrected_rules_stay_unverified_until_re_checked():
     by_id = {r.rule_id.value: r for r in default_rules()}
     for rule in ("default_bail", "undertrial_limit", "antil_category", "statutory_bar"):
         assert by_id[rule].last_verified is None, rule
-    for rule in ("notice_of_appearance", "grounds_of_arrest", "production_24h"):
-        assert by_id[rule].last_verified == "2026-10-27", rule
+    # RECONCILED: design review 2026-10-27 item 7 binds a date to a hash of rule text plus code (rights/verify_hash.py);
+    # grounds_of_arrest changed behaviour after its check (oral grounds -> CHECK) and production_24h rests on a wrong
+    # BNSS s.58 store text, so both carry no verified_hash and read unverified until re-checked.
+    assert by_id["notice_of_appearance"].last_verified == "2026-10-27"
+    for rule in ("grounds_of_arrest", "production_24h"):
+        assert by_id[rule].last_verified is None, rule
 
 
 def test_parse_section():

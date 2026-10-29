@@ -15,11 +15,13 @@ from typing import Any
 from vakeel_sahayak.agents.vakeel.facts import PER_COUNSEL
 from vakeel_sahayak.export.docx_style import court_date, heading, new_document, paragraph, table
 from vakeel_sahayak.export.list_of_dates import add_list_of_dates, build_list_of_dates
+from vakeel_sahayak.export.rights import unverified_notes
 from vakeel_sahayak.schemas.bail_brief import BailBrief, Ground
 from vakeel_sahayak.schemas.common import TrackedField
 from vakeel_sahayak.schemas.dossier import CaseDossier
 from vakeel_sahayak.schemas.enums import ClaimCheck, ClaimState, DocumentType, FieldStatus
 from vakeel_sahayak.schemas.ingestion_report import DocumentEntry
+from vakeel_sahayak.schemas.rights_report import RightsReport
 from vakeel_sahayak.schemas.store_rows import TimelineEvent
 
 HEADING = "Application under Section 483 BNSS for grant of regular bail"
@@ -164,7 +166,7 @@ def _earlier_applications(dossier: CaseDossier) -> list[str]:
     return ["[COUNSEL TO DISCLOSE EVERY EARLIER BAIL APPLICATION AND ITS OUTCOME, OR STATE THAT NONE WAS FILED]"]
 
 
-def _statutory_position(brief: BailBrief, dossier: CaseDossier) -> list[str]:
+def _statutory_position(brief: BailBrief, dossier: CaseDossier, rights: RightsReport | None = None) -> list[str]:
     sp = brief.statutory_position
     out = []
     sections = ", ".join(sp.sections) or _sections(dossier)
@@ -176,6 +178,7 @@ def _statutory_position(brief: BailBrief, dossier: CaseDossier) -> list[str]:
         out.append(f"Maximum punishment: {sp.max_punishment}.")
     if sp.rights:
         out.append(f"Procedural rights: {sp.rights}.".replace("..", "."))
+    out += unverified_notes(rights)
     return out or ["[COUNSEL TO STATE THE STATUTORY POSITION]"]
 
 
@@ -195,6 +198,7 @@ def assemble_application_docx(
     timeline: list[TimelineEvent],
     uploaded_docs: list[DocumentEntry],
     out_path: str,
+    rights: RightsReport | None = None,
 ) -> str:
     """Build the application: cause title (placeholders), s.483 BNSS heading, synopsis, List of Dates, brief facts, earlier bail applications, numbered grounds, statutory position, prayer, verification and affidavit placeholders, annexure index (plan §8.2). Banner: AI-generated draft: check against your court's rules.
 
@@ -204,6 +208,7 @@ def assemble_application_docx(
         timeline: `case.timeline`, the only source of the List of Dates
         uploaded_docs: documents Munshi found in the uploaded files, one annexure each
         out_path: where to write the DOCX
+        rights: the case's RightsReport; each rule not yet checked against the bare act gets a bracketed note under the statutory position
 
     Returns:
         Path of the DOCX.
@@ -237,7 +242,7 @@ def assemble_application_docx(
         paragraph(doc, "[NO GROUND HAS BEEN DRAFTED: COUNSEL TO ADD THE GROUNDS]")
 
     heading(doc, SECTION_HEADINGS["statutory_position"])
-    for text in _statutory_position(brief, dossier):
+    for text in _statutory_position(brief, dossier, rights):
         paragraph(doc, text)
 
     heading(doc, SECTION_HEADINGS["prayer"])

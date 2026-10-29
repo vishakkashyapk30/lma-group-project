@@ -14,8 +14,10 @@ from pydantic import ValidationError
 
 from vakeel_sahayak.agents.vakeel.hearing import MAX_CONDITIONS, build_card
 from vakeel_sahayak.export.docx_style import heading, new_document, paragraph, table
+from vakeel_sahayak.export.rights import rights_rows
 from vakeel_sahayak.schemas.bail_brief import DRAFT_LABEL, BailBrief
 from vakeel_sahayak.schemas.retrieval_plan import EvidencePack
+from vakeel_sahayak.schemas.rights_report import RightsReport
 from vakeel_sahayak.schemas.sparring import SparringRecord
 
 MAX_CONCERNS = 6
@@ -82,13 +84,14 @@ def card_from(brief: BailBrief, sparring: SparringRecord | None, packs: list[Evi
     return card
 
 
-def write_hearing_card_docx(card: dict[str, Any], case_id: str, out_path: str) -> str:
-    """The card as a one-page DOCX: points to lead with, likely concerns, conditions, open issues.
+def write_hearing_card_docx(card: dict[str, Any], case_id: str, out_path: str, rights: RightsReport | None = None) -> str:
+    """The card as a one-page DOCX: points to lead with, likely concerns, conditions, open issues, and the Rights checks.
 
     Args:
         card: `build_hearing_card` output (missing blocks are shown as empty)
         case_id: the case
         out_path: where to write the file
+        rights: the case's RightsReport; when given, one row per check, with "Not yet checked against the bare act" for every unverified rule
 
     Returns:
         out_path.
@@ -125,6 +128,11 @@ def write_hearing_card_docx(card: dict[str, Any], case_id: str, out_path: str) -
         paragraph(doc, f"• {i}", indent_cm=0.8, hanging_cm=0.4, justify=False)
     if not issues:
         paragraph(doc, "None.", italic=True)
+
+    rows = rights_rows(rights)
+    if rows:
+        heading(doc, "Rights checks")
+        table(doc, ["Check", "Result", "Rule", "Checked against the bare act"], rows, widths_cm=[3.2, 2.6, 4.6, 5.6])
 
     paragraph(doc, card.get("label") or DRAFT_LABEL, italic=True, align="center")
     doc.save(out_path)

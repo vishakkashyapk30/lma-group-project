@@ -48,11 +48,12 @@ def export_case(case_id: str, format: ExportFormat) -> list[str]:
     out = Path(runtime.config.paths.cases_dir) / one / "export"
     out.mkdir(parents=True, exist_ok=True)
 
+    rights = state.rights_report()
     written = [
-        application.assemble_application_docx(brief, state.dossier(), timeline, docs, str(out / "application.docx")),
+        application.assemble_application_docx(brief, state.dossier(), timeline, docs, str(out / "application.docx"), rights=rights),
         list_of_dates.write_list_of_dates_docx(timeline, one, str(out / "list_of_dates.docx")),
         objections.write_objections_docx(sparring, one, str(out / "objections_sheet.docx")),
-        hearing_card.write_hearing_card_docx(hearing_card.build_hearing_card(brief, sparring, one), one, str(out / "hearing_card.docx")),
+        hearing_card.write_hearing_card_docx(hearing_card.build_hearing_card(brief, sparring, one), one, str(out / "hearing_card.docx"), rights=rights),
     ]
     if fmt == ExportFormat.PDF:
         written += [pdf.docx_to_pdf(p) for p in written]

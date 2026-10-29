@@ -9,6 +9,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
+from vakeel_sahayak.rights.acts import special_default_bail_limit
 from vakeel_sahayak.rights.base import Rule
 from vakeel_sahayak.rights.engine import RightsEngine
 from vakeel_sahayak.rights.inputs import RuleInputs
@@ -191,5 +192,8 @@ def test_property_status_always_in_allowed_set(cls, inputs):
 @given(inputs=rule_inputs())
 def test_property_no_false_eligible_when_law_is_unsettled(inputs):
     """'May extend to ten years' never yields ELIGIBLE for default bail (unsettled -> CHECK, plan §7.3)."""
-    if inputs.max_punishment == "may extend to ten years":
+    special = special_default_bail_limit(inputs)
+    # RECONCILED: a certain special-act limit (UAPA s.43D(2), NDPS s.36A(4); rights-fixes.md) replaces the 60/90-day
+    # choice, so the 'ten years' question is not reached and an accrued right is correctly ELIGIBLE.
+    if inputs.max_punishment == "may extend to ten years" and not (special is not None and special.certain):
         assert DefaultBailRule().evaluate(inputs).status != RightsStatus.ELIGIBLE

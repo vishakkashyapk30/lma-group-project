@@ -28,6 +28,7 @@ def default_rules() -> list[Rule]:
     from vakeel_sahayak.rights.rules.production_24h import Production24hRule
     from vakeel_sahayak.rights.rules.statutory_bar import StatutoryBarRule
     from vakeel_sahayak.rights.rules.undertrial_limit import UndertrialLimitRule
+    from vakeel_sahayak.rights.verify_hash import effective_last_verified
 
     config = load_config().rights_rules
     rules: list[Rule] = [
@@ -41,7 +42,8 @@ def default_rules() -> list[Rule]:
     ]
     for rule in rules:
         section = config.get(rule.rule_id.value) or {}
-        rule.last_verified = section.get("last_verified", rule.last_verified)
+        # A date counts only with a `verified_hash` matching the rule text and code as they are now (rights/verify_hash.py)
+        rule.last_verified = effective_last_verified(rule.rule_id.value, section, config) if "last_verified" in section else rule.last_verified
         rule.params = dict(section.get("params") or {})
     return rules
 

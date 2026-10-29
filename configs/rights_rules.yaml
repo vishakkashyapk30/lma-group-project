@@ -1,4 +1,6 @@
-# Rights Radar rules and sources (plan §7.3, Appendix C). 'last_verified' is set in week 0 after checking the bare act.
+# Rights Radar rules and sources (plan §7.3, Appendix C). 'last_verified' is set after checking the bare act, together with
+# 'verified_hash' (printed by `python -m vakeel_sahayak.rights.verify_hash <rule>`): a date counts only while the hash matches the
+# rule's section here and its code in rights/rules/<rule>.py, so any later change shows the rule as unverified again.
 default_bail:
   rule: "Release if no charge sheet within 90 days (death, life or >=10 years) or 60 days (other); day 1 = first remand; the right is lost if the charge sheet is filed before the accused applies for default bail after the right accrued (M. Ravindran), not by any charge sheet; 'may extend to ten years' -> CHECK; UAPA s.43D(2): 90 days (extendable to 180); NDPS s.36A(4) for s.19, 24, 27A and commercial quantity: 180 days (extendable to one year); between the base limit and the extended maximum -> CHECK"
   sources: ["BNSS s.187(3) (CrPC s.167(2))", "ED v. Kapil Wadhawan (2023)", "M. Ravindran v. DRI (2020)"]
@@ -14,16 +16,19 @@ notice_of_appearance:
   sources: ["BNSS s.35(3) (CrPC s.41A)", "Arnesh Kumar v. State of Bihar (2014)", "Satender Kumar Antil v. CBI (2022)"]
   statuses: [FLAG, OK, UNKNOWN]
   last_verified: "2026-10-27"  # docs/qa/rights-verification.md
+  verified_hash: 1d8a8b13678ecb57  # rule text and code unchanged since the check (docs/handoff/rights-fixes.md: "No change")
 grounds_of_arrest:
   rule: "Grounds communicated; in writing, understood language, >=2 hours before production (Mihir Rajesh Shah); applicability to earlier arrests contested -> CHECK"
   sources: ["Art. 22(1)", "BNSS s.47 (CrPC s.50)", "Vihaan Kumar v. State of Haryana (2025)", "Mihir Rajesh Shah v. State of Maharashtra (2025)"]
   statuses: [FLAG, OK, UNKNOWN, CHECK]
   last_verified: "2026-10-27"  # docs/qa/rights-verification.md
+  # no verified_hash: the rule gained the oral-grounds CHECK after the check (ac92586), so it reads unverified until re-checked
 production_24h:
   rule: "Produce before a magistrate within 24 hours of arrest, excluding travel time"
   sources: ["Art. 22(2)", "BNSS s.58 (CrPC s.57)"]
   statuses: [FLAG, OK, CHECK]
   last_verified: "2026-10-27"  # docs/qa/rights-verification.md
+  # no verified_hash: the statute store holds the body of s.59 under BNSS s.58 (docs/handoff/rights-fixes.md), so it reads unverified until the official text is in
 antil_category:
   rule: "A: up to 7 years (not B/D); B: death, life or >7 years; C: only special acts with stringent bail provisions (NDPS s.37, PMLA s.45, UAPA s.43D(5), Companies Act s.212(6)), any other special act falls through to A/B; D: economic offences not under special acts. Antil's categories are for an accused not arrested during investigation: context for a client in custody, not an entitlement"
   sources: ["Satender Kumar Antil v. CBI (2022)"]

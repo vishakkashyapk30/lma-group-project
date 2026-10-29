@@ -114,7 +114,7 @@ class Spy:
     def __init__(self) -> None:
         self.calls: list[str] = []
 
-    def application(self, brief, dossier, timeline, uploaded_docs, out_path):
+    def application(self, brief, dossier, timeline, uploaded_docs, out_path, rights=None):  # RECONCILED: the exporter passes the case's RightsReport (design review item 7)
         self.calls.append("application")
         Path(out_path).write_bytes(b"docx")
         return out_path
