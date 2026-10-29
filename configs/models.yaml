@@ -159,7 +159,7 @@ providers:
     limits: {rpm: 5, rpd: 20, tpm: 250000}
     models:
       gemini-3.1-flash-lite: {rpm: 15, tpm: 250000, rpd: 500}
-      gemini-3.5-flash-lite: {rpm: 15, tpm: 250000, rpd: 500}
+      gemini-3.5-flash-lite: {rpm: 15, tpm: 250000, rpd: 500, thinking: {level: minimal}}   # rejects thinkingBudget 0 with a bare 400 INVALID_ARGUMENT (2026-10-29); minimal gives 0 thought tokens
       gemma-4-26b-a4b-it:        {rpm: 30, tpm: 16000, rpd: 14400, family: gemma, system_instruction: false, structured: prompt, thinking: {}, thinking_headroom: 2048}   # TPM 16K: one request may not exceed it
       gemma-4-31b-it:        {rpm: 30, tpm: 16000, rpd: 14400, family: gemma, system_instruction: false, structured: prompt, thinking: {}, thinking_headroom: 2048}
       gemini-2.5-flash-lite: {rpm: 10, tpm: 250000, rpd: 20}
