@@ -203,6 +203,21 @@ def dossier_hash(dossier: CaseDossier) -> str:
     return hash_value(dossier.model_dump(mode="json"))
 
 
+def export_content_hash(state: Any) -> str:
+    """Full SHA-256 of everything export renders: brief, sparring record, timeline (List of Dates) and dossier.
+
+    Stored with counsel's Gate 2 approval and compared before export, so an approval covers only the content counsel saw.
+    """
+    value = {
+        "brief": state.brief().model_dump(mode="json"),
+        "sparring": state.sparring().model_dump(mode="json"),
+        "timeline": [t.model_dump(mode="json") for t in state.timeline()],
+        "dossier": state.dossier().model_dump(mode="json"),
+    }
+    blob = json.dumps(value, sort_keys=True, default=str, ensure_ascii=False)
+    return "sha256:" + hashlib.sha256(blob.encode("utf-8")).hexdigest()
+
+
 def gate_event(events: list[Event], gate: GateId) -> Event | None:
     """The event that currently decides a gate: the latest of GATE_OPENED / GATE_APPROVED / GATE_REJECTED.
 

@@ -106,6 +106,8 @@ def approve_gate(log: EventLog, case_id: str, gate: GateId, acknowledged: list[s
     outputs: dict[str, str] = {"gate": gate.value}
     if gate == GateId.GATE_1_DOSSIER:  # the change-detection baseline (plan §7.4)
         outputs["dossier_hash"] = views.dossier_hash(CaseState(case_id, log).dossier())
+    else:  # binds the approval to the content counsel saw: export refuses once it changes (plan §16)
+        outputs["brief_hash"] = views.export_content_hash(CaseState(case_id, log))
     return log.append(
         Event(
             event_id="",
@@ -123,7 +125,9 @@ def assert_export_allowed(log: EventLog, case_id: str) -> None:
     """Raise unless counsel's Gate 2 approval for this very case is the latest word in this case's log.
 
     Approvals in other cases do not count (no bulk export; plan §11, §16), and neither does a Gate 2 approval that
-    was later rejected or reopened.
+    was later rejected or reopened, nor one whose `brief_hash` no longer matches what export would render (the brief,
+    sparring record, List of Dates or dossier changed after approval, by any path). An approval recorded before
+    approvals carried a hash has no `brief_hash` and is honoured as it stands (legacy logs; counsel can re-approve).
 
     Args:
         log: the event log to check
@@ -135,3 +139,9 @@ def assert_export_allowed(log: EventLog, case_id: str) -> None:
     events = log.read(case_id)
     if not views.gate_is_approved(events, GateId.GATE_2_EXPORT):
         raise GateNotApproved(f"export refused: no Gate 2 approval by counsel on record for case {case_id!r}")
+    approved = views.gate_event(events, GateId.GATE_2_EXPORT)
+    stored = approved.outputs.get("brief_hash") if approved is not None else None
+    if stored and stored != views.export_content_hash(CaseState(case_id, log)):
+        raise GateNotApproved(
+            f"export refused: the brief of case {case_id!r} changed after counsel's Gate 2 approval; counsel must approve it again"
+        )

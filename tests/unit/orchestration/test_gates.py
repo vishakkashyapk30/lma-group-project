@@ -14,10 +14,13 @@ import inspect
 import pytest
 
 from tests.unit.orchestration import _helpers as h
+from tests.unit.record._helpers import view_write
 from vakeel_sahayak.orchestration.gates import GateGuard
 from vakeel_sahayak.record.event_log import EventLog
+from vakeel_sahayak.schemas.bail_brief import BailBrief
 from vakeel_sahayak.schemas.case import GateStatus
 from vakeel_sahayak.schemas.enums import ClaimCheck, EventKind, GateId, SparringVerdict
+from vakeel_sahayak.schemas.sparring import SparringRecord
 
 CASE = "case-0007"
 CASE_B = "case-0008"
@@ -239,3 +242,61 @@ def test_export_refused_for_unknown_case(env):
     """A case with no record at all cannot export."""
     with pytest.raises(REFUSED):
         env.guard.assert_export_allowed("case-9999")
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Gate 2 binds to the content counsel approved (design review 2026-10-27, item 10)
+# ---------------------------------------------------------------------------------------------------------------------
+def _approve_clean_gate2(env) -> None:
+    h.approve(env.log, CASE, h.G1, ["antecedents"], "h:0a1b")
+    _clean_gate2_case(env.log, CASE)
+    env.guard.approve(CASE, G2)
+
+
+def test_gate2_approval_records_the_brief_hash(env):
+    """Counsel's Gate 2 approval stores a hash of what export renders (brief, sparring, List of Dates, dossier)."""
+    _approve_clean_gate2(env)
+    approval = env.log.read(CASE, kind=EventKind.GATE_APPROVED)[-1]
+    assert approval.outputs["brief_hash"].startswith("sha256:")
+
+
+def test_export_allowed_when_brief_unchanged_since_gate2(env):
+    """An unchanged brief exports after Gate 2 approval."""
+    _approve_clean_gate2(env)
+    assert env.guard.assert_export_allowed(CASE) is None
+
+
+def test_export_refused_when_brief_changes_after_gate2_by_a_non_vakeel_path(env):
+    """A brief edited after approval without reopening Gate 2 (a chat edit, an API patch) cannot export."""
+    _approve_clean_gate2(env)
+    edited = BailBrief(case_id=CASE, grounds=[h.ground("G1", ClaimCheck.SUPPORTED)])
+    env.log.append(view_write(CASE, "brief", edited))
+    with pytest.raises(REFUSED, match="changed after counsel's Gate 2 approval"):
+        env.guard.assert_export_allowed(CASE)
+
+
+def test_export_refused_when_sparring_changes_after_gate2(env):
+    """The sparring record is part of the approved content too."""
+    _approve_clean_gate2(env)
+    record = SparringRecord(case_id=CASE, rounds=3, objections=[h.objection("O1", SparringVerdict.ANSWERED)])
+    env.log.append(view_write(CASE, "sparring", record, "ABHIYOJAK"))
+    with pytest.raises(REFUSED):
+        env.guard.assert_export_allowed(CASE)
+
+
+def test_reapproval_after_a_change_allows_export_again(env):
+    """Counsel re-approving the changed brief binds the approval to the new content."""
+    _approve_clean_gate2(env)
+    env.log.append(view_write(CASE, "brief", BailBrief(case_id=CASE, grounds=[h.ground("G1", ClaimCheck.SUPPORTED)])))
+    env.log.append(h.gate_opened(CASE, h.G2))
+    env.guard.approve(CASE, G2)
+    assert env.guard.assert_export_allowed(CASE) is None
+
+
+def test_legacy_gate2_approval_without_hash_still_allows_export(env):
+    """An approval recorded before approvals carried a hash is honoured as it stands (old logs)."""
+    h.approve(env.log, CASE, h.G1, ["antecedents"], "h:0a1b")
+    _clean_gate2_case(env.log, CASE)
+    h.approve(env.log, CASE, h.G2)
+    assert "brief_hash" not in env.log.read(CASE, kind=EventKind.GATE_APPROVED)[-1].outputs
+    assert env.guard.assert_export_allowed(CASE) is None
