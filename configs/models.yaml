@@ -152,9 +152,9 @@ providers:
     retries: {max: 5, base_delay_s: 2.0, max_delay_s: 60.0, jitter_s: 1.0}   # 500/503 backoff; 429 rotates keys and lowers the learned rate
     learn: {factor: 0.5, hold_s: 3600}
     max_wait_s: 900
-    quota_day_tz: UTC           # Google resets at midnight Pacific (America/Los_Angeles); set that to follow Google's day exactly
+    quota_day_tz: America/Los_Angeles   # Google resets the free-tier day at midnight Pacific
     default_model: gemini-3.1-flash-lite
-    roles: {agents: gemini-3.1-flash-lite, labeler: gemini-3.1-flash-lite, teacher: gemini-3.1-flash-lite, b0l: gemini-3-flash-preview}   # b0l: the larger model of the B0L arm (20 RPD)
+    roles: {agents: gemini-3.1-flash-lite, labeler: gemini-3.1-flash-lite, teacher: gemini-3.1-flash-lite, b0l: gemini-3-flash-preview}   # b0l: the larger model of the B0L arm (20 RPD); the dev sweep sets its own model (sweep_dev.yaml backends.gemini)
     failover: [gemini-3.5-flash-lite, gemini-2.5-flash-lite, gemini-2.5-flash]   # used only with VS_HOSTED_FAILOVER=1 (never inside a paired comparison)
     limits: {rpm: 5, rpd: 20, tpm: 250000}
     models:
