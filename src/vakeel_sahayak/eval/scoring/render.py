@@ -140,6 +140,10 @@ def table_main(res: dict[str, Any]) -> Table:
              f"Label source: {meta['gold_source']} (hash {str(meta['gold_sha256'])[:12]}). n beside a metric is the number of orders where it is defined: M1 needs an agreed answerable "
              "factor, recall@10 a resolved court-cited precedent, objection recall an agreed objection. Runs are averaged within a case; the interval resamples cases.",
              f"pass^k bar: factor recall >= {meta['config']['pass_bar']} with no stage error (provisional; the bar is frozen in the pre-registration)."]
+    m6 = meta.get("m6_checker")
+    if m6:
+        notes.append(f"M6 checker: {m6['name']}" + (" (offline stand-in: a deterministic lexical checker, a plumbing check, not a validated judge)" if m6["stand_in"] else "")
+                     + (" (the system's own claim checker, by explicit opt-in: M6 is not independent of Full's repair loop)" if m6.get("system_checker") else "") + ".")
     if meta["pending"]:
         notes.append("pending: " + "; ".join(f"{k} waits for {v}" for k, v in meta["pending"].items()))
     if rights:
@@ -193,7 +197,13 @@ def table_holm(res: dict[str, Any]) -> Table:
             else:
                 rows.append([name, fam["claims"], str(fam["m_registered"]), t["comparator"], t["metric"], "", "", t.get("status", "not run")])
     notes = [f"Holm-Bonferroni with alpha {res['meta']['alpha']} and the registered family size m (a test not run counts as p = 1). Families: " +
-             "; ".join(f"{k} = {','.join(v['comparators'])} on {','.join(v['metrics'])}" for k, v in FAMILIES.items())]
+             "; ".join(f"{k} = {','.join(v['comparators'])} on {','.join(v['metrics'])}" + "".join(f", {c} on {m}" for m, c in v.get("extra", []))
+                       for k, v in FAMILIES.items())]
+    for name, fam in res["families"].items():
+        iut = fam.get("iut")
+        if iut:
+            notes.append(f"{iut['claim']} ({name}) is an intersection-union claim: it holds only if every registered comparison is significant at alpha "
+                         f"{iut['alpha']} without Holm and in the reference's favour; a comparator not run leaves it incomplete. Verdict: {iut['verdict']}.")
     return Table("table_holm", "Holm decisions by registered family (preliminary)", caption_prefix(res), cols, rows, notes)
 
 

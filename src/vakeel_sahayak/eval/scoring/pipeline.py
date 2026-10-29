@@ -53,7 +53,7 @@ def score_once(runs: list[RunSet], cases: list[dict[str, Any]], gold_source: str
         "gold_source": gold_source, "gold_sha256": prov.get("gold_sha256"), "gold_dir": prov.get("gold_dir"), "slice": slice_name, "n_gold_cases": len(cases),
         "reference": reference, "config": cfg.as_dict(), "pending": scored["pending"], "excluded_records": scored["excluded_records"], "systems_in_runs": sorted({r.system for r in runs}),
         "run_manifests_gold_source": manifests_gold, "min_slice_n": engine.MIN_SLICE_N, "alpha": engine.ALPHA, "n_boot": engine.N_BOOT,
-        "checker": scored.get("checker"), "models_modes": sorted({str((r.manifest.get("models") or {}).get("models_mode")) for r in runs}),
+        "checker": scored.get("checker"), "m6_checker": scored.get("m6_checker"), "models_modes": sorted({str((r.manifest.get("models") or {}).get("models_mode")) for r in runs}),
     }
     # M5: the label-source sensitivity reads the three label sets of the agreed gold rows; the rule-only gold has only one, so the block is built on the agreed pass
     sensitivity = label_sensitivity.compute(runs, cases, cfg, second_labeler_dir) if gold_source == "agreed" else None

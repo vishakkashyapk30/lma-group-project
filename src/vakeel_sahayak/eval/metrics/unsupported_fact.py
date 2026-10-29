@@ -1,13 +1,24 @@
 """Metrics: Unsupported-fact rate: share of factual sentences MiniCheck finds unsupported by the input; checker validation (plan §15.9) (plan §15.8).
 
-The checker is MiniCheck (Tang et al. 2024, LLM-AggreFact) when the optional `minicheck` package and its weights are
-installed (`.[eval]`); otherwise the repository's NLI facade (`models.factory.get_nli`: DeBERTa when available, the
-deterministic lexical stand-in offline). `checker_backend()` names the one in use, so a run records which it was.
+The evaluation checker must not be the system's own checker (evaluation-plan 2.4: Vakeel repairs its claims until the DeBERTa NLI accepts
+them, so scoring M6 with that model would favour Full). The checker is chosen as follows (`VS_M6_CHECKER`, default `auto`):
+
+- MiniCheck-RoBERTa-Large (Tang et al., EMNLP 2024, LLM-AggreFact), loaded with transformers from the local copy
+  `models/hf/lytang--MiniCheck-RoBERTa-Large` (`make models`; `$VS_MODELS_DIR` moves the root), or failing that the optional `minicheck`
+  package. Used in `real` and `auto` model mode, or whenever `VS_M6_CHECKER=minicheck` (which refuses to fall back when it cannot load).
+- The offline lexical stand-in (`offline` model mode, the default): allowed so offline runs and tests score end to end; its name
+  `offline-lexical-nli` marks every table as a stand-in (a plumbing check, not a validated judge), and no reported number comes from it.
+- The system's real NLI (DeBERTa, `models.factory.get_nli`) only with the explicit opt-in `VS_M6_ALLOW_SYSTEM_CHECKER=1` (or `VS_M6_CHECKER=nli`
+  with that opt-in); without it `SystemCheckerRefused` is raised instead of a silent fallback. The opt-in name carries "(system checker)".
+
+`checker_backend()` names the checker in use; the scorer records it in the score meta (`m6_checker`) and Table 1 prints it.
 """
 
 from __future__ import annotations
 
+import functools
 import importlib.util
+import os
 import re
 
 from vakeel_sahayak.schemas.bail_brief import BailBrief
@@ -15,38 +26,111 @@ from vakeel_sahayak.schemas.bail_brief import BailBrief
 _DATE = re.compile(r"\b(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})\b")
 _NUMBER = re.compile(r"\d+")
 
+MINICHECK_ID = "lytang/MiniCheck-RoBERTa-Large"
+MINICHECK_NAME = "minicheck-roberta-large"
+CHECKER_ENV = "VS_M6_CHECKER"  # auto (default) | minicheck | nli
+ALLOW_SYSTEM_ENV = "VS_M6_ALLOW_SYSTEM_CHECKER"
+CHUNK_TOKENS = 400  # MiniCheck's RoBERTa chunk size: the premise is split into chunks of about 400 tokens and the claim's score is the max over chunks
+MAX_LEN = 512
 
-def _minicheck_scorer():  # noqa: ANN202
-    """A (premise, sentence) -> support-probability callable from MiniCheck, or None when it is not installed or cannot load."""
+
+class SystemCheckerRefused(RuntimeError):
+    """M6 would be scored by the system's own claim checker (the DeBERTa NLI Vakeel repairs against); install MiniCheck or opt in explicitly."""
+
+
+def _truthy(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+@functools.lru_cache(maxsize=2)
+def _roberta_scorer(path: str):  # noqa: ANN202
+    """(premise, claim) -> P(supported) from the MiniCheck-RoBERTa-Large checkpoint at `path`: max over premise chunks of softmax label 1."""
+    import torch
+    from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained(path)
+    model = AutoModelForSequenceClassification.from_pretrained(path)
+    model.eval()
+    supported = 1  # config.json id2label {0: "0", 1: "1"}: label 1 is "supported" in MiniCheck
+
+    def score(premise: str, claim: str) -> float:
+        claim_ids = tok(claim, add_special_tokens=False)["input_ids"]
+        doc_ids = tok(premise, add_special_tokens=False)["input_ids"] or [tok.unk_token_id]
+        size = max(16, min(CHUNK_TOKENS, MAX_LEN - len(claim_ids) - 4))
+        chunks = [tok.decode(doc_ids[i:i + size], clean_up_tokenization_spaces=False) for i in range(0, len(doc_ids), size)]
+        best = 0.0
+        with torch.no_grad():
+            for i in range(0, len(chunks), 8):
+                batch = chunks[i:i + 8]
+                enc = tok(batch, [claim] * len(batch), truncation="only_first", max_length=MAX_LEN, padding=True, return_tensors="pt")
+                probs = torch.softmax(model(**enc).logits, dim=-1)[:, supported]
+                best = max(best, float(probs.max()))
+        return best
+
+    return score
+
+
+@functools.lru_cache(maxsize=1)
+def _package_scorer():  # noqa: ANN202
+    """The `minicheck` package's RoBERTa scorer (downloads its own weights), or None when the package is missing or cannot load."""
     if importlib.util.find_spec("minicheck") is None:
         return None
     try:
         from minicheck.minicheck import MiniCheck
 
-        scorer = MiniCheck(model_name="flan-t5-large", cache_dir=None)
+        scorer = MiniCheck(model_name="roberta-large", cache_dir=None)
 
         def score(premise: str, sentence: str) -> float:
             _, probs, _, _ = scorer.score(docs=[premise], claims=[sentence])
             return float(probs[0])
 
         return score
-    except Exception:  # noqa: BLE001 - heavy optional dependency: any load failure means use the NLI facade
+    except Exception:  # noqa: BLE001 - heavy optional dependency: any load failure means MiniCheck is unavailable
         return None
 
 
+def _minicheck_scorer():  # noqa: ANN202
+    """A (premise, sentence) -> support-probability callable from MiniCheck-RoBERTa-Large, or None when neither the local weights nor the package load."""
+    from vakeel_sahayak.models.nli import local_checkpoint
+
+    path = local_checkpoint(MINICHECK_ID)
+    if path is not None and importlib.util.find_spec("torch") is not None and importlib.util.find_spec("transformers") is not None:
+        try:
+            return _roberta_scorer(path)
+        except Exception:  # noqa: BLE001 - a broken local copy: try the package, then report unavailable
+            pass
+    return _package_scorer()
+
+
 def _scorer():  # noqa: ANN202
-    mini = _minicheck_scorer()
-    if mini is not None:
-        return "minicheck", mini, 0.5
-    from vakeel_sahayak.models.factory import get_nli
+    """(name, score(premise, hypothesis), cut) of the evaluation checker; see the module docstring for the choice and the refusal."""
+    from vakeel_sahayak.models.factory import get_nli, models_mode
     from vakeel_sahayak.models.nli import nli_threshold
 
+    choice = os.environ.get(CHECKER_ENV, "").strip().lower() or "auto"
+    if choice not in {"auto", "minicheck", "nli"}:
+        raise ValueError(f"{CHECKER_ENV} must be auto, minicheck or nli, got {choice!r}")
+    if choice == "minicheck" or (choice == "auto" and models_mode() != "offline"):
+        mini = _minicheck_scorer()
+        if mini is not None:
+            return MINICHECK_NAME, mini, 0.5
+        if choice == "minicheck":
+            raise SystemCheckerRefused(f"{CHECKER_ENV}=minicheck but MiniCheck cannot load: run `make models` ({MINICHECK_ID} under models/hf) with torch installed")
     client = get_nli()
-    return getattr(client, "name", "nli"), client.entails, nli_threshold("fact_support", client)
+    name = getattr(client, "name", "nli")
+    if not getattr(client, "is_offline", False):
+        if not _truthy(ALLOW_SYSTEM_ENV):
+            raise SystemCheckerRefused(
+                f"the unsupported-fact checker would be {name}, the system's own claim checker (Vakeel repairs until it agrees), so M6 would not be "
+                f"independent: install MiniCheck ({MINICHECK_ID} under models/hf via `make models`, plus torch), or set {ALLOW_SYSTEM_ENV}=1 to score "
+                "with the system checker on purpose (the tables then name it)")
+        name = f"{name} (system checker)"
+    return name, client.entails, nli_threshold("fact_support", client)
 
 
 def checker_backend() -> str:
-    """Name of the checker a call would use ('minicheck', 'deberta-v3-nli' or 'offline-lexical-nli')."""
+    """Name of the checker a call would use ('minicheck-roberta-large', 'offline-lexical-nli' or '<nli> (system checker)' under the opt-in); raises
+    `SystemCheckerRefused` where the scoring call would."""
     return _scorer()[0]
 
 

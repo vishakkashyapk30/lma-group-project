@@ -19,42 +19,43 @@ backends:
     env: {VS_MODELS: auto, VS_LLM_BACKEND: gemini, VS_GEMINI: pseudonymised, VS_GEMINI_MODEL: gemma-4-31b-it, VS_NLI: auto, VS_HOSTED_RUN_ID: dev-sweep-gemini}
     estimate: {source: "pilot-4f (gpt-6-luna, 3 dev cases)", calls_per_full_case: 47, tokens_per_full_case: 74228, single_call_overhead: 1.3}
 # arm fields: id (driver system id, or a label when kind is study), kind (driver, the default, or study: an offline non-driver arm run by `python -m vakeel_sahayak.eval.studies <study>`; `study_n` is its size), tier (must/should/could/baseline), phase (0 done earlier, 1 offline, 2 OpenAI, 3 Sarvam, 4 Ada, 5 Gemini free tier), backend, n cases, runs, testset, ratio (tokens vs Full, plan 7.2), claims, status
+# claims: the evaluation-plan 1.2 claims the arm is a named baseline or ablation of (C1-C3 B0-B4 and B6 as in 1.2, C4 B4, C9 B4 and A7, C10 A6/A7/S1/S6, C11 A1, C12 A3, C13 S8 and A2, C14/C15 A10, C28 the A2/A8/A9 arms); [] when 1.2 names none (S4, S5, S12: Holm family membership only, plan 5.3). Checked against 1.2 and 3.3 on 2026-10-29
 # status: planned | done | dropped | locked (needs a paid provider: locked by the owner's decision of 2026-10-28; scripts/sweep_dev.py never launches it) | moved (re-planned on another backend) | blocked
 # single_call: true marks a one-call baseline (the quota planner counts 1 call x single_call_overhead per case); calls_per_case overrides the estimate
 arms:
   # ---- baselines already run on OpenAI (dev-baselines agent); reused, not rerun
   - {id: full,  tier: baseline, phase: 0, backend: openai, n: 50, runs: 2, ratio: 1.0,  claims: [C1, C2, C3], status: done}
-  - {id: b0,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.07, claims: [C1, C2], status: done}
+  - {id: b0,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.07, claims: [C1, C2, C3], status: done}
   - {id: b0l,   tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.07, claims: [C1], status: dropped, note: "the hosted stand-in was an exact duplicate of b0 (same gpt-6-luna and prompt); no larger model is available (the Qwen3-32B Ada plan was dropped), so B0L is reported as not run"}
-  - {id: b1,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.1,  claims: [C4], status: done}
-  - {id: b4,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 1.6,  claims: [C10], status: done}
-  - {id: b6,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.0,  claims: [C1], status: done, note: "rule baseline, no model"}
+  - {id: b1,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.1,  claims: [C1, C2, C3], status: done}
+  - {id: b4,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 1.6,  claims: [C1, C2, C3, C4, C9], status: done}
+  - {id: b6,    tier: baseline, phase: 0, backend: openai, n: 50, runs: 1, ratio: 0.0,  claims: [C3], status: done, note: "rule baseline, no model"}
   # ---- phase 1: zero model cost, laptop. Offline block carries its own offline Full (same retrieval, stand-in LLM)
   - {id: full,  tier: baseline, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [], status: planned, note: "reference for every offline arm"}
-  - {id: S4,    tier: should, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [C9], status: planned}
-  - {id: S5,    tier: should, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [C9], status: planned}
-  - {id: "A10:*", tier: must, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [C5], status: planned, note: "seven store knock-outs, retrieval and slot fill only"}
+  - {id: S4,    tier: should, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [], status: planned}
+  - {id: S5,    tier: should, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [], status: planned}
+  - {id: "A10:*", tier: must, phase: 1, backend: offline, n: 50, runs: 1, ratio: 0, claims: [C14, C15], status: planned, note: "seven store knock-outs, retrieval and slot fill only"}
   # ---- phase 1 studies (kind: study): zero model cost, laptop; S4S5, S14, S16 write under <out_root>/studies/<study>/, M17 is a driver-style run under <out_root>/outputs/m17
   - {id: S14b,  kind: study, study: s14, tier: should, phase: 1, backend: offline, n: 300, runs: 1, testset: T5, ratio: 0, claims: [C31], status: planned, note: "scheduling simulation on the 300 T5 cases: FCFS (S14b) vs urgency vs urgency + least work (S14c); the per-case driver arm equals Full"}
   - {id: S14c,  kind: study, study: s14, tier: should, phase: 1, backend: offline, n: 300, runs: 1, testset: T5, ratio: 0, claims: [C31], status: planned, note: "same simulation as S14b (one study covers both)"}
   - {id: S16, kind: study, study: s16, study_n: 300, tier: should, phase: 1, backend: offline, n: 300, runs: 1, ratio: 0, claims: [], status: planned, note: "chunk strategies on a re-chunked sample of 300 orders; self-supervised targets (G2 has none resolvable in the corpus)"}
   - {id: S16b, kind: study, study: s16, study_n: 300, tier: could, phase: 1, backend: offline, n: 300, runs: 1, ratio: 0, claims: [], status: planned, note: "late chunking is a row of the same study"}
-  - {id: S4-retrieval, kind: study, study: s4s5, study_n: 150, tier: should, phase: 1, backend: offline, n: 150, runs: 1, ratio: 0, claims: [C9], status: planned, note: "AUROC of score skew (M19) on the real stores: G2 queries (thin, n printed) and a self-supervised proxy"}
-  - {id: S5-retrieval, kind: study, study: s4s5, study_n: 150, tier: should, phase: 1, backend: offline, n: 150, runs: 1, ratio: 0, claims: [C9], status: planned, note: "recall@10 with and without PPR expansion; same study as S4-retrieval"}
+  - {id: S4-retrieval, kind: study, study: s4s5, study_n: 150, tier: should, phase: 1, backend: offline, n: 150, runs: 1, ratio: 0, claims: [], status: planned, note: "AUROC of score skew (M19) on the real stores: G2 queries (thin, n printed) and a self-supervised proxy"}
+  - {id: S5-retrieval, kind: study, study: s4s5, study_n: 150, tier: should, phase: 1, backend: offline, n: 150, runs: 1, ratio: 0, claims: [], status: planned, note: "recall@10 with and without PPR expansion; same study as S4-retrieval"}
   - {id: M17-removal, kind: study, study: m17, study_n: 20, tier: should, phase: 1, backend: offline, n: 20, runs: 1, ratio: 0, claims: [], status: planned, note: "citation faithfulness by removal (M17): redraft cited claims without their paragraph; offline stand-in drafter (about 80 s a case); the hosted arm is run later"}
   - {id: S7,    tier: must, phase: 1, backend: offline, n: 100, runs: 1, testset: T2, ratio: 0, claims: [C21], status: planned}
   - {id: "P5-P8", tier: should, phase: 1, backend: offline, n: 100, runs: 1, testset: T2, ratio: 0, claims: [C21], status: planned}
   - {id: "S17*", tier: must, phase: 1, backend: offline, n: 60, runs: 1, testset: T7, ratio: 0, claims: [C37], status: planned, note: "offline stand-in: attack-success numbers describe the stand-in, not a model"}
   # ---- phase 2: OpenAI gpt-6-luna, 50 dev cases each: LOCKED (owner decision 2026-10-28, paid provider); moved to phase 5 (Gemini free tier)
-  - {id: A2, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C13], status: locked, moved_to: gemini}
-  - {id: A8, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C7], status: locked, moved_to: gemini}
-  - {id: A9, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C7, C13], status: locked, moved_to: gemini}
-  - {id: A3, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C11], status: locked, moved_to: gemini}
-  - {id: A1, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C12], status: locked, moved_to: gemini}
+  - {id: A2, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C13, C28], status: locked, moved_to: gemini}
+  - {id: A8, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C28], status: locked, moved_to: gemini}
+  - {id: A9, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C28], status: locked, moved_to: gemini}
+  - {id: A3, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C12], status: locked, moved_to: gemini}
+  - {id: A1, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C11], status: locked, moved_to: gemini}
   - {id: A6, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C6, C10], status: locked, moved_to: gemini}
-  - {id: A7, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C10], status: locked, moved_to: gemini}
-  - {id: b2, tier: baseline, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.15, claims: [C4], status: locked, moved_to: gemini}
-  - {id: b3, tier: baseline, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.1, claims: [C4], status: locked, moved_to: gemini}
+  - {id: A7, tier: must, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.83, claims: [C9, C10], status: locked, moved_to: gemini}
+  - {id: b2, tier: baseline, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.15, claims: [C1, C2], status: locked, moved_to: gemini}
+  - {id: b3, tier: baseline, phase: 2, backend: openai, n: 50, runs: 1, ratio: 0.1, claims: [C1, C2], status: locked, moved_to: gemini}
   # ---- phase 3 (PACKAGE for Satvik, own key and cap): Sarvam-105B: LOCKED (owner decision 2026-10-28, paid provider); the arms are moved to phase 5
   - {id: full, tier: baseline, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 1.0, claims: [], status: locked, moved_to: gemini}
   - {id: b0,   tier: baseline, phase: 3, backend: sarvam, runner: satvik, n: 50, runs: 1, ratio: 0.07, claims: [], status: locked, moved_to: gemini}
@@ -73,8 +74,8 @@ arms:
   - {id: S2,   tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 0.67, claims: [C4, C9], status: planned}
   - {id: S6,   tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 0.83, claims: [C10], status: planned}
   - {id: B5,   tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 0.83, claims: [C10], status: planned}
-  - {id: S12,  tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 0.83, claims: [C9], status: planned}
-  - {id: S12b, tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 0.83, claims: [C9], status: planned}
+  - {id: S12,  tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 0.83, claims: [], status: planned}
+  - {id: S12b, tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 0.83, claims: [], status: planned}
   - {id: S14,  tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 1.0, claims: [C31], status: planned}
   - {id: S14d, tier: should, phase: 4, backend: ada, n: 25, runs: 1, ratio: 1.0, claims: [C31], status: planned}
   - {id: S11b, tier: could, phase: 4, backend: ada, n: 25, runs: 1, ratio: 1.0, claims: [C7], status: planned}
@@ -84,19 +85,19 @@ arms:
   # every arm is compared with a Full of the same model. The OpenAI phase-0 baselines stay as they are (another model: not paired with these rows).
   # Requests at the configured limits: scripts/gemini_quota_plan.py --sweep --phase 5 (docs/handoff/gemini-free-tier.md has the table).
   - {id: full, tier: baseline, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 1.0,  claims: [C1, C2, C3], status: planned}
-  - {id: b0,   tier: baseline, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.07, single_call: true, claims: [C1, C2], status: planned}
-  - {id: b1,   tier: baseline, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.1,  single_call: true, claims: [C4], status: planned}
-  - {id: b2,   tier: baseline, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.15, single_call: true, claims: [C4], status: planned}
-  - {id: b3,   tier: baseline, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.1,  single_call: true, claims: [C4], status: planned}
-  - {id: b4,   tier: baseline, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 1.6,  claims: [C10], status: planned}
+  - {id: b0,   tier: baseline, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.07, single_call: true, claims: [C1, C2, C3], status: planned}
+  - {id: b1,   tier: baseline, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.1,  single_call: true, claims: [C1, C2, C3], status: planned}
+  - {id: b2,   tier: baseline, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.15, single_call: true, claims: [C1, C2], status: planned}
+  - {id: b3,   tier: baseline, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.1,  single_call: true, claims: [C1, C2], status: planned}
+  - {id: b4,   tier: baseline, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 1.6,  claims: [C1, C2, C3, C4, C9], status: planned}
   - {id: b0l,  tier: could,    phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.07, single_call: true, model: gemini-3-flash-preview, paired: false, claims: [C1], status: planned, note: "the larger model (providers.gemini.roles.b0l, 20 RPD per project): about 65 requests, 4 days on one key; not a paired arm (another model by design)"}
-  - {id: A2, tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.83, claims: [C13], status: planned}
-  - {id: A8, tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.83, claims: [C7], status: planned}
-  - {id: A9, tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.83, claims: [C7, C13], status: planned}
-  - {id: A3, tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.83, claims: [C11], status: planned}
-  - {id: A1, tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.83, claims: [C12], status: planned}
+  - {id: A2, tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.83, claims: [C13, C28], status: planned}
+  - {id: A8, tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.83, claims: [C28], status: planned}
+  - {id: A9, tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.83, claims: [C28], status: planned}
+  - {id: A3, tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.83, claims: [C12], status: planned}
+  - {id: A1, tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.83, claims: [C11], status: planned}
   - {id: A6, tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.83, claims: [C6, C10], status: planned}
-  - {id: A7, tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.83, claims: [C10], status: planned}
+  - {id: A7, tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.83, claims: [C9, C10], status: planned}
   - {id: S3,   tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 1.0, claims: [C6], status: planned}
   - {id: S3b,  tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 1.0, claims: [C6], status: planned}
   - {id: S8,   tier: must, phase: 5, backend: gemini, n: 50, runs: 1, ratio: 0.83, claims: [C13], status: planned}

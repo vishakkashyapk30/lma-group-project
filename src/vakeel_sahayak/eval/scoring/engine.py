@@ -59,15 +59,27 @@ METRICS: dict[str, tuple[str, bool]] = {
 }
 PAIRED_METRICS = ["factor_recall", "factor_precision_lenient", "factor_f1", "unsupported_fact_rate", "recall_at_10", "objection_recall", "tokens", "store_calls"]
 
-# Registered primary families (evaluation plan 5.3): metrics x comparators, tested as reference minus comparator. Lower-case system ids.
+# Registered primary families (evaluation plan 5.3): metrics x comparators, plus `extra` (metric, comparator) pairs for a claim whose own metric differs
+# from the family's; tested as reference minus comparator. Lower-case system ids. C11 (A1) is also scored on its own metric, the unsupported-fact rate
+# (plan 1.2), inside F-ablate-recall; C12 (A3: map_section accuracy, custody-day error, rights accuracy) is not a per-case paired metric of T1 runs and
+# is scored by its own jobs (IPC2BNS-Verify, T4), so here A3 enters only on recall, as plan 5.3 lists it. C13 (S8) is scored on the unsupported-fact
+# rate inside F-sparring (plan 5.3 puts S8 there; its metric in plan 1.2 is the unsupported-fact rate, not objection recall). `iut`: the claim is an
+# intersection-union claim (plan 1.2 C1: "supported only if it holds against all five"), decided at alpha without Holm (`intersection_union`).
 FAMILIES: dict[str, dict[str, Any]] = {
-    "F-RQ1-recall": {"claims": "C1", "metrics": ["factor_recall"], "comparators": ["b0", "b0l", "b1", "b2", "b3", "b4"]},
+    "F-RQ1-recall": {"claims": "C1", "metrics": ["factor_recall"], "comparators": ["b0", "b0l", "b1", "b2", "b3", "b4"], "iut": "C1"},
     "F-RQ1-halluc": {"claims": "C2", "metrics": ["unsupported_fact_rate"], "comparators": ["b0", "b0l", "b1", "b2", "b3", "b4"]},
     "F-RQ1-guard": {"claims": "C3", "metrics": ["factor_precision_lenient", "factor_f1"], "comparators": ["b0", "b1", "b4", "b6"]},
-    "F-ablate-recall": {"claims": "C10-C12", "metrics": ["factor_recall"], "comparators": ["a1", "a3", "a4", "a6", "a7"]},
-    "F-sparring": {"claims": "C7, C8, C28", "metrics": ["objection_recall"], "comparators": ["s9", "s10", "a2", "a8", "a9"]},
+    "F-ablate-recall": {"claims": "C10-C12", "metrics": ["factor_recall"], "comparators": ["a1", "a3", "a4", "a6", "a7"],
+                        "extra": [("unsupported_fact_rate", "a1")]},
+    "F-sparring": {"claims": "C7, C8, C13, C28", "metrics": ["objection_recall"], "comparators": ["s9", "s10", "a2", "a8", "a9"],
+                   "extra": [("unsupported_fact_rate", "s8")]},
     "F-retrieval": {"claims": "C5, C14", "metrics": ["recall_at_10"], "comparators": ["a4", "s4", "s5", "s16"]},
 }
+
+
+def family_tests(fam: dict[str, Any]) -> list[tuple[str, str]]:
+    """The registered (metric, comparator) tests of one family: metrics x comparators, then the `extra` pairs."""
+    return [(m, c) for m in fam["metrics"] for c in fam["comparators"]] + [(m, c) for m, c in fam.get("extra", [])]
 
 
 def _mean(values: list[float | None]) -> float | None:
@@ -103,7 +115,13 @@ def score_runs(runs: list[RunSet], cases: list[dict[str, Any]], cfg: cm.ScoreCon
             rows.append({"system": rs.system, "run": rs.run, **row})
     env = cfg.env or citation_scores.default_env() if rows else None
     checker = None if env is None or env.checker_used is None else {"name": env.checker_used, "stand_in": "offline" in env.checker_used}
-    return {"rows": rows, "pending": pending, "excluded_records": excluded, "by_case": by_case, "checker": checker}
+    m6_checker = None
+    if any(r.get("n_claims") for r in rows):  # M6 was computed on at least one claim: name its checker (MiniCheck, the stand-in, or the opted-in system checker)
+        from vakeel_sahayak.eval.metrics.unsupported_fact import checker_backend
+
+        name = checker_backend()
+        m6_checker = {"name": name, "stand_in": "offline" in name, "system_checker": "(system checker)" in name}
+    return {"rows": rows, "pending": pending, "excluded_records": excluded, "by_case": by_case, "checker": checker, "m6_checker": m6_checker}
 
 
 def case_means(rows: list[dict[str, Any]]) -> dict[str, dict[str, dict[str, float | None]]]:
@@ -307,7 +325,7 @@ def holm_families(paired: list[dict[str, Any]], alpha: float = ALPHA) -> dict[st
     for p in paired:
         p["family"], p["holm_reject"] = None, None
     for name, fam in FAMILIES.items():
-        registered = [(m, c) for m in fam["metrics"] for c in fam["comparators"]]
+        registered = family_tests(fam)
         pvals: dict[str, float] = {}
         present: dict[str, dict[str, Any]] = {}
         for m, c in registered:
@@ -330,7 +348,33 @@ def holm_families(paired: list[dict[str, Any]], alpha: float = ALPHA) -> dict[st
                 pend = any(p["metric"] == m and p["comparator"].lower() == c for p in paired)
                 tests.append({"comparator": c, "metric": m, "reject": None, "status": "pending" if m == "unsupported_fact_rate" and pend else "not run"})
         result[name] = {"claims": fam["claims"], "m_registered": len(registered), "alpha": alpha, "tests": tests}
+        if fam.get("iut"):
+            result[name]["iut"] = intersection_union(fam["iut"], registered, paired, alpha)
     return result
+
+
+def intersection_union(claim: str, registered: list[tuple[str, str]], paired: list[dict[str, Any]], alpha: float = ALPHA) -> dict[str, Any]:
+    """The intersection-union decision of an "against every comparator" claim (plan 1.2 C1; Berger 1982, Technometrics 24(4)).
+
+    The claim holds only if every registered comparison is significant at `alpha` (unadjusted: an intersection-union test needs no Holm) with the
+    sign favouring the reference. A registered comparator that was not run leaves the verdict `incomplete`, never `supported`; per-comparator
+    statements stay under Holm in the family. C1 also needs the C3 guard and the delta of plan 1.1, which are read beside this verdict.
+    """
+    per: list[dict[str, Any]] = []
+    for m, c in registered:
+        hit = next((p for p in paired if p["metric"] == m and p["comparator"].lower() == c and p["status"] == "ok"), None)
+        if hit is None:
+            per.append({"comparator": c, "metric": m, "status": "not run", "holds": None})
+            continue
+        better = (hit["diff"] > 0) if hit["higher_is_better"] else (hit["diff"] < 0)
+        per.append({"comparator": c, "metric": m, "status": "ok", "diff": hit["diff"], "p": hit["p"], "holds": bool(better and hit["p"] <= alpha)})
+    if any(t["holds"] is False for t in per):
+        verdict = "not supported"
+    elif any(t["holds"] is None for t in per):
+        verdict = "incomplete"
+    else:
+        verdict = "supported"
+    return {"claim": claim, "alpha": alpha, "verdict": verdict, "tests": per}
 
 
 # ---------------------------------------------------------------------------------------------------------------- T4 Rights Radar
