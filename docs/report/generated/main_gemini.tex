@@ -1,0 +1,15 @@
+\begin{table*}[t]
+\centering\footnotesize
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Arm & Cases & Obj. recall (arm / Full) & Ans. cov. (arm / Full) & Coverage (arm / Full) & Unsupp. facts (arm / Full) & Cit. prec. (arm / Full) & Factor rec. (arm / Full) \\
+\midrule
+B0 & 8 & 0.00 / 0.25 (4) & 0.00 / 0.00 (2) & 1.00 / 0.94 (8) & 0.86 / 0.94 (8) & -- & 0.00 / 0.00 (2) \\
+B1 & 6 & 0.00 / 0.25 (4) & 0.00 / 0.00 (2) & 1.00 / 0.92 (6) & 1.00 / 0.94 (6) & 0.00 / 1.00 (2) & 0.00 / 0.00 (2) \\
+B2 & 8 & 0.00 / 0.25 (4) & 1.00 / 0.00 (2) & 1.00 / 0.94 (8) & 0.98 / 0.94 (8) & -- & 0.50 / 0.00 (2) \\
+B3 & 6 & 0.00 / 0.25 (4) & 0.50 / 0.00 (2) & 0.67 / 0.92 (6) & 1.00 / 0.91 (4) & 0.00 / 1.00 (1) & 0.50 / 0.00 (2) \\
+\bottomrule
+\end{tabular}
+\caption{Family gemini: each baseline beside Full on the cases both answered without error. A cell is the arm's mean, then Full's mean on the same cases, over the cases where the metric is defined for both (the count in brackets). Unsupported facts: lower is better; the others: higher is better. A dash means the metric is undefined for the arm (for example, a baseline that cites no authority has no citation precision).}
+\label{tab:main_gemini}
+\end{table*}
