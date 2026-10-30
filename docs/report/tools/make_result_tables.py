@@ -150,7 +150,7 @@ def main(out, specs):
             fb = [r"\begin{figure*}[t]", r"\centering", r"\begin{tikzpicture}"]
             for k, (m, lab) in enumerate([("objection_recall", "objection recall"), ("unsupported_fact_rate", "unsupported-fact rate")]):
                 tick = ",".join(esc(x.upper()) for x in arms)
-                fb.append(r"\begin{axis}[vsbase, xbar, at={(" + f"{0.50 * k:.2f}" + r"\textwidth,0)}, width=0.46\textwidth, height=" + f"{max(4.5, 0.55 * len(arms) + 1.8):.1f}" + r"cm, title={" + lab + r": arm minus Full}, ytick=\empty, symbolic y coords={" + tick + r"}, ytick=data, yticklabel style={font=\scriptsize}, xmajorgrids, ymajorgrids=false, nodes near coords={}, xmin=-1.1, xmax=1.1, enlarge y limits=0.04, bar width=4pt, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.4pt, gray!70}, extra x ticks={0}, extra x tick style={grid=major, grid style={black, line width=0.4pt}}]")
+                fb.append(r"\begin{axis}[vsbase, xbar, at={(" + f"{0.50 * k:.2f}" + r"\textwidth,0)}, width=0.46\textwidth, height=" + f"{max(4.5, 0.36 * len(arms) + 1.6):.1f}" + r"cm, title={" + lab + r": arm minus Full}, ytick=\empty, symbolic y coords={" + tick + r"}, ytick=data, yticklabel style={font=\scriptsize}, xmajorgrids, ymajorgrids=false, nodes near coords={}, xmin=-1.1, xmax=1.1, enlarge y limits=0.04, bar width=4pt, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.4pt, gray!70}, extra x ticks={0}, extra x tick style={grid=major, grid style={black, line width=0.4pt}}]")
                 coords = []
                 for x in arms:
                     cs = sorted(c for c in S[x] if c in full and c in ok[x] and c in ok.get("full", set()))
