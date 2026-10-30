@@ -56,6 +56,9 @@ Sources: `docs/handoff/eval-complete.md`, `product-complete.md`, `sweep-dev.md`,
 - **Known weak spots:** G1 kappa 0.60 (weak_prima_facie 0.25, gravity 0.27); G3 previous_bail 0.26; Munshi cannot read image-only files offline (needs a vision model or OCR); Hindi native set is one court and two years.
 - **Handoff notes to read:** `docs/handoff/` (pilot-hosted-model, gold-labeler, eval-jobs, data-and-models, citation-sc-metadata, munshi-real-pdf-reading, testsets-t2-t9, literature-sweep-4, eval-features when VI-07 ends).
 
+## 0f. Mid-submission, 2026-10-30
+Code tag `dev-sweep-v3` (commit 7ad6ed4). OpenAI gpt-6-luna block (Full, B0 to B5, A1 to A3, A6 to A9, S1 to S6, S8 to S12, S15, S18) and Gemini blocks (3.5 flash-lite: Full, B0 to B3, B0L, A1; 3.1 flash-lite: Full, A2, A8) are run; scoring is in progress; offline studies S4/S5, S14, S16 are done. Not run: A4, A5, A10, S7, S11b/c, S12b, S15b, S13, S17, P5 to P8 (Shravani takes the Gemini and offline ones; split and cut-offs in `docs/handoff/midsub-split-2026-10-30.md`). Report on branch `midsub-report`; timeline to 10 November (all work done) in the report's Status section. First scored numbers: Full wins objection recall and answerable coverage over B0 to B3; it loses on unsupported-fact rate; factor recall is defined on only 2 to 8 dev cases and is not resolved.
+
 ## 0e. In flight when the usage limit hit (2026-10-24, about 18:30) and what to resume
 
 **Why this section exists:** the 5-hour usage limit was about 85% used. Four agents were running; each was told to keep the code consistent, finish one item at a time, and write a handoff note in `docs/handoff/`. A snapshot of all uncommitted work (about 150 changed files) is in the session scratchpad (`snapshot-*.tgz`); nothing from this session after the 20 commits has been committed.

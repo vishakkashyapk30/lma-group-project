@@ -63,3 +63,7 @@ Files: `tests/integration`, `tests/system` (plan §13.6 user flows 1–7 + the T
 - 2026-10-26: **Task 1 done** — orchestration graph + fallback machine; `tests/unit/orchestration` 260 passed (was 26 failed/14 passed).
 - 2026-10-26: **Task 2 done** — all 8 API routers + deps/app/service/sse; `tests/unit/api` 117/119 (2 failures are a pre-existing Sutradhar chat-handler bug, also failing in system flow2). Added `EventLog.case_ids()`, `gate_status` resolve-handling. `make smoke` + `tests/unit/{record,orchestration}` (317) still green; ruff clean. Nothing committed yet.
 - **Next: Task 3** (integration + system tests). These run full fake-model agent flows (slow) and will surface shared-agent bugs owned by others (e.g. the Sutradhar chat-handler tool-arg bug above).
+
+
+## 2026-10-30: mid-submission split
+Full brief, decisions and the cut-off times are in `docs/handoff/midsub-split-2026-10-30.md`. Your items today: (1) Gemini 3.1 flash-lite arms A4, A5, S11b, S11c, S12b, S15b with your own key, 5 dev cases each; (2) offline phase 1 (A10, S7, S17, P5 to P8) at 10 cases; (3) score your runs and push the per-case CSVs; (4) proofread challenges, data, limitations, threats, ethics. Stop at 17:00 and push what exists.
