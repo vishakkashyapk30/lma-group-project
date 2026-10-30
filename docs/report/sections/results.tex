@@ -35,6 +35,29 @@ page (B3) & 0.818 & 0.863 & 0.904 & 0.751 \\
 \label{tab:s16}
 \end{table}
 
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[vsplot, width=0.32\textwidth, title={S5: citation-graph expansion}, ylabel={recall@10}, ymax=1.0, symbolic x coords={Hashed n-gram,BGE-M3}, xtick=data, point meta=explicit symbolic,
+  nodes near coords align={vertical}]
+\addplot[fill=cA, draw=none] coordinates {(Hashed n-gram,0.037) [0.04] (BGE-M3,0.043) [0.04]};
+\addplot[fill=cB, draw=none] coordinates {(Hashed n-gram,0.537) [0.54] (BGE-M3,0.610) [0.61]};
+\legend{retrieval only, with expansion}
+\end{axis}
+\begin{axis}[vsplot, at={(0.35\textwidth,0)}, width=0.32\textwidth, title={S16: proposition chunks}, ymax=1.5, symbolic x coords={recall@10,MRR}, xtick=data, point meta=explicit symbolic]
+\addplot[fill=cA, draw=none] coordinates {(recall@10,0.842) [0.84] (MRR,0.751) [0.75]};
+\addplot[fill=cC, draw=none] coordinates {(recall@10,0.942) [0.94] (MRR,0.826) [0.83]};
+\legend{naive chunks, proposition chunks}
+\end{axis}
+\begin{axis}[vsplot, at={(0.70\textwidth,0)}, width=0.30\textwidth, title={S14: planted deadlines missed}, ylabel={missed of 100}, ymax=80, symbolic x coords={FIFO,Urgency order}, xtick=data, point meta=explicit symbolic]
+\addplot[fill=cE, draw=none] coordinates {(FIFO,66) [66] (Urgency order,0) [0]};
+\end{axis}
+\end{tikzpicture}
+\caption{Offline studies, no language model. Left: expanding the citation graph raises recall@10 on a self-supervised proxy (150 queries; 75 queries gained and none lost on hashed vectors). Middle: proposition-sized chunks against naive chunks on the dropout target (292 orders). Right: a simulation of 100 batches with a planted deadline; urgency order misses none.}
+\label{fig:studies}
+\end{figure*}
+
+
 \paragraph{Label-source sensitivity.} The same outputs are scored against the agreed gold and the rule-only gold. \resref{table_sweep_metrics} shows both and the difference; \todo{one sentence: does the ordering of systems change with the label source? from table\_sweep\_metrics and table\_sweep\_robustness}.
 
 

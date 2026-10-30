@@ -6,38 +6,37 @@ Figure~\ref{fig:arch} shows the system. The agents are named after people in an 
 \begin{figure*}[t]
 \centering
 \begin{tikzpicture}[
-  font=\small, >=Stealth,
-  ag/.style={draw, rounded corners=2pt, fill=gray!12, align=center, inner sep=4pt, minimum height=0.8cm, text width=2.75cm},
-  st/.style={draw, cylinder, shape border rotate=90, aspect=0.2, align=center, inner sep=2pt, minimum height=1.0cm, text width=2.3cm, fill=white},
-  gt/.style={draw, dashed, rounded corners=6pt, align=center, inner sep=3pt, text width=1.8cm, fill=white},
-  io/.style={align=center, text width=2.3cm}]
-% laptop column
-\node[io] (in) {PDFs of any kind, photos, typed chat, voice};
-\node[ag, right=0.45cm of in] (mu) {\textbf{Munshi}\\ intake: route each page, split bundles, file items, ask};
-\node[st, right=0.45cm of mu] (case) {Case shelf\\ docs, timeline, facts};
-\node[ag, right=0.45cm of case] (pe) {\textbf{Peshkar}\\ dossier, Rights Radar, change detection};
-\node[gt, right=0.45cm of pe] (g1) {Gate 1\\ counsel approves the dossier};
-% server row
-\node[ag, below=1.2cm of mu] (su) {\textbf{Sutradhar}\\ evidence contracts, retrieval plan, sufficiency, budget};
-\node[st, right=0.45cm of su] (law) {Law shelf\\ statutes, concordance};
-\node[st, right=0.3cm of law] (cl) {Case-law shelf\\ reasoning, citations, similar};
-\node[st, right=0.3cm of cl] (adv) {Advocacy shelf\\ arguments, objections};
-\node[ag, below=1.0cm of su] (va) {\textbf{Vakeel}\\ drafts, checks and repairs every claim};
-\node[ag, right=0.45cm of va] (ab) {\textbf{Abhiyojak}\\ prosecution sparring, isolated context};
-\node[gt, right=0.45cm of ab] (g2) {Gate 2\\ counsel approves};
-\node[io, right=0.45cm of g2] (out) {Application, List of Dates, objections sheet, hearing card};
-\node[ag, left=0.45cm of va] (pa) {\textbf{Pairokar}\\ batch desk: triage by urgency};
-\draw[->] (in) -- (mu); \draw[->] (mu) -- (case); \draw[->] (case) -- (pe); \draw[->] (pe) -- (g1);
-\draw[->] (g1.south) |- ($(su.north)+(0,0.55)$) -- (su.north);
-\draw[<->] (su) -- (law); \draw[<->] (law) -- (cl); \draw[<->] (cl) -- (adv);
+  font=\small, >=Stealth, line width=0.6pt,
+  ag/.style={draw, rounded corners=2pt, align=center, minimum width=2.7cm, minimum height=1.0cm},
+  st/.style={draw, align=center, minimum width=3.4cm, minimum height=0.9cm},
+  gt/.style={draw, dashed, rounded corners=6pt, align=center, minimum width=2.4cm, minimum height=0.9cm},
+  io/.style={align=center, minimum width=2.4cm}]
+% row 1: counsel's laptop, left to right
+\node[io] (pa) at (0,0) {Pairokar\\{\scriptsize batch desk}};
+\node[io] (in) at (3.3,0) {Files, photos,\\chat, voice};
+\node[ag] (mu) at (6.6,0) {Munshi\\{\scriptsize intake}};
+\node[ag] (pe) at (9.9,0) {Peshkar\\{\scriptsize dossier, Rights Radar}};
+\node[gt] (g1) at (13.2,0) {Gate 1\\{\scriptsize counsel}};
+% row 2: shared nodes, right to left
+\node[ag] (su) at (13.2,-2.6) {Sutradhar\\{\scriptsize retrieval plan}};
+\node[ag] (va) at (9.9,-2.6) {Vakeel\\{\scriptsize draft, check, repair}};
+\node[ag] (ab) at (6.6,-2.6) {Abhiyojak\\{\scriptsize prosecution sparring}};
+\node[gt] (g2) at (3.3,-2.6) {Gate 2\\{\scriptsize counsel}};
+\node[io] (out) at (0,-2.6) {Brief, objections,\\hearing card};
+% row 3: stores
+\node[st] (stores) at (13.2,-4.8) {Ten typed stores\\{\scriptsize law, case law, advocacy, case}};
+\draw[->] (pa) -- (in); \draw[->] (in) -- (mu); \draw[->] (mu) -- (pe); \draw[->] (pe) -- (g1);
+\draw[->] (g1) -- (su);
 \draw[->] (su) -- (va); \draw[<->] (va) -- (ab); \draw[->] (ab) -- (g2); \draw[->] (g2) -- (out);
-\draw[dotted,->] (pa.west) -- ++(-0.4,0) |- (in.west);
+\draw[<->] (su) -- (stores);
 \begin{scope}[on background layer]
- \node[draw=gray, dashed, rounded corners, fit=(mu)(case)(pe), inner sep=0.28cm, label={[font=\scriptsize,gray]above left:counsel's laptop: raw files stay here}] {};
- \node[draw=gray, dashed, rounded corners, fit=(su)(law)(cl)(adv)(va)(ab), inner sep=0.28cm, label={[font=\scriptsize,gray]below left:shared GPU nodes: pseudonymised text only}] {};
+ \node[draw, densely dotted, rounded corners, fit=(in)(mu)(pe), inner sep=0.35cm] (lap) {};
+ \node[draw, densely dotted, rounded corners, fit=(su)(va)(ab)(stores), inner sep=0.35cm] (srv) {};
 \end{scope}
+\node[font=\scriptsize, anchor=south west] at ([yshift=1pt]lap.north west) {Counsel's laptop: raw files stay here};
+\node[font=\scriptsize, anchor=north west] at ([yshift=-1pt]srv.south west) {Shared nodes: pseudonymised text only};
 \end{tikzpicture}
-\caption{Architecture. Munshi, Peshkar and the case shelf run on counsel's machine; Sutradhar, Vakeel and Abhiyojak see pseudonymised text only. Both gates are enforced in code.}
+\caption{Architecture. Arrows show the order of work; the double-headed arrows are request and reply. Dotted boxes mark where each part runs; dashed boxes are the two approval gates, which only counsel can open and which are enforced in code, so nothing is exported before Gate 2.}
 \label{fig:arch}
 \end{figure*}
 

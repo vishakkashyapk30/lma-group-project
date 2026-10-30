@@ -12,6 +12,15 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{xcolor}
+\usepackage{placeins}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.16}
+\definecolor{cA}{HTML}{1F77B4}\definecolor{cB}{HTML}{E67E22}\definecolor{cC}{HTML}{2A9D8F}\definecolor{cD}{HTML}{8E44AD}\definecolor{cE}{HTML}{C0392B}
+\pgfplotsset{vsplot/.style={ybar, bar width=9pt, width=\linewidth, height=4.6cm, ymin=0, axis lines*=left, axis line style={gray!70},
+  ymajorgrids, major grid style={gray!25, line width=0.3pt}, tick style={gray!70}, tick label style={font=\footnotesize}, label style={font=\footnotesize},
+  title style={font=\small\bfseries}, legend style={font=\scriptsize, draw=none, fill=none, at={(0.03,0.98)}, anchor=north west, legend columns=1, legend cell align=left}, enlarge x limits=0.35, nodes near coords, every node near coord/.append style={font=\scriptsize}}}
+\hypersetup{hidelinks}
+\renewcommand{\topfraction}{0.9}\renewcommand{\bottomfraction}{0.8}\renewcommand{\textfraction}{0.1}\renewcommand{\floatpagefraction}{0.75}\renewcommand{\dbltopfraction}{0.9}\renewcommand{\dblfloatpagefraction}{0.75}
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric,positioning,fit,backgrounds,arrows.meta,calc}
 
@@ -20,7 +29,7 @@
 % For a clean copy set \draftfalse (the todo text then disappears; check that no sentence is left empty).
 \newif\ifdraft
 \drafttrue
-\newcommand{\todo}[1]{\ifdraft{\color{red}\textbf{[TODO: #1]}}\fi}
+\newcommand{\todo}[1]{\ifdraft{\textbf{[TODO: #1]}}\fi}
 
 % ---------------------------------------------------------------- generated result tables
 % Tables written by `python -m vakeel_sahayak.eval.scoring report` land in docs/results/dev-sweep/tables/.
@@ -33,7 +42,7 @@
     \input{\tabdir/#1.tex}%
     \endgroup
   }{%
-    \par\smallskip\noindent\fbox{\parbox{0.9\linewidth}{\footnotesize \ifdraft\color{red}\fi Table \texttt{\detokenize{#1}} not generated yet (scoring pipeline output).}}\par\smallskip
+    \par\smallskip\noindent\fbox{\parbox{0.9\linewidth}{\footnotesize Table \texttt{\detokenize{#1}} not generated yet (scoring pipeline output).}}\par\smallskip
   }%
 }
 
