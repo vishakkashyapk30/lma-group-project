@@ -9,6 +9,12 @@
 
 \resulttable{table1_main}{w}
 
+\paragraph{Results on the current code (OpenAI \texttt{gpt-6-luna}, hosted).} \gentable{main_openai} \gentable{ablate_openai} \gentable{fig_openai} \todo{write 4 to 6 sentences from main\_openai, ablate\_openai and fig\_openai: where Full wins (objection recall, answerable coverage), where it does not (unsupported-fact rate), and which differences have intervals that include zero; say n for each}
+
+\paragraph{Results on the Gemini family (hosted, free tier).} \gentable{main_gemini} \gentable{ablate_gemini} \todo{write 3 to 4 sentences from main\_gemini and ablate\_gemini; this family has its own Full and is not compared with the OpenAI numbers}
+
+\paragraph{Superseded 50-case baseline run.} \gentable{main_v1} \todo{write 2 to 3 sentences from main\_v1: this run is on older code (tag dev-sweep-v1); it is the only run with all 50 cases and the B6 rule baseline; say that Full's factor recall (defined on 8 cases) is below B6 and is not resolved}
+
 \paragraph{What each baseline shows.} B0 (single pass) isolates the effect of having no retrieval and no agents: \todo{from table1\_main}. B1 and B3 (one store, with or without naive chunking) isolate the effect of several typed stores against one: \todo{from table1\_main}. B2 (whole-order embeddings) isolates retrieval granularity: \todo{b2 has not run; owner Vishak}. B4 (every store, fused) isolates an agent choosing against querying everything, and its token cost against Full: \todo{table1\_main and table9\_cost}. B6 (expert rule list) gives the no-model floor and is scored on precision, unsupported-fact rate and the Rights checks only: \todo{from table1\_main and table\_rights}. B5 and B0L: \todo{not run}.
 
 

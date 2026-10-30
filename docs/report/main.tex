@@ -46,6 +46,7 @@
   }%
 }
 
+\newcommand{\gentable}[1]{\IfFileExists{generated/#1.tex}{\input{generated/#1.tex}}{\par\smallskip\noindent\fbox{\parbox{0.9\linewidth}{\footnotesize Table \texttt{\detokenize{#1}} not generated yet (run docs/report/tools/make\_result\_tables.py).}}\par\smallskip}}
 \newcommand{\resref}[1]{\IfFileExists{\tabdir/#1.tex}{Table~\ref{tab:#1}}{the table \texttt{\detokenize{#1}}}}
 
 \title{Vakeel-Sahayak.ai: An Agentic Harness for Bail Preparation\\ over Typed Legal Stores (Mid-Project Report)}
