@@ -1,0 +1,18 @@
+\begin{table}[htbp]
+\centering\footnotesize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+Arm & Factor recall & Precision (lenient) & F1 \\
+\midrule
+FULL & 0.25 [0.00, 0.62] (8) & 0.15 [0.00, 0.33] (12) & 0.21 [0.00, 0.50] (8) \\
+B0 & 0.50 [0.12, 0.88] (8) & 0.41 [0.17, 0.69] (9) & 0.43 [0.12, 0.74] (8) \\
+B1 & 0.62 [0.25, 1.00] (8) & 0.47 [0.20, 0.72] (10) & 0.56 [0.25, 0.85] (8) \\
+B4 & 0.62 [0.25, 0.88] (8) & 0.27 [0.11, 0.46] (17) & 0.52 [0.21, 0.81] (8) \\
+B6 & 0.88 [0.62, 1.00] (8) & 0.56 [0.30, 0.80] (11) & 0.77 [0.52, 0.96] (8) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\caption{Family v1: factor-level metrics, mean [95\% bootstrap interval] over the orders where the metric is defined (their number in brackets). Each arm on its own orders.}
+\label{tab:table1a_v1}
+\end{table}

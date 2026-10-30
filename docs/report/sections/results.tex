@@ -23,10 +23,11 @@
 \paragraph{Offline studies (no model; retrieval and scheduling).} These run on the real stores at zero model cost, and each says in its output what its targets are. \emph{Retrieval over the citation graph (S5, S4).} On a self-supervised proxy of 150 queries, graph expansion raises recall@10 from 0.037 to 0.537 with the hashed n-gram index and from 0.043 to 0.610 with BGE-M3 vectors (paired differences $+0.50$ and $+0.57$; 95\% intervals $[0.42, 0.58]$ and $[0.49, 0.65]$; all discordant queries favour the expansion, 75 of 75 and 85 of 85). BGE-M3 barely moves plain recall@10 (0.037 to 0.043), so the gain is from the graph, not from the embedder. The proxy's gold is the cited-by relation of the graph that S5 walks, so it favours S5 by construction; the independent G2 set has 8 queries and no positives, so no claim is made on it. The score-skew signal (S4) separates queries whose top ten contain a cited document: AUROC 0.870 (0.751 to 0.969) with the hashed index and 0.672 (0.524 to 0.824) with BGE-M3, on 6 and 7 positive queries, so the two intervals overlap and neither is a stable estimate. \emph{Chunk granularity (S16, S16b; Table~\ref{tab:s16}).} Proposition units give the best recall and MRR at every cutoff on both self-supervised targets, at five times the number of chunks (15,792 against 3,281); late chunking with the hashed embedder is no better than the control, as the true variant needs token vectors from the long-context model. The targets measure findability of a sentence among near-duplicate boilerplate, not recall of court-cited precedents. \emph{Scheduling (S14b, S14c).} In a replay of the 300 T5 cases, first-come-first-served misses the deadline of 66 of 100 planted cases (95\% interval 0.563 to 0.745), while the urgency policy misses none (0.000 to 0.037; McNemar discordant 66/0). Service times are constructed and the policies change only the order, so throughput is identical by construction; this is a simulation, not a serving measurement.
 
 \begin{table}[!t]
-\centering\small
+\centering\small\setlength{\tabcolsep}{3.5pt}
+\begin{adjustbox}{max width=\columnwidth}
 \begin{tabular}{@{}lrrrr@{}}
 \toprule
-Strategy (target: dropout, $n=292$) & R@5 & R@10 & R@20 & MRR \\
+Strategy ($n=292$) & R@5 & R@10 & R@20 & MRR \\
 \midrule
 structure (control) & 0.808 & 0.842 & 0.877 & 0.751 \\
 proposition (S16) & 0.901 & 0.942 & 0.979 & 0.826 \\
@@ -37,6 +38,7 @@ semantic (B3) & 0.829 & 0.894 & 0.911 & 0.763 \\
 page (B3) & 0.818 & 0.863 & 0.904 & 0.751 \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{Chunking strategies on 300 re-chunked orders, hashed embedder, document-level recall. Proposition units cost five times the chunks of the control. Self-supervised target; the first-sentence target gives the same ordering (proposition R@10 0.990 against 0.870).}
 \label{tab:s16}
 \end{table}
@@ -64,7 +66,7 @@ page (B3) & 0.818 & 0.863 & 0.904 & 0.751 \\
 \end{figure*}
 
 
-\paragraph{Label-source sensitivity.} The same outputs are scored against the agreed gold and the rule-only gold. \resref{table_sweep_metrics} shows both and the difference; No: Full's factor recall stays below B0, B1 and B4 under the keyword rules (0.28 against 0.50, 0.61 and 0.67), under one labeler alone (0.33 against 0.44, 0.56 and its B4 value) and under the agreed labels (0.25 against 0.50 and 0.63), on 8 to 9 orders each, and every interval overlaps; the ordering does not depend on the label source, and neither does the conclusion that factor recall is unresolved at this size.
+\paragraph{Label-source sensitivity.} The same outputs are scored against the agreed gold, one labeler alone and the keyword rules alone (Table~\ref{tab:table_label_sensitivity}). The ordering of the systems does not change: Full's factor recall stays below B0, B1 and B4 under the keyword rules (0.28 against 0.50, 0.61 and 0.67), under one labeler alone (0.33 against 0.44, 0.56 and 0.67) and under the agreed labels (0.25 against 0.50, 0.63 and 0.63), on 8 to 9 orders each, and every interval overlaps. The conclusion that factor recall is unresolved at this size does not depend on the label source.
 
 
 \paragraph{Cost.} \resref{table9_cost} gives tokens, store calls, latency and USD per case. Full costs \$0.0107 a case (101,860 tokens, 104 store calls, 280 seconds) against \$0.0138 for B4 (131,239 tokens, a token ratio of 0.78, below the 1.0 to 1.6 the plan expected) and \$0.0004 for B0 (3,862 tokens, about 26 times fewer).

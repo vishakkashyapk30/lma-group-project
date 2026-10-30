@@ -163,6 +163,20 @@ def main(out, specs):
                 fb.append(r"\end{axis}")
             fb += [r"\end{tikzpicture}", r"\caption{" + f"Family {esc(fam)}: each arm minus Full on the cases both answered, mean difference with a 95\\% bootstrap interval; the line at zero is no difference. Right of zero favours the arm on objection recall and Full on the unsupported-fact rate." + r"}", r"\label{fig:forest_" + fam + "}", r"\end{figure*}"]
             (out / f"forest_{fam}.tex").write_text("\n".join(fb))
+        # compact table 1 in two parts (each arm's own cases, mean [95% CI] (n))
+        def part(name, cols, cap):
+            L = [r"\begin{table}[htbp]", r"\centering\footnotesize", r"\begin{tabular}{@{}l" + "r" * len(cols) + r"@{}}", r"\toprule", "Arm & " + " & ".join(c[1] for c in cols) + r" \\", r"\midrule"]
+            for x in [y for y in ["full"] + BASE if y in S]:
+                cs = []
+                for m, _, dg in cols:
+                    v = [fl(r_, m) for r_ in S[x].values()]
+                    t = mean_ci([q for q in v if q is not None])
+                    cs.append("--" if not t else (f"{t[0]:.{dg}f} [{t[1]:.{dg}f}, {t[2]:.{dg}f}] ({t[3]})" if t[1] is not None else f"{t[0]:.{dg}f} ({t[3]})"))
+                L.append(esc(x.upper()) + " & " + " & ".join(cs) + r" \\")
+            L += [r"\bottomrule", r"\end{tabular}", r"\caption{" + cap + r"}", r"\label{tab:" + name + "_" + fam + "}", r"\end{table}"]
+            (out / f"{name}_{fam}.tex").write_text(fit("\n".join(L)))
+        part("table1a", [("factor_recall", "Factor recall", 2), ("factor_precision_lenient", "Precision (lenient)", 2), ("factor_f1", "F1", 2)], f"Family {esc(fam)}: factor-level metrics, mean [95\\% bootstrap interval] over the orders where the metric is defined (their number in brackets). Each arm on its own orders.")
+        part("table1b", [("unsupported_fact_rate", "Unsupported facts", 2), ("objection_recall", "Objection recall", 2), ("answerable_coverage", "Answerable coverage", 2), ("coverage", "Coverage", 2), ("tokens", "Tokens", 0), ("cost_usd", "USD per case", 4)], f"Family {esc(fam)}: unsupported-fact rate (lower is better), objection recall, answerable coverage, coverage, tokens and cost per case, mean [95\\% bootstrap interval] (n). Each arm on its own orders.")
         print(fam, "arms", len(S), "common", len(common))
 
 
