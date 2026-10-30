@@ -23,7 +23,7 @@ python -m vakeel_sahayak.eval.scoring report \
 \section{Arms}
 \label{app:arms}
 
-\begin{table*}[t]
+\begin{table*}[htbp]
 \centering\small\setlength\tabcolsep{3pt}
 \begin{tabular}{@{}lp{5.2cm}p{3.5cm}l@{}}
 \toprule
@@ -58,7 +58,7 @@ A1--A10 & remove one part (dossier, repair, tools, filter, extractor, router, pl
 \section{Metrics}
 \label{app:metrics}
 
-\begin{table*}[t]
+\begin{table*}[htbp]
 \centering\small
 \begin{tabular}{@{}llp{6.2cm}l@{}}
 \toprule
@@ -102,7 +102,40 @@ Cost & tokens, calls, latency, USD & from manifests and ledgers; cost-quality fr
 \item[Metrics] M1 to M35, listed in the metrics table of this appendix: M1 factor recall, M6 unsupported-fact rate, M10 recall of cited precedents, and so on.
 \end{description}
 
+\section{Models and Where They Ran}
+\label{app:models}
+
+\begin{table}[htbp]
+\centering\small
+\begin{tabular}{@{}p{3.6cm}p{2.6cm}p{3.0cm}p{1.9cm}p{4.2cm}@{}}
+\toprule
+Block of runs & Provider & Model & Runs & Arms and size \\
+\midrule
+Dev runs, code \texttt{dev-sweep-v1} (superseded) & OpenAI & \texttt{gpt-6-luna} & hosted & Full (2 runs), B0, B1, B4: 50 cases; B6 is a rule baseline with no model \\
+Block A (OpenAI) & OpenAI & \texttt{gpt-6-luna} & hosted & Full, B0 to B3, A1: 25 cases \\
+Block A (Gemini) & Google, free tier & \texttt{gemini-3.5-flash-lite}; B0L on \texttt{gemini-3.6-flash} & hosted & Full, B0 to B3, B0L: 10 cases; A1: 5 \\
+Block B & Google, free tier & \texttt{gemini-3.1-flash-lite} & hosted & Full, A2, A8: 5 cases \\
+Phase 1 & none & offline stand-in (template) with real stores & local & store ablations, S4, S5, S7, S17: 50 to 300 cases \\
+Gold labeler & OpenAI & \texttt{gpt-6-luna} & hosted & public court text only \\
+Claim checker (system) & local & DeBERTa NLI & local & inside Vakeel \\
+Claim checker (scoring) & local & MiniCheck-RoBERTa-Large & local & evaluation only \\
+Retrieval & local & hashed n-gram; BGE-M3 (study only) & local & BGE-M3 vectors built on GPU nodes \\
+Speech & local & Whisper small & local & T8 \\
+\bottomrule
+\end{tabular}
+\caption{Every block of runs, its provider and model, and whether it ran locally or on a hosted service. Only one model family serves as system in each block, so each comparison is paired within a block.}
+\label{tab:models}
+\end{table}
+
 \section{Further Generated Tables}
+
+\resulttable{table1_main}{w}
+\gentable{main_v1}
+\gentable{ablate_v1}
+\gentable{main_gemini}
+\gentable{ablate_gemini}
+\gentable{main_openai}
+\gentable{ablate_openai}
 
 \resulttable{table_paired}{w}
 \resulttable{table_holm}{w}

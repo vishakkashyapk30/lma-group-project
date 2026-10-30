@@ -1,0 +1,11 @@
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[vsplot, width=\linewidth, height=4.4cm, ymode=log, ymin=1000, title={tokens per case}, symbolic x coords={FULL,B0,B1,B2,B3,A1,B0L}, xtick={FULL,B0,B1,B2,B3,A1,B0L}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08]
+\addplot[fill=cB, draw=none, bar shift=0pt] coordinates {(FULL,82292)};
+\addplot[fill=cA, draw=none, bar shift=0pt] coordinates {(B0,2904) (B1,6968) (B2,3288) (B3,6576) (A1,98089) (B0L,3147)};
+\end{axis}
+\end{tikzpicture}
+\caption{Family gemini: mean tokens per case (log scale); Full in orange.}
+\label{fig:cost_gemini}
+\end{figure}

@@ -54,24 +54,4 @@ Figure~\ref{fig:arch} shows the system. The agents are named after people in an 
 
 \paragraph{Models and where they run.} The design specifies a 4B model with OCR and a vision model on an 8\,GB laptop GPU for Munshi and Peshkar, and a 14B model on shared GPU nodes for Sutradhar, Vakeel and Abhiyojak. None of the runs reported here used those: serving a 32B model on the shared nodes failed (Section~\ref{sec:challenges}), so every language-model run is either hosted or an offline stand-in. Table~\ref{tab:models} lists each block of runs with its provider, model and where it executes. Hosted calls go only through the pseudonymisation boundary; the Gemini free tier receives public court text only. Paid providers are locked in code and were opened for OpenAI alone, for the block marked below, with the owner's go-ahead and a spend cap.
 
-\begin{table*}[t]
-\centering\small
-\begin{tabular}{@{}p{3.6cm}p{2.6cm}p{3.0cm}p{1.9cm}p{4.2cm}@{}}
-\toprule
-Block of runs & Provider & Model & Runs & Arms and size \\
-\midrule
-Dev runs, code \texttt{dev-sweep-v1} (superseded) & OpenAI & \texttt{gpt-6-luna} & hosted & Full (2 runs), B0, B1, B4: 50 cases; B6 is a rule baseline with no model \\
-Block A (OpenAI) & OpenAI & \texttt{gpt-6-luna} & hosted & Full, B0 to B3, A1: 25 cases \\
-Block A (Gemini) & Google, free tier & \texttt{gemini-3.5-flash-lite}; B0L on \texttt{gemini-3.6-flash} & hosted & Full, B0 to B3, B0L: 10 cases; A1: 5 \\
-Block B & Google, free tier & \texttt{gemini-3.1-flash-lite} & hosted & Full, A2, A8: 5 cases \\
-Phase 1 & none & offline stand-in (template) with real stores & local & store ablations, S4, S5, S7, S17: 50 to 300 cases \\
-Gold labeler & OpenAI & \texttt{gpt-6-luna} & hosted & public court text only \\
-Claim checker (system) & local & DeBERTa NLI & local & inside Vakeel \\
-Claim checker (scoring) & local & MiniCheck-RoBERTa-Large & local & evaluation only \\
-Retrieval & local & hashed n-gram; BGE-M3 (study only) & local & BGE-M3 vectors built on GPU nodes \\
-Speech & local & Whisper small & local & T8 \\
-\bottomrule
-\end{tabular}
-\caption{Every block of runs, its provider and model, and whether it ran locally or on a hosted service. Only one model family serves as system in each block, so each comparison is paired within a block.}
-\label{tab:models}
-\end{table*}
+Table~\ref{tab:models} (Appendix~\ref{app:models}) lists, for every block of runs, the provider, the model and whether it ran locally or on a hosted service.

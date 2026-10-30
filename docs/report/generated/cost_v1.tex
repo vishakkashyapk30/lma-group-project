@@ -1,0 +1,11 @@
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[vsplot, width=\linewidth, height=4.4cm, ymode=log, ymin=1000, title={tokens per case}, symbolic x coords={FULL,B0,B1,B4,B6}, xtick={FULL,B0,B1,B4,B6}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08]
+\addplot[fill=cB, draw=none, bar shift=0pt] coordinates {(FULL,101770)};
+\addplot[fill=cA, draw=none, bar shift=0pt] coordinates {(B0,3862) (B1,7472) (B4,131239)};
+\end{axis}
+\end{tikzpicture}
+\caption{Family v1: mean tokens per case (log scale); Full in orange.}
+\label{fig:cost_v1}
+\end{figure}

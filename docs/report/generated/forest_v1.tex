@@ -1,0 +1,13 @@
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[vsbase, xbar, at={(0.00\textwidth,0)}, width=0.46\textwidth, height=4.5cm, title={objection recall: arm minus Full}, ytick=\empty, symbolic y coords={B0,B1,B4,B6}, ytick=data, yticklabel style={font=\scriptsize}, xmajorgrids, ymajorgrids=false, nodes near coords={}, xmin=-1.1, xmax=1.1, enlarge y limits=0.04, bar width=4pt, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.4pt, gray!70}, extra x ticks={0}, extra x tick style={grid=major, grid style={black, line width=0.4pt}}]
+\addplot[fill=cC, draw=none] coordinates {(-0.700,B0) += (0.200,0) -= (0.175,0) (-0.700,B1) += (0.200,0) -= (0.175,0) (0.225,B4) += (0.225,0) -= (0.200,0) (-0.700,B6) += (0.200,0) -= (0.175,0)};
+\end{axis}
+\begin{axis}[vsbase, xbar, at={(0.50\textwidth,0)}, width=0.46\textwidth, height=4.5cm, title={unsupported-fact rate: arm minus Full}, ytick=\empty, symbolic y coords={B0,B1,B4,B6}, ytick=data, yticklabel style={font=\scriptsize}, xmajorgrids, ymajorgrids=false, nodes near coords={}, xmin=-1.1, xmax=1.1, enlarge y limits=0.04, bar width=4pt, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.4pt, gray!70}, extra x ticks={0}, extra x tick style={grid=major, grid style={black, line width=0.4pt}}]
+\addplot[fill=cC, draw=none] coordinates {(-0.008,B0) += (0.072,0) -= (0.070,0) (-0.087,B1) += (0.071,0) -= (0.070,0) (-0.045,B4) += (0.059,0) -= (0.060,0) (0.127,B6) += (0.055,0) -= (0.050,0)};
+\end{axis}
+\end{tikzpicture}
+\caption{Family v1: each arm minus Full on the cases both answered, mean difference with a 95\% bootstrap interval; the line at zero is no difference. Right of zero favours the arm on objection recall and Full on the unsupported-fact rate.}
+\label{fig:forest_v1}
+\end{figure*}

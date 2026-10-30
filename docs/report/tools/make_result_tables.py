@@ -102,22 +102,62 @@ def main(out, specs):
                  r"\caption{" + f"Family {esc(fam)}: each arm minus Full on the cases both answered (mean difference, 95\\% bootstrap interval). A positive difference favours the arm for the higher-is-better metrics and Full for unsupported facts and fabricated citations. Intervals that include zero are not resolved at this sample size." + r"}",
                  r"\label{tab:ablate_" + fam + "}", r"\end{table*}"]
         (out / f"ablate_{fam}.tex").write_text("\n".join(rows))
-        # figure: grouped bars, Full vs baselines on common cases, three metrics
-        figm = [("objection_recall", "objection recall"), ("answerable_coverage", "answerable coverage"), ("unsupported_fact_rate", "unsupported facts (lower is better)")]
-        cols = ["cA", "cB", "cC", "cD", "cE", "gray", "black"]
+        # figures: per metric, mean over each arm's own answered cases with a 95% bootstrap interval; Full highlighted
+        figm = [("objection_recall", "objection recall"), ("answerable_coverage", "answerable coverage"), ("unsupported_fact_rate", "unsupported-fact rate")]
+        order = ["full"] + [x for x in BASE + sorted(k for k in S if k not in BASE and k != "full") if x in S][:8]
+        order = [x for x in order if x in S][:9]
+        xs = ",".join(esc(x.upper()) for x in order)
         body = [r"\begin{figure*}[t]", r"\centering", r"\begin{tikzpicture}"]
         for k, (m, lab) in enumerate(figm):
-            xs = ",".join(esc(s.upper()) for s in ref)
-            body.append(r"\begin{axis}[vsplot, at={(" + f"{0.34 * k:.2f}" + r"\textwidth,0)}, width=0.32\textwidth, title={" + lab + r"}, ymax=1.15, symbolic x coords={" + xs + r"}, xtick=data, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=7pt, nodes near coords={}]")
-            coords = []
-            for s in ref:
-                t = mean_ci([x for x in (fl(S[s][c], m) for c in sorted(common)) if x is not None])
-                if t:
-                    coords.append(f"({esc(s.upper())},{t[0]:.3f})")
-            body.append(r"\addplot[fill=" + ("cB" if True else "cA") + ", draw=none] coordinates {" + " ".join(coords) + "};")
+            body.append(r"\begin{axis}[vsplot, at={(" + f"{0.34 * k:.2f}" + r"\textwidth,0)}, width=0.33\textwidth, title={" + lab + r"}, ymin=0, ymax=1.1, symbolic x coords={" + xs + r"}, xtick={" + xs + r"}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08, error bars/y dir=both, error bars/y explicit, error bars/error bar style={line width=0.4pt, gray!70}]")
+            for who, col in (("full", "cB"), ("rest", "cA")):
+                coords = []
+                for x in order:
+                    if (x == "full") != (who == "full"):
+                        continue
+                    t = mean_ci([v for v in (fl(S[x][c], m) for c in sorted(ok[x])) if v is not None])
+                    if t:
+                        lo, hi = (t[1], t[2]) if t[1] is not None else (t[0], t[0])
+                        coords.append(f"({esc(x.upper())},{t[0]:.3f}) += (0,{hi - t[0]:.3f}) -= (0,{t[0] - lo:.3f})")
+                if coords:
+                    body.append(r"\addplot[fill=" + col + r", draw=none, bar shift=0pt] coordinates {" + " ".join(coords) + "};")
             body.append(r"\end{axis}")
-        body += [r"\end{tikzpicture}", r"\caption{" + f"Family {esc(fam)}: Full against the baselines on the {len(common)} cases every arm answered." + r"}", r"\label{fig:main_" + fam + "}", r"\end{figure*}"]
+        body += [r"\end{tikzpicture}", r"\caption{" + f"Family {esc(fam)}: Full (orange) and the other arms (blue), mean over the cases each arm answered without error and the metric is defined for, with a 95\\% bootstrap interval. Cases per arm are in the generated table of the appendix; intervals on a handful of cases are wide and some collapse to a point when every case gives the same value. Unsupported-fact rate: lower is better." + r"}", r"\label{fig:main_" + fam + "}", r"\end{figure*}"]
         (out / f"fig_{fam}.tex").write_text("\n".join(body))
+        # cost figure: tokens per case, log scale
+        cb = [r"\begin{figure}[t]", r"\centering", r"\begin{tikzpicture}", r"\begin{axis}[vsplot, width=\linewidth, height=4.4cm, ymode=log, ymin=1000, title={tokens per case}, symbolic x coords={" + xs + r"}, xtick={" + xs + r"}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08]"]
+        for who, col in (("full", "cB"), ("rest", "cA")):
+            coords = []
+            for x in order:
+                if (x == "full") != (who == "full"):
+                    continue
+                v = [fl(r, "tokens") for r in S[x].values()]
+                v = [t for t in v if t]
+                if v:
+                    coords.append(f"({esc(x.upper())},{sum(v) / len(v):.0f})")
+            if coords:
+                cb.append(r"\addplot[fill=" + col + r", draw=none, bar shift=0pt] coordinates {" + " ".join(coords) + "};")
+        cb += [r"\end{axis}", r"\end{tikzpicture}", r"\caption{" + f"Family {esc(fam)}: mean tokens per case (log scale); Full in orange." + r"}", r"\label{fig:cost_" + fam + "}", r"\end{figure}"]
+        (out / f"cost_{fam}.tex").write_text("\n".join(cb))
+        # forest plot: each arm minus Full on the cases both answered, objection recall and unsupported-fact rate
+        arms = [x for x in sorted(S) if x != "full"]
+        if arms:
+            fb = [r"\begin{figure*}[t]", r"\centering", r"\begin{tikzpicture}"]
+            for k, (m, lab) in enumerate([("objection_recall", "objection recall"), ("unsupported_fact_rate", "unsupported-fact rate")]):
+                tick = ",".join(esc(x.upper()) for x in arms)
+                fb.append(r"\begin{axis}[vsbase, xbar, at={(" + f"{0.50 * k:.2f}" + r"\textwidth,0)}, width=0.46\textwidth, height=" + f"{max(4.5, 0.55 * len(arms) + 1.8):.1f}" + r"cm, title={" + lab + r": arm minus Full}, ytick=\empty, symbolic y coords={" + tick + r"}, ytick=data, yticklabel style={font=\scriptsize}, xmajorgrids, ymajorgrids=false, nodes near coords={}, xmin=-1.1, xmax=1.1, enlarge y limits=0.04, bar width=4pt, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.4pt, gray!70}, extra x ticks={0}, extra x tick style={grid=major, grid style={black, line width=0.4pt}}]")
+                coords = []
+                for x in arms:
+                    cs = sorted(c for c in S[x] if c in full and c in ok[x] and c in ok.get("full", set()))
+                    d = [fl(S[x][c], m) - fl(full[c], m) for c in cs if fl(S[x][c], m) is not None and fl(full[c], m) is not None]
+                    t = mean_ci(d)
+                    if t:
+                        lo, hi = (t[1], t[2]) if t[1] is not None else (t[0], t[0])
+                        coords.append(f"({t[0]:.3f},{esc(x.upper())}) += ({hi - t[0]:.3f},0) -= ({t[0] - lo:.3f},0)")
+                fb.append(r"\addplot[fill=cC, draw=none] coordinates {" + " ".join(coords) + "};")
+                fb.append(r"\end{axis}")
+            fb += [r"\end{tikzpicture}", r"\caption{" + f"Family {esc(fam)}: each arm minus Full on the cases both answered, mean difference with a 95\\% bootstrap interval; the line at zero is no difference. Right of zero favours the arm on objection recall and Full on the unsupported-fact rate." + r"}", r"\label{fig:forest_" + fam + "}", r"\end{figure*}"]
+            (out / f"forest_{fam}.tex").write_text("\n".join(fb))
         print(fam, "arms", len(S), "common", len(common))
 
 
