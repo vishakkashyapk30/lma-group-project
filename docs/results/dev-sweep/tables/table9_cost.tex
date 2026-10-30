@@ -1,0 +1,18 @@
+% booktabs fragment: \usepackage{booktabs} in the preamble
+\begin{table}[t]
+\centering
+\small
+\caption{Preliminary dev result: dev slice (50 orders; the n of each system is in the table), gold source agreed. USD is 0 on the offline stand-ins and priced on OpenAI only; Ada (Qwen) and Sarvam runs have no USD price.}
+\label{tab:table9_cost}
+\begin{tabular}{lrrrrrr}
+\toprule
+System & Tokens/case [mean, p90] & Store calls/case & Seconds/case & USD/case & USD per passed case (M31) & Backend \\
+\midrule
+full & 101860, 128420 & 104.0 & 279.6 & 0.0107 & 0.2676 & openai \\
+b0 & 3862, 4429 & 0.0 & 4.1 & 0.0004 & 0.0051 & openai \\
+b1 & 7472, 8956 & 1.0 & 5.0 & 0.0008 & 0.0079 & openai \\
+b4 & 131239, 150266 & 194.9 & 237.6 & 0.0138 & 0.1379 & openai \\
+b6 & 0, 0 & 2.1 & 0.1 & 0.0000 & 0.0000 & openai \\
+\bottomrule
+\end{tabular}
+\end{table}

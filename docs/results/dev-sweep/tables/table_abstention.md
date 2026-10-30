@@ -1,0 +1,15 @@
+### Abstention, confident-wrong and stopping quality (preliminary)
+
+*Preliminary dev result: dev slice (50 orders; the n of each system is in the table), gold source agreed.*
+
+| System | Can decline | Claims | Coverage at the cut (M33) | Risk at the cut (M33) | Coverage, all emitted | Risk, all emitted (M6) | AURC [95% CI] | Confident-wrong (M35) | Over-search (M18) | Stopped with a slot unfilled (M18) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| full | yes | 474 | 0.141 | 0.000 | 0.816 | 0.827 | 0.427 [0.338, 0.549] | 0.781 [0.697, 0.857] n=50 | 0.017 [0.007, 0.030] n=50 | 0.546 [0.461, 0.635] n=50 |
+| b0 | no | 560 | 0.168 | 0.000 | 1.000 | 0.832 | one point (cannot decline) | 0.789 [0.746, 0.829] n=43 | n/a (n=0) | n/a (n=0) |
+| b1 | no | 450 | 0.209 | 0.000 | 1.000 | 0.791 | one point (cannot decline) | 0.717 [0.666, 0.767] n=45 | n/a (n=0) | n/a (n=0) |
+| b4 | yes | 617 | 0.186 | 0.000 | 0.455 | 0.591 | 0.103 [0.064, 0.154] | 0.581 [0.475, 0.682] n=45 | n/a (n=0) | n/a (n=0) |
+| b6 | no | 395 | 0.018 | 0.000 | 1.000 | 0.982 | one point (cannot decline) | 0.940 [0.918, 0.960] n=50 | n/a (n=0) | n/a (n=0) |
+
+- Support checker: minicheck-roberta-large.
+- Claims are the factual sentences of the brief. A claim is emitted at threshold tau when its ground passed the gate and its support score is at least tau; coverage is emitted claims over all claims, risk the share of emitted claims below the unsupported-fact cut. 'At the cut' keeps the claims the checker itself supports; 'all emitted' keeps every claim the gate emitted. Because risk is defined with the same score, it is 0 at tau = cut by construction; what the curve shows is how much coverage is lost to reach zero risk.
+- M35: emitted claims that are unfaithful (not supported by the facts given) and uncorroborated (not supported by the rest of the order). It needs the order parts (`data/interim/t1_work/parts.jsonl`). M18 is event-based: over-search is the share of retrieval calls after the first round where no required slot was missing or weak; the replay to the 16-call budget for 'stopped too early' needs a re-run and is not computed.

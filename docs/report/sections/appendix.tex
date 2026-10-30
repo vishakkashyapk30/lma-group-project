@@ -18,7 +18,7 @@ python -m vakeel_sahayak.eval.scoring report \
   --scores data/eval/dev_scores
 \end{verbatim}}
 
-\paragraph{Manifests.} Each run writes a manifest with the system id and variant, prompt hash, config hash, model names and modes, test-set and gold hashes, shard count, and the code stamp (\texttt{git\_sha}, \texttt{git\_dirty}, \texttt{code\_tree\_hash}). The scoring loader refuses runs from different commits unless told otherwise, and a dirty stamp is not admissible for frozen runs. The hosted-model settings are \texttt{VS\_MODELS=auto}, \texttt{VS\_LLM\_BACKEND=openai}, \texttt{VS\_EXTERNAL=pseudonymised}, with keys read from an untracked \texttt{.env}; offline stand-ins are the default and need neither a GPU nor a key. Agreed-gold hashes: \todo{owner Vishak: paste cases, dev and gold sha256 from the manifest at the report date}.
+\paragraph{Manifests.} Each run writes a manifest with the system id and variant, prompt hash, config hash, model names and modes, test-set and gold hashes, shard count, and the code stamp (\texttt{git\_sha}, \texttt{git\_dirty}, \texttt{code\_tree\_hash}). The scoring loader refuses runs from different commits unless told otherwise, and a dirty stamp is not admissible for frozen runs. The hosted-model settings are \texttt{VS\_MODELS=auto}, \texttt{VS\_LLM\_BACKEND=openai}, \texttt{VS\_EXTERNAL=pseudonymised}, with keys read from an untracked \texttt{.env}; offline stand-ins are the default and need neither a GPU nor a key. Agreed-gold hashes: agreed-gold sha256 \texttt{5583690e3754dacd8f2ebd4e27987ae7cfa0c3df9eb2fd9e8bc9a879d86c05be}, shared by every run of the current code; code tag \texttt{dev-sweep-v3}, git sha \texttt{7ad6ed41ea39}, code tree hash \texttt{d85cdc64f123}; the 24-case file of scorable orders has cases hash \texttt{ec0611f23b3c7749}.
 
 \section{Arms}
 \label{app:arms}
@@ -29,30 +29,30 @@ python -m vakeel_sahayak.eval.scoring report \
 \toprule
 Id & Idea (source) & Switch & Run so far \\
 \midrule
-B0, B1, B4, B6, Full & baselines (Section~\ref{sec:eval}) & driver system id & dev, pinned tag, not scored \\
-B0L, B2, B3, B5, B0S & baselines & driver system id & not run \\
-S1 & self-critique retrieval \citep{asai2024selfrag,yan2024crag} & \texttt{retrieval\_policy} & planned \\
-S2 & adaptive depth \citep{jeong2024adaptive} & \texttt{retrieval\_policy} & planned \\
-S3, S3b & sufficiency stopping \citep{joren2025sufficient} & \texttt{stopping} & planned \\
+B0, B1, B4, B6, Full & baselines (Section~\ref{sec:eval}) & driver system id & run on the earlier code (50 cases) and the current code; scored \\
+B0L, B2, B3, B5 & baselines & driver system id & run on the current code (B0L on Gemini only); scored on the cases available\\ B0S & baseline & driver system id & not run \\
+S1 & self-critique retrieval \citep{asai2024selfrag,yan2024crag} & \texttt{retrieval\_policy} & run (OpenAI, 10 cases) \\
+S2 & adaptive depth \citep{jeong2024adaptive} & \texttt{retrieval\_policy} & run (OpenAI, 10 cases) \\
+S3, S3b & sufficiency stopping \citep{joren2025sufficient} & \texttt{stopping} & run (OpenAI, 10 cases) \\
 S4 & score-skew weak signal & \texttt{weak\_signal} & offline study \\
 S5 & citation-graph expansion \citep{gutierrez2025hipporag2} & \texttt{graph\_expansion} & offline study \\
-S6 & learned store prior \citep{zhang2026agentrouter} & \texttt{store\_prior} & needs trained prior \\
-S7 & hierarchy re-reading for Munshi & \texttt{munshi\_gap\_policy} & planned (T2) \\
-S8 & self-critique repair \citep{gou2024critic,huang2024selfcorrect} & \texttt{repair\_mode} & planned \\
-S9, S10 & sampling critic; no isolation \citep{choi2025debate,wynn2025talk} & \texttt{critic\_mode}, \texttt{abhiyojak\_isolation} & planned \\
-S11 & three-role review, debate, vote \citep{kumar2025courtevel} & \texttt{critic\_mode}, \texttt{draft\_mode} & planned \\
-S12 & topology: sequential, single agent \citep{cemri2025mast} & \texttt{topology} & planned \\
+S6 & learned store prior \citep{zhang2026agentrouter} & \texttt{store\_prior} & run, no effect without a trained prior \\
+S7 & hierarchy re-reading for Munshi & \texttt{munshi\_gap\_policy} & not run (T2 phase) \\
+S8 & self-critique repair \citep{gou2024critic,huang2024selfcorrect} & \texttt{repair\_mode} & run (OpenAI, 10 cases) \\
+S9, S10 & sampling critic; no isolation \citep{choi2025debate,wynn2025talk} & \texttt{critic\_mode}, \texttt{abhiyojak\_isolation} & run (OpenAI, 10 cases) \\
+S11 & three-role review, debate, vote \citep{kumar2025courtevel} & \texttt{critic\_mode}, \texttt{draft\_mode} & S11 run (OpenAI, 10 cases); S11b, S11c in progress \\
+S12 & topology: sequential, single agent \citep{cemri2025mast} & \texttt{topology} & S12 run (OpenAI, 10 cases); S12b in progress \\
 S13 & searched workflow (grid on dev) & none (grid over switches) & offline smoke \\
 S14, S14b--d & plan cache, scheduling, prefix signal \citep{zheng2024sglang} & \texttt{plan\_cache}, \texttt{urgency\_policy} & offline study \\
-S15, S15b & output format \citep{tam2024speak} & \texttt{output\_format} & planned \\
+S15, S15b & output format \citep{tam2024speak} & \texttt{output\_format} & S15 run (OpenAI, 10 cases); S15b in progress \\
 S16, S16b & proposition units, late chunking \citep{chen2024densex} & \texttt{chunking} & offline study \\
-S17 & injection defences \citep{beurerkellner2025patterns} & defence flags & planned (T7) \\
-S18 & authority stance \citep{wachsmuth2018} & stance switch & planned \\
-P5--P8 & ingestion arms, image-only \citep{yu2025visrag,faysse2025colpali} & \texttt{munshi\_*} & planned (T2) \\
-A1--A10 & remove one part (dossier, repair, tools, filter, extractor, router, planner, sparring, a store) & \texttt{Switches} flags & planned \\
+S17 & injection defences \citep{beurerkellner2025patterns} & defence flags & not run (T7 phase) \\
+S18 & authority stance \citep{wachsmuth2018} & \texttt{authority\_stance} & run (OpenAI, 10 cases) \\
+P5--P8 & ingestion arms, image-only \citep{yu2025visrag,faysse2025colpali} & \texttt{munshi\_*} & not run (T2 phase) \\
+A1--A10 & remove one part (dossier, repair, tools, filter, extractor, router, planner, sparring, a store) & \texttt{Switches} flags & A1 to A3, A6 to A9 run; A4, A5, A10 not run \\
 \bottomrule
 \end{tabular}
-\caption{Arms and their state. ``Planned'' means the arm is implemented and offline-smoked, with a phase in the sweep plan, and has not produced scored results. Switch names follow \texttt{orchestration/switches.py}; \todo{owner Vishak: check the S18 and S3b switch names}.}
+\caption{Arms and their state. ``Run'' means the arm has produced outputs on the tag \texttt{dev-sweep-v3} on the stated backend and cases; ``not run'' means it is implemented and offline-smoked but has produced no outputs. Switch names follow \texttt{orchestration/switches.py}; S18 is \texttt{authority\_stance=outcome} and S3b is \texttt{stopping=llm}.}
 \end{table*}
 
 \section{Metrics}
