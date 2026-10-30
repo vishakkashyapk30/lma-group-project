@@ -4,6 +4,7 @@
 \small
 \caption{Preliminary dev result: dev slice (50 orders; the n of each system is in the table), gold source agreed. USD is 0 on the offline stand-ins and priced on OpenAI only; Ada (Qwen) and Sarvam runs have no USD price.}
 \label{tab:table9_cost}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{lrrrrrr}
 \toprule
 System & Tokens/case [mean, p90] & Store calls/case & Seconds/case & USD/case & USD per passed case (M31) & Backend \\
@@ -15,4 +16,5 @@ b4 & 131239, 150266 & 194.9 & 237.6 & 0.0138 & 0.1379 & openai \\
 b6 & 0, 0 & 2.1 & 0.1 & 0.0000 & 0.0000 & openai \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}

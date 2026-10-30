@@ -56,6 +56,11 @@ def per_system(rows):
     return d
 
 
+def fit(t):
+    t = t.replace(r'\begin{tabular}', '\\begin{adjustbox}{max width=\\textwidth}\n\\begin{tabular}', 1)
+    return t.replace(r'\end{tabular}', '\\end{tabular}\n\\end{adjustbox}', 1)
+
+
 def esc(s):
     return s.replace("_", r"\_")
 
@@ -84,7 +89,7 @@ def main(out, specs):
         lines += [r"\bottomrule", r"\end{tabular}",
                   r"\caption{" + f"Family {esc(fam)}: each baseline beside Full on the cases both answered without error. A cell is the arm's mean, then Full's mean on the same cases, over the cases where the metric is defined for both (the count in brackets). Unsupported facts: lower is better; the others: higher is better. A dash means the metric is undefined for the arm (for example, a baseline that cites no authority has no citation precision)." + r"}",
                   r"\label{tab:main_" + fam + "}", r"\end{table*}"]
-        (out / f"main_{fam}.tex").write_text("\n".join(lines))
+        (out / f"main_{fam}.tex").write_text(fit("\n".join(lines)))
         # table 2: each other arm against Full on the cases both answered (paired difference of means)
         rows = [r"\begin{table*}[t]", r"\centering\footnotesize", r"\begin{tabular}{@{}lr" + "r" * len(METRICS) + r"@{}}", r"\toprule",
                 "Arm & Cases & " + " & ".join("$\\Delta$ " + m[1] for m in METRICS) + r" \\", r"\midrule"]
@@ -101,7 +106,7 @@ def main(out, specs):
         rows += [r"\bottomrule", r"\end{tabular}",
                  r"\caption{" + f"Family {esc(fam)}: each arm minus Full on the cases both answered (mean difference, 95\\% bootstrap interval). A positive difference favours the arm for the higher-is-better metrics and Full for unsupported facts and fabricated citations. Intervals that include zero are not resolved at this sample size." + r"}",
                  r"\label{tab:ablate_" + fam + "}", r"\end{table*}"]
-        (out / f"ablate_{fam}.tex").write_text("\n".join(rows))
+        (out / f"ablate_{fam}.tex").write_text(fit("\n".join(rows)))
         # figures: per metric, mean over each arm's own answered cases with a 95% bootstrap interval; Full highlighted
         figm = [("objection_recall", "objection recall"), ("answerable_coverage", "answerable coverage"), ("unsupported_fact_rate", "unsupported-fact rate")]
         order = ["full"] + [x for x in BASE + sorted(k for k in S if k not in BASE and k != "full") if x in S][:8]

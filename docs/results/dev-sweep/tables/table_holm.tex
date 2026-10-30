@@ -4,6 +4,7 @@
 \small
 \caption{Preliminary dev result: dev slice (50 orders; the n of each system is in the table), gold source agreed.}
 \label{tab:table_holm}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{lrrrrrrr}
 \toprule
 Family & Claims & Registered tests (m) & Comparator & Metric & Difference & p & Holm decision \\
@@ -46,6 +47,7 @@ F-retrieval & C5, C14 & 4 & s5 & recall\_at\_10 &  &  & not run \\
 F-retrieval & C5, C14 & 4 & s16 & recall\_at\_10 &  &  & not run \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 % note: Holm-Bonferroni with alpha 0.05 and the registered family size m (a test not run counts as p = 1). Families: F-RQ1-recall = b0,b0l,b1,b2,b3,b4 on factor_recall; F-RQ1-halluc = b0,b0l,b1,b2,b3,b4 on unsupported_fact_rate; F-RQ1-guard = b0,b1,b4,b6 on factor_precision_lenient,factor_f1; F-ablate-recall = a1,a3,a4,a6,a7 on factor_recall, a1 on unsupported_fact_rate; F-sparring = s9,s10,a2,a8,a9 on objection_recall, s8 on unsupported_fact_rate; F-retrieval = a4,s4,s5,s16 on recall_at_10
 % note: C1 (F-RQ1-recall) is an intersection-union claim: it holds only if every registered comparison is significant at alpha 0.05 without Holm and in the reference's favour; a comparator not run leaves it incomplete. Verdict: not supported.
 \end{table}

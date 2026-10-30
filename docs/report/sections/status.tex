@@ -3,8 +3,9 @@
 
 \paragraph{Done.} The six agents and the event log; the ten stores; the ingestion ladder; contracts and Sutradhar; Vakeel's check and repair; Abhiyojak; truth maintenance with the byte-identity test; Pairokar; the Rights Radar (rules unverified); both gates and the privacy boundary; the web interface and API routes. For evaluation: test sets T1 to T9, gold G1 to G7 (Table~\ref{tab:kappa}), baselines B0 to B6, every S/A/P variant as a switch (61 of 61 pass an offline end-to-end audit; 42 effect tests), the scoring pipeline (bootstrap, Wilcoxon, McNemar, cluster bootstrap, Holm), the label-source sweep, the offline studies, the code stamp in every manifest, and spend ledgers for both hosted providers. On 29 October the test suite (run per area; the fine-tuning folder excluded) gave 5,082 passed and 0 failed: 4,665 unit, 133 integration and 284 system tests; 5,264 tests are collected after the changes of that day. Since the first draft of this report the team locked the paid providers in code and moved hosted calls to the Gemini free tier (providers are added by configuration), added per-case consent and quasi-identifier aliasing to the privacy boundary, bound Gate 2 to a hash of the approved brief, bound each Rights rule's verification to a hash of its text and code, made the unsupported-fact metric use MiniCheck and refuse the system's own checker, and built BGE-M3 side vectors for the four vector stores.
 
-\begin{table}[t]
+\begin{table}[!t]
 \centering\small
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}p{3.6cm}p{1.5cm}p{1.5cm}@{}}
 \toprule
 Item & State & Owner \\
@@ -24,6 +25,7 @@ Freeze tags, pre-registration & template & all \\
 Blind-slice run, once & after freeze & all \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{Work left. Owners follow the split of the project file.}
 \label{tab:status}
 \end{table}
@@ -34,8 +36,9 @@ Blind-slice run, once & after freeze & all \\
 
 \paragraph{Timeline to 10 November 2026.} Table~\ref{tab:timeline}. Everything planned for this project, every run, table, fix and the final report, is finished by 10 November; the days after are held in reserve and are not planned. Each step depends on the one before, and the free-tier quota sets the pace, so dev and test runs use every teammate's key.
 
-\begin{table}[t]
+\begin{table}[!t]
 \centering\small
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}p{1.5cm}p{4.2cm}p{1.2cm}@{}}
 \toprule
 Dates & Step & Owner \\
@@ -48,6 +51,7 @@ Dates & Step & Owner \\
 10 Nov & Code freeze; repository and tags pushed; report submitted & all \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{Plan from the mid-project checkpoint to the final submission.}
 \label{tab:timeline}
 \end{table}

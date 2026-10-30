@@ -25,6 +25,7 @@ python -m vakeel_sahayak.eval.scoring report \
 
 \begin{table*}[htbp]
 \centering\small\setlength\tabcolsep{3pt}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}lp{5.2cm}p{3.5cm}l@{}}
 \toprule
 Id & Idea (source) & Switch & Run so far \\
@@ -52,6 +53,7 @@ P5--P8 & ingestion arms, image-only \citep{yu2025visrag,faysse2025colpali} & \te
 A1--A10 & remove one part (dossier, repair, tools, filter, extractor, router, planner, sparring, a store) & \texttt{Switches} flags & A1 to A3, A6 to A9 run; A4, A5, A10 not run \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{Arms and their state. ``Run'' means the arm has produced outputs on the tag \texttt{dev-sweep-v3} on the stated backend and cases; ``not run'' means it is implemented and offline-smoked but has produced no outputs. Switch names follow \texttt{orchestration/switches.py}; S18 is \texttt{authority\_stance=outcome} and S3b is \texttt{stopping=llm}.}
 \end{table*}
 
@@ -60,6 +62,7 @@ A1--A10 & remove one part (dossier, repair, tools, filter, extractor, router, pl
 
 \begin{table*}[htbp]
 \centering\small
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}llp{6.2cm}l@{}}
 \toprule
 Id & Metric & Definition and check & Set \\
@@ -83,6 +86,7 @@ Safety & attack success, unapproved exports & bounded by the rule of three & T7 
 Cost & tokens, calls, latency, USD & from manifests and ledgers; cost-quality frontier & all \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{Metrics. Definitions are in the evaluation plan; none is an LLM-judge score.}
 \end{table*}
 
@@ -107,7 +111,8 @@ Cost & tokens, calls, latency, USD & from manifests and ledgers; cost-quality fr
 
 \begin{table}[htbp]
 \centering\small
-\begin{tabular}{@{}p{3.6cm}p{2.6cm}p{3.0cm}p{1.9cm}p{4.2cm}@{}}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}p{4.0cm}p{2.6cm}p{4.2cm}p{1.6cm}p{5.2cm}@{}}
 \toprule
 Block of runs & Provider & Model & Runs & Arms and size \\
 \midrule
@@ -123,13 +128,16 @@ Retrieval & local & hashed n-gram; BGE-M3 (study only) & local & BGE-M3 vectors 
 Speech & local & Whisper small & local & T8 \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{Every block of runs, its provider and model, and whether it ran locally or on a hosted service. Only one model family serves as system in each block, so each comparison is paired within a block.}
 \label{tab:models}
 \end{table}
 
 \section{Further Generated Tables}
 
+\begin{landscape}
 \resulttable{table1_main}{w}
+\end{landscape}
 \gentable{main_v1}
 \gentable{ablate_v1}
 \gentable{main_gemini}

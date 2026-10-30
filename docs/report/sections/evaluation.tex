@@ -7,8 +7,9 @@ The evaluation follows the course material on evaluation (L12) and on RAG evalua
 
 \paragraph{Gold labels without annotators.} Seven kinds of gold label are derived from the order text. G1 is the set of the 12 bail factors the defence argued; G2 the precedents the court cited that resolve to a document in the index; G3 dossier fields and dated events (sections, dates, charge-sheet status, co-accused bail, stage); G4 the objections the prosecution raised; G5 the factors the court discussed; G6 condition types of the operative order; G7 the rights computations the court states itself (custody against the 60 and 90 day limits, s.436A and s.479). For G1 and G3 (and, with weaker coverage, G4 to G6) two labelers work independently: the keyword and date rules, and a hosted model (OpenAI \texttt{gpt-6-luna}) that is not shown the rule output. This labeler is the same model as the system in the dev runs, so the agreed gold is not independent of the system; the rule-only gold is therefore reported beside it as a co-primary column. A label enters gold only if both agree, and the labeler must quote a verbatim span, which is rejected unless it is found in the order (a date label needs a written date in the span that normalises to the claimed date). The agreed gold is primary; the rule-only gold is a declared secondary, and every headline metric is also recomputed on it (label-source sensitivity). Table~\ref{tab:kappa} gives agreement on 250 orders (200 test plus 50 dev); a second labeler (Sarvam-105B) on a random 80 orders gives $\kappa = 0.78$ for G1 against the first labeler. G2 is rule-extracted and merged from the Supreme Court metadata index; dev has no resolved citation (0 of 50), so recall of court-cited precedents is undefined on dev and measurable on the test slice only (14 of 200 orders).
 
-\begin{table}[t]
+\begin{table}[!t]
 \centering\small
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{lrrr}
 \toprule
 Gold & $\kappa$ & 95\% CI & orders with label \\
@@ -17,6 +18,7 @@ G1 factors & 0.60 & [0.55, 0.64] & 169 of 250 \\
 G3 fields & 0.84 & [0.82, 0.86] & 249 of 250 \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{Agreement of the rules and the model labeler (pooled $\kappa$, bootstrap over orders). G1 is weakest on gravity ($\kappa$ 0.27) and weak prima facie case (0.25); G3 on previous bail (0.26). G7 has a label for 1 of 250 orders, so claims on rights rest on T4.}
 \label{tab:kappa}
 \end{table}

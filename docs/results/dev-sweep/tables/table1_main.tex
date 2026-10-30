@@ -4,6 +4,7 @@
 \small
 \caption{Preliminary dev result: dev slice (50 orders; the n of each system is in the table), gold source agreed. Mean [95\% bootstrap CI over cases].}
 \label{tab:table1_main}
+\begin{adjustbox}{max width=\textheight}
 \begin{tabular}{lrrrrrrrrrrrrrr}
 \toprule
 System & Evaluated object & n / runs & Factor recall (M1) & Precision, lenient (M2) & F1 (M3) & Unsupported-fact rate (M6) & Cases with claims (M6) & Claims/case & Unsupported sentences/case & Answerable-factor coverage & Recall@10 G2 (M10) [coverage] & Objection recall G4 & pass\textasciicircum{}k & Tokens/case \\
@@ -15,6 +16,7 @@ b4 & full & 50 / 1 & 0.625 [0.250, 0.875] n=8 & 0.275 [0.108, 0.461] n=17 & 0.52
 b6 & full & 50 / 1 & 0.875 [0.625, 1.000] n=8 & 0.561 [0.303, 0.818] n=11 & 0.771 [0.521, 0.958] n=8 & 0.984 [0.973, 0.993] n=50 & 50 / 50 & 7.9 [7.6, 8.2] & 7.76 [7.52, 8.00] & 0.000 [0.000, 0.000] n=20 & n/a (n=0) [0 of 50 orders with a resolved citation, 0\% resolved] & 0.000 [0.000, 0.000] n=20 & pass\textasciicircum{}1=0.88 (n=8) & 0 [0, 0] \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 % note: Cases with no claims are excluded from M6 and counted in coverage: M6 is the mean over the cases with claims (k / n above); the unsupported-sentence count per case and the share of answerable factors with a supported argument are shown beside it, so a system that says nothing cannot win on M6.
 % note: Label source: agreed (hash 5583690e3754). n beside a metric is the number of orders where it is defined: M1 needs an agreed answerable factor, recall@10 a resolved court-cited precedent, objection recall an agreed objection. Runs are averaged within a case; the interval resamples cases.
 % note: pass^k bar: factor recall >= 0.5 with no stage error (provisional; the bar is frozen in the pre-registration).

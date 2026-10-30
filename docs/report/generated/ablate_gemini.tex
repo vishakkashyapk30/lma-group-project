@@ -1,5 +1,6 @@
 \begin{table*}[htbp]
 \centering\footnotesize
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}lrrrrrrrr@{}}
 \toprule
 Arm & Cases & $\Delta$ Obj. recall & $\Delta$ Ans. cov. & $\Delta$ Coverage & $\Delta$ Unsupp. facts & $\Delta$ Fabr. cit. & $\Delta$ Cit. prec. & $\Delta$ Factor rec. \\
@@ -12,6 +13,7 @@ B2 & 8 & -0.25 [-0.75, +0.00] & +1.00 [+1.00, +1.00] & +0.06 [+0.00, +0.14] & +0
 B3 & 6 & -0.25 [-0.75, +0.00] & +0.50 [+0.00, +1.00] & -0.26 [-0.67, +0.14] & +0.09 [+0.00, +0.18] & +0.00 & -1.00 & +0.50 [+0.00, +1.00] \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{Family gemini: each arm minus Full on the cases both answered (mean difference, 95\% bootstrap interval). A positive difference favours the arm for the higher-is-better metrics and Full for unsupported facts and fabricated citations. Intervals that include zero are not resolved at this sample size.}
 \label{tab:ablate_gemini}
 \end{table*}

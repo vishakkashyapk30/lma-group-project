@@ -4,6 +4,7 @@
 \small
 \caption{Preliminary dev result: dev slice (50 orders; the n of each system is in the table), gold source agreed. Same outputs, different label sources; mean [95\% CI] with n.}
 \label{tab:table_label_sensitivity}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{lrrrrrr}
 \toprule
 System & Label source & M1 factor recall & M2 precision (strict) & M2 precision (lenient) & M3 F1 & M4 G5 recall \\
@@ -25,6 +26,7 @@ b6 & one labeler only (LLM, span-grounded) & 0.778 [0.444, 1.000] n=9 & 0.530 [0
 b6 & agreed only (primary) & 0.875 [0.625, 1.000] n=8 & 0.530 [0.273, 0.803] n=11 & 0.561 [0.318, 0.818] n=11 & 0.771 [0.521, 0.958] n=8 & 0.833 [0.500, 1.000] n=3 \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 % note: rule: systems by M1, best first: b6 > b4 > b1 > b0 > full (order differs from agreed)
 % note: labeler: systems by M1, best first: b6 > b4 > b1 > b0 > full (order differs from agreed)
 % note: agreed: systems by M1, best first: b6 > b1 > b4 > b0 > full (same order as agreed)

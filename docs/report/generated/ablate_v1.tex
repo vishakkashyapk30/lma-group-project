@@ -1,5 +1,6 @@
 \begin{table*}[htbp]
 \centering\footnotesize
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}lrrrrrrrr@{}}
 \toprule
 Arm & Cases & $\Delta$ Obj. recall & $\Delta$ Ans. cov. & $\Delta$ Coverage & $\Delta$ Unsupp. facts & $\Delta$ Fabr. cit. & $\Delta$ Cit. prec. & $\Delta$ Factor rec. \\
@@ -10,6 +11,7 @@ B4 & 50 & +0.23 [+0.03, +0.45] & +0.25 [+0.03, +0.47] & -0.38 [-0.49, -0.28] & -
 B6 & 50 & -0.70 [-0.88, -0.50] & -0.50 [-0.70, -0.30] & +0.17 [+0.11, +0.23] & +0.13 [+0.08, +0.18] & -- & -- & +0.62 [+0.12, +1.00] \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{Family v1: each arm minus Full on the cases both answered (mean difference, 95\% bootstrap interval). A positive difference favours the arm for the higher-is-better metrics and Full for unsupported facts and fabricated citations. Intervals that include zero are not resolved at this sample size.}
 \label{tab:ablate_v1}
 \end{table*}

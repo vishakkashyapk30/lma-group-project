@@ -4,6 +4,7 @@
 \small
 \caption{Preliminary dev result: dev slice (50 orders; the n of each system is in the table), gold source agreed.}
 \label{tab:table_paired}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{lrrrrrr}
 \toprule
 Comparison & Metric & n & Difference [95\% CI] & p (test) & d\_z / odds ratio & Family (Holm) \\
@@ -50,5 +51,6 @@ full minus b6 & tokens & 50 & +101860.030 [+96914.999, +106871.670] & 0.0000 (wi
 full minus b6 & unsupported\_fact\_rate & 50 & -0.120 [-0.171, -0.072] & 0.0000 (wilcoxon) & -0.66 & exploratory (uncorrected) \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 % note: Difference is full minus the comparator; for the unsupported-fact rate, tokens and store calls lower is better. Binary rows: exact McNemar on discordant pairs; pooled factor hits: cluster bootstrap over cases. n is the number of paired cases; for the unsupported-fact rate only cases where both systems made claims are paired. Holm only inside the registered primary families (plan 5.3), on this gold; everything else is exploratory.
 \end{table}

@@ -9,8 +9,9 @@ All data are public court text, official tables, existing datasets, or construct
 
 \paragraph{Test sets.} T1 is the main set: 200 test-window High Court orders (120 open after the freeze, 80 blind) and 50 development orders; the system reads the facts part of each order and gold comes from the rest of it (Section~\ref{sec:eval}). The facts part is short: 19 of the 50 dev orders have under 1,000 characters of facts, and one has only the caption. T2 to T9 test the other parts of the system.
 
-\begin{table}[t]
+\begin{table}[!t]
 \centering\small
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}llr@{}}
 \toprule
 Set & Content & Size \\
@@ -26,6 +27,7 @@ T8 & Hindi utterances & 300 \\
 T9 & citation strings & 2,095 \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{Test sets on 29 October 2026 (rows on disk). T2, T3, T5, T7 and T8 are constructed with known answers; T4 is generated from the written rule table.}
 \label{tab:data}
 \end{table}

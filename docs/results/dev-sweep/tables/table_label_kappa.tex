@@ -4,6 +4,7 @@
 \small
 \caption{Preliminary dev result: dev slice (50 orders; the n of each system is in the table), gold source agreed.}
 \label{tab:table_label_kappa}
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{lrrrrrr}
 \toprule
 Pair & Label & n first & n second & both & Cohen kappa & 95\% CI \\
@@ -46,5 +47,6 @@ G5 rule vs labeler & witness\_tampering & 2 & 2 & 1 & 0.48 & [-0.04, 1.00] \\
 G5 rule vs labeler & all labels pooled & 58 & 60 &  & 0.60 & n=50 orders \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 % note: Per-label binary kappa over the scored orders; pooled kappa treats every (order, label) cell as one item.
 \end{table}

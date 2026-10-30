@@ -1,5 +1,6 @@
 \begin{table*}[htbp]
 \centering\footnotesize
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}lrrrrrrr@{}}
 \toprule
 Arm & Cases & Obj. recall (arm / Full) & Ans. cov. (arm / Full) & Coverage (arm / Full) & Unsupp. facts (arm / Full) & Cit. prec. (arm / Full) & Factor rec. (arm / Full) \\
@@ -10,6 +11,7 @@ B4 & 50 & 0.93 / 0.70 (20) & 0.75 / 0.50 (20) & 0.45 / 0.83 (50) & 0.81 / 0.86 (
 B6 & 50 & 0.00 / 0.70 (20) & 0.00 / 0.50 (20) & 1.00 / 0.83 (50) & 0.98 / 0.86 (50) & -- & 0.88 / 0.25 (8) \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{Family v1: each baseline beside Full on the cases both answered without error. A cell is the arm's mean, then Full's mean on the same cases, over the cases where the metric is defined for both (the count in brackets). Unsupported facts: lower is better; the others: higher is better. A dash means the metric is undefined for the arm (for example, a baseline that cites no authority has no citation precision).}
 \label{tab:main_v1}
 \end{table*}

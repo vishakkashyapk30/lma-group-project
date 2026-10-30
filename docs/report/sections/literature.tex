@@ -18,8 +18,9 @@ The design of the system was not fixed once. Four sweeps through the literature 
 
 \paragraph{What the catalogue holds.} 145 papers: 114 from a top venue, 8 workshop or other, 23 preprints; 34 score 4 or 5 and form the core reading list, 81 score 3 (a useful idea), and 30 score 1 or 2 (framing only). A further 24 were read and not catalogued. Contribution lines come from abstracts and earlier summaries, not from full reads of every paper, and the numbers papers report (for example attack success rates) are theirs, on their benchmarks; nothing in the review is evidence about our own system.
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering\small
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}p{3.1cm}p{4.9cm}p{6.6cm}@{}}
 \toprule
 Kind of paper & Examples & What we took, and why \\
@@ -35,6 +36,7 @@ Legal AI for India & NyayaRAG, PredEx, ``Hallucination-Free?'' \citep{nigam2025n
 Serving and scheduling & SGLang, KV-cache scheduling \citep{zheng2024sglang} & Plan caching and an urgency-ordered batch queue (S14), applied at the application level because we cannot modify a serving engine. \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{Kinds of papers reviewed, the inspiration taken and the reason. The full catalogue is in the project repository (\texttt{docs/literature-review-and-usage.md}).}
 \label{tab:litkinds}
 \end{table*}
@@ -47,8 +49,9 @@ Serving and scheduling & SGLang, KV-cache scheduling \citep{zheng2024sglang} & P
 
 \subsection{What was built, by sweep}
 
-\begin{table*}[t]
+\begin{table*}[!t]
 \centering\footnotesize
+\begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}p{2.2cm}p{3.5cm}p{3.6cm}p{4.6cm}r@{}}
 \toprule
 Variant & Idea (paper) & Switch & What was adapted & Tests \\
@@ -77,6 +80,7 @@ S16, S16b & Chunk granularity, propositions, late chunking (Dense X) & \texttt{c
 S13 & Automatically designed workflows (AFlow; ADAS) & grid over switches & Budget-capped grid search on dev; harness and offline smoke only & 14 \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \caption{Ideas taken from the literature, the switch that turns each on, how it was adapted, and the number of unit tests that pin it. Test counts are those of the files named in \texttt{docs/literature-to-code-map.md}; they are collected, not re-run, in this table.}
 \label{tab:literature}
 \end{table*}
