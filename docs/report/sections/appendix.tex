@@ -86,6 +86,22 @@ Cost & tokens, calls, latency, USD & from manifests and ledgers; cost-quality fr
 \caption{Metrics. Definitions are in the evaluation plan; none is an LLM-judge score.}
 \end{table*}
 
+\section{Glossary of Names Used in This Report}
+\label{sec:glossary}
+
+\begin{description}\itemsep0pt
+\item[Full] The complete system: all six agents, the ten stores, retrieval, verification and prosecution sparring.
+\item[B0 to B6] Baselines, simpler systems that Full must beat. B0: one model call with no retrieval. B1: retrieval from one store. B2: retrieval over whole-order embeddings. B3: retrieval over naively chunked text. B4: every store searched and fused, with no agent planning. B5: a learned router alone, with no contracts. B6: rules only, no model. B0L: B0 on a larger model.
+\item[A1 to A10] Ablations: Full with one part switched off, to show whether the part earns its place.
+\item[S1 to S18] Variants taken from the literature (Section~\ref{sec:literature}). Each swaps one idea from a paper into the system as an opt-in switch. P5 to P8 are the same for intake.
+\item[Dev set] The 50 development orders (T1 dev). All numbers in this report come from it. The blind slice has not been opened.
+\item[Code tag] A named snapshot of the code. \texttt{dev-sweep-v1} (27 October) is the code of the first 50-case baseline runs; it is superseded and reported only as such. \texttt{dev-sweep-v3} (29 October) is the current code; every other model run reported here comes from it. A result is comparable only with results from the same tag, and the scorer refuses to mix tags.
+\item[Block] A batch of runs on one model and one set of cases: the OpenAI block (\texttt{gpt-6-luna}), Gemini block A (\texttt{gemini-3.5-flash-lite}) and Gemini block B (\texttt{gemini-3.1-flash-lite}). Arms are compared only with the Full of the same block (Table~\ref{tab:models}).
+\item[Agents] Munshi (intake), Peshkar (dossier and Rights Radar), Sutradhar (orchestrator), Vakeel (drafter), Abhiyojak (prosecution sparring), Pairokar (batch desk).
+\item[Gates] Gate 1 (dossier) and Gate 2 (brief): approvals that only counsel can give; export is impossible before Gate 2.
+\item[Metrics] M1 to M35, listed in the metrics table of this appendix: M1 factor recall, M6 unsupported-fact rate, M10 recall of cited precedents, and so on.
+\end{description}
+
 \section{Further Generated Tables}
 
 \resulttable{table_paired}{w}

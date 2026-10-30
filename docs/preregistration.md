@@ -1,6 +1,6 @@
-# Pre-registration (template, not yet frozen)
+# Pre-registration (partly filled 2026-10-29, not yet frozen)
 
-Status: TEMPLATE. Nothing below is a result, and every `<...>` is a placeholder to be filled before the freeze. It is written from `docs/evaluation-plan.md` (sections 1, 2.6, 2.7, 3, 5, 7)
+Status: PARTLY FILLED on 2026-10-29 from `dev-sweep-v3` (hashes, switch set, models, test-set hashes). Not frozen: the dev-fixed thresholds wait for the phase-5 dev runs, and `prereg-v1` / `eval-freeze-v1` are created only then. Nothing below is a result, and every `<...>` is a placeholder to be filled before the freeze. It is written from `docs/evaluation-plan.md` (sections 1, 2.6, 2.7, 3, 5, 7)
 and `configs/eval/hypotheses.yaml`. The freeze is the commit that carries this file with the git tag `prereg-v1`, plus the code tag `eval-freeze-v1` (split.md appendix C, 8.2). Until the
 tags exist, the blind scoring entry point refuses to run (`testsets/blind.py`). Defaults marked "(default)" are the plan's, to be fixed on the 50 dev orders and rounded to whole points.
 
@@ -11,16 +11,16 @@ tags exist, the blind scoring entry point refuses to run (`testsets/blind.py`). 
 | Date and time of the freeze | `<YYYY-MM-DD HH:MM>` |
 | Git SHA of `eval-freeze-v1` | `<40-hex SHA>` |
 | Git SHA of the commit carrying this file (`prereg-v1`) | `<40-hex SHA>` |
-| Tracked switch set (the output of `Switches.implemented_variants()` at the freeze) | `<sorted list, pasted by script>` |
-| Prompt hash (`driver.prompt_hash()`, also in every run manifest) | `<16-hex>` |
-| Config hash (`driver.config_hash()`) | `<16-hex>` |
-| Blind-slice set hash (`python scripts/prereg_hash.py`) | `<64-hex>` (the T1 builder's value today is in `data/testsets/t1/manifest_blind.json`; it is recomputed, not copied) |
+| Tracked switch set (the output of `Switches.implemented_variants()` at the freeze) | at `dev-sweep-v3` (46): A1, A10, A2, A3, A4, A5, A6, A7, A8, A9, B5, P5, P6, P7, P8, S1, S10, S11, S11b, S11c, S12, S12b, S13, S14, S14b, S14c, S14d, S15, S15b, S16, S16b, S17, S17b, S17c, S17d, S18, S2, S3, S3b, S4, S5, S6, S7, S8, S9, full (re-paste at the freeze) |
+| Prompt hash (`driver.prompt_hash()`, also in every run manifest) | `f4e2c690b94aaad3` at `dev-sweep-v3` (re-check at the freeze) |
+| Config hash (`driver.config_hash()`) | `bcc7d5d5f409c8ca` at `dev-sweep-v3` (re-check at the freeze) |
+| Blind-slice set hash (`python scripts/prereg_hash.py`) | `9185e1cce6f981a70df4cf4aaaa5a35bc0648dfa216dff6900010512be8ebe32` (recomputed 2026-10-29; equals `manifest_blind.json`) |
 | Blind slice: size, BNS-era count, post-release count | `<80>`, `<n>`, `<n>` (from `manifest.json`, counts only) |
-| Dev ids | `data/testsets/t1/manifest_dev.json` (identical in `t1_rule_only`), file hash `<hash>` |
-| Test-set manifests and hashes (T1 to T9) | `<name: hash>` |
+| Dev ids | `data/testsets/t1/manifest_dev.json` (identical in `t1_rule_only`), sha256 `61c4bc451d40fcb26c0b5d3d418371c3ba2f3e8f08148a2474d7cd4bfaa3ba06` |
+| Test-set manifests and hashes (T1 to T9) | sha256 (first 16 hex) of the row files on 2026-10-29. The blind slice's gold is sealed by the hash of the whole T1 file, not only its ids (design review item 11): T1 `cases.jsonl` 2262383a77f3a7b0, `dev.jsonl` 9a22f359b9f4c5ba, T1 rule-only `cases.jsonl` 0c440657ff99e885, T2 `truth.jsonl` 422fab921f0a3512, T2 Hindi native c88583c2adbac7b9, T3 ca2fb11a401d143d, T4 (627) f9946f466ec36e95, T5 0ce0b029d7483806, T6 313918794447744d, T7 71e68c8bf6e9398e, T8 f55cecccea2677f3, T9 3c26048bd62bf7ad |
 | Seeds | `<seed 1, seed 2, seed 3>`; the same seeds for every system, run r of every system shares seed r (plan 5.1) |
 | Code stamp | every run manifest records `git_sha`, `git_dirty` and `code_tree_hash`; the scoring loader refuses to mix runs from different commits (`--allow-mixed-code` overrides, for exploration only); frozen runs must come from a clean worktree of the tag (a `-dirty` sha is not admissible) |
-| Models and versions | `<the `models` block of the run manifests: name, version, date stamp>`; hosted models name the provider and the date; labeler and teacher are non-Qwen |
+| Models and versions | agents: Gemini `gemini-3.5-flash-lite` (free tier, public court text, pseudonymised) for the dev sweep at `dev-sweep-v3`; B0L: `gemini-3.6-flash` (not paired); system claim checker DeBERTa-v3 NLI; evaluation checker MiniCheck-RoBERTa-Large (refuses the system's checker); gold labeler OpenAI `gpt-6-luna` (the system model of the v1 runs: a declared threat, rule-only gold co-primary). Paste the run manifests' `models` block at the freeze |
 | Budgets | tokens per case `<n>`, store calls and tokens per factor `<n>` (`configs/budgets.yaml`), hosted caps `<USD>` and `<INR>` (`configs/eval/runs.yaml` `budgets:`; at 2026-10-27 the OpenAI ledger ceiling is 4.90 USD, the owner's Sarvam key INR 30 in total, and the large Sarvam block runs on Satvik's own key, `docs/handoff/sweep-satvik.md`) |
 
 ## 1. Claims and hypotheses
@@ -160,6 +160,7 @@ if they differ the blind numbers are the headline. Opened on `<date>` at `<SHA>`
 | Equivalence | non-inferiority: the lower end of the 95% interval of (system minus comparator) above -epsilon |
 
 Multiple comparisons: Holm-Bonferroni within each family named in section 1.1 (alpha `<0.05>`), on the primary (agreed) gold; families are not pooled; exploratory slices are labelled and not corrected. The rescoring against the rule-only gold (section 0, Gold-source sensitivity) is one declared sensitivity analysis: it adds no test to any family, is not corrected, and a claim is called robust to the label source when its sign and Holm decision hold on both golds.
+Claim C1 ("Full beats every baseline") is an intersection-union claim: supported only if every comparison is significant at alpha without Holm and in Full's favour; a comparator that did not run makes it "incomplete" (`eval/scoring/engine.py::intersection_union`). Holm stays for statements about single baselines. One family per backend: arms run on different models (the v1 OpenAI runs, the phase-5 Gemini runs) are never in one family.
 Averaging: runs within a case first, then paired tests across cases (case-level is the unit). Ties and empty cases: `<rule>`. Differences smaller than the interval half-width are "not resolved",
 not "no difference". Code status: exact McNemar and the cluster bootstrap exist in `eval/scoring/stats_extra.py` (written there because `eval/stats` has neither); `eval/stats/{bootstrap,wilcoxon,holm}.py` are owned by a teammate (check their state before the freeze).
 

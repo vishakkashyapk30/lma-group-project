@@ -1,0 +1,31 @@
+\section{Datasets}
+\label{sec:data}
+
+All data are public court text, official tables, existing datasets, or constructed; no client data and no hand-made labels are used (Table~\ref{tab:data}).
+
+\paragraph{Corpus.} Open India Law (release v2026.08.1) supplies the court orders: bail-related High Court decisions from 2019 to 2025 and Supreme Court judgments of any year (1.4\,GB of the 53.6\,GB release). Of 115,988 orders read, 115,524 feed the stores; 464 are excluded because they are test-window orders or share an FIR with one. Orders dated before 2024 are the training window; the test window is later. IPC2BNS-Verify supplies the IPC-to-BNS concordance (563 rows) and a 1,140-query mapping benchmark. Statute texts come from the corpus's legislation file (IPC, BNS, BNSS) plus the CrPC and NDPS sections the rules need, 1,426 sections in all. Kathbath (first 1,000 of 3,130 Hindi test utterances) supplies Hindi speech for dictated facts.
+
+\paragraph{Stores.} The build of 26 October 2026 took 35 minutes on a laptop and holds 1.77\,GB: 161,708 reasoning paragraphs, 114,692 whole-order fact vectors, 70,880 defence-argument and 55,161 prosecution-objection paragraphs, and 5,842 citation edges (37.3\% of extracted citations resolve to a document in the index).
+
+\paragraph{Test sets.} T1 is the main set: 200 test-window High Court orders (120 open after the freeze, 80 blind) and 50 development orders; the system reads the facts part of each order and gold comes from the rest of it (Section~\ref{sec:eval}). The facts part is short: 19 of the 50 dev orders have under 1,000 characters of facts, and one has only the caption. T2 to T9 test the other parts of the system.
+
+\begin{table}[t]
+\centering\small
+\begin{tabular}{@{}llr@{}}
+\toprule
+Set & Content & Size \\
+\midrule
+T1 & HC bail orders, facts in, gold out & 200 + 50 dev \\
+T2 & messy bundles; native Hindi orders & 600; 200 \\
+T3 & change-set updates & 240 \\
+T4 & rights scenarios (rule table) & 627 \\
+T5 & batch cases, planted deadlines & 300 \\
+T6 & chat questions & 150 \\
+T7 & safety scenarios & 60 \\
+T8 & Hindi utterances & 300 \\
+T9 & citation strings & 2,095 \\
+\bottomrule
+\end{tabular}
+\caption{Test sets on 29 October 2026 (rows on disk). T2, T3, T5, T7 and T8 are constructed with known answers; T4 is generated from the written rule table.}
+\label{tab:data}
+\end{table}

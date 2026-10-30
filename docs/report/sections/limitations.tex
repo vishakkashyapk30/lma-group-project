@@ -1,12 +1,12 @@
 \section{Limitations and Risks}
 
 \begin{itemize}\setlength\itemsep{0pt}
-\item \textbf{Small $n$, dev only.} All runs use the 50 dev orders (25 for some arms); intervals will be wide and the blind slice is unopened.
-\item \textbf{Stand-in models.} Offline arms use a template LLM and, unless MiniCheck or the DeBERTa NLI is installed, an offline NLI; such numbers carry that label in the tables. The 4B and 14B models of the design have not been run on the GPU nodes for this report.
+\item \textbf{Small $n$, dev only, one backend, superseded code.} The scored runs use the 50 dev orders on one hosted model and come from the tag \texttt{dev-sweep-v1}; later code (privacy, providers, the fixes of Section~\ref{sec:status}) has not been rerun. Intervals are wide (about $\pm$7 points at $n=50$, above the 5-point margin), and the blind slice is unopened, so no claim can be called supported.
+\item \textbf{Stand-in models.} Offline arms use a template LLM; such numbers carry that label in the tables. The 4B and 14B models of the design have not been run on the GPU nodes for this report; serving Qwen3-32B on the shared nodes failed and was dropped.
 \item \textbf{Thin facts in T1.} The facts part is often only a caption. A single pass then answers ``no facts supplied'', while Full draws grounds from retrieved authorities not tied to the client's facts, so Full can win on recall through retrieved boilerplate.
 \item \textbf{Gold is not human.} Rules plus one non-Qwen labeler that must agree; $\kappa$ is 0.60 for G1, and the agreed G1 gold leaves 81 of 250 orders without a factor. Only 37.3\% of citations resolve, and no dev order has a resolved court citation. HLDC was unavailable, so the Hindi set is native High Court orders from one court and two years.
-\item \textbf{Rights Radar.} All seven rules are marked unverified until the owner re-checks them against the bare acts and cited judgments.
-\item \textbf{No authentication.} The gates are enforced in code, but there are no user accounts, so ``approval only from counsel'' is a property of the code path, not of an identity check.
-\item \textbf{Budgets.} OpenAI is capped by a ledger (ceiling 4.90 USD), the owner's Sarvam key at INR 30; a larger Sarvam block runs on a teammate's key. The full plan (about 4,500 Full case-runs) does not fit, so sample sizes are cut, not features.
+\item \textbf{Rights Radar.} Six of the seven rules are unverified. A rule's verification is now bound to a hash of its text and code, so a later change clears it, and every unverified rule is printed in the export as ``Not yet checked against the bare act''. T4 is generated from the same rule table, so it measures conformance, not legal accuracy.
+\item \textbf{No authentication.} The gates are enforced in code, but there are no user accounts and the API token is off by default, so ``approval only from counsel'' is a property of the code path, not of an identity check.
+\item \textbf{Budgets.} Spent so far: 2.20 USD on OpenAI and INR 5.49 on Sarvam; both are now locked in code. The free Gemini tier allows 500 requests a day per project on the flash-lite models, about 10 Full cases a day (a Full case takes about 49 requests). The full plan (about 4,500 Full case-runs) does not fit, so sample sizes are cut, not features.
 \item \textbf{Known weaknesses.} Grounds are sometimes weak in substance (about ten open issues per case; sparring objections mostly unanswered); the pseudonymiser still refuses one order of 250.
 \end{itemize}

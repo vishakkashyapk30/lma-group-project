@@ -1,0 +1,24 @@
+\section{Challenges and Mitigations}
+\label{sec:challenges}
+
+\begin{table*}[t]
+\centering\small
+\begin{tabular}{@{}p{4.6cm}p{5.4cm}p{5.2cm}@{}}
+\toprule
+Challenge & What happened & Mitigation \\
+\midrule
+Budget for hosted models & The plan needs about 4,500 Full case-runs; a Full case takes about 50 model calls. 2.20\,USD (OpenAI) and INR 5.49 (Sarvam) were spent, then both providers were locked in code. & Hosted runs moved to the Gemini free tier (500 requests a day per project per model), with a quota ledger and resumable shards; sample sizes are cut, never features; team keys are pooled. \\
+Free-tier reliability & Gemma 4 31B failed on 86 of 94 calls in an hour (HTTP 500, 503); \texttt{gemini-3.5-flash-lite} rejected the default thinking setting with a bare 400. & Model chosen on a 3-case smoke (no failures on \texttt{gemini-3.5-flash-lite}); per-model thinking settings live in configuration; a case that hits the daily quota is not saved and reruns. \\
+GPU serving & Qwen3-32B installed on the shared GPU nodes but never answered a prompt: the account limit on job starts blocked it. & Dropped for now; BGE-M3 vectors were built on the nodes (2\,h\,43\,min) and applied locally. \\
+Thin input facts & The facts part of many orders is short or only a caption (19 of 50 dev orders under 1,000 characters). & Answerable-factor rule; coverage columns; cases with no facts are reported, not dropped. \\
+Gold independence & The model labeler is the same model as the system in the OpenAI runs. & Rule-only gold reported beside the agreed gold; the phase-5 runs use a different model family from the labeler. \\
+Checker circularity & The unsupported-fact metric first fell back to the system's own DeBERTa checker. & The scorer now uses MiniCheck and refuses the system's checker. \\
+Privacy on the wire & Names were scrubbed but FIR numbers, police stations and dates went out. & Quasi-identifier aliasing and a per-case date shift; per-case consent for client text; free tiers take public text only. \\
+Rights rules not verified & Six of seven rules await a check against the bare acts; one rule's store text is wrong. & Verification bound to a hash of rule text and code; exports print ``Not yet checked against the bare act''. \\
+Gated data & HLDC (Hindi district-court bail orders) and an Indic translation model are gated. & Native Hindi High Court orders as T2's Hindi set; access requested. \\
+Disk & The laptop is at 97\% disk use. & Caches cleared; large weights not in use are candidates for removal. \\
+\bottomrule
+\end{tabular}
+\caption{Challenges met so far and how each is handled.}
+\label{tab:challenges}
+\end{table*}

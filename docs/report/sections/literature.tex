@@ -1,0 +1,104 @@
+\section{Literature Sweep and Its Tests}
+\label{sec:literature}
+
+The design of the system was not fixed once. Four sweeps through the literature (retrieval and orchestration; verification and adversarial review; intake, safety and serving; routing, topology, chunking and workflow search) each produced a list of ideas that a paper reported as useful, and each idea became an opt-in \emph{variant} of the harness. This section records which paper each variant comes from, what was changed when the idea moved to a bail-preparation setting, and what has been checked about it so far. The full table, with links, is \texttt{docs/literature-to-code-map.md} in the repository.
+
+\paragraph{Rules of the sweep.} (1) Every variant is a field of one typed \texttt{Switches} object and defaults to the current behaviour; a golden test per agent (digests of the default run of case-0007, captured before any variant was written) fails if switching a variant off does not reproduce the old output byte for byte. (2) A variant is an \emph{adaptation}, never a reproduction: each row of the map says what was replaced (for example, the learned complexity classifier of Adaptive-RAG became deterministic rules over the Rights Radar and the statute era). (3) A variant is built only if it can be scored by a metric of the evaluation plan; its row names the claim, metric and test file. (4) Constants that the papers do not give (the skew thresholds of S4, the damping and depth of the graph expansion of S5) are marked as untuned assumptions to be set on the dev split, never on the test split. (5) No variant is claimed to help until it has been scored against Full on the same backend and cases (Section~\ref{sec:results}).
+
+\paragraph{Citation check.} Every paper in the map was checked against the official proceedings page or the arXiv record. Four links or author lists were corrected (Self-RAG, CRITIC, the first author of the multi-agent failure taxonomy, and a preview link for semantic chunking); seven further checks passed, one with a note on a changed page title; Doyle's truth-maintenance paper was checked on secondary sources only, and its row says so. Preprints without a venue are labelled as such.
+
+\subsection{How the literature review was done}
+\label{sec:litprocess}
+
+\paragraph{Why we reviewed the literature.} Our project is an engineering contribution: the way agents, stores, checks and approval gates are put together for one workflow. Such a claim is only credible if each design choice is placed against published work (what is borrowed, what is adapted, what is new) and if each borrowed idea becomes a test that can fail. The review therefore had two outputs, a catalogue of papers with a recorded decision for each, and a map from papers to code switches and metrics (Table~\ref{tab:literature}). It also had a third, less visible output: a list of ideas we looked at and did not adopt, with the reason.
+
+\paragraph{Scope and search.} We covered fourteen themes: routing among models; multi-agent orchestration and its failure modes; agentic and adaptive retrieval-augmented generation; graph-structured and multi-source retrieval; document ingestion and chunking; verification, attribution and self-correction; debate and adversarial critics; memory and state; agent safety; agent evaluation; legal AI and Indian legal NLP; clarification, abstention and human-in-the-loop; small models and structured output; serving and scheduling. We searched 2023 to 2026 proceedings (ICML, ICLR, NeurIPS, ACL, EMNLP, NAACL, COLM, AAAI, IJCAI, SIGIR, ICAIL, USENIX, OSDI, MLSys, TMLR, TACL) and arXiv for items without a venue, starting from the two papers the course team named and from the TA's request for novelty in agentic engineering rather than in a new model.
+
+\paragraph{Three passes, and how each paper was checked.} A first sweep per theme recorded candidates with an official link. A second pass checked 33 papers one by one against the official page (proceedings, ACL Anthology or arXiv). A third pass re-fetched 25 more, including the two named papers, and corrected several venue claims; where a venue could not be confirmed (for some preprints and workshop papers) the entry says so instead of guessing. Each catalogue row carries a check mark (verified on an official page, or taken from the sweep only), a tier (top venue, workshop or other, preprint) and a relevance score from 1 to 5 that records how much the paper changes a decision in this project.
+
+\paragraph{What the catalogue holds.} 145 papers: 114 from a top venue, 8 workshop or other, 23 preprints; 34 score 4 or 5 and form the core reading list, 81 score 3 (a useful idea), and 30 score 1 or 2 (framing only). A further 24 were read and not catalogued. Contribution lines come from abstracts and earlier summaries, not from full reads of every paper, and the numbers papers report (for example attack success rates) are theirs, on their benchmarks; nothing in the review is evidence about our own system.
+
+\begin{table*}[t]
+\centering\small
+\begin{tabular}{@{}p{3.1cm}p{4.9cm}p{6.6cm}@{}}
+\toprule
+Kind of paper & Examples & What we took, and why \\
+\midrule
+Adaptive retrieval and sufficiency & Self-RAG, CRAG, Adaptive-RAG, Sufficient Context \citep{asai2024selfrag,yan2024crag,jeong2024adaptive,joren2025sufficient} & Sutradhar stops when the evidence for a factor is enough, and caps effort by case complexity (S3, S6). Chosen because stopping and sufficiency are the closest match to the orchestrator's job; their trained components were replaced by rules over the Rights Radar and the statute era, since we have no routing labels. \\
+Graph and multi-source retrieval & HippoRAG~2, ToG~2.0, HybGRAG, GraphRAG, LightRAG & A citation graph extracted from the orders themselves, expanded by personalised PageRank (S5); the entity-graph systems built by LLMs were left out for indexing cost, and a paper reporting that graph RAG often loses to plain RAG is the reason S2 is a small ablation. \\
+Verification and self-correction & CRITIC, ``Cannot Self-Correct'', MiniCheck, ALCE \citep{gou2024critic,huang2024selfcorrect,tang2024minicheck,gao2023alce} & Self-critique without an outside verifier helps little, so Vakeel repairs with an NLI and rule check, and a self-critique arm (S8) tests that claim here. MiniCheck scores the unsupported-fact rate; ALCE-style citation precision and recall score citations. \\
+Debate and critics & Debate or Vote, MAD, Talk Isn't Always Cheap \citep{choi2025debate} & Several studies find debate gains come from voting. So Abhiyojak (the prosecution critic) must beat a sampling-only critic at equal tokens (S9), and context isolation is an ablation (S10). \\
+Ingestion and chunking & VisRAG, ColPali, Dense X \citep{yu2025visrag,faysse2025colpali,chen2024densex} & A text-first page ladder with an image-only baseline (P7); propositions as retrieval units (S16) against naive chunking (B3). \\
+Agent safety & Design Patterns for Securing Agents, CaMeL \citep{beurerkellner2025patterns} & Prompt injection is an architecture problem. Typed hand-offs and code-enforced approval gates fit; the injection-defence variant S17 and the hidden-text check on PDFs follow from this. \\
+Agent evaluation & AI Agents That Matter, $\tau$-bench & Cost and reliability beside accuracy: tokens, store calls and pass$^k$ are reported for every arm, never one accuracy number. \\
+Legal AI for India & NyayaRAG, PredEx, ``Hallucination-Free?'' \citep{nigam2025nyayarag,nigam2024predex,magesh2025} & Indian work is mostly outcome prediction, which the system refuses by design. We position as preparation with checked citations, where commercial legal RAG tools were shown to fabricate, and make the citation checks the headline safety metrics. \\
+Serving and scheduling & SGLang, KV-cache scheduling \citep{zheng2024sglang} & Plan caching and an urgency-ordered batch queue (S14), applied at the application level because we cannot modify a serving engine. \\
+\bottomrule
+\end{tabular}
+\caption{Kinds of papers reviewed, the inspiration taken and the reason. The full catalogue is in the project repository (\texttt{docs/literature-review-and-usage.md}).}
+\label{tab:litkinds}
+\end{table*}
+
+\paragraph{What we did not adopt, and why.} The reasons are specific to our constraints: open-weight or free-tier models at run time, small GPUs, no manual annotation, eight weeks, and the need for an auditable legal record. (a) Trained routers, searchers and stoppers (Router-R1, Search-R1, AutoSearch) need rollouts or routing labels we do not have; we kept their loop shape and their cost-aware reward as evaluation ideas and left the policy to rules and contracts. (b) Automated workflow search (AFlow, ADAS, MaAS) spends thousands of model calls and returns pipelines that are hard to audit; only difficulty-adaptive effort was borrowed. (c) Memory managed by a language model (MemGPT, Mem0) conflicts with an event-sourced case record that must be auditable. (d) Vision-first retrieval as the main path needs a vision model on every page and stays a baseline. (e) Training-based and detector-style injection defences were replaced by architecture. (f) Outcome-prediction systems conflict with the rule that the system gives no outcome predictions or grant rates. (g) Other-jurisdiction legal benchmarks use US or Chinese law, so only their metric ideas were kept.
+
+\paragraph{Findings that changed the design.} Five findings changed what we built. Stopping and sufficiency checks are the most direct match to the orchestrator, so rule checks plus a rater are tested while a trained stopper is not built. Self-correction needs outside evidence, so the repair loop uses an NLI and rule check, with a self-critique comparison. Debate is not better than sampling at equal cost, so the prosecution critic carries the burden of proof. Prompt injection is an architecture problem, which favours typed hand-offs. Agent evaluation needs cost and reliability, so every table carries tokens, store calls and pass$^k$.
+
+\paragraph{Limits of the review.} Every idea we borrowed was written for other tasks and mostly other models, so each is an adaptation and a hypothesis here, not a result. Many 2026 items are preprints. The review is the reason each switch exists; whether a switch helps is decided only by the runs in Section~\ref{sec:results}, and null or negative results will be reported as such.
+
+\subsection{What was built, by sweep}
+
+\begin{table*}[t]
+\centering\footnotesize
+\begin{tabular}{@{}p{2.2cm}p{3.5cm}p{3.6cm}p{4.6cm}r@{}}
+\toprule
+Variant & Idea (paper) & Switch & What was adapted & Tests \\
+\midrule
+\multicolumn{5}{@{}l}{\textit{Sweep 1: retrieval and orchestration (Sutradhar, stores)}} \\
+S3, S3b & Stop when the evidence is sufficient (Sufficient Context; AutoSearch; Stop-RAG) & \texttt{stopping} = rules, rules\_llm, llm & Rules first, a model rating second; stopped-too-early and over-search are scored (M18) & 20 \\
+S1 & Critique retrieved text, re-retrieve on a miss (Self-RAG; CRAG) & \texttt{retrieval\_policy} = self\_critique & A slot with nothing retrieved is MISSING and costs no critic call; verdicts kept in the event log & 24 \\
+S2 & Retrieval depth by complexity (Adaptive-RAG) & \texttt{retrieval\_policy} = adaptive & Classifier replaced by rules: none, single, multi; round cap per factor & 21 \\
+S5 & Expand over a citation graph (HippoRAG 2) & \texttt{graph\_expansion} & Personalised PageRank on 5,842 citation edges; expanded paragraphs must still pass the slot rules (factor, family, date) & 33 \\
+S4 & Score skew as weak-evidence signal (SkewRoute) & \texttt{weak\_signal} = skew & Gini and top gap of the fused scores; thresholds untuned & 23 \\
+\multicolumn{5}{@{}l}{\textit{Sweep 2: verification and adversarial review (Vakeel, Abhiyojak)}} \\
+S8 & Self-critique without an outside verifier (CRITIC; ``cannot self-correct yet'') & \texttt{repair\_mode} = self\_critique & Replaces the NLI and rule check by the drafter's own critique, to test the claim in this domain & 16 \\
+S9 & Sampling-only critic at equal tokens (Debate or Vote; ``Should we be going MAD?'') & \texttt{critic\_mode} = sampling & Same token budget as the critic, spent on samples & 21 \\
+S10 & Debate without context isolation (``Talk Isn't Always Cheap'') & \texttt{abhiyojak\_isolation} = off & Abhiyojak sees Vakeel's reasoning; flip rate measured & 11 \\
+S11, S11b, S11c & Grader, critic, defender (CourtEval); two-instance debate; three-sample vote & \texttt{critic\_mode}, \texttt{draft\_mode} & Roles mapped to the sparring and drafting steps & 18 \\
+S15, S15b & Reasoning before structured output; free text then parse (``Let Me Speak Freely?''; CRANE) & \texttt{output\_format} & Schema-valid rate, repairs and tokens compared across the three layouts & 17 \\
+S18 & Authority stance: counter-argument evidence (Wachsmuth et al.) & \texttt{authority\_stance} = outcome & Supporting authorities first, precedents from refused orders flagged & 6 \\
+\multicolumn{5}{@{}l}{\textit{Sweep 3: intake, safety and serving (Munshi, defences, Pairokar)}} \\
+S17 & Prompt-injection defences: typed hand-off, spotlighting, guard (design patterns for securing agents) & \texttt{no\_typed\_handoff} and two more & Each defence can be switched off; attack success scored on T7 & 10 \\
+S7, P7, P8 & Hierarchy-ranked gap re-reading (IntrAgent); image-only ingestion (VisRAG, ColPali); keep weak text layer & \texttt{munshi\_gap\_policy}, \texttt{munshi\_image\_only}, \texttt{munshi\_keep\_weak\_text} & Pages re-read per recovered field; vision calls per page & 41 \\
+S14, S14b--d & Plan caching, scheduling, prefix-friendly prompts (Agentic Plan Caching; SGLang) & \texttt{plan\_cache}, \texttt{urgency\_policy}, \texttt{prefix\_layout} & Second case with the same signature skips all 8 planning calls: 30,633 to 12,836 tokens, packs byte-identical & 38 \\
+\multicolumn{5}{@{}l}{\textit{Sweep 4: routing, topology, chunking, workflow search}} \\
+S6, B5 & Learned store prior (GraphRouter; AgentRouter) & \texttt{store\_prior} = order, only & Orders calls inside a contract, or replaces it; artefact not yet trained on real data & 17 \\
+S12, S12b & Orchestrator-worker topology (scaling agent systems; MAST) & \texttt{topology} & Lock-step vs sequential vs one merged agent & 11 \\
+S16, S16b & Chunk granularity, propositions, late chunking (Dense X) & \texttt{chunking} & Fixed, recursive, semantic, page, proposition & 22 \\
+S13 & Automatically designed workflows (AFlow; ADAS) & grid over switches & Budget-capped grid search on dev; harness and offline smoke only & 14 \\
+\bottomrule
+\end{tabular}
+\caption{Ideas taken from the literature, the switch that turns each on, how it was adapted, and the number of unit tests that pin it. Test counts are those of the files named in \texttt{docs/literature-to-code-map.md}; they are collected, not re-run, in this table.}
+\label{tab:literature}
+\end{table*}
+
+\subsection{How the variants are tested}
+
+The tests answer four different questions, and a variant is not called done until all four have an answer.
+
+\paragraph{1. Does the default stay the same?} Each of Sutradhar, Vakeel, Peshkar and Munshi has a golden test that hashes the evidence packs, plans, event multiset, budget, prompts and drafted output of the default run (Peshkar over a planted shelf, Munshi over the 14-page bundle). Adding a variant must not change a digest. This is the test that lets 46 switches coexist with the shipped behaviour.
+
+\paragraph{2. Does the switch do what the paper's idea says?} Each variant has its own test file, 631 collected unit tests across 37 files (about 220 of them are the shared registry, switch and effect tests) (Table~\ref{tab:literature}). They check mechanism, not quality: the critique variant issues no critic call for an empty slot; the adaptive policy caps rounds for single-factor cases (case-0007 is a BNS-era case, so every factor is ``multi'' there and the single and none branches are tested by reading it as IPC-era); graph expansion only counts a hit that also passes the factor, family and date rules; the Gini and top-gap signals are computed on scored searches that leave the unscored path unchanged. A registry test fails if a variant id appears in the plan without a switch, a map row, or a test, and an end-to-end audit runs every one of the 61 ids through the offline pipeline (61 of 61 pass; 42 have a measured-effect test that checks the switch changes the run in the direction the idea predicts).
+
+\paragraph{3. Is it measured on the right metric?} Each row names a metric from the evaluation plan: stopped-too-early and over-search (S3), verdict counts (S1), tokens and store calls at equal recall (S2, S14), recall@10 of the citation graph with and without expansion (S5), AUROC of the score skew against ``the top ten contain a cited precedent'' (S4), unsupported-fact rate and repair success (S8, S15), objection recall at equal tokens (S9, S10, S11), pages re-read per recovered field (S7), attack success (S17). A scoring test pins the metric on synthetic inputs with known answers, so a metric change cannot pass silently.
+
+\paragraph{4. Is the claim tied to the right comparison?} A variant is compared only with Full on the same backend and cases; the scorer refuses mixed code stamps and scores one model family per backend, applies a Holm correction inside each family of claims, and decides the headline claim by an intersection-union rule (every comparator must lose). A comparator that was not run makes the claim ``incomplete'', not ``supported''.
+
+\subsection{What has been measured so far}
+
+Mechanism tests and the 61-id audit are complete and green (5,082 passed on 29 October). Quality measurements are fewer, and we state them as they stand.
+
+\paragraph{S4 and S5 on the real stores (offline, no model).} On a self-supervised proxy of 150 queries (a held-out citing order, with its cited precedents as targets under a strict before-date filter), expanding the citation graph raised recall@10 from 0.037 to 0.537; the paired difference is 0.50 (95\% interval 0.42 to 0.58, McNemar $p<10^{-20}$; 75 queries gained and none lost). The gain comes from co-citation structure rather than from the retriever finding the cited order itself, and the proxy is optimistic, so this is evidence that the graph carries signal, not a forecast of the gain on real briefs. The score-skew signal separates queries with and without a cited precedent in the top ten with an AUROC of 0.870 (interval 0.751 to 0.969); as a weak-evidence flag at the chosen threshold it has precision 1.0 and recall 0.49. The second query set (G2, the precedents the court cited) has only 8 queries and no positives, so no claim is made on it.
+
+\paragraph{Caching, scheduling and chunking.} Plan caching on case-0007 (offline): the second case with the same signature skips all 8 planning calls, tokens fall from 30,633 to 12,836 and the evidence packs are byte-identical to the no-cache run. The scheduling and chunking studies run as simulations or on self-supervised targets and say so in their output; they are reported as such, not as serving measurements.
+
+\paragraph{Not yet measured.} Quality of S1, S2, S3, S6, S8 to S12, S15 and S18 against Full on a real model. The mid-project runs fund only the Full and baseline arms plus a small ablation set (Table~\ref{tab:models}); the remaining arms are in the timeline to the final submission (Section~\ref{sec:status}). Until they are scored we claim only that each variant is implemented, tested for mechanism and default equivalence, and ready to be measured. A null or negative result on any of them will be reported as such.
