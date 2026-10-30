@@ -1,0 +1,59 @@
+\section{Status and Plan}
+\label{sec:status}
+
+\paragraph{Done.} The six agents and the event log; the ten stores; the ingestion ladder; contracts and Sutradhar; Vakeel's check and repair; Abhiyojak; truth maintenance with the byte-identity test; Pairokar; the Rights Radar (rules unverified); both gates and the privacy boundary; the web interface and API routes. For evaluation: test sets T1 to T9, gold G1 to G7 (Table~\ref{tab:kappa}), baselines B0 to B6, every S/A/P variant as a switch (61 of 61 pass an offline end-to-end audit; 42 effect tests), the scoring pipeline (bootstrap, Wilcoxon, McNemar, cluster bootstrap, Holm), the label-source sweep, the offline studies, the code stamp in every manifest, and spend ledgers for both hosted providers. On 29 October the test suite (run per area; the fine-tuning folder excluded) gave 5,082 passed and 0 failed: 4,665 unit, 133 integration and 284 system tests; 5,264 tests are collected after the changes of that day. Since the first draft of this report the team locked the paid providers in code and moved hosted calls to the Gemini free tier (providers are added by configuration), added per-case consent and quasi-identifier aliasing to the privacy boundary, bound Gate 2 to a hash of the approved brief, bound each Rights rule's verification to a hash of its text and code, made the unsupported-fact metric use MiniCheck and refuse the system's own checker, and built BGE-M3 side vectors for the four vector stores.
+
+\begin{table}[!t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}p{3.6cm}p{1.5cm}p{1.5cm}@{}}
+\toprule
+Item & State & Owner \\
+\midrule
+Dev baselines B0--B4, B6 on the earlier code (50 cases) & done, scored & Vishak \\
+Full, B0--B4, A1--A3, A6--A9 on current code (OpenAI) & run; scoring in progress & Vishak \\
+B5, S1--S6, S8--S12, S15, S18 (OpenAI, 10 cases) & run; scoring in progress & Vishak \\
+Gemini family: Full, B0--B3, B0L, A1, A2, A8 & run; scoring in progress & Vishak \\
+A4, A5, A10, S7, S11b/c, S12b, S15b, S17, P5--P8 & not yet run & Vishak, Satvik \\
+Offline studies S4/S5, S14, S16 & done & Vishak \\
+Retrieval under BGE-M3 & measured (study only) & Vishak \\
+Rights rule verification (6 of 7) & pending & Harshita \\
+BNSS s.58 official text & pending & Harshita \\
+Consent route and UI & not done & Shravani \\
+Frontend merge & on hold & Satvik, Vishak \\
+Freeze tags, pre-registration & template & all \\
+Blind-slice run, once & after freeze & all \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\caption{Work left. Owners follow the split of the project file.}
+\label{tab:status}
+\end{table}
+
+\paragraph{Where the project stands.} This is a work in progress with much already built. The six agents, ten stores, two approval gates, the Rights Radar, the pseudonymisation boundary, 46 opt-in switches for literature variants, and an evaluation pipeline with its statistics are implemented and tested (about 4,950 tests). Baselines, ablations and variants have been run on hosted models and the first scored comparisons are in Section~\ref{sec:results}; the numbers are small-sample dev results and we do not claim more from them than they show. Phase 2 (to 10 November) widens the runs, fixes the weaknesses these runs exposed, freezes the code and scores the blind slice once.
+
+\paragraph{Code.} All code, tests, documents, the report source, run manifests and the tag \texttt{dev-sweep-v3} are in the repository \url{https://github.com/vishakkashyapk30/lma-group-project}; the work of this report is on the branch \texttt{midsub-report} (\url{https://github.com/vishakkashyapk30/lma-group-project/tree/midsub-report}). Data, model weights and keys are not in it; \texttt{make setup}, \texttt{make data} and \texttt{make models} rebuild them (Appendix, Reproducibility).
+
+\paragraph{Timeline to 10 November 2026.} Table~\ref{tab:timeline}. Everything planned for this project, every run, table, fix and the final report, is finished by 10 November; the days after are held in reserve and are not planned. Each step depends on the one before, and the free-tier quota sets the pace, so dev and test runs use every teammate's key.
+
+\begin{table}[!t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}p{1.5cm}p{4.2cm}p{1.2cm}@{}}
+\toprule
+Dates & Step & Owner \\
+\midrule
+31 Oct--2 Nov & Finish the dev runs on Gemini and OpenAI (A4, A5, S11b, S11c, S12b, S15b, S7, P5--P8, A10 offline); score with MiniCheck; fill every table & Vishak, Satvik \\
+1--3 Nov & Rights rules re-checked; BNSS s.58 text; consent route and UI; frontend merge & Harshita, Shravani, Satvik \\
+3--4 Nov & Fix thresholds on dev; fill the pre-registration; tags \texttt{prereg-v1}, \texttt{eval-freeze-v1} & all \\
+5--7 Nov & Test runs from the freeze tag: open slice, then the blind slice once (Full and B0--B4; size set by the pooled quota) & Vishak, Satvik \\
+7--9 Nov & Scoring, Holm tables, failure taxonomy, case studies; final report written from the frozen tables & Harshita, Shravani, Vishak \\
+10 Nov & Code freeze; repository and tags pushed; report submitted & all \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\caption{Plan from the mid-project checkpoint to the final submission.}
+\label{tab:timeline}
+\end{table}
+
+\paragraph{Risks.} Budget: the plan needs more calls than the caps buy, so sample sizes shrink first and features never (cut order is in the plan). Compute: shared GPU nodes, where serving the 32B model failed, and a laptop with about 97\% disk use. Free-tier reliability: one model (Gemma 4 31B) failed on 86 of 94 calls in an hour, so model choice is driven by availability. Gated resources: HLDC and an Indic translation model are not yet available. Gold quality: low agreement on two factors may force a merge of confusable factors. A null result on any claim is reported as such.

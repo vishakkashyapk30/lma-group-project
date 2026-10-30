@@ -1,0 +1,57 @@
+\section{System}
+\label{sec:system}
+
+Figure~\ref{fig:arch} shows the system. The agents are named after people in an Indian court office, and each has a narrow decision to make.
+
+\begin{figure*}[!t]
+\centering
+\begin{tikzpicture}[
+  font=\small, >=Stealth, line width=0.6pt,
+  ag/.style={draw, rounded corners=2pt, align=center, minimum width=2.7cm, minimum height=1.0cm},
+  st/.style={draw, align=center, minimum width=3.4cm, minimum height=0.9cm},
+  gt/.style={draw, dashed, rounded corners=6pt, align=center, minimum width=2.4cm, minimum height=0.9cm},
+  io/.style={align=center, minimum width=2.4cm}]
+% row 1: counsel's laptop, left to right
+\node[io] (pa) at (0,0) {Pairokar\\{\scriptsize batch desk}};
+\node[io] (in) at (3.3,0) {Files, photos,\\chat, voice};
+\node[ag] (mu) at (6.6,0) {Munshi\\{\scriptsize intake}};
+\node[ag] (pe) at (9.9,0) {Peshkar\\{\scriptsize dossier, Rights Radar}};
+\node[gt] (g1) at (13.2,0) {Gate 1\\{\scriptsize counsel}};
+% row 2: shared nodes, right to left
+\node[ag] (su) at (13.2,-2.6) {Sutradhar\\{\scriptsize retrieval plan}};
+\node[ag] (va) at (9.9,-2.6) {Vakeel\\{\scriptsize draft, check, repair}};
+\node[ag] (ab) at (6.6,-2.6) {Abhiyojak\\{\scriptsize prosecution sparring}};
+\node[gt] (g2) at (3.3,-2.6) {Gate 2\\{\scriptsize counsel}};
+\node[io] (out) at (0,-2.6) {Brief, objections,\\hearing card};
+% row 3: stores
+\node[st] (stores) at (13.2,-4.8) {Ten typed stores\\{\scriptsize law, case law, advocacy, case}};
+\draw[->] (pa) -- (in); \draw[->] (in) -- (mu); \draw[->] (mu) -- (pe); \draw[->] (pe) -- (g1);
+\draw[->] (g1) -- (su);
+\draw[->] (su) -- (va); \draw[<->] (va) -- (ab); \draw[->] (ab) -- (g2); \draw[->] (g2) -- (out);
+\draw[<->] (su) -- (stores);
+\begin{scope}[on background layer]
+ \node[draw, densely dotted, rounded corners, fit=(in)(mu)(pe), inner sep=0.35cm] (lap) {};
+ \node[draw, densely dotted, rounded corners, fit=(su)(va)(ab)(stores), inner sep=0.35cm] (srv) {};
+\end{scope}
+\node[font=\scriptsize, anchor=south west] at ([yshift=1pt]lap.north west) {Counsel's laptop: raw files stay here};
+\node[font=\scriptsize, anchor=north west] at ([yshift=-1pt]srv.south west) {Shared nodes: pseudonymised text only};
+\end{tikzpicture}
+\caption{Architecture. Arrows show the order of work; the double-headed arrows are request and reply. Dotted boxes mark where each part runs; dashed boxes are the two approval gates, which only counsel can open and which are enforced in code, so nothing is exported before Gate 2.}
+\label{fig:arch}
+\end{figure*}
+
+\paragraph{Agents.} \textbf{Munshi} (intake) decides the parse route of each page, when to escalate, document boundaries and types, where each item is filed, and what is missing. \textbf{Peshkar} builds the dossier with a source quote for every field, a List of Dates, and the Rights Radar (deterministic checks on custody periods and statutory rights, each with a verification status). \textbf{Sutradhar} orchestrates retrieval. \textbf{Vakeel} drafts the grounds and checks and repairs every claim. \textbf{Abhiyojak} plays the prosecution with its own prompt and an allow-listed context. \textbf{Pairokar} orders a batch by urgency and decides per case between a full brief, a flag for counsel, or a request for documents. Every action is appended to an event log; dossier, timeline, brief and sparring record are views of it, which gives an audit trail and the dependency data for truth maintenance.
+
+\paragraph{Ingestion ladder.} Munshi handles ten input kinds (born-digital, scanned, degraded, phone photo, Hindi or mixed script, legacy Hindi fonts, handwriting, bundles, locked files, non-PDF). A page climbs only as far as needed: text layer; layout parser; clean-up and OCR; a vision model asked only to transcribe; a request to counsel for a clearer copy. Per-page quality signals (text coverage, OCR confidence, dictionary-word share, script, legacy-font patterns) decide each step and are logged. A gap-driven re-read returns to a page when a checklist field is still missing. The ladder is evaluated as a router against the cheapest route that clears the quality bar.
+
+\paragraph{Ten stores on four shelves.} A brief needs exact text, a section-mapping graph, court reasoning, citation history, what each side usually argues, and the client's own record; each has a different right way to search. The \emph{law} shelf holds statutes (exact lookup, BM25) and the IPC--BNS and CrPC--BNSS concordance (typed graph). The \emph{case-law} shelf holds reasoning paragraphs (BM25 plus a dense vector, metadata pre-filter), the citation graph with treatment and court level, and whole-order fact vectors. The \emph{advocacy} shelf holds defence-argument and prosecution-objection paragraphs by factor, used for coverage and phrasing, never cited as authority. The private \emph{case} shelf holds the client's documents in structure-aware chunks, a dated timeline and the dossier. The October 2026 build has 161,708 reasoning paragraphs, 70,880 arguments, 55,161 objections, 114,692 similar-fact orders and 5,842 citation edges (37.3\% of citations resolved to a document). Test-window orders and same-FIR orders are excluded from every store. The dense side of the runs reported here is a hashed character n-gram vector, not BGE-M3; BGE-M3 side vectors for the four vector stores were built afterwards on a GPU node (2\,h\,43\,min, 1.65\,GB) and are opt-in (\texttt{VS\_STORES=bge}); retrieval under BGE-M3 is not yet measured.
+
+\paragraph{Evidence contracts and the orchestrator.} Each of twelve bail factors has a contract: slots (for example co-accused order, role comparison, authority, good-law check, likely objection), a need for each (required, a count, or optional), the stores that may hold it, and a budget in store calls and tokens. Sutradhar decides whether the factor applies, the order of calls, the query and filters, whether a result is good enough, when to relax a filter or follow a citation, and when to stop; slots left unfilled become open issues, never silent omissions. A learned store prior, trained from train orders, may order calls within a contract (S6) or replace the contracts (B5).
+
+\paragraph{Checking and truth maintenance.} Vakeel checks every claim with an NLI model and rules (statute lookup, section mapping, good-law check), and repairs or flags it; nothing is dropped silently. Each claim records the dossier fields (by hash), timeline events, rights entries and authorities it depends on. When counsel approves a change, claims with a changed dependency, and claims citing them, become stale; only the reopened factors are re-planned, and unchanged claims stay byte-identical (tested).
+
+\paragraph{Gates and privacy.} Gate 1 (dossier) and Gate 2 (brief) pass only on counsel's approval, and export is impossible before Gate 2, in code and in tests. Raw client files stay on the user's machine. External model services are off by default, gated by a mode (\texttt{off}, \texttt{public}, \texttt{pseudonymised}, \texttt{consented}); client text needs counsel's per-case consent event for the provider even when pseudonymised, and every external payload passes the boundary. The boundary aliases names and quasi-identifiers (FIR, case and crime numbers, police stations, villages, addresses, PIN codes, vehicle numbers, ages) and shifts every date by a per-case offset; on the 250 T1 orders no FIR number, case number or numeric date survived, and the boundary refused 5 orders whose names were glued to other words by OCR (those calls stay local). Gate 2's approval is bound to a hash of the brief, sparring record and List of Dates, so a later change re-closes export. Defences against instructions planted in documents (a typed hand-off from a tool-less extractor, spotlighting, a guard) are all on by default; switching each off is an arm of the safety test set T7.
+
+\paragraph{Models and where they run.} The design specifies a 4B model with OCR and a vision model on an 8\,GB laptop GPU for Munshi and Peshkar, and a 14B model on shared GPU nodes for Sutradhar, Vakeel and Abhiyojak. None of the runs reported here used those: serving a 32B model on the shared nodes failed (Section~\ref{sec:challenges}), so every language-model run is either hosted or an offline stand-in. Table~\ref{tab:models} lists each block of runs with its provider, model and where it executes. Hosted calls go only through the pseudonymisation boundary; the Gemini free tier receives public court text only. Paid providers are locked in code and were opened for OpenAI alone, for the block marked below, with the owner's go-ahead and a spend cap.
+
+Table~\ref{tab:models} (Appendix~\ref{app:models}) lists, for every block of runs, the provider, the model and whether it ran locally or on a hosted service.

@@ -1,0 +1,87 @@
+\documentclass[11pt]{article}
+
+% ACL style: "preprint" = non-anonymous with page numbers. Use "review" for an anonymous version, "final" for camera-ready.
+\usepackage[preprint]{acl}
+
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{placeins}
+\usepackage{adjustbox}
+\usepackage{pdflscape}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.16}
+\definecolor{cA}{HTML}{1F77B4}\definecolor{cB}{HTML}{E67E22}\definecolor{cC}{HTML}{2A9D8F}\definecolor{cD}{HTML}{8E44AD}\definecolor{cE}{HTML}{C0392B}
+\pgfplotsset{vsplot/.style={vsbase, ybar, ymin=0}, vsbase/.style={bar width=9pt, width=\linewidth, height=4.6cm, axis lines*=left, axis line style={gray!70},
+  ymajorgrids, major grid style={gray!25, line width=0.3pt}, tick style={gray!70}, tick label style={font=\footnotesize}, label style={font=\footnotesize},
+  title style={font=\small\bfseries}, legend style={font=\scriptsize, draw=none, fill=none, at={(0.03,0.98)}, anchor=north west, legend columns=1, legend cell align=left}, enlarge x limits=0.35, nodes near coords, every node near coord/.append style={font=\scriptsize}}}
+\hypersetup{hidelinks}
+\renewcommand{\topfraction}{0.9}\renewcommand{\bottomfraction}{0.8}\renewcommand{\textfraction}{0.1}\renewcommand{\floatpagefraction}{0.75}\renewcommand{\dbltopfraction}{0.9}\renewcommand{\dblfloatpagefraction}{0.75}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,positioning,fit,backgrounds,arrows.meta,calc}
+
+% ---------------------------------------------------------------- draft mode
+% \todo{...} marks a number or fact still to be filled. Visible in the PDF while \drafttrue.
+% For a clean copy set \draftfalse (the todo text then disappears; check that no sentence is left empty).
+\newif\ifdraft
+\drafttrue
+\newcommand{\todo}[1]{\ifdraft{\textbf{[TODO: #1]}}\fi}
+
+% ---------------------------------------------------------------- generated result tables
+% Tables written by `python -m vakeel_sahayak.eval.scoring report` land in docs/results/dev-sweep/tables/.
+% A missing file leaves a visible placeholder, so the document compiles with or without them.
+\newcommand{\tabdir}{../results/dev-sweep/tables}
+\newcommand{\resulttable}[2]{% #1 = file stem, #2 = "n" narrow (one column) or "w" wide (two columns)
+  \IfFileExists{\tabdir/#1.tex}{%
+    \begingroup
+    \if#2w\let\table\table*\let\endtable\endtable*\let\small\scriptsize\fi
+    \input{\tabdir/#1.tex}%
+    \endgroup
+  }{%
+    \par\smallskip\noindent\fbox{\parbox{0.9\linewidth}{\footnotesize Table \texttt{\detokenize{#1}} not generated yet (scoring pipeline output).}}\par\smallskip
+  }%
+}
+
+\newcommand{\gentable}[1]{\IfFileExists{generated/#1.tex}{\input{generated/#1.tex}}{\par\smallskip\noindent\fbox{\parbox{0.9\linewidth}{\footnotesize Table \texttt{\detokenize{#1}} not generated yet (run docs/report/tools/make\_result\_tables.py).}}\par\smallskip}}
+\newcommand{\resref}[1]{\IfFileExists{\tabdir/#1.tex}{Table~\ref{tab:#1}}{the table \texttt{\detokenize{#1}}}}
+
+\title{Vakeel-Sahayak.ai: An Agentic Harness for Bail Preparation\\ over Typed Legal Stores (Mid-Project Report, Version 1)}
+
+\author{Vishak Kashyap K, Shravani K, Satvik Rao, Harshita Kumari \\
+  International Institute of Information Technology, Hyderabad \\
+  \texttt{vishakkashyap.k@research.iiit.ac.in}, \texttt{shravani.k@research.iiit.ac.in}, \\
+  \texttt{satvik.rao@research.iiit.ac.in}, \texttt{harshita.kumari@students.iiit.ac.in} \\
+  Code: \url{https://github.com/vishakkashyapk30/lma-group-project} (branch \texttt{midsub-report})}
+
+\begin{document}
+\maketitle
+
+\input{v1_sections/abstract}
+\input{v1_sections/introduction}
+\input{v1_sections/related}
+\input{v1_sections/literature}
+\input{v1_sections/system}
+\input{v1_sections/data}
+\input{v1_sections/evaluation}
+\input{v1_sections/results}
+\input{v1_sections/challenges}
+\input{v1_sections/limitations}
+\input{v1_sections/threats}
+\input{v1_sections/status}
+\input{v1_sections/ethics}
+
+\bibliography{references}
+
+\clearpage
+\onecolumn
+\newgeometry{a4paper,left=1.8cm,right=1.8cm,top=2.2cm,bottom=2.2cm}
+\appendix
+\input{v1_sections/appendix}
+
+\end{document}
