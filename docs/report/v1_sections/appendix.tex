@@ -109,19 +109,19 @@ Cost & tokens, calls, latency, USD & from manifests and ledgers; cost-quality fr
 \section{Models and Where They Ran}
 \label{app:models}
 
-\begin{table}[htbp]
+\begin{table}[H]
 \centering\small
 \begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}p{4.0cm}p{2.6cm}p{4.2cm}p{1.6cm}p{5.2cm}@{}}
 \toprule
 Block of runs & Provider & Model & Runs & Arms and size \\
 \midrule
-Dev runs, code \texttt{dev-sweep-v1} (superseded) & OpenAI & \texttt{gpt-6-luna} & hosted & Full (2 runs), B0, B1, B4: 50 cases; B6 is a rule baseline with no model \\
+Dev runs, code \texttt{dev-sweep-v1} (superseded) & OpenAI & \texttt{gpt-6-luna} & hosted & Full (2 runs), B0, B1, B4: 50 cases, scored; B6 is a rule baseline with no model \\
 Block A (OpenAI), current code & OpenAI & \texttt{gpt-6-luna} & hosted & Full, B0 to B5, A1 to A3, A6 to A9, S1 to S6, S8 to S12, S15, S18: run, scoring in progress, not reported in this version \\
-Block A (Gemini) & Google, free tier & \texttt{gemini-3.5-flash-lite}; B0L on \texttt{gemini-3.6-flash} & hosted & Full, B0 to B3, B0L: 10 cases; A1: 5 \\
-Block B & Google, free tier & \texttt{gemini-3.1-flash-lite} & hosted & Full, A2, A8: 5 cases \\
-Phase 1 & none & offline stand-in (template) with real stores & local & store ablations, S4, S5, S7, S17: 50 to 300 cases \\
-Gold labeler & OpenAI & \texttt{gpt-6-luna} & hosted & public court text only \\
+Block A (Gemini) & Google, free tier & \texttt{gemini-3.5-flash-lite}; B0L on \texttt{gemini-3.6-flash} & hosted & Full, B0 to B3, B0L: 10 cases; A1: 5; scored \\
+Block B & Google, free tier & \texttt{gemini-3.1-flash-lite} & hosted & Full, A2, A8: 5 cases; run, not yet scored \\
+Offline studies & none (no language model) & real stores, hashed n-gram and BGE-M3 & local & S4 and S5 (150 queries), S14 (100 simulated batches), S16 (292 orders) \\
+Gold labeler & OpenAI & \texttt{gpt-6-luna} & hosted & labels the dev and test orders (public court text only); a label counts only if the rule labeler agrees \\
 Claim checker (system) & local & DeBERTa NLI & local & inside Vakeel \\
 Claim checker (scoring) & local & MiniCheck-RoBERTa-Large & local & evaluation only \\
 Retrieval & local & hashed n-gram; BGE-M3 (study only) & local & BGE-M3 vectors built on GPU nodes \\

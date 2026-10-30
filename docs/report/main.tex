@@ -13,6 +13,7 @@
 \usepackage{booktabs}
 \usepackage{xcolor}
 \usepackage{placeins}
+\usepackage{float}
 \usepackage{adjustbox}
 \usepackage{pdflscape}
 \usepackage{pgfplots}
@@ -40,7 +41,7 @@
 \newcommand{\resulttable}[2]{% #1 = file stem, #2 = "n" narrow (one column) or "w" wide (two columns)
   \IfFileExists{\tabdir/#1.tex}{%
     \begingroup
-    \if#2w\let\table\table*\let\endtable\endtable*\let\small\scriptsize\fi
+    \if#2w\expandafter\let\expandafter\table\csname table*\endcsname\expandafter\let\expandafter\endtable\csname endtable*\endcsname\let\small\scriptsize\fi
     \input{\tabdir/#1.tex}%
     \endgroup
   }{%
@@ -79,7 +80,7 @@
 
 \clearpage
 \onecolumn
-\newgeometry{a4paper,left=1.8cm,right=1.8cm,top=2.2cm,bottom=2.2cm}
+\addtolength{\textwidth}{1.4cm}\addtolength{\oddsidemargin}{-0.7cm}\addtolength{\evensidemargin}{-0.7cm}
 \appendix
 \input{sections/appendix}
 
