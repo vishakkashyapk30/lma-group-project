@@ -1,0 +1,16 @@
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[vsplot, at={(0.00\textwidth,0)}, width=0.32\textwidth, title={objection recall}, ymax=1.15, symbolic x coords={FULL,B0,B1,B4,B6}, xtick=data, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=7pt, nodes near coords={}]
+\addplot[fill=cB, draw=none] coordinates {(FULL,0.700) (B0,0.000) (B1,0.000) (B4,0.925) (B6,0.000)};
+\end{axis}
+\begin{axis}[vsplot, at={(0.34\textwidth,0)}, width=0.32\textwidth, title={answerable coverage}, ymax=1.15, symbolic x coords={FULL,B0,B1,B4,B6}, xtick=data, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=7pt, nodes near coords={}]
+\addplot[fill=cB, draw=none] coordinates {(FULL,0.500) (B0,0.000) (B1,0.000) (B4,0.750) (B6,0.000)};
+\end{axis}
+\begin{axis}[vsplot, at={(0.68\textwidth,0)}, width=0.32\textwidth, title={unsupported facts (lower is better)}, ymax=1.15, symbolic x coords={FULL,B0,B1,B4,B6}, xtick=data, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=7pt, nodes near coords={}]
+\addplot[fill=cB, draw=none] coordinates {(FULL,0.857) (B0,0.834) (B1,0.755) (B4,0.812) (B6,0.984)};
+\end{axis}
+\end{tikzpicture}
+\caption{Family v1: Full against the baselines on the 50 cases every arm answered.}
+\label{fig:main_v1}
+\end{figure*}
