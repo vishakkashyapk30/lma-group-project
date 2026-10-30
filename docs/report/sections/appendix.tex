@@ -23,7 +23,7 @@ python -m vakeel_sahayak.eval.scoring report \
 \section{Arms}
 \label{app:arms}
 
-\begin{table*}[htbp]
+\begin{table}[H]
 \centering\small\setlength\tabcolsep{3pt}
 \begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}lp{5.2cm}p{3.5cm}l@{}}
@@ -55,12 +55,12 @@ A1--A10 & remove one part (dossier, repair, tools, filter, extractor, router, pl
 \end{tabular}
 \end{adjustbox}
 \caption{Arms and their state. ``Run'' means the arm has produced outputs on the tag \texttt{dev-sweep-v3} on the stated backend and cases; ``not run'' means it is implemented and offline-smoked but has produced no outputs. Switch names follow \texttt{orchestration/switches.py}; S18 is \texttt{authority\_stance=outcome} and S3b is \texttt{stopping=llm}.}
-\end{table*}
+\end{table}
 
 \section{Metrics}
 \label{app:metrics}
 
-\begin{table*}[htbp]
+\begin{table}[H]
 \centering\small
 \begin{adjustbox}{max width=\textwidth}
 \begin{tabular}{@{}llp{6.2cm}l@{}}
@@ -88,7 +88,7 @@ Cost & tokens, calls, latency, USD & from manifests and ledgers; cost-quality fr
 \end{tabular}
 \end{adjustbox}
 \caption{Metrics. Definitions are in the evaluation plan; none is an LLM-judge score.}
-\end{table*}
+\end{table}
 
 \section{Glossary of Names Used in This Report}
 \label{sec:glossary}
@@ -134,6 +134,7 @@ Speech & local & Whisper small & local & T8 \\
 \end{table}
 
 \section{Further Generated Tables}
+\label{app:tables}
 
 \gentable{table1a_v1}
 \gentable{table1b_v1}

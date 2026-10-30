@@ -1,4 +1,5 @@
 \section{Related Work}
+\label{sec:related}
 
 \paragraph{Agentic and adaptive RAG.} Self-RAG and CRAG let the model critique retrieved text and re-retrieve \citep{asai2024selfrag,yan2024crag}; Adaptive-RAG chooses the retrieval depth by query complexity \citep{jeong2024adaptive}; Sufficient Context studies when the retrieved context is enough to answer \citep{joren2025sufficient}; HippoRAG~2 retrieves over a graph \citep{gutierrez2025hipporag2}. We implement adaptations of these as opt-in switches (S1, S2, S3, S5) and compare them with hand-written contracts. A related line routes among language models or answering agents \citep{zhang2026agentrouter}; our action space is about ten stores that are not agents, so a learned store prior is only one baseline (B5) and one ablation (S6).
 
