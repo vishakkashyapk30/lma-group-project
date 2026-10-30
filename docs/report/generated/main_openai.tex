@@ -1,0 +1,19 @@
+\begin{table*}[htbp]
+\centering\footnotesize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Arm & Cases & Obj. recall (arm / Full) & Ans. cov. (arm / Full) & Coverage (arm / Full) & Unsupp. facts (arm / Full) & Cit. prec. (arm / Full) & Factor rec. (arm / Full) \\
+\midrule
+B0 & 30 & 0.00 / 0.74 (17) & 0.00 / 0.33 (10) & 0.83 / 0.77 (30) & 0.87 / 0.87 (25) & -- & 0.50 / 0.17 (6) \\
+B1 & 23 & 0.00 / 0.79 (14) & 0.00 / 0.42 (8) & 0.83 / 0.77 (23) & 0.82 / 0.88 (19) & 0.00 / 1.00 (1) & 0.75 / 0.25 (4) \\
+B2 & 30 & 0.00 / 0.74 (17) & 0.05 / 0.33 (10) & 0.87 / 0.77 (30) & 0.83 / 0.88 (26) & -- & 0.50 / 0.17 (6) \\
+B3 & 23 & 0.00 / 0.79 (14) & 0.00 / 0.42 (8) & 0.87 / 0.77 (23) & 0.84 / 0.87 (20) & -- & 0.75 / 0.25 (4) \\
+B4 & 30 & 0.90 / 0.75 (20) & 0.64 / 0.42 (12) & 0.42 / 0.82 (30) & 0.82 / 0.89 (30) & -- & 0.50 / 0.25 (8) \\
+B5 & 10 & 1.00 / 1.00 (4) & 0.50 / 0.50 (2) & 0.28 / 0.91 (10) & 0.92 / 0.95 (10) & 0.50 / 0.50 (1) & 0.50 / 0.50 (2) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\caption{Family openai: each baseline beside Full on the cases both answered without error. A cell is the arm's mean, then Full's mean on the same cases, over the cases where the metric is defined for both (the count in brackets). Unsupported facts: lower is better; the others: higher is better. A dash means the metric is undefined for the arm (for example, a baseline that cites no authority has no citation precision).}
+\label{tab:main_openai}
+\end{table*}

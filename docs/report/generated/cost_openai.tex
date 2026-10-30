@@ -1,0 +1,11 @@
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[vsplot, width=\linewidth, height=4.4cm, ymode=log, ymin=1000, title={tokens per case}, symbolic x coords={FULL,B0,B1,B2,B3,B4,B5,A1,A2}, xtick={FULL,B0,B1,B2,B3,B4,B5,A1,A2}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08]
+\addplot[fill=cB, draw=none, bar shift=0pt] coordinates {(FULL,95466)};
+\addplot[fill=cA, draw=none, bar shift=0pt] coordinates {(B0,3682) (B1,7008) (B2,4352) (B3,7290) (B4,126301) (B5,94180) (A1,98772) (A2,90720)};
+\end{axis}
+\end{tikzpicture}
+\caption{Family openai: mean tokens per case (log scale); Full in orange.}
+\label{fig:cost_openai}
+\end{figure}
