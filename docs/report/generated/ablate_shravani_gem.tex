@@ -1,0 +1,19 @@
+\begin{table*}[t]
+\centering\footnotesize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lrrrrrrrr@{}}
+\toprule
+Arm & Cases & $\Delta$ Obj. recall & $\Delta$ Ans. cov. & $\Delta$ Coverage & $\Delta$ Unsupp. facts & $\Delta$ Fabr. cit. & $\Delta$ Cit. prec. & $\Delta$ Factor rec. \\
+\midrule
+A4 & 2 & -- & -- & +0.10 [+0.00, +0.20] & +0.00 [+0.00, +0.00] & +0.00 [+0.00, +0.00] & +0.09 [+0.00, +0.18] & -- \\
+A5:BASE\_4B & 2 & -- & -- & +0.00 [+0.00, +0.00] & +0.00 [+0.00, +0.00] & +0.00 [+0.00, +0.00] & +0.00 [+0.00, +0.00] & -- \\
+S11B & 2 & -- & -- & -0.20 [-0.40, +0.00] & -0.02 [-0.03, +0.00] & +0.00 [+0.00, +0.00] & -0.12 [-0.25, +0.00] & -- \\
+S11C & 2 & -- & -- & -0.10 [-0.20, +0.00] & -0.01 [-0.02, +0.00] & +0.00 [+0.00, +0.00] & +0.03 [+0.00, +0.06] & -- \\
+S12B & 2 & -- & -- & -0.10 [-0.20, +0.00] & +0.01 [+0.00, +0.01] & +0.00 [+0.00, +0.00] & -0.03 [-0.07, +0.00] & -- \\
+S15B & 2 & -- & -- & -0.20 [-0.40, +0.00] & -0.04 [-0.08, +0.00] & +0.00 [+0.00, +0.00] & -0.13 [-0.26, +0.00] & -- \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\caption{Family shravani\_gem: each arm minus Full on the cases both answered (mean difference, 95\% bootstrap interval). A positive difference favours the arm for the higher-is-better metrics and Full for unsupported facts and fabricated citations. Intervals that include zero are not resolved at this sample size.}
+\label{tab:ablate_shravani_gem}
+\end{table*}

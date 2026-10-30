@@ -1,0 +1,13 @@
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[vsbase, xbar, at={(0.00\textwidth,0)}, width=0.46\textwidth, height=5.7cm, title={objection recall: arm minus Full}, ytick=\empty, symbolic y coords={A10:ADVOCACY.ARGUMENTS,A10:ADVOCACY.OBJECTIONS,A10:CASELAW.CITATIONS,A10:CASELAW.REASONING,A10:CASELAW.SIMILAR,A10:LAW.CONCORDANCE,A10:LAW.STATUTES}, ytick=data, yticklabel style={font=\scriptsize}, xmajorgrids, ymajorgrids=false, nodes near coords={}, xmin=-1.1, xmax=1.1, enlarge y limits=0.04, bar width=4pt, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.4pt, gray!70}, extra x ticks={0}, extra x tick style={grid=major, grid style={black, line width=0.4pt}}]
+\addplot[fill=cC, draw=none] coordinates {(-1.000,A10:ADVOCACY.ARGUMENTS) += (0.000,0) -= (0.000,0) (-1.000,A10:ADVOCACY.OBJECTIONS) += (0.000,0) -= (0.000,0) (-1.000,A10:CASELAW.CITATIONS) += (0.000,0) -= (0.000,0) (-1.000,A10:CASELAW.REASONING) += (0.000,0) -= (0.000,0) (-1.000,A10:CASELAW.SIMILAR) += (0.000,0) -= (0.000,0) (-1.000,A10:LAW.CONCORDANCE) += (0.000,0) -= (0.000,0) (-1.000,A10:LAW.STATUTES) += (0.000,0) -= (0.000,0)};
+\end{axis}
+\begin{axis}[vsbase, xbar, at={(0.50\textwidth,0)}, width=0.46\textwidth, height=5.7cm, title={unsupported-fact rate: arm minus Full}, ytick=\empty, symbolic y coords={A10:ADVOCACY.ARGUMENTS,A10:ADVOCACY.OBJECTIONS,A10:CASELAW.CITATIONS,A10:CASELAW.REASONING,A10:CASELAW.SIMILAR,A10:LAW.CONCORDANCE,A10:LAW.STATUTES}, ytick=data, yticklabel style={font=\scriptsize}, xmajorgrids, ymajorgrids=false, nodes near coords={}, xmin=-1.1, xmax=1.1, enlarge y limits=0.04, bar width=4pt, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.4pt, gray!70}, extra x ticks={0}, extra x tick style={grid=major, grid style={black, line width=0.4pt}}]
+\addplot[fill=cC, draw=none] coordinates {};
+\end{axis}
+\end{tikzpicture}
+\caption{Family shravani\_off: each arm minus Full on the cases both answered, mean difference with a 95\% bootstrap interval; the line at zero is no difference. Right of zero favours the arm on objection recall and Full on the unsupported-fact rate.}
+\label{fig:forest_shravani_off}
+\end{figure*}

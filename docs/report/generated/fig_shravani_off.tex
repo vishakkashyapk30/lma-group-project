@@ -1,0 +1,18 @@
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[vsplot, at={(0.00\textwidth,0)}, width=0.33\textwidth, title={objection recall}, ymin=0, ymax=1.1, symbolic x coords={FULL,A10:ADVOCACY.ARGUMENTS,A10:ADVOCACY.OBJECTIONS,A10:CASELAW.CITATIONS,A10:CASELAW.REASONING,A10:CASELAW.SIMILAR,A10:LAW.CONCORDANCE,A10:LAW.STATUTES}, xtick={FULL,A10:ADVOCACY.ARGUMENTS,A10:ADVOCACY.OBJECTIONS,A10:CASELAW.CITATIONS,A10:CASELAW.REASONING,A10:CASELAW.SIMILAR,A10:LAW.CONCORDANCE,A10:LAW.STATUTES}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08, error bars/y dir=both, error bars/y explicit, error bars/error bar style={line width=0.4pt, gray!70}]
+\addplot[fill=cB, draw=none, bar shift=0pt] coordinates {(FULL,1.000) += (0,0.000) -= (0,0.000)};
+\addplot[fill=cA, draw=none, bar shift=0pt] coordinates {(A10:ADVOCACY.ARGUMENTS,0.000) += (0,0.000) -= (0,0.000) (A10:ADVOCACY.OBJECTIONS,0.000) += (0,0.000) -= (0,0.000) (A10:CASELAW.CITATIONS,0.000) += (0,0.000) -= (0,0.000) (A10:CASELAW.REASONING,0.000) += (0,0.000) -= (0,0.000) (A10:CASELAW.SIMILAR,0.000) += (0,0.000) -= (0,0.000) (A10:LAW.CONCORDANCE,0.000) += (0,0.000) -= (0,0.000) (A10:LAW.STATUTES,0.000) += (0,0.000) -= (0,0.000)};
+\end{axis}
+\begin{axis}[vsplot, at={(0.34\textwidth,0)}, width=0.33\textwidth, title={answerable coverage}, ymin=0, ymax=1.1, symbolic x coords={FULL,A10:ADVOCACY.ARGUMENTS,A10:ADVOCACY.OBJECTIONS,A10:CASELAW.CITATIONS,A10:CASELAW.REASONING,A10:CASELAW.SIMILAR,A10:LAW.CONCORDANCE,A10:LAW.STATUTES}, xtick={FULL,A10:ADVOCACY.ARGUMENTS,A10:ADVOCACY.OBJECTIONS,A10:CASELAW.CITATIONS,A10:CASELAW.REASONING,A10:CASELAW.SIMILAR,A10:LAW.CONCORDANCE,A10:LAW.STATUTES}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08, error bars/y dir=both, error bars/y explicit, error bars/error bar style={line width=0.4pt, gray!70}]
+\addplot[fill=cB, draw=none, bar shift=0pt] coordinates {(FULL,0.000) += (0,0.000) -= (0,0.000)};
+\addplot[fill=cA, draw=none, bar shift=0pt] coordinates {(A10:ADVOCACY.ARGUMENTS,0.000) += (0,0.000) -= (0,0.000) (A10:ADVOCACY.OBJECTIONS,0.000) += (0,0.000) -= (0,0.000) (A10:CASELAW.CITATIONS,0.000) += (0,0.000) -= (0,0.000) (A10:CASELAW.REASONING,0.000) += (0,0.000) -= (0,0.000) (A10:CASELAW.SIMILAR,0.000) += (0,0.000) -= (0,0.000) (A10:LAW.CONCORDANCE,0.000) += (0,0.000) -= (0,0.000) (A10:LAW.STATUTES,0.000) += (0,0.000) -= (0,0.000)};
+\end{axis}
+\begin{axis}[vsplot, at={(0.68\textwidth,0)}, width=0.33\textwidth, title={unsupported-fact rate}, ymin=0, ymax=1.1, symbolic x coords={FULL,A10:ADVOCACY.ARGUMENTS,A10:ADVOCACY.OBJECTIONS,A10:CASELAW.CITATIONS,A10:CASELAW.REASONING,A10:CASELAW.SIMILAR,A10:LAW.CONCORDANCE,A10:LAW.STATUTES}, xtick={FULL,A10:ADVOCACY.ARGUMENTS,A10:ADVOCACY.OBJECTIONS,A10:CASELAW.CITATIONS,A10:CASELAW.REASONING,A10:CASELAW.SIMILAR,A10:LAW.CONCORDANCE,A10:LAW.STATUTES}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08, error bars/y dir=both, error bars/y explicit, error bars/error bar style={line width=0.4pt, gray!70}]
+\addplot[fill=cB, draw=none, bar shift=0pt] coordinates {(FULL,0.969) += (0,0.031) -= (0,0.043)};
+\end{axis}
+\end{tikzpicture}
+\caption{Family shravani\_off: Full (orange) and the other arms (blue), mean over the cases each arm answered without error and the metric is defined for, with a 95\% bootstrap interval. Cases per arm are in the generated table of the appendix; intervals on a handful of cases are wide and some collapse to a point when every case gives the same value. Unsupported-fact rate: lower is better.}
+\label{fig:main_shravani_off}
+\end{figure*}

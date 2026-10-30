@@ -1,0 +1,13 @@
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[vsbase, xbar, at={(0.00\textwidth,0)}, width=0.46\textwidth, height=5.1cm, title={objection recall: arm minus Full}, ytick=\empty, symbolic y coords={A4,A5:BASE\_4B,S11B,S11C,S12B,S15B}, ytick=data, yticklabel style={font=\scriptsize}, xmajorgrids, ymajorgrids=false, nodes near coords={}, xmin=-1.1, xmax=1.1, enlarge y limits=0.04, bar width=4pt, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.4pt, gray!70}, extra x ticks={0}, extra x tick style={grid=major, grid style={black, line width=0.4pt}}]
+\addplot[fill=cC, draw=none] coordinates {};
+\end{axis}
+\begin{axis}[vsbase, xbar, at={(0.50\textwidth,0)}, width=0.46\textwidth, height=5.1cm, title={unsupported-fact rate: arm minus Full}, ytick=\empty, symbolic y coords={A4,A5:BASE\_4B,S11B,S11C,S12B,S15B}, ytick=data, yticklabel style={font=\scriptsize}, xmajorgrids, ymajorgrids=false, nodes near coords={}, xmin=-1.1, xmax=1.1, enlarge y limits=0.04, bar width=4pt, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.4pt, gray!70}, extra x ticks={0}, extra x tick style={grid=major, grid style={black, line width=0.4pt}}]
+\addplot[fill=cC, draw=none] coordinates {(0.000,A4) += (0.000,0) -= (0.000,0) (0.000,A5:BASE\_4B) += (0.000,0) -= (0.000,0) (-0.017,S11B) += (0.017,0) -= (0.017,0) (-0.008,S11C) += (0.008,0) -= (0.008,0) (0.006,S12B) += (0.006,0) -= (0.006,0) (-0.042,S15B) += (0.042,0) -= (0.042,0)};
+\end{axis}
+\end{tikzpicture}
+\caption{Family shravani\_gem: each arm minus Full on the cases both answered, mean difference with a 95\% bootstrap interval; the line at zero is no difference. Right of zero favours the arm on objection recall and Full on the unsupported-fact rate.}
+\label{fig:forest_shravani_gem}
+\end{figure*}

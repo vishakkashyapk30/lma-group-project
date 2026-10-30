@@ -38,19 +38,19 @@ S3, S3b & sufficiency stopping \citep{joren2025sufficient} & \texttt{stopping} &
 S4 & score-skew weak signal & \texttt{weak\_signal} & offline study \\
 S5 & citation-graph expansion \citep{gutierrez2025hipporag2} & \texttt{graph\_expansion} & offline study \\
 S6 & learned store prior \citep{zhang2026agentrouter} & \texttt{store\_prior} & run, no effect without a trained prior \\
-S7 & hierarchy re-reading for Munshi & \texttt{munshi\_gap\_policy} & not run (T2 phase) \\
+S7 & hierarchy re-reading for Munshi & \texttt{munshi\_gap\_policy} & run offline (T2), not yet scored \\
 S8 & self-critique repair \citep{gou2024critic,huang2024selfcorrect} & \texttt{repair\_mode} & run (OpenAI, 10 cases) \\
 S9, S10 & sampling critic; no isolation \citep{choi2025debate,wynn2025talk} & \texttt{critic\_mode}, \texttt{abhiyojak\_isolation} & run (OpenAI, 10 cases) \\
-S11 & three-role review, debate, vote \citep{kumar2025courtevel} & \texttt{critic\_mode}, \texttt{draft\_mode} & S11 run (OpenAI, 10 cases); S11b, S11c in progress \\
-S12 & topology: sequential, single agent \citep{cemri2025mast} & \texttt{topology} & S12 run (OpenAI, 10 cases); S12b in progress \\
+S11 & three-role review, debate, vote \citep{kumar2025courtevel} & \texttt{critic\_mode}, \texttt{draft\_mode} & S11 run (OpenAI); S11b, S11c run (Gemini block B, 2 cases) \\
+S12 & topology: sequential, single agent \citep{cemri2025mast} & \texttt{topology} & S12 run (OpenAI); S12b run (Gemini block B, 2 cases) \\
 S13 & searched workflow (grid on dev) & none (grid over switches) & offline smoke \\
 S14, S14b--d & plan cache, scheduling, prefix signal \citep{zheng2024sglang} & \texttt{plan\_cache}, \texttt{urgency\_policy} & offline study \\
-S15, S15b & output format \citep{tam2024speak} & \texttt{output\_format} & S15 run (OpenAI, 10 cases); S15b in progress \\
+S15, S15b & output format \citep{tam2024speak} & \texttt{output\_format} & S15 run (OpenAI); S15b run (Gemini block B, 2 cases) \\
 S16, S16b & proposition units, late chunking \citep{chen2024densex} & \texttt{chunking} & offline study \\
-S17 & injection defences \citep{beurerkellner2025patterns} & defence flags & not run (T7 phase) \\
+S17 & injection defences \citep{beurerkellner2025patterns} & defence flags & run offline (T7), not yet scored \\
 S18 & authority stance \citep{wachsmuth2018} & \texttt{authority\_stance} & run (OpenAI, 10 cases) \\
-P5--P8 & ingestion arms, image-only \citep{yu2025visrag,faysse2025colpali} & \texttt{munshi\_*} & not run (T2 phase) \\
-A1--A10 & remove one part (dossier, repair, tools, filter, extractor, router, planner, sparring, a store) & \texttt{Switches} flags & A1 to A3, A6 to A9 run; A4, A5, A10 not run \\
+P5--P8 & ingestion arms, image-only \citep{yu2025visrag,faysse2025colpali} & \texttt{munshi\_*} & run offline (T2), not yet scored \\
+A1--A10 & remove one part (dossier, repair, tools, filter, extractor, router, planner, sparring, a store) & \texttt{Switches} flags & A1 to A3, A6 to A9 run (OpenAI); A4, A5 run (Gemini block B); A10 run offline, scored \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -142,8 +142,7 @@ Speech & local & Whisper small & local & T8 \\
 \gentable{ablate_v1}
 \gentable{main_gemini}
 \gentable{ablate_gemini}
-\gentable{main_openai}
-\gentable{ablate_openai}
+\noindent\emph{The OpenAI \texttt{gpt-6-luna} block tables are omitted at this checkpoint: that block's scoring was not finished in time (Section~\ref{sec:results}).}
 
 \resulttable{table_paired}{w}
 \resulttable{table_holm}{w}

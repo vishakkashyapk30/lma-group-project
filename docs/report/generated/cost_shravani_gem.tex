@@ -1,0 +1,11 @@
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{axis}[vsplot, width=\linewidth, height=4.4cm, ymode=log, ymin=1000, title={tokens per case}, symbolic x coords={FULL,A4,A5:BASE\_4B,S11B,S11C,S12B,S15B}, xtick={FULL,A4,A5:BASE\_4B,S11B,S11C,S12B,S15B}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08]
+\addplot[fill=cB, draw=none, bar shift=0pt] coordinates {(FULL,89890)};
+\addplot[fill=cA, draw=none, bar shift=0pt] coordinates {(A4,80478) (A5:BASE\_4B,89890) (S11B,102106) (S11C,96426) (S12B,84262) (S15B,96454)};
+\end{axis}
+\end{tikzpicture}
+\caption{Family shravani\_gem: mean tokens per case (log scale); Full in orange.}
+\label{fig:cost_shravani_gem}
+\end{figure}
