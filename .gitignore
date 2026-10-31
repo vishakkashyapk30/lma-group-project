@@ -59,3 +59,6 @@ docs/proposal/build/
 *.out
 *.toc
 configs/providers.local.yaml
+# LaTeX build output of the report versions
+docs/report/build/
+docs/report/build_v1/
