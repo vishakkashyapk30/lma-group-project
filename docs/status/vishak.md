@@ -25,3 +25,6 @@ Budgets (2026-10-27): OpenAI ledger ceiling 4.90 USD (1.51 spent at the checkpoi
 
 ## 2026-10-30
 Mid-submission: OpenAI queue and Gemini blocks run (tag `dev-sweep-v3`), scoring in progress, report on branch `midsub-report`. Split with Shravani: `docs/handoff/midsub-split-2026-10-30.md`. Mine: scoring, tables, results text, final PDF and push by 23:00.
+
+## 2026-11-01
+A7 scored, report updated and on main; Gemini block A extending to 25 orders (`vs-gemA25`); phase-2 notes in `docs/handoff/phase2-2026-11-01.md`.
