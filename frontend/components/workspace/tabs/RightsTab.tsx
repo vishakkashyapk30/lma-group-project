@@ -10,7 +10,7 @@ import { timelineFromReport } from "@/lib/rightsTimeline";
 import { fieldLabel } from "@/lib/fields";
 import { daysBetween, formatCourtDate, plural } from "@/lib/format";
 import { RIGHTS_CHECK_LABELS } from "@/lib/labels";
-import { RIGHTS_URGENCY } from "@/lib/status";
+import { RIGHTS_URGENCY, ruleVerifiedOn, unverifiedChecks } from "@/lib/status";
 import { DOSSIER_FIELD_NAMES, type RightsCheckResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useCaseData, useEdits, useStageNav, useWorkspace } from "@/lib/workspace";
@@ -54,6 +54,7 @@ function CheckRow({ check, asOf, focusedId, changed }: { check: RightsCheckResul
   const left = daysLeft(check, asOf);
   const dates = Object.entries(check.dates ?? {});
   const focused = focusedId === check.check;
+  const verifiedOn = ruleVerifiedOn(check);
   useEffect(() => {
     if (focused) setOpen(true);
   }, [focused]);
@@ -91,7 +92,13 @@ function CheckRow({ check, asOf, focusedId, changed }: { check: RightsCheckResul
           {check.rule ? (
             <>
               <dt className="text-ink-muted">Rule</dt>
-              <dd className="m-0 text-ink"><span className="cite">{check.rule}</span>{check.rule_text ? <span className="block text-ink-soft">{check.rule_text}</span> : null}</dd>
+              <dd className="m-0 text-ink">
+                <span className="cite">{check.rule}</span>
+                {check.rule_text ? <span className="block text-ink-soft">{check.rule_text}</span> : null}
+                <span data-testid="rule-verification" data-verified={verifiedOn ? "true" : "false"} className="mt-0.5 block text-ink-muted">
+                  {verifiedOn ? `Verified against the bare act on ${formatCourtDate(verifiedOn)}` : "Rule text not yet verified against the bare act"}
+                </span>
+              </dd>
             </>
           ) : null}
           {check.sources && check.sources.length > 0 ? (
@@ -143,12 +150,6 @@ function CheckRow({ check, asOf, focusedId, changed }: { check: RightsCheckResul
               </dd>
             </>
           ) : null}
-          {check.last_verified ? (
-            <>
-              <dt className="text-ink-muted">Rule checked</dt>
-              <dd className="m-0 text-ink-soft">{formatCourtDate(check.last_verified)}</dd>
-            </>
-          ) : null}
         </dl>
       ) : null}
     </li>
@@ -195,6 +196,7 @@ export function RightsTab(): ReactElement {
     firstRemand: typeof fields?.first_remand?.value === "string" ? fields.first_remand.value : null,
     chargeSheet: cs?.filed && cs.date ? cs.date : null,
   });
+  const unverified = unverifiedChecks(rights);
   const nextDate = (data.dates ?? []).map((e) => e.date).filter((d) => d > rights.as_of).sort()[0];
 
   return (
@@ -203,6 +205,13 @@ export function RightsTab(): ReactElement {
       intro={`Possible rights worked out from the dates in the file as of ${formatCourtDate(rights.as_of)}. These are prompts to check, not advice or a prediction.`}
       footer={footer}
     >
+      {unverified.length > 0 ? (
+        <p data-testid="rights-unverified" className="max-w-prose text-sm text-ink-soft">
+          The rule text of {unverified.length === rights.checks.length ? `all ${rights.checks.length} checks` : `${unverified.length} of ${rights.checks.length} checks`} is not yet
+          verified against the bare act ({unverified.map((c) => RIGHTS_CHECK_LABELS[c.check] ?? c.check).join(", ")}). Read the section itself before you rely on it.
+        </p>
+      ) : null}
+
       {timeline ? (
         <section aria-labelledby="rights-calendar" data-testid="rights-calendar">
           <SectionTitle id="rights-calendar">On the calendar</SectionTitle>
