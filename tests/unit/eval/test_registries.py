@@ -89,6 +89,7 @@ def test_every_switch_belongs_to_some_ablation_or_variant():
         "no_spotlighting", "no_guard", "munshi_image_only", "chunking",
         "authority_stance", "munshi_keep_weak_text",  # RECONCILED: sweep 4 (S18, P8)
         "prefix_layout",  # RECONCILED: sweep 3 added S14d (prefix-friendly prompt layout)
+        "signal_source", "argument_policy", "sparring_scope", "abstention", "draft_source", "critic_material",  # RECONCILED: architecture search 2026-11-01 (X1-X6)
     }
     assert set(Switches.model_fields) <= documented | {"extractor", "knockout_store", "stopping"} | ev01
 

@@ -48,6 +48,7 @@ def test_what_the_map_calls_done_or_built_is_implemented():
 def test_every_implemented_id_is_named_in_the_plan_or_declared_beyond_it():
     plan = (REPO / "docs" / "evaluation-plan.md").read_text(encoding="utf-8")
     beyond_the_plan = {"S18", "P8", "S14d", "S6b"}  # added after the plan (switches.py docstring; B5 is the plan's S6b)
+    beyond_the_plan |= {"X1", "X2", "X3", "X4", "X5", "X6", "H1", *(f"H1m{k}" for k in range(1, 7))}  # RECONCILED: architecture search 2026-11-01 (docs/literature-to-code-map.md, "Architecture search")
     for ident in IMPLEMENTED_VARIANTS - {"full"}:
         root = re.sub(r"[a-d]$", "", ident)
         assert ident in beyond_the_plan or re.search(rf"\b{ident}\b|\b{root}\b", plan), f"{ident} is implemented but not in docs/evaluation-plan.md"
