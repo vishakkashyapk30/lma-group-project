@@ -1,0 +1,16 @@
+\begin{table*}[t]
+\centering\footnotesize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lrlrrrrrrlr@{}}
+\toprule
+Arm & $n$ & Accuracy [95\% Wilson] & Default bail (254) & Undertrial limit (232) & Notice of appearance (50) & Production 24 h (50) & Antil category (19) & Statutory bar (22) & False-ELIGIBLE & CHECK rate \\
+\midrule
+Rights Radar (rules engine) & 627 & \textbf{1.000 [0.994, 1.000]} & \textbf{1.000} & \textbf{1.000} & \textbf{1.000} & \textbf{1.000} & \textbf{1.000} & \textbf{1.000} & \textbf{0 of 627} & 0.134 \\
+Stand-in reader & 627 & \underline{0.488 [0.449, 0.527]} & \underline{0.358} & \underline{0.664} & \underline{0.460} & \underline{0.760} & \underline{0.000} & \underline{0.000} & \underline{17 of 627} & 0.000 \\
+Stand-in reader + date\_calc & 627 & \underline{0.488 [0.449, 0.527]} & \underline{0.358} & \underline{0.664} & \underline{0.460} & \underline{0.760} & \underline{0.000} & \underline{0.000} & \underline{17 of 627} & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\caption{Rights Radar on the constructed test set T4 ($n=627$ scenarios; the number after each rule is its scenario count). The designed answer of each scenario is derived from the rule text by a spec writer that does not import the Radar, so the Radar's score is a consistency check of code against rule text, not a legal validation. The two stand-in rows are a deliberately naive offline reader, not a language model, and say nothing about any real model. T4 has scenarios for six of the seven rules; grounds of arrest is not scored. False-ELIGIBLE: predicted ELIGIBLE where the designed answer is not. Bold: best value in the column; underlined: second best (ties share a rank); the CHECK rate is not comparable.}
+\label{tab:rights}
+\end{table*}

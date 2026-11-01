@@ -1,0 +1,133 @@
+{
+ "set_id": "T4",
+ "size": 627,
+ "answers_from": "designed answers derived from the bare-act rule text by the spec writer (not from the Rights Radar)",
+ "used_for": [
+  "F3"
+ ],
+ "path": "data/testsets/t4",
+ "details": {
+  "seed": 20260424,
+  "spec_sha256": "1096b8253a10db8048708940b547852ed4294497f032a7fdf00f3174a2f4c197",
+  "per_rule": {
+   "default_bail": 254,
+   "undertrial_limit": 232,
+   "notice_of_appearance": 50,
+   "production_24h": 50,
+   "antil_category": 19,
+   "statutory_bar": 22
+  },
+  "per_designed_answer": {
+   "default_bail": {
+    "NOT_YET": 91,
+    "ELIGIBLE": 46,
+    "CHECK": 33,
+    "WINDOW_CLOSED": 84
+   },
+   "undertrial_limit": {
+    "NOT_YET": 102,
+    "ELIGIBLE": 82,
+    "CHECK": 42,
+    "NOT_APPLICABLE": 6
+   },
+   "notice_of_appearance": {
+    "OK": 37,
+    "FLAG": 7,
+    "UNKNOWN": 6
+   },
+   "production_24h": {
+    "OK": 25,
+    "FLAG": 25
+   },
+   "antil_category": {
+    "A": 6,
+    "C": 5,
+    "B": 5,
+    "CHECK": 3
+   },
+   "statutory_bar": {
+    "NOT_APPLICABLE": 5,
+    "BAR_APPLIES": 11,
+    "CHECK": 6
+   }
+  },
+  "default_bail_days": [
+   1,
+   30,
+   40,
+   45,
+   58,
+   59,
+   60,
+   61,
+   62,
+   64,
+   65,
+   66,
+   70,
+   75,
+   79,
+   80,
+   81,
+   82,
+   85,
+   88,
+   89,
+   90,
+   91,
+   92,
+   94,
+   95,
+   97,
+   100,
+   105,
+   109,
+   110,
+   111,
+   112,
+   120,
+   160,
+   179,
+   180,
+   181,
+   200,
+   210,
+   300,
+   365,
+   366,
+   400
+  ],
+  "threshold_straddle": {
+   "day_59_60_61": true,
+   "first_time_and_repeat": true,
+   "max_punishments": [
+    "",
+    "1 year",
+    "10 years",
+    "10 years or more",
+    "12 years",
+    "14 years",
+    "15 years",
+    "2 years",
+    "20 years",
+    "3 years",
+    "4 years",
+    "5 years",
+    "6 years",
+    "7 years",
+    "8 years",
+    "9 years",
+    "None",
+    "death",
+    "imprisonment for life",
+    "life",
+    "may extend to seven years",
+    "may extend to ten years",
+    "not less than ten years",
+    "seven years"
+   ]
+  },
+  "not_built": [],
+  "notes": "documents are plain text (typed facts in facts.json); PDF renderings come from testsets.rendering when needed"
+ }
+}
