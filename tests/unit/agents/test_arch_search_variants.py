@@ -25,7 +25,8 @@ from vakeel_sahayak.schemas.enums import ClaimCheck, Factor, FactorStance
 PARITY, CUSTODY = Factor.PARITY_WITH_CO_ACCUSED, Factor.CUSTODY_PERIOD
 FACTS = "The applicant has been in judicial custody since 04.01.2024. Co-accused with an identical role were granted bail by this Court."
 X_FIELDS = {"X1": ("signal_source", "merge"), "X2": ("argument_policy", "fact_law_split"), "X3": ("sparring_scope", "all_factors"),
-            "X4": ("abstention", "strict"), "X5": ("draft_source", "facts_text"), "X6": ("critic_material", "union_free")}
+            "X4": ("abstention", "strict"), "X5": ("draft_source", "facts_text"), "X6": ("critic_material", "union_free"),
+            "X7": ("objection_grounding", "by_id")}
 
 
 # ---- selection and defaults -----------------------------------------------------------------------------------------
@@ -49,7 +50,7 @@ def test_each_candidate_sets_exactly_its_field_and_is_registered(ident):
 
 def test_h1_is_the_combination_and_each_leave_one_out_drops_one_part():
     h1 = Switches.for_variant("H1")
-    assert h1.model_dump(exclude_defaults=True) == dict(X_FIELDS[k] for k in H1_PARTS)
+    assert h1.model_dump(exclude_defaults=True) == dict(X_FIELDS[k] for k in H1_PARTS)  # H1 is X1-X6; X7 came in iteration 2
     assert h1.variant() == "H1" and "H1" in IMPLEMENTED_VARIANTS
     for k in H1_PARTS:
         loo = Switches.for_variant(f"H1m{k[1:]}")
@@ -217,6 +218,29 @@ def test_split_metric_classifies_by_markers_and_leaves_m6_alone():
     brief = {"grounds": [{"argument": "The applicant has been in custody since 04.01.2024 [F:facts_text]. The Court held that parity requires the same relief [A:DLHC-2022-1187#14]."}]}
     row = case_row(brief, "The applicant has been in custody since 04.01.2024.", "c1", lambda premise, s: 0.9 if "custody" in s else 0.1, 0.5)
     assert (row["n_case_fact"], row["n_legal"], row["n_case_fact_unsupported"], row["unsupported_case_fact_rate"], row["unsupported_all_rate"]) == (1, 1, 0, 0.0, 0.5)
+
+
+def test_x7_resolves_offered_material_by_id_and_never_accepts_what_was_not_offered():
+    from vakeel_sahayak.agents.abhiyojak.agent import BANK, REFUSALS, STATUTES, resolve_by_id
+    from vakeel_sahayak.agents.abhiyojak.prompts import RaisedGround
+
+    offered = {BANK: {("DOC-B", 6)}, REFUSALS: {("DOC-R", 3)}, STATUTES: {"IPC 302"}}
+    facts = {"antecedents": {}, "charge_sheet": {}}
+    wrong_label = resolve_by_id(RaisedGround(store=REFUSALS, doc_id="DOC-B", para=6), offered, facts)
+    assert (wrong_label.store, wrong_label.doc_id, wrong_label.para) == (BANK, "DOC-B", 6)
+    assert resolve_by_id(RaisedGround(store=BANK, doc_id="DOC-R#3"), offered, facts).store == REFUSALS
+    assert resolve_by_id(RaisedGround(store=STATUTES, doc_id="ipc  302"), offered, facts).doc_id == "IPC 302"
+    assert resolve_by_id(RaisedGround(doc_id="F:antecedents"), offered, facts).fact == "antecedents"
+    assert resolve_by_id(RaisedGround(doc_id="facts.charge_sheet.value.filed"), offered, facts).fact == "charge_sheet"
+    for bad in (RaisedGround(store=BANK, doc_id="DOC-X", para=6), RaisedGround(store=STATUTES, doc_id="CODE section"), RaisedGround(fact="personal")):
+        assert resolve_by_id(bad, offered, facts) is None
+
+
+def test_x7_default_keeps_the_exact_check():
+    base = vh.build()
+    vh.run_both(base)
+    assert not vh.events_of(base, "ground_resolved")
+    assert Switches().objection_grounding == "exact"
 
 
 def test_x6_adds_a_free_search_and_default_runs_none():

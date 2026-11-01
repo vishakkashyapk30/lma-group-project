@@ -376,6 +376,16 @@ class AbhiyojakAgent(BaseAgent):
         dropped: list[str] = []
         for g in raw.grounds:
             label = f"{g.store or '-'}:{g.doc_id or g.fact}#{g.para}"
+            if self.switches.objection_grounding == "by_id":  # X7
+                resolved = resolve_by_id(g, offered, facts)
+                if resolved is not None:
+                    kept.append(resolved)
+                    if (resolved.store, resolved.doc_id, resolved.para, resolved.fact) != (g.store, g.doc_id, g.para, g.fact):
+                        self._decision("ground_resolved", f"{where}: {label} resolved to offered material by its id.", ref=label,
+                                       to=resolved.model_dump(mode="json", exclude_none=True), variant="X7")
+                else:
+                    dropped.append(label)
+                continue
             if g.fact:
                 if g.store in _FACT_STORES and g.fact in facts:
                     kept.append(ObjectionGround(fact=g.fact))
@@ -741,6 +751,36 @@ class AbhiyojakAgent(BaseAgent):
                 result.append(Objection(id=f"B{len(result) + 1}", against="general", factor=factor, objection=text))
         self._decision("one_call_list", f"One-call baseline: {len(result)} ungrounded objection(s) listed.", objections=len(result))
         return result
+
+
+def resolve_by_id(g: Any, offered: dict[str, set[Any]], facts: dict[str, Any]) -> ObjectionGround | None:
+    """X7 (`objection_grounding='by_id'`): the offered item a model's reference names, whatever store label it wrote, or None.
+
+    RARR (Gao et al., ACL 2023: revise a generation's attributions to the evidence actually retrieved). On Sarvam-105B most discarded objections
+    pointed at a paragraph that WAS offered under the other store label (bank vs refusal reasoning) or at a dossier field written as '[F:field]'
+    or 'facts.field'. Only material that was offered to this call is ever accepted: a paragraph by its exact (doc_id, para) in either store, a
+    statute by its 'CODE section' id (case and spaces ignored), a fact by a field name of `facts`. A placeholder or an unknown id stays dropped.
+    """
+    doc = str(g.doc_id or "").strip()
+    para = g.para
+    m = re.fullmatch(r"(?:[\w.]+:)?([^#\s]+)#(\d+)", doc)
+    if m and para is None:
+        doc, para = m.group(1), int(m.group(2))
+    if doc and para is not None:
+        for store in (BANK, REFUSALS):
+            if (doc, para) in offered[store]:
+                return ObjectionGround(store=store, doc_id=doc, para=para)
+    if doc:
+        norm = re.sub(r"\s+", " ", doc).strip().upper()
+        for sid in offered[STATUTES]:
+            if norm == re.sub(r"\s+", " ", str(sid)).strip().upper():
+                return ObjectionGround(store=STATUTES, doc_id=sid)
+    text = " ".join(str(x or "") for x in (g.fact, g.doc_id, g.store))
+    names = sorted((str(k) for k in facts), key=len, reverse=True)
+    for name in names:
+        if re.search(rf"(?<![a-z_]){re.escape(name)}(?![a-z_])", text):
+            return ObjectionGround(fact=name)
+    return None
 
 
 def unwrapped(text: str) -> str:
