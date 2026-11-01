@@ -1,5 +1,9 @@
 # Status: Vishak
 
+## Current assignment (2 Nov 2026, to the freeze on 10 Nov)
+Architecture search to beat every baseline on every metric (until it does), ablations of the winner, merges, report rebuild, owner decisions before the freeze, tags, the single blind run.
+Full list, dates and rules: `docs/handoff/team-todo-2026-11-02.md`. The tables below are the earlier state.
+
 Tasks from `split.md` (stream C and shared files). Updated 2026-10-27. Details are in the handoff notes under `docs/handoff/`.
 
 | Task | State | Note |

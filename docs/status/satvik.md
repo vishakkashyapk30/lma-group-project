@@ -1,5 +1,9 @@
 # Status: Satvik
 
+## Current assignment (2 Nov 2026, to the freeze on 10 Nov)
+No blocker: the Sarvam block is superseded (already run with the owner's key). Frontend of the chosen architecture, live end-to-end tests, a Gemini key in the pool and a shard of the 5 to 7 Nov Gemini runs, Hindi labels wired in.
+Full list, dates and rules: `docs/handoff/team-todo-2026-11-02.md`. The tables below are the earlier state.
+
 My tasks (split.md stream B): SA-01 to SA-08. Updated 2026-10-26. All finished work is on `main` (no task branches).
 
 | Task | State |

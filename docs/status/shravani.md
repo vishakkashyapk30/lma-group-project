@@ -1,5 +1,9 @@
 # Status — Shravani
 
+## Current assignment (2 Nov 2026, to the freeze on 10 Nov)
+Backend of the chosen architecture (LangGraph flow, API, new agents' nodes, events and Swagger, integration and system tests); review the `arch-search` switch code before 4 Nov; report layout fixes; final PDF and submission on 10 Nov.
+Full list, dates and rules: `docs/handoff/team-todo-2026-11-02.md`. The tables below are the earlier state.
+
 My assigned tasks (owner's day-1 message §7): **the LangGraph flow, the API routes with Swagger docs, and the integration + system tests.**
 
 ## Task list & implementation plan
