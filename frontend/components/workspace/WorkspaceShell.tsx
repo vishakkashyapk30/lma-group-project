@@ -78,7 +78,7 @@ export function WorkspaceShell({ caseId, className }: WorkspaceShellProps): Reac
       <ChangeBanner />
 
       <div className="flex min-h-0 flex-1">
-        <div data-testid="pane-main" className="min-w-0 flex-1 overflow-y-auto overscroll-contain">
+        <div data-testid="pane-main" className="min-w-0 flex-1 scroll-pb-24 overflow-y-auto overscroll-contain">
           <StepView caseId={caseId} />
         </div>
         {ws.chatOpen ? (

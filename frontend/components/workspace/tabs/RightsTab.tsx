@@ -5,6 +5,8 @@
 import { ChevronDown } from "lucide-react";
 import { useEffect, useState, type ReactElement } from "react";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { RightsTimeline } from "@/components/rights/RightsTimeline";
+import { timelineFromReport } from "@/lib/rightsTimeline";
 import { fieldLabel } from "@/lib/fields";
 import { daysBetween, formatCourtDate, plural } from "@/lib/format";
 import { RIGHTS_CHECK_LABELS } from "@/lib/labels";
@@ -184,12 +186,36 @@ export function RightsTab(): ReactElement {
   const rest = sorted.filter((c) => !LEAD.has(c.status));
   const restOpen = showRest || rest.some((c) => c.check === focused?.id);
 
+  // The calendar view of the same checks; the list below stays the full record (and the path for screen readers).
+  const antecedents = data.dossier?.fields.antecedents;
+  const fields = data.dossier?.fields;
+  const cs = fields?.charge_sheet?.value as { filed?: boolean; date?: string | null } | null | undefined;
+  const timeline = timelineFromReport(rights, Boolean(antecedents && antecedents.status !== "UNSUPPORTED" && antecedents.value != null), {
+    arrest: typeof fields?.arrest_date?.value === "string" ? fields.arrest_date.value : null,
+    firstRemand: typeof fields?.first_remand?.value === "string" ? fields.first_remand.value : null,
+    chargeSheet: cs?.filed && cs.date ? cs.date : null,
+  });
+  const nextDate = (data.dates ?? []).map((e) => e.date).filter((d) => d > rights.as_of).sort()[0];
+
   return (
     <StepFrame
       title="Check rights"
       intro={`Possible rights worked out from the dates in the file as of ${formatCourtDate(rights.as_of)}. These are prompts to check, not advice or a prediction.`}
       footer={footer}
     >
+      {timeline ? (
+        <section aria-labelledby="rights-calendar" data-testid="rights-calendar">
+          <SectionTitle id="rights-calendar">On the calendar</SectionTitle>
+          <RightsTimeline
+            input={timeline}
+            initialDate={nextDate ?? rights.as_of}
+            jumps={nextDate ? [{ label: "Next date in the file", date: nextDate }] : []}
+            testId="workspace-rights-timeline"
+            className="mt-2 border border-line"
+          />
+        </section>
+      ) : null}
+
       {lead.length > 0 ? (
         <section aria-labelledby="rights-lead">
           <SectionTitle id="rights-lead">Worth checking now</SectionTitle>

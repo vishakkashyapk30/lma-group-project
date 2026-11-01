@@ -123,3 +123,61 @@ test("Hindi text on screen is marked lang=hi", async ({ page }) => {
   await expect(page.getByTestId(TID.sourcePanel)).toBeVisible();
   expect(await unmarked()).toEqual([]);
 });
+
+test.describe("focus and loading after a navigation", () => {
+  test.beforeEach(async ({ page }) => {
+    await MockBackend.install(page, { gate1Approved: true, draft: "done" });
+    await page.setViewportSize({ width: 1440, height: 900 });
+  });
+
+  test("a sidebar link moves focus to the new page's heading", async ({ page }) => {
+    await page.goto("/cases");
+    await expect(page.getByTestId("new-case-button")).toBeVisible();
+    await page.getByTestId(TID.sidebar).getByRole("link", { name: "Batch desk" }).click();
+    await expect(page).toHaveURL(/\/desk$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Batch desk" })).toBeFocused();
+  });
+
+  test("the command palette moves focus to the new page's heading, keyboard only", async ({ page }) => {
+    await page.goto("/cases");
+    await expect(page.getByTestId("new-case-button")).toBeVisible();
+    await page.keyboard.press("Control+k");
+    await page.keyboard.type("Precedent");
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/library$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Precedent library" })).toBeFocused();
+  });
+
+  test("opening a case from the sidebar's Cases list keeps the stepper's arrow keys working", async ({ page }) => {
+    await page.goto("/desk");
+    await page.getByTestId(TID.sidebar).getByRole("link", { name: "Cases" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Cases" })).toBeFocused();
+    await page.goto("/case/case-0007");
+    await page.getByTestId(TID.stage("II")).focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(page.getByTestId(TID.stage("III"))).toBeFocused();
+  });
+
+  test("while the workspace loads, its skeleton has the real layout and appears only after 150 ms", async ({ page }) => {
+    await page.goto("/cases");
+    await expect(page.getByTestId("new-case-button")).toBeVisible();
+    // Hold the workspace's code so the skeleton stays up long enough to measure.
+    await page.route(/WorkspaceShell/, async (route) => {
+      await new Promise((r) => setTimeout(r, 1500));
+      await route.fallback();
+    });
+    await page.goto("/case/case-0007");
+    const skel = page.getByTestId("workspace-skeleton");
+    await expect(skel).toBeAttached();
+    await page.waitForTimeout(400);
+    expect(Number(await skel.evaluate((el) => getComputedStyle(el).opacity))).toBe(1);
+    const skelRow = (await skel.locator("> div").first().boundingBox())!;
+    const skelCol = (await skel.locator("> div").nth(1).boundingBox())!;
+    await expect(page.getByTestId(TID.stageRail)).toBeVisible({ timeout: 15_000 });
+    const rail = (await page.getByTestId(TID.stageRail).boundingBox())!;
+    const col = (await page.locator("section[aria-labelledby=step-title]").boundingBox())!;
+    expect(Math.abs(rail.y - skelRow.y)).toBeLessThan(4);
+    expect(Math.abs(col.x - skelCol.x)).toBeLessThan(2);
+    expect(Math.abs(col.width - skelCol.width)).toBeLessThan(2);
+  });
+});

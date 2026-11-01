@@ -1,0 +1,37 @@
+/*
+ * Transitions that do not need the browser's View Transitions API. Route changes are instant by decision (DESIGN.md
+ * "Route transitions"); a step change inside a case slides by direction, and skeletons wait 150 ms before they show.
+ */
+
+/* A step change inside a case: the new step slides 12 px from the side it comes from. */
+@keyframes step-in-forward {
+  from { opacity: 0; transform: translateX(12px); }
+}
+@keyframes step-in-back {
+  from { opacity: 0; transform: translateX(-12px); }
+}
+.step-enter[data-step-enter="forward"] {
+  animation: step-in-forward 200ms var(--ease-spring) both;
+}
+.step-enter[data-step-enter="back"] {
+  animation: step-in-back 200ms var(--ease-spring) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .step-enter[data-step-enter] { animation: none; }
+}
+:root[data-motion="reduce"] .step-enter[data-step-enter] { animation: none; }
+
+/* Skeletons appear only after 150 ms, so a fast navigation shows no flash (the delay stays under reduced motion; only the
+   fade is skipped). */
+@keyframes skeleton-show {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.skeleton-delayed {
+  animation: skeleton-show 150ms var(--ease) 150ms both;
+}
+
+/* The case title moving into the breadcrumb must not be clipped by the crumb's truncation while it flies. */
+nav[aria-label="Breadcrumb"] li:has(> [data-morphing]) {
+  overflow: visible;
+}

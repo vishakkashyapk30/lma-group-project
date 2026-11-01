@@ -25,7 +25,7 @@ A calm tool for a legal-aid lawyer who uses it daily. Dense where it should be, 
 
 App shell (every route except `/`):
 
-- Left sidebar: Cases, Batch desk, Precedent library, Help, Settings. Icons plus labels, active state (tint, maroon text, thin left mark), collapsible to an icon rail (remembered in localStorage, tooltips carry the labels). Inside a case it stays an icon rail so the step gets the width. Below `lg` it becomes a drawer opened from the top bar.
+- Left sidebar: Cases, Batch desk, Precedent library, Help, Settings. Icons plus labels, active state (tint, maroon text, thin left mark), collapsible to an icon rail (remembered in localStorage, tooltips carry the labels). Inside a case it stays an icon rail so the step gets the width. Below `lg` it becomes a drawer opened from the top bar. The logo at its top (and in the drawer) goes to the landing page `/` from every route; Cases stays the first item, one click away.
 - Top bar: breadcrumb (page title, or `Cases > case title` with `Stage: <name>` inside a case), search field that opens the command palette (Ctrl/Cmd+K), mode chip, primary New case button, settings and help menu.
 - Mode chip: `Local · Sample data` in demo mode (built-in sample cases, changes stay in the browser), `Local · Connected` when the API answers, and `Local · Not connected` when a live server stops answering. It links to Settings and never claims more. Product builds are live: an unreachable server is an error on the page, never the sample case (`NEXT_PUBLIC_API_MODE`).
 - Command palette: Actions (New case, Reduce motion, Collapse sidebar), Pages, and Cases (fetched when opened). Combobox plus listbox semantics, arrows, Enter, Esc.
@@ -89,7 +89,7 @@ Flat fills only: no gradients, no glow. Meaning: maroon acts, indigo informs (so
 
 | Token | Hex | Use | Contrast |
 | --- | --- | --- | --- |
-| saffron | `#E8A33D` | rules, the offset block behind the hero loop; never text | ink on it 7.8 |
+| saffron | `#E8A33D` | rules, outlined "Check" ranges, the margin rule on a ground that needs a check; never text | ink on it 7.8 |
 | saffron-tint | `#FBEBCB` | "How it works" band | ink 14.3, ink-soft 8.6, maroon 9.1 |
 | saffron-wash | `#FDF5E6` | "needs your check" row highlight | saffron-ink 7.3 |
 | saffron-ink | `#764706` | "Needs your check" text | 7.9 on white, 6.7 on tint |
@@ -99,13 +99,13 @@ Flat fills only: no gradients, no glow. Meaning: maroon acts, indigo informs (so
 | neem-tint | `#E4F0E1` | "control" band | ink 14.3, neem 5.4, neem-deep 8.5 |
 | neem-deep | `#1E4B2A` | "Approved for export" text, fill behind white | 8.5 on tint, 10.0 with white text |
 
-Landing band order: hero parchment, saffron-tint (how it works), indigo-deep (sources example), neem-tint (control), maroon with a faint white lattice at 7% opacity (Preamble line, gold-pale text), parchment-deep footer. Maroon and cream stay dominant (hero, buttons, close).
+Landing band order ("Walk the file"): hero parchment (headline and the FIR demo), the walk links, indigo-deep (Read: sources), saffron-tint (Check: rights against the dates), cream (Hold: the two gates), parchment (Draft), cream (Spar), neem-tint (Privacy), parchment-deep (Batch desk), flat maroon (close: open the sample case, who built it, how it is tested), parchment-deep footer (disclaimer, NALSA 15100, the Preamble line in English and Hindi, the motto). Every demo runs on the sample case-0007 data through `components/landing/sample.ts` and the product's own components, with no sign-in and no backend. Maroon and cream stay dominant (hero, buttons, close).
 
 White text on maroon is 10.7:1. Status colours always travel with an icon and a word.
 
 ## Logo and icons
 
-Mark: a V whose arms carry a balance beam, so the letter and the scales are one stroke, white on a maroon square (6/32 radius). Two strokes, no fill shapes, no dots, no gradient. It holds at 16 px (checked at 16, 32, 64, 128 and 256 px) and in one colour.
+Mark: a V whose arms meet a balance beam that carries two short hangers and pans, so the letter and the scales are one figure, white on a maroon square (6/32 radius). Strokes for the V, beam and hangers, two small half-round pans; no dots, no gradient. From 24 px the full mark is used (checked at 24, 28, 64, 128 and 512 px: it reads as scales at the 28 px of the sidebar); below 24 px (the 16 px favicon) the hangers and pans would blur, so the small mark keeps only the V and the beam, joined. One colour throughout. The previous mark (a beam floating above the V) read as a V with a macron at 28 px.
 
 Files (hand-authored SVG) in `public/brand/`: `mark.svg` (maroon tile, white glyph), `mark-mono.svg` (maroon with the glyph cut out, one colour, for print and stamps), `mark-reversed.svg` (cream tile, glyph cut out, for dark backgrounds), `mark-square.svg` (full-bleed, source for the app icons), `lockup.svg` and `lockup-reversed.svg` (mark plus the wordmark). The lockup SVGs name Newsreader in `font-family`; they render correctly where the font is installed and fall back to Georgia elsewhere. In the app the `Logo` component draws the same geometry inline and sets the wordmark in the self-hosted Newsreader, so use the component, not the lockup files, inside the product.
 
@@ -114,7 +114,7 @@ Rules:
 - Minimum size: mark 16 px; lockup 24 px high. Below 24 px use the mark alone.
 - Colour: maroon `#7A1626` with white or cream. One-colour use is `mark-mono.svg`. On dark backgrounds use `mark-reversed.svg`. Never recolour, outline, rotate, add effects, or place on busy imagery.
 - No Devanagari line under the wordmark: at the sizes the product uses it was not legible beside the Latin. The motto appears only in the landing footer.
-- Icons: `app/icon.svg` (the mark), `app/favicon.ico` (16, 32 and 48 px, rasterised from the mark), `app/apple-icon.png` (180 px, full-bleed), `public/icon-192.png` and `public/icon-512.png` (full-bleed, used by `app/manifest.ts`; theme `#7A1626`, background `#F7F5F0`).
+- Icons: `app/icon.svg` (the mark), `app/favicon.ico` (16, 32 and 48 px PNGs; the 16 px one from the small mark), `app/apple-icon.png` (180 px, full-bleed), `public/icon-192.png` and `public/icon-512.png` (full-bleed, used by `app/manifest.ts`; theme `#7A1626`, background `#F7F5F0`).
 
 ## Spacing, radius, elevation
 
@@ -131,18 +131,47 @@ One easing: `--ease: cubic-bezier(0.2, 0, 0, 1)`. The older `--ease-*` names are
 | --- | --- | --- |
 | `--dur-fast` | 120 ms | hover, press, colour |
 | `--dur-base` | 180 ms | menus, dialogs, sidebar width |
-| `--dur-slow` | 250 ms | entrance, reveal, drawers (the ceiling) |
+| `--dur-slow` | 250 ms | entrance, reveal, drawers (the ceiling for time-based motion) |
+| `--dur-gesture-max` | 450 ms | longest settle of a spring released from a drag |
+| `--ease-spring` | `linear(...)` | time-based curve that looks like a critically damped spring (tab indicator, step slide) |
 
 Motion budget:
 
 - Landing first paint (hero text): one fade and 6 px rise on the hero, 250 ms, no delay, no stagger. Total intro: 250 ms.
 - Landing sections: one fade and 6 px rise, 250 ms, once, only for sections that start below the fold. Content is visible without JavaScript and under reduced motion.
-- App: dialogs, menus, toasts and drawers 180 to 250 ms. No page transitions.
+- App: dialogs, menus, toasts and drawers 180 to 250 ms. Route changes are instant (see "Route transitions" below).
+
+### Direct manipulation and springs
+
+Two kinds of motion, with different budgets:
+
+- **Time-based motion** (anything that plays without the user's hand: reveals, crossfades, menus, the tab indicator, the step slide) stays at 150 to 300 ms with `--ease` or `--ease-spring` (a `linear()` sampling of a critically damped spring). Decorative motion never exceeds 300 ms.
+- **Gesture-driven motion** (the user drags a panel, a sheet, a landing demo card, the gate button): the element follows the pointer 1:1 and is released into a spring that carries the gesture's velocity. These springs are critically damped or nearly so (bounce at most 0.15 in the app, 0.2 on the landing demos) and settle within 450 ms (`--dur-gesture-max`). Past a limit, a dragged element resists with the rubber-band curve `offset = (1 - 1 / (x * 0.55 / d + 1)) * d` (x = distance past the limit, d = the element's allowance) and springs back on release. Gestures can be interrupted: grabbing a moving element stops it where it is.
+
+Spring parameters (mass 1, stiffness `(2π/T)²`, damping `4π(1-b)/T` from a perceptual duration T and bounce b; helpers in `lib/motion`):
+
+| Use | T | bounce | Rubber-band allowance d | Release rule |
+| --- | --- | --- | --- | --- |
+| Button press | 0.15 s | 0 | none | scale 0.97 in 100 ms, back on release |
+| Tab and step indicator | time-based, 275 ms `--ease-spring` | | none | |
+| Side panel drag to close | 0.40 s | 0 | 48 px past fully open | closes past 50 % of its width or above 500 px/s |
+| Sheet drag to dismiss (below `lg`) | 0.35 s | 0.10 | 64 px upward | dismisses past 25 % of its height or above 800 px/s |
+| Gate that holds | 0.30 s | 0 | 12 px | always springs back and lists the open items |
+| Landing demo cards | 0.45 s | 0.15 | 80 px | snaps to the drop target when released over it or projected into it |
+
+Rules:
+
+- **Never** hijack or smooth the page scroll, rubber-band anything the user is not dragging (`overscroll-behavior` stays native, no scroll-linked scenes), glow, gradient, blur, or motion that delays input. `touch-action: none` only on drag handles, so page scroll stays native.
+- **Parity.** Every drag has a button and a keyboard path that does the same thing (Escape or a Close button closes a panel; a button adds the FIR in the landing demo; Enter opens a source). Dragging is an enhancement, never the only way. Focus stays visible on every handle.
+- **Reduced motion** (system or in-app): springs are replaced by an instant jump or a 100 ms opacity fade; rubber-banding is off (the element stops at its limit); route transitions do not animate.
+- **Press feedback.** Buttons and drag handles scale to 0.97 on press (100 ms) and come back on release; no lift on touch.
+- **Route transitions.** Instant, by decision: a crossfade needed Next's `experimental.viewTransition`, which runs the app on the experimental React channel and adds about 12 kB to every route. The sidebar, the top bar and the case stepper never move. Inside a case a step change slides 12 px by direction (CSS, 200 ms), and the case title still moves from its card into the top bar (a measured FLIP, `components/motion/Morph.tsx`), neither of which needs the flag.
+
 Landing motion (styles/landing.css; every element rests in its final state, so reduced motion, no-JS and the end of a run look identical):
 
 - Band reveal: children marked `data-rv` rise 8 px and fade in, 250 ms (`--dur-slow`), 40 ms stagger, once, via IntersectionObserver; bands already on screen are left alone.
-- Highlight sweep behind the cited date (scaleX, 250 ms), animated check (stroke draw, 250 ms), underline draw on text links (180 ms), 1 px lift on buttons and a 3 px arrow nudge (120 to 180 ms).
-- Hero loop, one run of 8.55 s then rest (all 180 to 250 ms beats, `--ease`, opacity and transform only): FIR card slides in 0.4 s, remand order 0.75 s, dossier rows 2.1 / 2.4 / 2.7 / 3.0 s, source highlight sweeps over the quoted arrest date 3.4 s, "Needs your check" resolves to "Confirmed by you" 5.3 to 5.45 s, draft sentences 6.2 and 6.7 s with numbered sources, source list 7.2 s, status strip reads "Reading the papers", "Checking each fact against its source", "Drafting the application", then "Approved for export" with a drawn check at 8.3 s. Replay is a quiet text button that remounts the panel. The run pauses while the tab is hidden. With reduced motion (system or in-app) all animation is removed, the final frame shows, and Replay is hidden.
+- Underline draw on text links (180 ms), 1 px lift on buttons and a 3 px arrow nudge (120 to 180 ms).
+- Demos move only under the visitor's hand (springs from the table above): the FIR card follows the pointer and snaps into the dossier or springs home; a fact row resists a pull and opens; the hearing date coasts on a flick and settles on a day; a held gate moves at most 12 px. Each has a button and keyboard path, and under reduced motion each change is instant. Rows that appear use the motion library's presence (220 ms, opacity and a 6 px rise).
 - Loops: skeleton opacity pulse and the small glyph that breathes beside a running agent (1.2 s), nothing else.
 - Transform and opacity only. `prefers-reduced-motion` and the in-app "Reduce motion" setting collapse every duration to near zero.
 
@@ -152,7 +181,7 @@ Landing motion (styles/landing.css; every element rests in its final state, so r
 `components/shell`: AppShell, Sidebar, MobileDrawer, TopBar (with ModeChip and help menu), CommandPalette, ShellProvider (palette, new-case, drawer, collapsed state, Ctrl/Cmd+K), `meta.ts` (case title and stage published to the top bar), `nav.ts` (single list of destinations).
 `components/common`: Logo (mark, mark only, reversed), PageHeader, StatusBadge (icon and word, no pill), SourceChip, AgentGlyph.
 `components/agents/AgentSignature`: a quiet one-line status with a small glyph that breathes while the agent runs.
-`components/landing`: LandingPage, HeroLoop (the one-run product loop), Footer, Reveal.
+`components/landing`: LandingPage, `demos/` (FileDemo, ReadDemo, CheckDemo, HoldDemo, DraftDemo, SparDemo, PrivacyDemo), DeskBand, CloseBand, ContinueCase, Footer, Reveal, `sample.ts`. `components/rights/RightsTimeline` (shared with the Check rights step), `components/common/HoldButton`, `components/motion` (Morph, MotionProvider).
 `components/workspace`: WorkspaceShell (stepper row, step, side panel, drawers), StageRail, StepView and `tabs/*` (one view per step), StepFrame and StepFooter, NeedsYou, SidePanel and SourcePanel, ChatPane, TraceDrawer, GateModal (confirm dialog), DocumentsMenu, ProgressLine, ChangeBanner.
 `components/settings`: SettingsPage (server address, live/demo mode, connection, the server's model, privacy and data settings).
 
@@ -170,6 +199,7 @@ Keep these out of every screen, including future ones.
 - No rounded-everything cards with soft tinted shadows or tinted borders. Use neutral dividers and hairline borders, and avoid cards inside cards.
 - No mock-browser chrome with traffic-light dots in visuals.
 - No scroll-jacking, pinned or scrubbed scenes, smooth-scroll libraries, or intros over 600 ms.
+- No drag that is the only way to do something, and no physics on things the user is not touching.
 - No State Emblem, flag, court logos or gavel.
 
 Do instead: plain, specific, short copy a lawyer would write (Cases, New case, Review facts, Draft, Export); type hierarchy and spacing for structure; tabular numerals for dates and counts; one accent colour, for actions.

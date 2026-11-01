@@ -3,3 +3,4 @@ test-results/
 playwright-report/
 coverage/
 next-env.d.ts
+.next-build/
