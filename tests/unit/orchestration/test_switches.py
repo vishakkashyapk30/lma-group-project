@@ -38,6 +38,8 @@ EV01_DEFAULTS = {
     "munshi_image_only": False, "chunking": "structure",
     "authority_stance": "off", "munshi_keep_weak_text": False,  # RECONCILED: sweep 4 (opt-in, no variant id)
     "prefix_layout": False,  # RECONCILED: sweep 3 added S14d (prefix-friendly prompt layout), a field the plan does not name
+    # RECONCILED: the architecture search of 2026-11-01 added X1-X6 (opt-in, defaults are today's behaviour; docs/handoff/arch-search-results.md)
+    "signal_source": "dossier", "argument_policy": "single", "sparring_scope": "per_ground", "abstention": "flag", "draft_source": "dossier", "critic_material": "contract",
 }
 EXTRACTORS = ["finetuned_4b", "base_4b", "prompted_32b"]
 
@@ -215,7 +217,9 @@ def test_implemented_variants_are_s3_and_the_existing_ablations():
     # RECONCILED: sweep 3 implemented S17, S17b, S17c, S17d (the injection-defence flags) and S7 (munshi_gap_policy='hierarchy') and P7 (munshi_image_only) and S14, S14b, S14c, S14d (serving)
     # RECONCILED: sweep 4 implemented S6 / A12 (store_prior='order') and B5 / S6b (store_prior='only')
     # RECONCILED: sweep 4 implemented S16 / S16b (chunking) and S12 (topology='sequential') and S12b ('single_agent')
-    assert done == {"full", "S6", "B5", "S12", "S12b", "S13", "S16", "S16b", "S7", "S14", "S14b", "S14c", "S14d", "S1", "S2", "S3", "S3b", "S4", "S5", "S8", "S9", "S10", "S11", "S11b", "S11c", "S15", "S15b", "S17", "S17b", "S17c", "S17d", "S18", "P5", "P6", "P7", "P8", *(f"A{i}" for i in range(1, 11))}
+    # RECONCILED: the architecture search of 2026-11-01 implemented X1-X6, the combination H1 and its leave-one-out arms H1m1-H1m6
+    assert done == {"full", "S6", "B5", "S12", "S12b", "S13", "S16", "S16b", "S7", "S14", "S14b", "S14c", "S14d", "S1", "S2", "S3", "S3b", "S4", "S5", "S8", "S9", "S10", "S11", "S11b", "S11c", "S15", "S15b", "S17", "S17b", "S17c", "S17d", "S18", "P5", "P6", "P7", "P8", *(f"A{i}" for i in range(1, 11)),
+                    "X1", "X2", "X3", "X4", "X5", "X6", "H1", *(f"H1m{i}" for i in range(1, 7))}
     # RECONCILED: every defined id is now implemented (S13 as the search harness, `eval/runners/workflow_search.py`; S15b as `orchestration/structured_output.output_format`)
 
 

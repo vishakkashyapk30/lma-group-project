@@ -25,6 +25,9 @@ PROBLEM_WORDS = {
     "invented": "names a case or a citation instead of an ID marker",
     "check_error": "could not be checked",
     "self_critique": "flagged by the model's own re-reading (no outside check)",  # S8
+    "not_extractive": "is not a span of the facts text",  # X2
+    "mixed": "mixes a case fact and a legal principle",  # X2
+    "absence": "only says the record is silent",  # X4
 }
 
 
@@ -80,6 +83,7 @@ class Work:
     empty: bool = False  # the model gave nothing to cite
     unchecked: bool = False  # A2/A9: nothing was checked
     notes: list[str] = field(default_factory=list)  # reasons the claim is flagged, for the open issues
+    abstained: list[tuple[str, str]] = field(default_factory=list)  # X4: (sentence, reason) left out of the argument and handed to counsel
 
     def failing(self) -> list[int]:
         return [i for i, c in enumerate(self.checks) if not c.ok]

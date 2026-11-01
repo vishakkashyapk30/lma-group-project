@@ -72,11 +72,14 @@ from vakeel_sahayak.agents.vakeel.facts import (
     Fact,
     facts_of,
     rights_lines,
+    span_share,
     text_fact,
 )
 from vakeel_sahayak.agents.vakeel.hearing import build_card
 from vakeel_sahayak.agents.vakeel.prompts import (
     REASONING_NOTE,
+    SPLIT_NOTE,
+    SPLIT_REWORD_NOTE,
     SYSTEM_PROMPT,
     TASK_DEBATE,
     TASK_DRAFT,
@@ -95,7 +98,7 @@ from vakeel_sahayak.agents.vakeel.prompts import (
     instructions,
 )
 from vakeel_sahayak.agents.vakeel.stance import ADVERSE, ADVERSE_INSTRUCTION, arrange, stance_of
-from vakeel_sahayak.agents.vakeel.work import AUTHORITY_PROBLEMS, Evidence, SentenceCheck, Work
+from vakeel_sahayak.agents.vakeel.work import AUTHORITY_PROBLEMS, PROBLEM_WORDS, Evidence, SentenceCheck, Work
 from vakeel_sahayak.models.base import ModelUnavailable
 from vakeel_sahayak.orchestration.budgets import BudgetExhausted
 from vakeel_sahayak.orchestration.state import CaseGraphState
@@ -134,6 +137,15 @@ REASONING_ROOM = 1.8  # S15: factor on the token limit of a drafting call, to le
 REASONING_LOG_CHARS = 1500  # S15: characters of reasoning kept in the log event
 MAX_AUTHORITIES = 4  # paragraphs offered to the drafter per factor
 PARAGRAPH_LIMIT = 2000  # characters of a paragraph shown to the model
+SPAN_SHARE = 0.8  # X2: share of a case-fact sentence's words that must come from the facts text, in order
+# X4: a sentence that only says the record is silent (it states nothing a source can support; the gap belongs in the open issues)
+ABSENCE = re.compile(
+    r"\b(?:record|file|papers|documents?|dossier|facts?|material|application)\s+(?:does|do|did|is|are|has|have)\s+(?:not|no|silent)\b"
+    r"|\bno\s+(?:facts?|material|information|details?|record|evidence)\s+(?:is|are|was|were)?\s*(?:about|on|regarding|of|stated|available|on record|recorded|provided)\b"
+    r"|\b(?:not|nowhere)\s+(?:been\s+)?(?:stated|established|disclosed|mentioned|specified|recorded)\b|\bsilent\s+on\b|\bnothing\s+(?:is\s+)?(?:stated|recorded|on record|shown)\b"
+    r"|\bunknown\b|\bcannot\s+be\s+(?:determined|assessed)\b",
+    re.IGNORECASE,
+)
 UNCHECKED = ClaimCheck.NEEDS_REVIEW  # A2/A9 run no check, so no claim may claim to be SUPPORTED
 NO_REPLY = "No supported reply could be drafted from the retrieved material: counsel to answer this objection."
 NO_GROUND = "No supported argument could be drafted from the evidence for this factor: counsel to draft it."
@@ -308,6 +320,11 @@ class VakeelAgent(BaseAgent):
         self._dossier, self._rights, self._timeline = dossier, rights, timeline
         if sw.uses_dossier:
             self._facts = facts_of(dossier)
+            if sw.draft_source == "facts_text" or sw.argument_policy == "fact_law_split" or sw.signal_source == "merge":
+                # X5 drafts from the raw facts alone; X2 (always) and X1 (where the dossier has nothing for a factor) offer the facts text beside the dossier facts
+                text = text_fact(state.facts_text)
+                if text:
+                    self._facts = text if sw.draft_source == "facts_text" else {**self._facts, **text}
             tracked = dossier.fields.sections if dossier is not None else None
             self._case_pairs = [(f"{sv.code} {sv.section}", sv.equivalent) for sv in (tracked.value or [])] if tracked is not None else []
         else:
@@ -409,9 +426,12 @@ class VakeelAgent(BaseAgent):
     def _evidence_for(self, pack: EvidencePack) -> Evidence:
         """The facts, paragraphs and Radar rows a factor's ground may rest on."""
         factor = pack.factor.value
-        if self.switches.uses_dossier:
+        sw = self.switches
+        if sw.uses_dossier and not (sw.draft_source == "facts_text" and FACTS_TEXT_FIELD in self._facts):
             names = FACTOR_FIELDS.get(factor, ())
             facts = {n: self._facts[n] for n in names if n in self._facts}
+            if FACTS_TEXT_FIELD in self._facts and (sw.argument_policy == "fact_law_split" or (sw.signal_source == "merge" and not facts)):
+                facts[FACTS_TEXT_FIELD] = self._facts[FACTS_TEXT_FIELD]  # X2: spans to quote; X1: the dossier has nothing on this factor, so read the source
         else:
             facts = dict(self._facts)
         auths, left_out = self._candidates(pack)
@@ -456,6 +476,8 @@ class VakeelAgent(BaseAgent):
     def _ins(self, task: str, **kwargs: str) -> str:
         """The task's instructions; S15 adds the note on the reasoning field."""
         extra = ADVERSE_INSTRUCTION if self.switches.authority_stance == "outcome" and task in (TASK_DRAFT, TASK_REPLY, TASK_REWORD) else ""
+        if self.switches.argument_policy == "fact_law_split" and FACTS_TEXT_FIELD in self._facts:  # X2
+            extra += SPLIT_NOTE if task == TASK_DRAFT else SPLIT_REWORD_NOTE if task == TASK_REWORD else ""
         return instructions(task, **kwargs) + extra + (REASONING_NOTE if self._reasoning_first else "")
 
     def _keep_reasoning(self, key: str, task: str, out: Any) -> None:
@@ -726,6 +748,7 @@ class VakeelAgent(BaseAgent):
     def _check_local(self, s: Sentence, sc: SentenceCheck) -> None:
         """A1: the raw facts text is the premise (there is no dossier for `check_claim` to read)."""
         premise = [self._facts[FACTS_TEXT_FIELD].text] if FACTS_TEXT_FIELD in self._facts else []
+        premise += [self._facts[f].text for f in s.facts if f != FACTS_TEXT_FIELD and f in self._facts]  # a dossier fact cited beside the facts text (X1, X2)
         for key in s.auths:
             text = str((self._auth_items.get(key) or {}).get("text") or "")
             if not text:
@@ -739,6 +762,16 @@ class VakeelAgent(BaseAgent):
             sc.problems.append("fact" if s.facts else "authority")
             sc.detail.append(f"support {score:.2f}")
         sc.result = ClaimCheckResult(supported=not sc.problems, fact_support=score if s.facts else None, authority_support=score if s.auths else None)
+
+    def _split_problems(self, s: Sentence, sc: SentenceCheck) -> None:
+        """X2: a sentence citing the facts text must be a near-verbatim span of it (at least `SPAN_SHARE` of its words in matching runs) and must not also cite an authority."""
+        if s.auths:
+            sc.problems.append("mixed")
+            sc.detail.append("a case fact and a legal principle in one sentence: write them as two sentences")
+        share = span_share(s.plain, self._facts[FACTS_TEXT_FIELD].text)
+        if share < SPAN_SHARE:
+            sc.problems.append("not_extractive")
+            sc.detail.append(f"only {share:.0%} of the words come from the facts text in order")
 
     @staticmethod
     def _guard_problems(s: Sentence, sc: SentenceCheck) -> None:
@@ -779,7 +812,9 @@ class VakeelAgent(BaseAgent):
                 by = self._auth_info[(doc, para)].get("overruled_by")
                 sc.problems.append("overruled")
                 sc.detail.append(f"{doc} overruled" + (f" by {by}" if by else ""))
-        if not self.switches.uses_dossier and FACTS_TEXT_FIELD in s.facts:
+        if FACTS_TEXT_FIELD in s.facts and (not self.switches.uses_dossier or FACTS_TEXT_FIELD in self._facts):
+            if self.switches.argument_policy == "fact_law_split":
+                self._split_problems(s, sc)  # X2: a case fact is a span of the facts text, never mixed with a legal principle
             self._check_local(s, sc)
             return self._settle(sc)
         res = self._claim_check(s)
@@ -959,11 +994,49 @@ class VakeelAgent(BaseAgent):
                 self._run_check(w)
             if w.failing() and not w.empty and self.switches.check_and_repair:
                 self._repair(w, g.factor)
+            if self.switches.abstention == "strict" and self._abstain(w, g):
+                continue  # X4: nothing supportable was left; the factor is an open issue, not a ground
             out.append(self._finish(g, w))
             if out[-1].check == ClaimCheck.NEEDS_REVIEW and not w.unchecked:
                 self._flag(w, g.id, g.factor.value)
         self._grounds = out
         return out
+
+    def _abstain(self, w: Work, g: Ground) -> bool:
+        """X4 (`abstention='strict'`): take out of the claim every sentence that still fails after repair and every sentence that only says the record is silent.
+
+        Trust-Align (Song et al., ICLR 2025) and Conformal Language Model Factuality (Mohri and Hashimoto, ICML 2024): a system that cannot support a statement
+        should withhold it. Nothing is dropped silently: each removed sentence is kept in `w.abstained` and `_open_issues` hands it to counsel. Notes (qualifications,
+        warnings) are rebuilt by `_annotate` from the sentences that remain. Returns True when no sentence is left (the ground is then not emitted).
+        """
+        if w.unchecked or w.empty:
+            return False
+        failing = set(w.failing())
+        keep: list[Sentence] = []
+        checks: list[SentenceCheck] = []
+        for i, s in enumerate(w.sentences):
+            if s.is_note:
+                continue
+            check = w.checks[i] if i < len(w.checks) else None
+            if i in failing and check is not None:
+                w.abstained.append((s.readable, check.describe()))
+            elif ABSENCE.search(s.plain):
+                w.abstained.append((s.readable, PROBLEM_WORDS["absence"]))
+            else:
+                keep.append(s)
+                if check is not None:
+                    checks.append(check)
+        if not w.abstained:
+            return False
+        w.sentences, w.checks = keep, checks
+        self._decision(
+            "abstain", f"{w.key} ({g.factor.value}): {len(w.abstained)} sentence(s) left out of the argument and handed to counsel; {len(keep)} remain.",
+            claim=w.key, factor=g.factor.value, removed=len(w.abstained), kept=len(keep), variant="X4", abstention="strict",
+        )  # fmt: skip
+        if not keep:
+            w.empty = True
+            return True
+        return False
 
     def _repair(self, w: Work, factor: Factor | None) -> None:
         for rnd in range(1, self.max_rounds + 1):
@@ -1224,6 +1297,8 @@ class VakeelAgent(BaseAgent):
         names = list(FACTOR_FIELDS.get(factor, ())) if factor else []
         names += [g.fact for g in o.grounds if g.fact]
         facts = {n: self._facts[n] for n in dict.fromkeys(names) if n in self._facts}
+        if self.switches.draft_source == "facts_text" and FACTS_TEXT_FIELD in self._facts:
+            facts = dict(self._facts)  # X5: replies rest on the raw facts as the grounds do
         if not facts and not self.switches.uses_dossier:
             facts = dict(self._facts)
         pack = self._packs.get(factor) if factor else None
@@ -1368,6 +1443,12 @@ class VakeelAgent(BaseAgent):
             if not any(i.type == OpenIssueType.NEEDS_REVIEW and "antecedent" in i.item.lower() for i in issues):
                 issues.append(OpenIssue(type=OpenIssueType.NEEDS_REVIEW, item="Antecedents unknown: confirm no other pending cases."))
         for key, w in self._work.items():
+            if w.abstained and not key.startswith("reply:"):  # X4
+                label = (w.ev.factor or "general").replace("_", " ")
+                for text, why in w.abstained:
+                    add(OpenIssueType.NEEDS_REVIEW, f"{key} ({label}): left out of the argument, it {why}: \"{text[:200]}\"")
+                if w.empty:
+                    add(OpenIssueType.MISSING_EVIDENCE, f"No supported argument could be drafted for {label} ({key}): counsel to draft it.")
             if key.startswith("reply:") and w.notes:
                 add(OpenIssueType.NEEDS_REVIEW, f"Reply to objection {key.split(':', 1)[1]}: " + "; ".join(w.notes) + ".")
         return issues

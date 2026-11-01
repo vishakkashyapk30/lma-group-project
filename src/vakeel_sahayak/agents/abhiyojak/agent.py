@@ -80,6 +80,7 @@ from vakeel_sahayak.tools.base import ToolError
 MAX_ROUNDS = 2  # plan §9: two rounds, no more
 MAX_PER_GROUND = 2  # plan §9: up to two objections per ground
 MAX_PER_GENERAL = 1  # one objection on each general factor
+MAX_EXTRA = 4  # X3: objections on factors without a ground, per case
 GENERAL_FACTORS: tuple[str, ...] = ("gravity_and_punishment", "flight_risk", "witness_tampering", "antecedents", "statutory_bar")
 BANK, REFUSALS, STATUTES = "advocacy.objections", "caselaw.reasoning", "law.statutes"
 BANK_K, REFUSAL_K, MAX_STATUTES = 4, 3, 3
@@ -165,6 +166,7 @@ class AbhiyojakAgent(BaseAgent):
         self._discarded: list[str] = []
         self._statute_cache: dict[tuple[str, str], dict[str, Any] | None] = {}
         self._count = 0
+        self._free_query = ""  # X6: the facts-keyed query of the free search
 
     @property
     def discarded(self) -> list[str]:
@@ -292,6 +294,8 @@ class AbhiyojakAgent(BaseAgent):
         fac = Factor(factor)
         with self.factor_scope(fac):
             self._search(mat, fac, query, before)
+            if self.switches.critic_material == "union_free" and self._free_query:
+                self._search_free(mat, fac, before)
             for sec in sections[:MAX_STATUTES]:
                 if row := self._statute(str(sec["code"]), str(sec["section"])):
                     mat.statutes.append(row)
@@ -308,6 +312,22 @@ class AbhiyojakAgent(BaseAgent):
             mat.refusals = self._rows(self._tool("search_reasoning", query=query, factor=fac, before=before, outcome=REFUSAL_OUTCOME, k=REFUSAL_K))
         else:
             self._decision("retrieve_skipped", "The case has no order date to search before: the bank and refusal reasoning are not searched.", factor=factor)
+
+    def _search_free(self, mat: Material, fac: Factor, before: str | None) -> None:
+        """X6 (`critic_material='union_free'`): add what a free search of the same two stores finds, keyed by the case facts and not filtered by factor.
+
+        A7's free planner raised objection recall with the same grounds (plan section 15.4); Abhiyojak may not read Sutradhar's packs (plan section 9), so the
+        union is built from its own stores: the ground-keyed, factor-filtered search of `_search` plus a facts-keyed, unfiltered one. Duplicates keep the first row.
+        """
+        if not before:
+            return
+        query = f"{self._free_query} {fac.value.replace('_', ' ')}"[:900]
+        extra_bank = self._rows(self._tool("search_objections", query=query, before=before, k=BANK_K))
+        extra_ref = self._rows(self._tool("search_reasoning", query=query, before=before, outcome=REFUSAL_OUTCOME, k=REFUSAL_K))
+        for rows, extra in ((mat.bank, extra_bank), (mat.refusals, extra_ref)):
+            have = {(r["doc_id"], r["para"]) for r in rows}
+            rows += [r for r in extra if (r["doc_id"], r["para"]) not in have]
+        self._decision("retrieve_free", f"{fac.value}: free search added {len(extra_bank)} bank and {len(extra_ref)} refusal candidate(s) (X6).", factor=fac.value, variant="X6", critic_material="union_free")
 
     def _log_material(self, mat: Material, factor: str) -> None:
         self._decision(
@@ -377,23 +397,27 @@ class AbhiyojakAgent(BaseAgent):
         return kept, dropped
 
     def _raise_for(
-        self, against: str, factor: str | None, ground: dict[str, Any] | None, mat: Material, facts: dict[str, Any], limit: int, seen: set[Any]
+        self, against: str, factor: str | None, ground: dict[str, Any] | None, mat: Material, facts: dict[str, Any], limit: int, seen: set[Any],
+        general: tuple[str, ...] = GENERAL_FACTORS, note: str = "",
     ) -> list[Objection]:
-        """One model call for a ground (factor given) or for the general objections (factor None): validated, grounded objections, ids not yet assigned."""
+        """One model call for a ground (factor given) or for the general objections (factor None): validated, grounded objections, ids not yet assigned.
+
+        `general` names the factors a general call may object on (the five general factors; X3 passes the uncovered ones), `note` is appended to the instructions (X3 only).
+        """
         scope = Factor(factor) if factor else None
-        case = {"ground": ground, "factor": factor or "general", "factors": [] if factor else list(GENERAL_FACTORS), "against": against, "limit": limit, "facts": list(facts.values())}
+        case = {"ground": ground, "factor": factor or "general", "factors": [] if factor else list(general), "against": against, "limit": limit, "facts": list(facts.values())}
         if (open_view := self._view_for(against)) is not None:
             case["vakeel_view"] = open_view  # S10 only
         self.guard(case)
         with self.factor_scope(scope):
             out = self._safe_ask(
-                TASK_RAISE, self._instructions(TASK_RAISE, limit=limit, factor=factor or "general"), factor=scope, case=case,
+                TASK_RAISE, self._instructions(TASK_RAISE, limit=limit, factor=factor or "general") + note, factor=scope, case=case,
                 corpus=self._corpus(mat), schema=RaisedObjections, max_tokens=900 if factor is None else 700,
             )  # fmt: skip
         # An answer for several grounds at once is read for this call's part only (an objection that names no ground is this one's).
         raised = [r for r in getattr(out, "objections", None) or [] if r.against in (None, "", against)]
         if factor is None:
-            raised = [r for r in raised if r.factor in GENERAL_FACTORS]
+            raised = [r for r in raised if r.factor in general]
         if len(raised) > limit:
             self._decision("truncated", f"{against}: {len(raised)} objections raised, only {limit} kept (plan §9).", against=against)
             raised = raised[:limit]
@@ -445,6 +469,8 @@ class AbhiyojakAgent(BaseAgent):
         sections: list[dict[str, Any]] = ctx["sections"]
         before = self._before(state, ctx["as_of"])
         self._discarded = []
+        if self.switches.critic_material == "union_free":  # X6: a facts-keyed query for the free search (the dossier facts as citable text)
+            self._free_query = re.sub(r"\s+", " ", " ".join(str(f.get("text") or "") for f in facts.values()))[:700]
         out: list[Objection] = []
         seen: set[Any] = set()
         self._decision("round_1", f"Round 1: {len(ctx['grounds'])} ground(s) and the general objections.", grounds=[g["id"] for g in ctx["grounds"]], context_keys=sorted(ctx), stores=ctx["stores"])
@@ -459,6 +485,8 @@ class AbhiyojakAgent(BaseAgent):
             out += self._raise_for(str(g["id"]), factor, view, mat, facts, MAX_PER_GROUND, seen)
         parts = [self._material(f, self._query(None, f), before, sections) for f in GENERAL_FACTORS]
         out += self._raise_for("general", None, None, self._merged(parts), facts, len(GENERAL_FACTORS) * MAX_PER_GENERAL, seen)
+        if self.switches.sparring_scope == "all_factors":
+            out += self._raise_uncovered(out, ctx, facts, sections, before, seen)
         objections = []
         for o in out:
             self._count += 1
@@ -470,6 +498,36 @@ class AbhiyojakAgent(BaseAgent):
         self._stats["discarded"] = self._stats.get("discarded", 0) + len(self._discarded)
         self._emit_critic_signals()
         return objections
+
+    def _raise_uncovered(
+        self, raised: list[Objection], ctx: dict[str, Any], facts: dict[str, Any], sections: list[dict[str, Any]], before: str | None, seen: set[Any]
+    ) -> list[Objection]:
+        """X3 (`sparring_scope='all_factors'`): one more call for the factors that have no ground and no objection yet, at most one objection each and `MAX_EXTRA` in all.
+
+        Equal-breadth critic (Debate or Vote, Choi et al., NeurIPS 2025): the per-ground round can only object where Vakeel argued, so a factor the planner never
+        grounded (custody period, parity, charge sheet ...) is never contested. The material is Abhiyojak's own stores, searched per factor exactly as for the
+        general round; a factor whose search returned no bank or refusal paragraph is left out (nothing to point to), and every objection still needs a grounded pointer.
+        The factors are taken in the order of Appendix A, so the cap is not a choice by model.
+        """
+        have = {str(g.get("factor")) for g in ctx["grounds"]} | {str(o.factor) for o in raised}
+        parts: list[Material] = []
+        with_material: list[str] = []
+        for f in Factor:
+            if f.value in have:
+                continue
+            mat = self._material(f.value, self._query(None, f.value), before, sections)
+            if mat.bank or mat.refusals:
+                parts.append(mat)
+                with_material.append(f.value)
+        if not with_material:
+            self._decision("round_1_extra", "X3: no uncovered factor has material to object from.", variant="X3", factors=[])
+            return []
+        limit = min(MAX_EXTRA, len(with_material))
+        note = (" For this call the factors you may object on are exactly those listed in 'factors' (not the five named above): the defence did not argue them, so object "
+                "only where the material shows what the State would say; at most one objection per factor.")
+        extra = self._raise_for("general", None, None, self._merged(parts), facts, limit, seen, general=tuple(with_material), note=note)
+        self._decision("round_1_extra", f"X3: {len(extra)} objection(s) on factors without a ground (of {len(with_material)} with material).", variant="X3", factors=with_material, raised=len(extra), sparring_scope="all_factors")
+        return extra
 
     # ------------------------------------------------------------------ replies and round 2
 

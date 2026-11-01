@@ -98,6 +98,20 @@ REASONING_NOTE: str = (
 )
 
 
+# X2 only (`Switches.argument_policy='fact_law_split'`): appended to a drafting or reword instruction. ALCE (Gao et al., EMNLP 2023) and Claimify
+# (Metropolitansky and Larson, ACL 2025): a case fact is quoted from the source, a legal principle is stated from its paragraph, and the two are not mixed.
+SPLIT_NOTE: str = (
+    " Write two kinds of sentence and never mix them in one sentence. (1) A case-fact sentence copies a sentence or clause of the fact 'facts_text' "
+    "word for word (you may drop words, never add or reword) and ends with [F:facts_text] only. (2) A legal-basis sentence states one principle that "
+    "the cited paragraph states, in words close to the paragraph, and ends with its [A:doc_id#para] marker only. Put the case-fact sentences first. "
+    "Do not write a sentence about what the record does not state: counsel sees the gaps in the open issues."
+)
+SPLIT_REWORD_NOTE: str = (
+    " A case-fact sentence must be a word-for-word span of the fact 'facts_text' and carry only [F:facts_text]; a legal-basis sentence must stay close "
+    "to its paragraph and carry only its [A:doc_id#para] marker. Do not mix the two in one sentence."
+)
+
+
 def instructions(task: str, **kwargs: str) -> str:
     """The task's instructions with its placeholders filled (`{{` in a template is a literal brace)."""
     return USER_PROMPT_TEMPLATES[task].format(**kwargs)
