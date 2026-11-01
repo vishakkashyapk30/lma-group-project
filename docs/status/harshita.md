@@ -1,7 +1,7 @@
 # Status — Harshita
 
 ## Current assignment (2 Nov 2026, to the freeze on 10 Nov)
-Win/loss/tie table (every arm against every baseline on every metric, paired intervals, Holm), M6a reported beside the unsupported-fact rate for every arm, Rights rules verification (6 of 7 open), BNSS s.58 text, second review of the pre-registration and the Rights table, Hindi labels.
+All scripted, no manual work: win/loss/tie table (every arm against every baseline on every metric, paired intervals, Holm), a test that M6a is reported beside the unsupported-fact rate for every arm, an automatic Rights rule check against the statute store, BNSS s.58 fixed from the official Gazette PDF by script, consistency checks of the pre-registration and the Rights table.
 Full list, dates and rules: `docs/handoff/team-todo-2026-11-02.md`. The tables below are the earlier state.
 
 Assigned (owner's day-1 message §7): **metrics & statistics, the statutes, the Rights Radar verification, and the proposal PDF + README/QA docs.**
