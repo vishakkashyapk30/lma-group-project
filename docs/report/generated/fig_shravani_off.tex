@@ -15,8 +15,8 @@
 \addplot[only marks, mark=*, mark size=2.1pt, color=cB, fill=cB] coordinates {(0.9690,FULL) += (0.0310,0) -= (0.0429,0)};
 \addplot[black, dashed, line width=0.5pt, mark=none, error bars/.cd, x dir=none] coordinates {(0.9690,FULL) (0.9690,A10:LAW.STATUTES)};
 \end{axis}
-\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cB}{$\bullet$} Full \quad \textcolor{cA}{$\bullet$} baselines (B) \quad \textcolor{cD}{$\bullet$} ablations (A) \quad \textcolor{cC}{$\bullet$} variants (S, P)};
+\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cB}{$\bullet$} Full \quad \textcolor{cD}{$\bullet$} ablations (A)};
 \end{tikzpicture}
-\caption{Family shravani\_off: each arm on the cases it answered without error and where the metric is defined, mean with a 95\% bootstrap interval (the number of cases per arm is in the appendix tables). The dashed line is Full; an arm without a mark has no defined value on this metric (no gold or no output of that kind). Unsupported-fact rate: lower is better.}
+\caption{Family offline store knock-outs: each arm on the cases it answered without error and where the metric is defined, mean with a 95\% bootstrap interval (the number of cases per arm is in the appendix tables). The dashed line is Full; an arm without a mark has no defined value on this metric (no gold or no output of that kind). Unsupported-fact rate: lower is better.}
 \label{fig:main_shravani_off}
 \end{figure*}

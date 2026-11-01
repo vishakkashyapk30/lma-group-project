@@ -5,18 +5,18 @@
 \toprule
 Group & Arm & Cases & Obj. rec. & Ans. cov. & Cov. & Factor rec. & Cit. prec. & Fabr. cit. & Unsupp. facts & Tokens \\
 \midrule
-Full & FULL & 25 & \textbf{0.64} & 0.46 & 0.86 & \underline{0.33} & \underline{0.76} & \textbf{0.00} & \underline{0.88} & 85128 \\
+Full & FULL & 25 & \textbf{0.64} & 0.46 & 0.86 & 0.33 & \underline{0.76} & 0.00 & \underline{0.88} & 85128 \\
 \midrule
-Baselines & B0 & 20 & 0.00 & 0.17 & \textbf{1.00} & 0.00 & -- & -- & 0.89 & \textbf{3032} \\
- & B0L & 20 & 0.00 & 0.00 & \textbf{1.00} & \textbf{0.50} & -- & -- & 0.90 & \underline{3206} \\
- & B1 & 17 & 0.00 & 0.08 & \textbf{1.00} & 0.00 & 0.00 & \textbf{0.00} & 0.95 & 7136 \\
- & B2 & 20 & 0.00 & 0.42 & \textbf{1.00} & \textbf{0.50} & -- & -- & 0.93 & 3248 \\
- & B3 & 17 & 0.00 & \textbf{0.58} & 0.82 & \textbf{0.50} & 0.00 & \textbf{0.00} & 0.94 & 7494 \\
+Baselines & B0 & 20 & 0.00 & 0.17 & 1.00 & 0.00 & -- & -- & 0.89 & \textbf{3032} \\
+ & B0L & 20 & 0.00 & 0.00 & 1.00 & 0.50 & -- & -- & 0.90 & \underline{3206} \\
+ & B1 & 17 & 0.00 & 0.08 & 1.00 & 0.00 & 0.00 & 0.00 & 0.95 & 7136 \\
+ & B2 & 20 & 0.00 & 0.42 & 1.00 & 0.50 & -- & -- & 0.93 & 3248 \\
+ & B3 & 17 & 0.00 & \textbf{0.58} & 0.82 & 0.50 & 0.00 & 0.00 & 0.94 & 7494 \\
 \midrule
-Ablations & A1 & 10 & \underline{0.50} & \underline{0.50} & \underline{0.90} & \textbf{0.50} & \textbf{0.78} & \textbf{0.00} & \textbf{0.75} & 96248 \\
+Ablations & A1 & 10 & \underline{0.50} & \underline{0.50} & 0.90 & 0.50 & \textbf{0.78} & 0.00 & \textbf{0.75} & 96248 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\caption{Family gemini: every arm on every metric, mean over the cases the arm answered without error where the metric is defined (a dash means undefined, for example no citation by that arm). Cases: orders answered. Higher is better except unsupported facts and fabricated citations; tokens and USD are per case. Arms run on different numbers of orders (the Cases column), so read near-equal rows with the paired tables of the appendix, which carry intervals. Bold: best in the column; underlined: second best.}
+\caption{Family Gemini block A: every arm on every metric, mean over the cases the arm answered without error where the metric is defined (a dash means undefined, for example no citation by that arm). Cases: orders answered. Higher is better except unsupported facts and fabricated citations; tokens (and USD where priced) are per case. Arms run on different numbers of orders (the Cases column), so read near-equal rows with the paired tables of the appendix, which carry intervals. Bold: best in the column; underlined: second best.}
 \label{tab:master_gemini}
 \end{table*}

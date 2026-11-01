@@ -21,8 +21,8 @@
 \addplot[only marks, mark=*, mark size=2.1pt, color=cD, fill=cD] coordinates {(-0.1507,A1) += (0.1221,0) -= (0.1246,0)};
 \addplot[black, dashed, line width=0.5pt, mark=none, error bars/.cd, x dir=none] coordinates {(0.0000,B0) (0.0000,A1)};
 \end{axis}
-\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cB}{$\bullet$} Full \quad \textcolor{cA}{$\bullet$} baselines (B) \quad \textcolor{cD}{$\bullet$} ablations (A) \quad \textcolor{cC}{$\bullet$} variants (S, P)};
+\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cA}{$\bullet$} baselines (B) \quad \textcolor{cD}{$\bullet$} ablations (A)};
 \end{tikzpicture}
-\caption{Family gemini: each arm minus Full on the cases both answered, mean difference with a 95\% bootstrap interval. The line at zero is no difference; an interval that crosses it is not resolved at this sample size. On the unsupported-fact rate a negative difference favours the arm.}
+\caption{Family Gemini block A: each arm minus Full on the cases both answered, mean difference with a 95\% bootstrap interval. The line at zero is no difference; an interval that crosses it is not resolved at this sample size. On the unsupported-fact rate a negative difference favours the arm.}
 \label{fig:forest_gemini}
 \end{figure*}

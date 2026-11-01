@@ -5,18 +5,18 @@
 \toprule
 Group & Arm & Cases & Cov. & Cit. prec. & Fabr. cit. & Unsupp. facts & Tokens \\
 \midrule
-Full & FULL & 2 & \underline{0.90} & 0.91 & \textbf{0.00} & 0.92 & 89890 \\
+Full & FULL & 2 & \underline{0.90} & 0.91 & 0.00 & 0.92 & 89890 \\
 \midrule
-Ablations & A4 & 2 & \textbf{1.00} & \textbf{1.00} & \textbf{0.00} & 0.92 & \textbf{80478} \\
- & A5:BASE\_4B & 2 & \underline{0.90} & 0.91 & \textbf{0.00} & 0.92 & 89890 \\
+Ablations & A4 & 2 & \textbf{1.00} & \textbf{1.00} & 0.00 & 0.92 & \textbf{80478} \\
+ & A5:BASE\_4B & 2 & \underline{0.90} & 0.91 & 0.00 & 0.92 & 89890 \\
 \midrule
-Variants & S11B & 2 & 0.70 & 0.79 & \textbf{0.00} & \underline{0.90} & 102106 \\
- & S11C & 2 & 0.80 & \underline{0.94} & \textbf{0.00} & 0.91 & 96426 \\
- & S12B & 2 & 0.80 & 0.88 & \textbf{0.00} & 0.92 & \underline{84262} \\
- & S15B & 2 & 0.70 & 0.78 & \textbf{0.00} & \textbf{0.88} & 96454 \\
+Variants & S11B & 2 & 0.70 & 0.79 & 0.00 & \underline{0.90} & 102106 \\
+ & S11C & 2 & 0.80 & \underline{0.94} & 0.00 & 0.91 & 96426 \\
+ & S12B & 2 & 0.80 & 0.88 & 0.00 & 0.92 & \underline{84262} \\
+ & S15B & 2 & 0.70 & 0.78 & 0.00 & \textbf{0.88} & 96454 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\caption{Family shravani\_gem: every arm on every metric, mean over the cases the arm answered without error where the metric is defined (a dash means undefined, for example no citation by that arm). Cases: orders answered. Higher is better except unsupported facts and fabricated citations; tokens and USD are per case. Arms run on different numbers of orders (the Cases column), so read near-equal rows with the paired tables of the appendix, which carry intervals. Bold: best in the column; underlined: second best.}
+\caption{Family Gemini block B: every arm on every metric, mean over the cases the arm answered without error where the metric is defined (a dash means undefined, for example no citation by that arm). Cases: orders answered. Higher is better except unsupported facts and fabricated citations; tokens (and USD where priced) are per case. Arms run on different numbers of orders (the Cases column), so read near-equal rows with the paired tables of the appendix, which carry intervals. Bold: best in the column; underlined: second best.}
 \label{tab:master_shravani_gem}
 \end{table*}

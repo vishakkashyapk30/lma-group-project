@@ -61,6 +61,13 @@ def fit(t):
     return t.replace(r'\end{tabular}', '\\end{tabular}\n\\end{adjustbox}', 1)
 
 
+FAMNAME = {"shravani_gem": "Gemini block B", "shravani_off": "offline store knock-outs", "openai": "OpenAI", "gemini": "Gemini block A", "sarvam": "Sarvam", "v1": "superseded 50-case run"}
+
+
+def fam_label(f):
+    return FAMNAME.get(f, f)
+
+
 def esc(s):
     return s.replace("_", r"\_")
 
@@ -80,6 +87,9 @@ def marks(vals, higher=True, dg=2):
             out[i] = "b"
         elif len(d) > 1 and r == d[1]:
             out[i] = "u"
+    n = len([v for v in vals if v is not None])
+    if sum(1 for k in out.values() if k == "b") > max(3, n // 3):  # a column where many arms tie carries no ranking
+        return {}
     return out
 
 
@@ -142,7 +152,9 @@ def dotplot(fam, kind, arms, panels, stat, lo_, hi_, xlabel, caption, log=False,
         if ref is not None and not log:
             L.append(r"\addplot[black, dashed, line width=0.5pt, mark=none, error bars/.cd, x dir=none] coordinates {(" + f"{ref:.4f}," + labs[arms[0]] + ") (" + f"{ref:.4f}," + labs[arms[-1]] + ")};")
         L.append(r"\end{axis}")
-    leg = r"\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cB}{$\bullet$} Full \quad \textcolor{cA}{$\bullet$} baselines (B) \quad \textcolor{cD}{$\bullet$} ablations (A) \quad \textcolor{cC}{$\bullet$} variants (S, P)};"
+    present = {("full" if x == "full" else {"b": "base", "a": "abl"}.get(x[0], "var")) for x in arms}
+    names = [("full", "cB", "Full"), ("base", "cA", "baselines (B)"), ("abl", "cD", "ablations (A)"), ("var", "cC", "variants (S, P)")]
+    leg = r"\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {" + r" \quad ".join(r"\textcolor{" + c + r"}{$\bullet$} " + n for g, c, n in names if g in present) + "};"
     L += [leg, r"\end{tikzpicture}", r"\caption{" + caption + r"}", r"\label{fig:" + kind + "_" + fam + "}", r"\end{figure*}"]
     return "\n".join(L)
 
@@ -178,13 +190,13 @@ def main(out, specs):
                 cells.append("--" if not t else style(f"{t[0]:.2f}", mm[j].get(xi)) + f" / {t[1]:.2f} ({t[2]})")
             lines.append(esc(s_.upper()) + " & " + " & ".join(cells) + r" \\")
         lines += [r"\bottomrule", r"\end{tabular}",
-                  r"\caption{" + f"Family {esc(fam)}: each baseline beside Full on the cases both answered without error. A cell is the arm's mean, then Full's mean on the same cases, over the cases where the metric is defined for both (the count in brackets). Unsupported facts: lower is better; the others: higher is better. The arm's value is bold for the best baseline in the column and underlined for the second best. A dash means the metric is undefined for the arm (for example, a baseline that cites no authority has no citation precision)." + r"}",
+                  r"\caption{" + f"Family {fam_label(fam)}: each baseline beside Full on the cases both answered without error. A cell is the arm's mean, then Full's mean on the same cases, over the cases where the metric is defined for both (the count in brackets). Unsupported facts: lower is better; the others: higher is better. The arm's value is bold for the best baseline in the column and underlined for the second best. A dash means the metric is undefined for the arm (for example, a baseline that cites no authority has no citation precision)." + r"}",
                   r"\label{tab:main_" + fam + "}", r"\end{table*}"]
         (out / f"main_{fam}.tex").write_text(fit("\n".join(lines)))
         # table 2: each other arm against Full on the cases both answered (paired difference of means)
         rows = [r"\begin{table*}[t]", r"\centering\footnotesize", r"\begin{tabular}{@{}lr" + "r" * len(METRICS) + r"@{}}", r"\toprule",
                 "Arm & Cases & " + " & ".join("$\\Delta$ " + m[1] for m in METRICS) + r" \\", r"\midrule"]
-        ab_arms = [x for x in sorted(S) if x != "full"]
+        ab_arms = [x for x in armorder(S) if x != "full"]
         ab = {}
         for x in ab_arms:
             cs = sorted(c for c in S[x] if c in full and c in ok[x] and c in ok.get("full", set()))
@@ -198,7 +210,7 @@ def main(out, specs):
                 cells.append(style(txt, abm[j].get(xi)) if t else txt)
             rows.append(esc(x.upper()) + " & " + " & ".join(cells) + r" \\")
         rows += [r"\bottomrule", r"\end{tabular}",
-                 r"\caption{" + f"Family {esc(fam)}: each arm minus Full on the cases both answered (mean difference, 95\\% bootstrap interval). A positive difference favours the arm for the higher-is-better metrics and Full for unsupported facts and fabricated citations. Intervals that include zero are not resolved at this sample size. Bold: the most favourable mean difference in the column; underlined: the second most favourable." + r"}",
+                 r"\caption{" + f"Family {fam_label(fam)}: each arm minus Full on the cases both answered (mean difference, 95\\% bootstrap interval). A positive difference favours the arm for the higher-is-better metrics and Full for unsupported facts and fabricated citations. Intervals that include zero are not resolved at this sample size. Bold: the most favourable mean difference in the column; underlined: the second most favourable." + r"}",
                  r"\label{tab:ablate_" + fam + "}", r"\end{table*}"]
         (out / f"ablate_{fam}.tex").write_text(fit("\n".join(rows)))
         arms_all = armorder(S)
@@ -222,7 +234,7 @@ def main(out, specs):
                 cs.append(style(f"{v:.{dg}f}", mk[j].get(xi)) if v is not None else "--")
             ML.append((g if g != prev else "") + " & " + esc(x.upper()) + " & " + " & ".join(cs) + r" \\")
             prev = g
-        ML += [r"\bottomrule", r"\end{tabular}", r"\caption{" + f"Family {esc(fam)}: every arm on every metric, mean over the cases the arm answered without error where the metric is defined (a dash means undefined, for example no citation by that arm). Cases: orders answered. Higher is better except unsupported facts and fabricated citations; tokens and USD are per case. Arms run on different numbers of orders (the Cases column), so read near-equal rows with the paired tables of the appendix, which carry intervals. Bold: best in the column; underlined: second best." + r"}", r"\label{tab:master_" + fam + "}", r"\end{table*}"]
+        ML += [r"\bottomrule", r"\end{tabular}", r"\caption{" + f"Family {fam_label(fam)}: every arm on every metric, mean over the cases the arm answered without error where the metric is defined (a dash means undefined, for example no citation by that arm). Cases: orders answered. Higher is better except unsupported facts and fabricated citations; tokens (and USD where priced) are per case. Arms run on different numbers of orders (the Cases column), so read near-equal rows with the paired tables of the appendix, which carry intervals. Bold: best in the column; underlined: second best." + r"}", r"\label{tab:master_" + fam + "}", r"\end{table*}"]
         (out / f"master_{fam}.tex").write_text(fit("\n".join(ML)))
         # figure 1: per metric, each arm on its own answered cases, mean with a 95% bootstrap interval; dashed line is Full
         fig_panels = [("objection_recall", "Objection recall", "higher is better"), ("answerable_coverage", "Answerable coverage", "higher is better"), ("unsupported_fact_rate", "Unsupported-fact rate", "lower is better")]
@@ -230,7 +242,7 @@ def main(out, specs):
             return mean_ci([v for v in (fl(S[x][c], m) for c in sorted(ok[x])) if v is not None])
         (out / f"fig_{fam}.tex").write_text(dotplot(
             fam, "main", arms_all, fig_panels, stat, 0, 1.05, "Mean",
-            f"Family {esc(fam)}: each arm on the cases it answered without error and where the metric is defined, mean with a 95\\% bootstrap interval (the number of cases per arm is in the appendix tables). The dashed line is Full; an arm without a mark has no defined value on this metric (no gold or no output of that kind). Unsupported-fact rate: lower is better."))
+            f"Family {fam_label(fam)}: each arm on the cases it answered without error and where the metric is defined, mean with a 95\\% bootstrap interval (the number of cases per arm is in the appendix tables). The dashed line is Full; an arm without a mark has no defined value on this metric (no gold or no output of that kind). Unsupported-fact rate: lower is better."))
         # figure 2: each arm minus Full on the cases both answered
         full = S.get("full", {})
         def diff(x, m):
@@ -241,13 +253,13 @@ def main(out, specs):
             fpan = [("objection_recall", "Objection recall", "right favours the arm"), ("answerable_coverage", "Answerable coverage", "right favours the arm"), ("citation_precision", "Citation precision", "right favours the arm"), ("unsupported_fact_rate", "Unsupported-fact rate", "left favours the arm")]
             (out / f"forest_{fam}.tex").write_text(dotplot(
                 fam, "forest", farms, fpan, diff, -1.05, 1.05, "Arm minus Full",
-                f"Family {esc(fam)}: each arm minus Full on the cases both answered, mean difference with a 95\\% bootstrap interval. The line at zero is no difference; an interval that crosses it is not resolved at this sample size. On the unsupported-fact rate a negative difference favours the arm."))
+                f"Family {fam_label(fam)}: each arm minus Full on the cases both answered, mean difference with a 95\\% bootstrap interval. The line at zero is no difference; an interval that crosses it is not resolved at this sample size. On the unsupported-fact rate a negative difference favours the arm."))
         # cost figure: tokens per case, log scale, horizontal
         def toks(x, m):
             v = [t for t in (fl(r, "tokens") for r in S[x].values()) if t]
             return (sum(v) / len(v), None, None, len(v)) if v else None
         (out / f"cost_{fam}.tex").write_text(dotplot(
-            fam, "cost", arms_all, [("tokens", "Tokens per case", "log scale")], toks, 1000, 400000, "Tokens", f"Family {esc(fam)}: mean tokens per case (log scale), each arm on its own cases.", log=True, single=True))
+            fam, "cost", arms_all, [("tokens", "Tokens per case", "log scale")], toks, 1000, 400000, "Tokens", f"Family {fam_label(fam)}: mean tokens per case (log scale), each arm on its own cases.", log=True, single=True))
         # compact table 1 in two parts (each arm's own cases, mean [95% CI] (n))
         def part(name, cols, cap):
             L = [r"\begin{table}[htbp]", r"\centering\footnotesize", r"\begin{tabular}{@{}l" + "r" * len(cols) + r"@{}}", r"\toprule", "Arm & " + " & ".join(c[1] for c in cols) + r" \\", r"\midrule"]
@@ -263,8 +275,8 @@ def main(out, specs):
                 L.append(esc(x.upper()) + " & " + " & ".join(cs) + r" \\")
             L += [r"\bottomrule", r"\end{tabular}", r"\caption{" + cap + " Bold: best in the column; underlined: second best." + r"}", r"\label{tab:" + name + "_" + fam + "}", r"\end{table}"]
             (out / f"{name}_{fam}.tex").write_text(fit("\n".join(L)))
-        part("table1a", [("factor_recall", "Factor recall", 2), ("factor_precision_lenient", "Precision (lenient)", 2), ("factor_f1", "F1", 2)], f"Family {esc(fam)}: factor-level metrics, mean [95\\% bootstrap interval] over the orders where the metric is defined (their number in brackets). Each arm on its own orders.")
-        part("table1b", [("unsupported_fact_rate", "Unsupported facts", 2), ("objection_recall", "Objection recall", 2), ("answerable_coverage", "Answerable coverage", 2), ("coverage", "Coverage", 2), ("tokens", "Tokens", 0), ("cost_usd", "USD per case", 4)], f"Family {esc(fam)}: unsupported-fact rate (lower is better), objection recall, answerable coverage, coverage, tokens and cost per case, mean [95\\% bootstrap interval] (n). Each arm on its own orders.")
+        part("table1a", [("factor_recall", "Factor recall", 2), ("factor_precision_lenient", "Precision (lenient)", 2), ("factor_f1", "F1", 2)], f"Family {fam_label(fam)}: factor-level metrics, mean [95\\% bootstrap interval] over the orders where the metric is defined (their number in brackets). Each arm on its own orders.")
+        part("table1b", [("unsupported_fact_rate", "Unsupported facts", 2), ("objection_recall", "Objection recall", 2), ("answerable_coverage", "Answerable coverage", 2), ("coverage", "Coverage", 2), ("tokens", "Tokens", 0), ("cost_usd", "USD per case", 4)], f"Family {fam_label(fam)}: unsupported-fact rate (lower is better), objection recall, answerable coverage, coverage, tokens and cost per case, mean [95\\% bootstrap interval] (n). Each arm on its own orders.")
         print(fam, "arms", len(S), "common", len(common))
 
 

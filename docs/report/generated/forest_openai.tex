@@ -25,8 +25,8 @@
 \addplot[only marks, mark=*, mark size=2.1pt, color=cC, fill=cC] coordinates {(-0.0250,S1) += (0.1000,0) -= (0.1000,0) (0.0000,S2) += (0.0000,0) -= (0.0000,0) (0.0000,S3) += (0.0000,0) -= (0.0000,0) (0.0000,S3B) += (0.0000,0) -= (0.0000,0) (0.0200,S4) += (0.0400,0) -= (0.0200,0) (0.0333,S5) += (0.0667,0) -= (0.0333,0) (0.0000,S6) += (0.0000,0) -= (0.0000,0) (0.0200,S8) += (0.0400,0) -= (0.0200,0) (0.0000,S9) += (0.0000,0) -= (0.0000,0) (0.0000,S10) += (0.0000,0) -= (0.0000,0) (0.0000,S11) += (0.0000,0) -= (0.0000,0) (0.0000,S12) += (0.0000,0) -= (0.0000,0) (0.0533,S15) += (0.0800,0) -= (0.0533,0) (0.0533,S18) += (0.0800,0) -= (0.0533,0)};
 \addplot[black, dashed, line width=0.5pt, mark=none, error bars/.cd, x dir=none] coordinates {(0.0000,B0) (0.0000,S18)};
 \end{axis}
-\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cB}{$\bullet$} Full \quad \textcolor{cA}{$\bullet$} baselines (B) \quad \textcolor{cD}{$\bullet$} ablations (A) \quad \textcolor{cC}{$\bullet$} variants (S, P)};
+\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cA}{$\bullet$} baselines (B) \quad \textcolor{cD}{$\bullet$} ablations (A) \quad \textcolor{cC}{$\bullet$} variants (S, P)};
 \end{tikzpicture}
-\caption{Family openai: each arm minus Full on the cases both answered, mean difference with a 95\% bootstrap interval. The line at zero is no difference; an interval that crosses it is not resolved at this sample size. On the unsupported-fact rate a negative difference favours the arm.}
+\caption{Family OpenAI: each arm minus Full on the cases both answered, mean difference with a 95\% bootstrap interval. The line at zero is no difference; an interval that crosses it is not resolved at this sample size. On the unsupported-fact rate a negative difference favours the arm.}
 \label{fig:forest_openai}
 \end{figure*}

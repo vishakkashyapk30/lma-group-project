@@ -17,8 +17,8 @@
 \addplot[only marks, mark=*, mark size=2.1pt, color=cA, fill=cA] coordinates {(-0.0079,B0) += (0.0721,0) -= (0.0701,0) (-0.0868,B1) += (0.0712,0) -= (0.0698,0) (-0.0451,B4) += (0.0590,0) -= (0.0604,0) (0.1271,B6) += (0.0547,0) -= (0.0498,0)};
 \addplot[black, dashed, line width=0.5pt, mark=none, error bars/.cd, x dir=none] coordinates {(0.0000,B0) (0.0000,B6)};
 \end{axis}
-\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cB}{$\bullet$} Full \quad \textcolor{cA}{$\bullet$} baselines (B) \quad \textcolor{cD}{$\bullet$} ablations (A) \quad \textcolor{cC}{$\bullet$} variants (S, P)};
+\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cA}{$\bullet$} baselines (B)};
 \end{tikzpicture}
-\caption{Family v1: each arm minus Full on the cases both answered, mean difference with a 95\% bootstrap interval. The line at zero is no difference; an interval that crosses it is not resolved at this sample size. On the unsupported-fact rate a negative difference favours the arm.}
+\caption{Family superseded 50-case run: each arm minus Full on the cases both answered, mean difference with a 95\% bootstrap interval. The line at zero is no difference; an interval that crosses it is not resolved at this sample size. On the unsupported-fact rate a negative difference favours the arm.}
 \label{fig:forest_v1}
 \end{figure*}

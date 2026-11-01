@@ -15,8 +15,8 @@
 \begin{axis}[vsbase, at={(0.840\textwidth,0)}, width=0.225\textwidth, height=5.0cm, title={Unsupported-fact rate\\{\scriptsize\mdseries left favours the arm}}, title style={font=\footnotesize\bfseries, align=center}, symbolic y coords={A10:ADVOCACY.ARGUMENTS,A10:ADVOCACY.OBJECTIONS,A10:CASELAW.CITATIONS,A10:CASELAW.REASONING,A10:CASELAW.SIMILAR,A10:LAW.CONCORDANCE,A10:LAW.STATUTES}, ytick={A10:ADVOCACY.ARGUMENTS,A10:ADVOCACY.OBJECTIONS,A10:CASELAW.CITATIONS,A10:CASELAW.REASONING,A10:CASELAW.SIMILAR,A10:LAW.CONCORDANCE,A10:LAW.STATUTES}, y dir=reverse, xmin=-1.05, xmax=1.05, xmajorgrids, grid style={gray!25}, enlarge y limits=0.03, enlarge x limits=0.04, nodes near coords={}, xticklabel style={font=\scriptsize}, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.5pt, gray!70}, every axis plot/.append style={}, yticklabels={}]
 \addplot[black, dashed, line width=0.5pt, mark=none, error bars/.cd, x dir=none] coordinates {(0.0000,A10:ADVOCACY.ARGUMENTS) (0.0000,A10:LAW.STATUTES)};
 \end{axis}
-\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cB}{$\bullet$} Full \quad \textcolor{cA}{$\bullet$} baselines (B) \quad \textcolor{cD}{$\bullet$} ablations (A) \quad \textcolor{cC}{$\bullet$} variants (S, P)};
+\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cD}{$\bullet$} ablations (A)};
 \end{tikzpicture}
-\caption{Family shravani\_off: each arm minus Full on the cases both answered, mean difference with a 95\% bootstrap interval. The line at zero is no difference; an interval that crosses it is not resolved at this sample size. On the unsupported-fact rate a negative difference favours the arm.}
+\caption{Family offline store knock-outs: each arm minus Full on the cases both answered, mean difference with a 95\% bootstrap interval. The line at zero is no difference; an interval that crosses it is not resolved at this sample size. On the unsupported-fact rate a negative difference favours the arm.}
 \label{fig:forest_shravani_off}
 \end{figure*}

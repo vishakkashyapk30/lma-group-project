@@ -119,7 +119,7 @@ Block of runs & Provider & Model & Runs & Arms and size \\
 Dev runs, code \texttt{dev-sweep-v1} (superseded) & OpenAI & \texttt{gpt-6-luna} & hosted & Full (2 runs), B0, B1, B4: 50 cases, scored; B6 is a rule baseline with no model \\
 Block A (OpenAI) & OpenAI & \texttt{gpt-6-luna} & hosted & Full, B0 to B3, A1: 25 cases \\
 Block A (Gemini) & Google, free tier & \texttt{gemini-3.5-flash-lite}; B0L on \texttt{gemini-3.6-flash} & hosted & Full, B0 to B3, B0L: 25 cases; A1: 10; scored \\
-Block C (Sarvam) & Sarvam & \texttt{sarvam-105b} & hosted & Full, B0 to B6, A1 to A4, A6 to A9: 30 cases; 23 variants: 10; scored \\
+Block C (Sarvam) & Sarvam & \texttt{sarvam-105b} & hosted & Full, B0 to B6, A1 to A4, A6 to A9: 30 cases; 22 variants: 10; scored \\
 Block B & Google, free tier & \texttt{gemini-3.1-flash-lite} & hosted & Full, A2, A8: 5 cases; run, not yet scored \\
 Offline studies & none (no language model) & real stores, hashed n-gram and BGE-M3 & local & S4 and S5 (150 queries), S14 (100 simulated batches), S16 (292 orders) \\
 Gold labeler & OpenAI & \texttt{gpt-6-luna} & hosted & labels the dev and test orders (public court text only); a label counts only if the rule labeler agrees \\
@@ -150,9 +150,7 @@ Speech & local & Whisper small & local & T8 \\
 \gentable{forest_v1}
 \gentable{cost_v1}
 \FloatBarrier
-\gentable{master_openai}
 \gentable{master_gemini}
-\gentable{master_sarvam}
 \gentable{ablate_openai}
 \gentable{ablate_sarvam}
 \gentable{ablate_gemini}
