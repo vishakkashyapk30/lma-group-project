@@ -5,40 +5,40 @@
 \toprule
 Group & Arm & Cases & Obj. rec. & Ans. cov. & Cov. & Factor rec. & Cit. prec. & Fabr. cit. & Unsupp. facts & Tokens & USD \\
 \midrule
-Full & FULL & 38 & 0.75 & 0.47 & 0.79 & 0.25 & 0.80 & 0.00 & 0.90 & 95466 & 0.0100 \\
+Full & FULL & 38 & 0.75 & 0.47 & 0.79 & 0.25 & 0.80 & \textbf{0.00} & 0.90 & 95466 & 0.0100 \\
 \midrule
-Baselines & B0 & 30 & 0.00 & 0.00 & 0.83 & 0.50 & -- & -- & 0.87 & 3682 & 0.0004 \\
- & B1 & 23 & 0.00 & 0.00 & 0.83 & 0.75 & 0.00 & 0.00 & 0.82 & 7008 & 0.0007 \\
- & B2 & 30 & 0.00 & 0.05 & 0.87 & 0.50 & -- & -- & 0.83 & 4352 & 0.0005 \\
- & B3 & 23 & 0.00 & 0.00 & 0.87 & 0.75 & -- & -- & 0.84 & 7290 & 0.0008 \\
- & B4 & 30 & 0.90 & 0.64 & 0.42 & 0.50 & -- & -- & 0.82 & 126301 & 0.0133 \\
- & B5 & 10 & 1.00 & 0.50 & 0.28 & 0.50 & 0.50 & 0.00 & 0.92 & 94180 & 0.0099 \\
+Baselines & B0 & 30 & 0.00 & 0.00 & 0.83 & \underline{0.50} & -- & -- & 0.87 & \textbf{3682} & \textbf{0.0004} \\
+ & B1 & 23 & 0.00 & 0.00 & 0.83 & \textbf{0.75} & 0.00 & \textbf{0.00} & \underline{0.82} & 7008 & 0.0007 \\
+ & B2 & 30 & 0.00 & 0.05 & 0.87 & \underline{0.50} & -- & -- & 0.83 & \underline{4352} & \underline{0.0005} \\
+ & B3 & 23 & 0.00 & 0.00 & 0.87 & \textbf{0.75} & -- & -- & 0.84 & 7290 & 0.0008 \\
+ & B4 & 30 & 0.90 & \textbf{0.64} & 0.42 & \underline{0.50} & -- & -- & \underline{0.82} & 126301 & 0.0133 \\
+ & B5 & 10 & \textbf{1.00} & \underline{0.50} & 0.28 & \underline{0.50} & 0.50 & \textbf{0.00} & 0.92 & 94180 & 0.0099 \\
 \midrule
-Ablations & A1 & 28 & 0.89 & 0.23 & 0.90 & 0.38 & 0.64 & 0.00 & 0.79 & 98772 & 0.0104 \\
- & A2 & 30 & 0.78 & 0.00 & 0.00 & 0.25 & 0.41 & 0.00 & 0.92 & 90720 & 0.0095 \\
- & A3 & 30 & 0.72 & 0.42 & 0.81 & 0.25 & 0.72 & 0.00 & 0.89 & 101529 & 0.0107 \\
- & A6 & 30 & 0.82 & 0.42 & 0.83 & 0.25 & 0.84 & 0.00 & 0.92 & 95831 & 0.0101 \\
- & A7 & 30 & 0.93 & 0.39 & 0.34 & 0.25 & -- & -- & 0.87 & 89266 & 0.0094 \\
- & A8 & 28 & 0.00 & 0.30 & 0.81 & 0.25 & 0.80 & 0.00 & 0.89 & 57384 & 0.0060 \\
- & A9 & 30 & 0.00 & 0.00 & 0.00 & 0.25 & 0.41 & 0.00 & 0.92 & 57045 & 0.0060 \\
+Ablations & A1 & 28 & 0.89 & 0.23 & 0.90 & 0.38 & 0.64 & \textbf{0.00} & \textbf{0.79} & 98772 & 0.0104 \\
+ & A2 & 30 & 0.78 & 0.00 & 0.00 & 0.25 & 0.41 & \textbf{0.00} & 0.92 & 90720 & 0.0095 \\
+ & A3 & 30 & 0.72 & 0.42 & 0.81 & 0.25 & 0.72 & \textbf{0.00} & 0.89 & 101529 & 0.0107 \\
+ & A6 & 30 & 0.82 & 0.42 & 0.83 & 0.25 & 0.84 & \textbf{0.00} & 0.92 & 95831 & 0.0101 \\
+ & A7 & 30 & \underline{0.93} & 0.39 & 0.34 & 0.25 & -- & -- & 0.87 & 89266 & 0.0094 \\
+ & A8 & 28 & 0.00 & 0.30 & 0.81 & 0.25 & 0.80 & \textbf{0.00} & 0.89 & 57384 & 0.0060 \\
+ & A9 & 30 & 0.00 & 0.00 & 0.00 & 0.25 & 0.41 & \textbf{0.00} & 0.92 & 57045 & 0.0060 \\
 \midrule
-Variants & S1 & 10 & 1.00 & 0.50 & 0.93 & 0.50 & 0.78 & 0.00 & 0.92 & 123531 & 0.0130 \\
- & S2 & 10 & 1.00 & 0.50 & 0.91 & 0.50 & 0.77 & 0.00 & 0.95 & 99421 & 0.0104 \\
- & S3 & 10 & 0.75 & 0.50 & 0.91 & 0.50 & 0.77 & 0.00 & 0.95 & 102824 & 0.0108 \\
- & S3B & 10 & 1.00 & 0.50 & 0.91 & 0.50 & 0.77 & 0.00 & 0.95 & 111346 & 0.0117 \\
- & S4 & 10 & 1.00 & 0.50 & 0.93 & 0.50 & 0.86 & 0.00 & 0.97 & 98336 & 0.0103 \\
- & S5 & 10 & 1.00 & 0.50 & 0.91 & 0.50 & 0.77 & 0.00 & 0.98 & 101988 & 0.0107 \\
- & S6 & 10 & 1.00 & 0.50 & 0.91 & 0.50 & 0.77 & 0.00 & 0.95 & 99689 & 0.0105 \\
- & S8 & 10 & 0.75 & 0.50 & 0.90 & 0.50 & 0.88 & 0.00 & 0.97 & 113210 & 0.0119 \\
- & S9 & 10 & 0.50 & 0.50 & 0.91 & 0.50 & 0.77 & 0.00 & 0.95 & 80816 & 0.0085 \\
- & S10 & 10 & 1.00 & 0.50 & 0.91 & 0.50 & 0.77 & 0.00 & 0.95 & 124305 & 0.0131 \\
- & S11 & 10 & 1.00 & 0.50 & 0.91 & 0.50 & 0.77 & 0.00 & 0.95 & 82989 & 0.0087 \\
- & S12 & 10 & 1.00 & 0.50 & 0.91 & 0.50 & 0.77 & 0.00 & 0.95 & 99977 & 0.0105 \\
- & S15 & 10 & 1.00 & 0.00 & 0.93 & 0.50 & 0.77 & 0.00 & 1.00 & 102942 & 0.0108 \\
- & S18 & 10 & 0.75 & 0.50 & 0.97 & 0.50 & 0.86 & 0.00 & 1.00 & 99106 & 0.0104 \\
+Variants & S1 & 10 & \textbf{1.00} & \underline{0.50} & \underline{0.93} & \underline{0.50} & 0.78 & \textbf{0.00} & 0.92 & 123531 & 0.0130 \\
+ & S2 & 10 & \textbf{1.00} & \underline{0.50} & 0.91 & \underline{0.50} & 0.77 & \textbf{0.00} & 0.95 & 99421 & 0.0104 \\
+ & S3 & 10 & 0.75 & \underline{0.50} & 0.91 & \underline{0.50} & 0.77 & \textbf{0.00} & 0.95 & 102824 & 0.0108 \\
+ & S3B & 10 & \textbf{1.00} & \underline{0.50} & 0.91 & \underline{0.50} & 0.77 & \textbf{0.00} & 0.95 & 111346 & 0.0117 \\
+ & S4 & 10 & \textbf{1.00} & \underline{0.50} & \underline{0.93} & \underline{0.50} & \underline{0.86} & \textbf{0.00} & 0.97 & 98336 & 0.0103 \\
+ & S5 & 10 & \textbf{1.00} & \underline{0.50} & 0.91 & \underline{0.50} & 0.77 & \textbf{0.00} & 0.98 & 101988 & 0.0107 \\
+ & S6 & 10 & \textbf{1.00} & \underline{0.50} & 0.91 & \underline{0.50} & 0.77 & \textbf{0.00} & 0.95 & 99689 & 0.0105 \\
+ & S8 & 10 & 0.75 & \underline{0.50} & 0.90 & \underline{0.50} & \textbf{0.88} & \textbf{0.00} & 0.97 & 113210 & 0.0119 \\
+ & S9 & 10 & 0.50 & \underline{0.50} & 0.91 & \underline{0.50} & 0.77 & \textbf{0.00} & 0.95 & 80816 & 0.0085 \\
+ & S10 & 10 & \textbf{1.00} & \underline{0.50} & 0.91 & \underline{0.50} & 0.77 & \textbf{0.00} & 0.95 & 124305 & 0.0131 \\
+ & S11 & 10 & \textbf{1.00} & \underline{0.50} & 0.91 & \underline{0.50} & 0.77 & \textbf{0.00} & 0.95 & 82989 & 0.0087 \\
+ & S12 & 10 & \textbf{1.00} & \underline{0.50} & 0.91 & \underline{0.50} & 0.77 & \textbf{0.00} & 0.95 & 99977 & 0.0105 \\
+ & S15 & 10 & \textbf{1.00} & 0.00 & \underline{0.93} & \underline{0.50} & 0.77 & \textbf{0.00} & 1.00 & 102942 & 0.0108 \\
+ & S18 & 10 & 0.75 & \underline{0.50} & \textbf{0.97} & \underline{0.50} & \underline{0.86} & \textbf{0.00} & 1.00 & 99106 & 0.0104 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\caption{Family openai: every arm on every metric, mean over the cases the arm answered without error where the metric is defined (a dash means undefined, for example no citation by that arm). Cases: orders answered. Higher is better except unsupported facts and fabricated citations; tokens and USD are per case. Arms run on different numbers of orders (the Cases column), so read near-equal rows with the paired tables of the appendix, which carry intervals.}
+\caption{Family openai: every arm on every metric, mean over the cases the arm answered without error where the metric is defined (a dash means undefined, for example no citation by that arm). Cases: orders answered. Higher is better except unsupported facts and fabricated citations; tokens and USD are per case. Arms run on different numbers of orders (the Cases column), so read near-equal rows with the paired tables of the appendix, which carry intervals. Bold: best in the column; underlined: second best.}
 \label{tab:master_openai}
 \end{table*}

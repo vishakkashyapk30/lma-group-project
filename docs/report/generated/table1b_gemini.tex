@@ -5,14 +5,14 @@
 \toprule
 Arm & Unsupported facts & Objection recall & Answerable coverage & Coverage & Tokens & USD per case \\
 \midrule
-FULL & 0.88 [0.82, 0.94] (25) & 0.64 [0.36, 0.91] (11) & 0.46 [0.12, 0.79] (8) & 0.86 [0.78, 0.93] (25) & 85128 [77643, 93004] (25) & -- \\
-B0 & 0.89 [0.78, 0.97] (20) & 0.00 [0.00, 0.00] (11) & 0.12 [0.00, 0.38] (8) & 0.80 [0.64, 0.96] (25) & 2426 [1903, 2912] (25) & -- \\
-B1 & 0.95 [0.88, 1.00] (17) & 0.00 [0.00, 0.00] (11) & 0.06 [0.00, 0.19] (8) & 0.68 [0.48, 0.84] (25) & 4853 [3443, 6105] (25) & -- \\
-B2 & 0.93 [0.88, 0.97] (20) & 0.00 [0.00, 0.00] (11) & 0.31 [0.06, 0.62] (8) & 0.80 [0.64, 0.96] (25) & 2599 [2038, 3087] (25) & -- \\
-B3 & 0.94 [0.89, 0.98] (14) & 0.00 [0.00, 0.00] (11) & 0.44 [0.12, 0.75] (8) & 0.56 [0.36, 0.72] (25) & 5096 [3557, 6580] (25) & -- \\
+FULL & \textbf{0.88 [0.82, 0.94] (25)} & \textbf{0.64 [0.36, 0.91] (11)} & \textbf{0.46 [0.12, 0.79] (8)} & \textbf{0.86 [0.78, 0.93] (25)} & 85128 [77643, 93004] (25) & -- \\
+B0 & \underline{0.89 [0.78, 0.97] (20)} & \underline{0.00 [0.00, 0.00] (11)} & 0.12 [0.00, 0.38] (8) & \underline{0.80 [0.64, 0.96] (25)} & \textbf{2426 [1903, 2912] (25)} & -- \\
+B1 & 0.95 [0.88, 1.00] (17) & \underline{0.00 [0.00, 0.00] (11)} & 0.06 [0.00, 0.19] (8) & 0.68 [0.48, 0.84] (25) & 4853 [3443, 6105] (25) & -- \\
+B2 & 0.93 [0.88, 0.97] (20) & \underline{0.00 [0.00, 0.00] (11)} & 0.31 [0.06, 0.62] (8) & \underline{0.80 [0.64, 0.96] (25)} & \underline{2599 [2038, 3087] (25)} & -- \\
+B3 & 0.94 [0.89, 0.98] (14) & \underline{0.00 [0.00, 0.00] (11)} & \underline{0.44 [0.12, 0.75] (8)} & 0.56 [0.36, 0.72] (25) & 5096 [3557, 6580] (25) & -- \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
-\caption{Family gemini: unsupported-fact rate (lower is better), objection recall, answerable coverage, coverage, tokens and cost per case, mean [95\% bootstrap interval] (n). Each arm on its own orders.}
+\caption{Family gemini: unsupported-fact rate (lower is better), objection recall, answerable coverage, coverage, tokens and cost per case, mean [95\% bootstrap interval] (n). Each arm on its own orders. Bold: best in the column; underlined: second best.}
 \label{tab:table1b_gemini}
 \end{table}
