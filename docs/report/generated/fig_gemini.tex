@@ -1,19 +1,26 @@
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \begin{tikzpicture}
-\begin{axis}[vsplot, at={(0.00\textwidth,0)}, width=0.33\textwidth, title={objection recall}, ymin=0, ymax=1.1, symbolic x coords={FULL,B0,B1,B2,B3,A1,B0L}, xtick={FULL,B0,B1,B2,B3,A1,B0L}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08, error bars/y dir=both, error bars/y explicit, error bars/error bar style={line width=0.4pt, gray!70}]
-\addplot[fill=cB, draw=none, bar shift=0pt] coordinates {(FULL,0.250) += (0,0.500) -= (0,0.250)};
-\addplot[fill=cA, draw=none, bar shift=0pt] coordinates {(B0,0.000) += (0,0.000) -= (0,0.000) (B1,0.000) += (0,0.000) -= (0,0.000) (B2,0.000) += (0,0.000) -= (0,0.000) (B3,0.000) += (0,0.000) -= (0,0.000) (A1,0.500) += (0,0.500) -= (0,0.500) (B0L,0.000) += (0,0.000) -= (0,0.000)};
+\begin{axis}[vsbase, at={(0.000\textwidth,0)}, width=0.370\textwidth, height=5.0cm, title={Objection recall\\{\scriptsize\mdseries higher is better}}, title style={font=\footnotesize\bfseries, align=center}, symbolic y coords={FULL,B0,B0L,B1,B2,B3,A1}, ytick={FULL,B0,B0L,B1,B2,B3,A1}, y dir=reverse, xmin=0, xmax=1.05, xmajorgrids, grid style={gray!25}, enlarge y limits=0.03, enlarge x limits=0.04, nodes near coords={}, xticklabel style={font=\scriptsize}, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.5pt, gray!70}, every axis plot/.append style={}, yticklabel style={font=\scriptsize}]
+\addplot[only marks, mark=*, mark size=2.1pt, color=cB, fill=cB] coordinates {(0.6364,FULL) += (0.2727,0) -= (0.2727,0)};
+\addplot[only marks, mark=*, mark size=2.1pt, color=cA, fill=cA] coordinates {(0.0000,B0) += (0.0000,0) -= (0.0000,0) (0.0000,B0L) += (0.0000,0) -= (0.0000,0) (0.0000,B1) += (0.0000,0) -= (0.0000,0) (0.0000,B2) += (0.0000,0) -= (0.0000,0) (0.0000,B3) += (0.0000,0) -= (0.0000,0)};
+\addplot[only marks, mark=*, mark size=2.1pt, color=cD, fill=cD] coordinates {(0.5000,A1) += (0.5000,0) -= (0.5000,0)};
+\addplot[black, dashed, line width=0.5pt, mark=none, error bars/.cd, x dir=none] coordinates {(0.6364,FULL) (0.6364,A1)};
 \end{axis}
-\begin{axis}[vsplot, at={(0.34\textwidth,0)}, width=0.33\textwidth, title={answerable coverage}, ymin=0, ymax=1.1, symbolic x coords={FULL,B0,B1,B2,B3,A1,B0L}, xtick={FULL,B0,B1,B2,B3,A1,B0L}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08, error bars/y dir=both, error bars/y explicit, error bars/error bar style={line width=0.4pt, gray!70}]
-\addplot[fill=cB, draw=none, bar shift=0pt] coordinates {(FULL,0.000) += (0,0.000) -= (0,0.000)};
-\addplot[fill=cA, draw=none, bar shift=0pt] coordinates {(B0,0.000) += (0,0.000) -= (0,0.000) (B1,0.000) += (0,0.000) -= (0,0.000) (B2,1.000) += (0,0.000) -= (0,0.000) (B3,0.500) += (0,0.500) -= (0,0.500) (A1,1.000) += (0,0.000) -= (0,0.000) (B0L,0.000) += (0,0.000) -= (0,0.000)};
+\begin{axis}[vsbase, at={(0.405\textwidth,0)}, width=0.300\textwidth, height=5.0cm, title={Answerable coverage\\{\scriptsize\mdseries higher is better}}, title style={font=\footnotesize\bfseries, align=center}, symbolic y coords={FULL,B0,B0L,B1,B2,B3,A1}, ytick={FULL,B0,B0L,B1,B2,B3,A1}, y dir=reverse, xmin=0, xmax=1.05, xmajorgrids, grid style={gray!25}, enlarge y limits=0.03, enlarge x limits=0.04, nodes near coords={}, xticklabel style={font=\scriptsize}, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.5pt, gray!70}, every axis plot/.append style={}, yticklabels={}]
+\addplot[only marks, mark=*, mark size=2.1pt, color=cB, fill=cB] coordinates {(0.4583,FULL) += (0.3333,0) -= (0.3333,0)};
+\addplot[only marks, mark=*, mark size=2.1pt, color=cA, fill=cA] coordinates {(0.1667,B0) += (0.3333,0) -= (0.1667,0) (0.0000,B0L) += (0.0000,0) -= (0.0000,0) (0.0833,B1) += (0.1667,0) -= (0.0833,0) (0.4167,B2) += (0.4167,0) -= (0.3333,0) (0.5833,B3) += (0.3333,0) -= (0.4167,0)};
+\addplot[only marks, mark=*, mark size=2.1pt, color=cD, fill=cD] coordinates {(0.5000,A1) += (0.5000,0) -= (0.5000,0)};
+\addplot[black, dashed, line width=0.5pt, mark=none, error bars/.cd, x dir=none] coordinates {(0.4583,FULL) (0.4583,A1)};
 \end{axis}
-\begin{axis}[vsplot, at={(0.68\textwidth,0)}, width=0.33\textwidth, title={unsupported-fact rate}, ymin=0, ymax=1.1, symbolic x coords={FULL,B0,B1,B2,B3,A1,B0L}, xtick={FULL,B0,B1,B2,B3,A1,B0L}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08, error bars/y dir=both, error bars/y explicit, error bars/error bar style={line width=0.4pt, gray!70}]
-\addplot[fill=cB, draw=none, bar shift=0pt] coordinates {(FULL,0.930) += (0,0.052) -= (0,0.066)};
-\addplot[fill=cA, draw=none, bar shift=0pt] coordinates {(B0,0.865) += (0,0.135) -= (0,0.250) (B1,1.000) += (0,0.000) -= (0,0.000) (B2,0.981) += (0,0.019) -= (0,0.038) (B3,1.000) += (0,0.000) -= (0,0.000) (A1,0.841) += (0,0.109) -= (0,0.127) (B0L,0.970) += (0,0.030) -= (0,0.042)};
+\begin{axis}[vsbase, at={(0.735\textwidth,0)}, width=0.300\textwidth, height=5.0cm, title={Unsupported-fact rate\\{\scriptsize\mdseries lower is better}}, title style={font=\footnotesize\bfseries, align=center}, symbolic y coords={FULL,B0,B0L,B1,B2,B3,A1}, ytick={FULL,B0,B0L,B1,B2,B3,A1}, y dir=reverse, xmin=0, xmax=1.05, xmajorgrids, grid style={gray!25}, enlarge y limits=0.03, enlarge x limits=0.04, nodes near coords={}, xticklabel style={font=\scriptsize}, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.5pt, gray!70}, every axis plot/.append style={}, yticklabels={}]
+\addplot[only marks, mark=*, mark size=2.1pt, color=cB, fill=cB] coordinates {(0.8801,FULL) += (0.0625,0) -= (0.0643,0)};
+\addplot[only marks, mark=*, mark size=2.1pt, color=cA, fill=cA] coordinates {(0.8926,B0) += (0.0782,0) -= (0.1167,0) (0.9045,B0L) += (0.0360,0) -= (0.0367,0) (0.9465,B1) += (0.0490,0) -= (0.0690,0) (0.9285,B2) += (0.0430,0) -= (0.0499,0) (0.9381,B3) += (0.0440,0) -= (0.0476,0)};
+\addplot[only marks, mark=*, mark size=2.1pt, color=cD, fill=cD] coordinates {(0.7515,A1) += (0.1098,0) -= (0.1069,0)};
+\addplot[black, dashed, line width=0.5pt, mark=none, error bars/.cd, x dir=none] coordinates {(0.8801,FULL) (0.8801,A1)};
 \end{axis}
+\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cB}{$\bullet$} Full \quad \textcolor{cA}{$\bullet$} baselines (B) \quad \textcolor{cD}{$\bullet$} ablations (A) \quad \textcolor{cC}{$\bullet$} variants (S, P)};
 \end{tikzpicture}
-\caption{Family gemini: Full (orange) and the other arms (blue), mean over the cases each arm answered without error and the metric is defined for, with a 95\% bootstrap interval. Cases per arm are in the generated table of the appendix; intervals on a handful of cases are wide and some collapse to a point when every case gives the same value. Unsupported-fact rate: lower is better.}
+\caption{Family gemini: each arm on the cases it answered without error and where the metric is defined, mean with a 95\% bootstrap interval (the number of cases per arm is in the appendix tables). The dashed line is Full; an arm without a mark has no defined value on this metric (no gold or no output of that kind). Unsupported-fact rate: lower is better.}
 \label{fig:main_gemini}
 \end{figure*}

@@ -1,0 +1,22 @@
+\begin{table*}[t]
+\centering\footnotesize
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}llrrrrrrrrrr@{}}
+\toprule
+Group & Arm & Cases & Obj. rec. & Ans. cov. & Cov. & Factor rec. & Cit. prec. & Fabr. cit. & Unsupp. facts & Tokens & USD \\
+\midrule
+Full & FULL & 10 & 1.00 & 0.00 & 0.76 & 0.50 & 0.87 & 0.00 & 0.97 & 125484 & 0.0000 \\
+\midrule
+Ablations & A10:ADVOCACY.ARGUMENTS & 10 & 0.00 & 0.00 & 0.00 & 0.00 & -- & -- & -- & 49942 & 0.0000 \\
+ & A10:ADVOCACY.OBJECTIONS & 10 & 0.00 & 0.00 & 0.00 & 0.00 & -- & -- & -- & 49175 & 0.0000 \\
+ & A10:CASELAW.CITATIONS & 10 & 0.00 & 0.00 & 0.00 & 0.00 & -- & -- & -- & 49775 & 0.0000 \\
+ & A10:CASELAW.REASONING & 10 & 0.00 & 0.00 & 0.00 & 0.00 & -- & -- & -- & 49356 & 0.0000 \\
+ & A10:CASELAW.SIMILAR & 10 & 0.00 & 0.00 & 0.00 & 0.00 & -- & -- & -- & 49934 & 0.0000 \\
+ & A10:LAW.CONCORDANCE & 10 & 0.00 & 0.00 & 0.00 & 0.00 & -- & -- & -- & 49907 & 0.0000 \\
+ & A10:LAW.STATUTES & 10 & 0.00 & 0.00 & 0.00 & 0.00 & -- & -- & -- & 49678 & 0.0000 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\caption{Family shravani\_off: every arm on every metric, mean over the cases the arm answered without error where the metric is defined (a dash means undefined, for example no citation by that arm). Cases: orders answered. Higher is better except unsupported facts and fabricated citations; tokens and USD are per case. Arms run on different numbers of orders (the Cases column), so read near-equal rows with the paired tables of the appendix, which carry intervals.}
+\label{tab:master_shravani_off}
+\end{table*}

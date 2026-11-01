@@ -3,7 +3,7 @@
 usage: python3 make_result_tables.py OUT_DIR family=CSV [family=CSV ...]   (a CSV may be a comma list of files; rows are concatenated)
 Writes OUT_DIR/{main_<family>.tex, ablate_<family>.tex, fig_<family>.tex}. All numbers come from the CSVs; nothing is typed in.
 """
-import csv, random, sys, statistics as st
+import csv, random, re, sys, statistics as st
 from collections import defaultdict
 from pathlib import Path
 
@@ -65,6 +65,66 @@ def esc(s):
     return s.replace("_", r"\_")
 
 
+def armkey(x):
+    if x == "full":
+        return (0, 0, "")
+    g = {"b": 1, "a": 2, "s": 3, "p": 4}.get(x[0], 5)
+    n = re.sub(r"\D", "", x)
+    return (g, int(n) if n else 0, x)
+
+
+def armorder(S):
+    return sorted(S, key=armkey)
+
+
+def dotplot(fam, kind, arms, panels, stat, lo_, hi_, xlabel, caption, log=False, single=False):
+    """Full-width horizontal dot-and-interval plot: one row per arm, one panel per metric, all arms listed (grouped by family of arm)."""
+    labs = {x: esc(x.upper()) for x in arms}
+    ys = ",".join(labs[x] for x in arms)
+    h = max(5.0, 0.26 * len(arms) + 1.2)
+    pw = 0.30 if len(panels) == 3 else (0.225 if len(panels) == 4 else 0.62)
+    gap = 0.03
+    L = [r"\begin{figure*}[!t]", r"\centering", r"\begin{tikzpicture}"]
+    for k, (m, title, note) in enumerate(panels):
+        x0 = 0.0 if k == 0 else (0.07 + k * (pw + gap)) if single is False else 0.0
+        first = k == 0
+        at = 0.0 if first else 0.07 + k * (pw + gap) - (0.0)
+        opts = [r"vsbase", r"at={(" + f"{(0.0 if first else 0.075 + k * (pw + gap)):.3f}" + r"\textwidth,0)}", r"width=" + (f"{pw + (0.07 if first else 0):.3f}" if not single else f"{pw:.3f}") + r"\textwidth",
+                r"height=" + f"{h:.1f}cm", r"title={" + title + r"\\{\scriptsize\mdseries " + note + r"}}", r"title style={font=\footnotesize\bfseries, align=center}", r"symbolic y coords={" + ys + r"}", r"ytick={" + ys + "}", r"y dir=reverse",
+                r"xmin=" + str(lo_), r"xmax=" + str(hi_), r"xmajorgrids", r"grid style={gray!25}", r"enlarge y limits=0.03", r"enlarge x limits=0.04", r"nodes near coords={}", r"xticklabel style={font=\scriptsize}",
+                r"error bars/x dir=both", r"error bars/x explicit", r"error bars/error bar style={line width=0.5pt, gray!70}", r"every axis plot/.append style={}"]
+        if log:
+            opts.append("xmode=log")
+        opts.append(r"yticklabel style={font=\scriptsize}" if first else r"yticklabels={}")
+        if kind != "forest" and not log and "full" in arms:
+            t = stat("full", m)
+            ref = t[0] if t else None
+        else:
+            ref = 0 if kind == "forest" else None
+        L.append(r"\begin{axis}[" + ", ".join(opts) + "]")
+        for grp, col in (("full", "cB"), ("base", "cA"), ("abl", "cD"), ("var", "cC")):
+            co = []
+            for x in arms:
+                g = "full" if x == "full" else {"b": "base", "a": "abl"}.get(x[0], "var")
+                if g != grp:
+                    continue
+                t = stat(x, m)
+                if not t:
+                    continue
+                if t[1] is None:
+                    co.append(f"({t[0]:.4f},{labs[x]}) += (0,0) -= (0,0)")
+                else:
+                    co.append(f"({t[0]:.4f},{labs[x]}) += ({t[2] - t[0]:.4f},0) -= ({t[0] - t[1]:.4f},0)")
+            if co:
+                L.append(r"\addplot[only marks, mark=*, mark size=2.1pt, color=" + col + r", fill=" + col + r"] coordinates {" + " ".join(co) + "};")
+        if ref is not None and not log:
+            L.append(r"\addplot[black, dashed, line width=0.5pt, mark=none, error bars/.cd, x dir=none] coordinates {(" + f"{ref:.4f}," + labs[arms[0]] + ") (" + f"{ref:.4f}," + labs[arms[-1]] + ")};")
+        L.append(r"\end{axis}")
+    leg = r"\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cB}{$\bullet$} Full \quad \textcolor{cA}{$\bullet$} baselines (B) \quad \textcolor{cD}{$\bullet$} ablations (A) \quad \textcolor{cC}{$\bullet$} variants (S, P)};"
+    L += [leg, r"\end{tikzpicture}", r"\caption{" + caption + r"}", r"\label{fig:" + kind + "_" + fam + "}", r"\end{figure*}"]
+    return "\n".join(L)
+
+
 def main(out, specs):
     out = Path(out); out.mkdir(parents=True, exist_ok=True)
     for spec in specs:
@@ -107,62 +167,50 @@ def main(out, specs):
                  r"\caption{" + f"Family {esc(fam)}: each arm minus Full on the cases both answered (mean difference, 95\\% bootstrap interval). A positive difference favours the arm for the higher-is-better metrics and Full for unsupported facts and fabricated citations. Intervals that include zero are not resolved at this sample size." + r"}",
                  r"\label{tab:ablate_" + fam + "}", r"\end{table*}"]
         (out / f"ablate_{fam}.tex").write_text(fit("\n".join(rows)))
-        # figures: per metric, mean over each arm's own answered cases with a 95% bootstrap interval; Full highlighted
-        figm = [("objection_recall", "objection recall"), ("answerable_coverage", "answerable coverage"), ("unsupported_fact_rate", "unsupported-fact rate")]
-        order = ["full"] + [x for x in BASE + sorted(k for k in S if k not in BASE and k != "full") if x in S][:8]
-        order = [x for x in order if x in S][:9]
-        xs = ",".join(esc(x.upper()) for x in order)
-        body = [r"\begin{figure*}[t]", r"\centering", r"\begin{tikzpicture}"]
-        for k, (m, lab) in enumerate(figm):
-            body.append(r"\begin{axis}[vsplot, at={(" + f"{0.34 * k:.2f}" + r"\textwidth,0)}, width=0.33\textwidth, title={" + lab + r"}, ymin=0, ymax=1.1, symbolic x coords={" + xs + r"}, xtick={" + xs + r"}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08, error bars/y dir=both, error bars/y explicit, error bars/error bar style={line width=0.4pt, gray!70}]")
-            for who, col in (("full", "cB"), ("rest", "cA")):
-                coords = []
-                for x in order:
-                    if (x == "full") != (who == "full"):
-                        continue
-                    t = mean_ci([v for v in (fl(S[x][c], m) for c in sorted(ok[x])) if v is not None])
-                    if t:
-                        lo, hi = (t[1], t[2]) if t[1] is not None else (t[0], t[0])
-                        coords.append(f"({esc(x.upper())},{t[0]:.3f}) += (0,{hi - t[0]:.3f}) -= (0,{t[0] - lo:.3f})")
-                if coords:
-                    body.append(r"\addplot[fill=" + col + r", draw=none, bar shift=0pt] coordinates {" + " ".join(coords) + "};")
-            body.append(r"\end{axis}")
-        body += [r"\end{tikzpicture}", r"\caption{" + f"Family {esc(fam)}: Full (orange) and the other arms (blue), mean over the cases each arm answered without error and the metric is defined for, with a 95\\% bootstrap interval. Cases per arm are in the generated table of the appendix; intervals on a handful of cases are wide and some collapse to a point when every case gives the same value. Unsupported-fact rate: lower is better." + r"}", r"\label{fig:main_" + fam + "}", r"\end{figure*}"]
-        (out / f"fig_{fam}.tex").write_text("\n".join(body))
-        # cost figure: tokens per case, log scale
-        cb = [r"\begin{figure}[t]", r"\centering", r"\begin{tikzpicture}", r"\begin{axis}[vsplot, width=\linewidth, height=4.4cm, ymode=log, ymin=1000, title={tokens per case}, symbolic x coords={" + xs + r"}, xtick={" + xs + r"}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08]"]
-        for who, col in (("full", "cB"), ("rest", "cA")):
-            coords = []
-            for x in order:
-                if (x == "full") != (who == "full"):
-                    continue
-                v = [fl(r, "tokens") for r in S[x].values()]
-                v = [t for t in v if t]
-                if v:
-                    coords.append(f"({esc(x.upper())},{sum(v) / len(v):.0f})")
-            if coords:
-                cb.append(r"\addplot[fill=" + col + r", draw=none, bar shift=0pt] coordinates {" + " ".join(coords) + "};")
-        cb += [r"\end{axis}", r"\end{tikzpicture}", r"\caption{" + f"Family {esc(fam)}: mean tokens per case (log scale); Full in orange." + r"}", r"\label{fig:cost_" + fam + "}", r"\end{figure}"]
-        (out / f"cost_{fam}.tex").write_text("\n".join(cb))
-        # forest plot: each arm minus Full on the cases both answered, objection recall and unsupported-fact rate
-        arms = [x for x in sorted(S) if x != "full"]
-        if arms:
-            fb = [r"\begin{figure*}[t]", r"\centering", r"\begin{tikzpicture}"]
-            for k, (m, lab) in enumerate([("objection_recall", "objection recall"), ("unsupported_fact_rate", "unsupported-fact rate")]):
-                tick = ",".join(esc(x.upper()) for x in arms)
-                fb.append(r"\begin{axis}[vsbase, xbar, at={(" + f"{0.50 * k:.2f}" + r"\textwidth,0)}, width=0.46\textwidth, height=" + f"{max(4.5, 0.36 * len(arms) + 1.6):.1f}" + r"cm, title={" + lab + r": arm minus Full}, ytick=\empty, symbolic y coords={" + tick + r"}, ytick=data, yticklabel style={font=\scriptsize}, xmajorgrids, ymajorgrids=false, nodes near coords={}, xmin=-1.1, xmax=1.1, enlarge y limits=0.04, bar width=4pt, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.4pt, gray!70}, extra x ticks={0}, extra x tick style={grid=major, grid style={black, line width=0.4pt}}]")
-                coords = []
-                for x in arms:
-                    cs = sorted(c for c in S[x] if c in full and c in ok[x] and c in ok.get("full", set()))
-                    d = [fl(S[x][c], m) - fl(full[c], m) for c in cs if fl(S[x][c], m) is not None and fl(full[c], m) is not None]
-                    t = mean_ci(d)
-                    if t:
-                        lo, hi = (t[1], t[2]) if t[1] is not None else (t[0], t[0])
-                        coords.append(f"({t[0]:.3f},{esc(x.upper())}) += ({hi - t[0]:.3f},0) -= ({t[0] - lo:.3f},0)")
-                fb.append(r"\addplot[fill=cC, draw=none] coordinates {" + " ".join(coords) + "};")
-                fb.append(r"\end{axis}")
-            fb += [r"\end{tikzpicture}", r"\caption{" + f"Family {esc(fam)}: each arm minus Full on the cases both answered, mean difference with a 95\\% bootstrap interval; the line at zero is no difference. Right of zero favours the arm on objection recall and Full on the unsupported-fact rate." + r"}", r"\label{fig:forest_" + fam + "}", r"\end{figure*}"]
-            (out / f"forest_{fam}.tex").write_text("\n".join(fb))
+        arms_all = armorder(S)
+        # master table: every arm on every metric (mean over the arm's own answered cases; a dash = undefined)
+        MM = [("objection_recall", "Obj. rec.", 2), ("answerable_coverage", "Ans. cov.", 2), ("coverage", "Cov.", 2), ("factor_recall", "Factor rec.", 2),
+              ("citation_precision", "Cit. prec.", 2), ("fabricated_citation_rate", "Fabr. cit.", 2), ("unsupported_fact_rate", "Unsupp. facts", 2), ("tokens", "Tokens", 0), ("cost_usd", "USD", 4)]
+        MM = [t for t in MM if any(fl(S[x][c], t[0]) is not None for x in arms_all for c in ok[x])]
+        ML = [r"\begin{table*}[t]", r"\centering\footnotesize", r"\begin{tabular}{@{}llr" + "r" * len(MM) + r"@{}}", r"\toprule",
+              "Group & Arm & Cases & " + " & ".join(m[1] for m in MM) + r" \\", r"\midrule"]
+        prev = None
+        for x in arms_all:
+            g = "Full" if x == "full" else {"b": "Baselines", "a": "Ablations"}.get(x[0], "Variants")
+            if prev is not None and g != prev:
+                ML.append(r"\midrule")
+            cs = [str(len(ok[x]))]
+            for m, _, dg in MM:
+                v = [q for q in (fl(S[x][c], m) for c in sorted(ok[x])) if q is not None]
+                cs.append(f"{sum(v) / len(v):.{dg}f}" if v else "--")
+            ML.append((g if g != prev else "") + " & " + esc(x.upper()) + " & " + " & ".join(cs) + r" \\")
+            prev = g
+        ML += [r"\bottomrule", r"\end{tabular}", r"\caption{" + f"Family {esc(fam)}: every arm on every metric, mean over the cases the arm answered without error where the metric is defined (a dash means undefined, for example no citation by that arm). Cases: orders answered. Higher is better except unsupported facts and fabricated citations; tokens and USD are per case. Arms run on different numbers of orders (the Cases column), so read near-equal rows with the paired tables of the appendix, which carry intervals." + r"}", r"\label{tab:master_" + fam + "}", r"\end{table*}"]
+        (out / f"master_{fam}.tex").write_text(fit("\n".join(ML)))
+        # figure 1: per metric, each arm on its own answered cases, mean with a 95% bootstrap interval; dashed line is Full
+        fig_panels = [("objection_recall", "Objection recall", "higher is better"), ("answerable_coverage", "Answerable coverage", "higher is better"), ("unsupported_fact_rate", "Unsupported-fact rate", "lower is better")]
+        def stat(x, m):
+            return mean_ci([v for v in (fl(S[x][c], m) for c in sorted(ok[x])) if v is not None])
+        (out / f"fig_{fam}.tex").write_text(dotplot(
+            fam, "main", arms_all, fig_panels, stat, 0, 1.05, "Mean",
+            f"Family {esc(fam)}: each arm on the cases it answered without error and where the metric is defined, mean with a 95\\% bootstrap interval (the number of cases per arm is in the appendix tables). The dashed line is Full; an arm without a mark has no defined value on this metric (no gold or no output of that kind). Unsupported-fact rate: lower is better."))
+        # figure 2: each arm minus Full on the cases both answered
+        full = S.get("full", {})
+        def diff(x, m):
+            cs = sorted(c for c in S[x] if c in full and c in ok[x] and c in ok.get("full", set()))
+            return mean_ci([fl(S[x][c], m) - fl(full[c], m) for c in cs if fl(S[x][c], m) is not None and fl(full[c], m) is not None])
+        farms = [x for x in arms_all if x != "full"]
+        if farms:
+            fpan = [("objection_recall", "Objection recall", "right favours the arm"), ("answerable_coverage", "Answerable coverage", "right favours the arm"), ("citation_precision", "Citation precision", "right favours the arm"), ("unsupported_fact_rate", "Unsupported-fact rate", "left favours the arm")]
+            (out / f"forest_{fam}.tex").write_text(dotplot(
+                fam, "forest", farms, fpan, diff, -1.05, 1.05, "Arm minus Full",
+                f"Family {esc(fam)}: each arm minus Full on the cases both answered, mean difference with a 95\\% bootstrap interval. The line at zero is no difference; an interval that crosses it is not resolved at this sample size. On the unsupported-fact rate a negative difference favours the arm."))
+        # cost figure: tokens per case, log scale, horizontal
+        def toks(x, m):
+            v = [t for t in (fl(r, "tokens") for r in S[x].values()) if t]
+            return (sum(v) / len(v), None, None, len(v)) if v else None
+        (out / f"cost_{fam}.tex").write_text(dotplot(
+            fam, "cost", arms_all, [("tokens", "Tokens per case", "log scale")], toks, 1000, 400000, "Tokens", f"Family {esc(fam)}: mean tokens per case (log scale), each arm on its own cases.", log=True, single=True))
         # compact table 1 in two parts (each arm's own cases, mean [95% CI] (n))
         def part(name, cols, cap):
             L = [r"\begin{table}[htbp]", r"\centering\footnotesize", r"\begin{tabular}{@{}l" + "r" * len(cols) + r"@{}}", r"\toprule", "Arm & " + " & ".join(c[1] for c in cols) + r" \\", r"\midrule"]

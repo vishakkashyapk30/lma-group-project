@@ -1,13 +1,24 @@
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \begin{tikzpicture}
-\begin{axis}[vsbase, xbar, at={(0.00\textwidth,0)}, width=0.46\textwidth, height=4.5cm, title={objection recall: arm minus Full}, ytick=\empty, symbolic y coords={B0,B1,B4,B6}, ytick=data, yticklabel style={font=\scriptsize}, xmajorgrids, ymajorgrids=false, nodes near coords={}, xmin=-1.1, xmax=1.1, enlarge y limits=0.04, bar width=4pt, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.4pt, gray!70}, extra x ticks={0}, extra x tick style={grid=major, grid style={black, line width=0.4pt}}]
-\addplot[fill=cC, draw=none] coordinates {(-0.700,B0) += (0.200,0) -= (0.175,0) (-0.700,B1) += (0.200,0) -= (0.175,0) (0.225,B4) += (0.225,0) -= (0.200,0) (-0.700,B6) += (0.200,0) -= (0.175,0)};
+\begin{axis}[vsbase, at={(0.000\textwidth,0)}, width=0.295\textwidth, height=5.0cm, title={Objection recall\\{\scriptsize\mdseries right favours the arm}}, title style={font=\footnotesize\bfseries, align=center}, symbolic y coords={B0,B1,B4,B6}, ytick={B0,B1,B4,B6}, y dir=reverse, xmin=-1.05, xmax=1.05, xmajorgrids, grid style={gray!25}, enlarge y limits=0.03, enlarge x limits=0.04, nodes near coords={}, xticklabel style={font=\scriptsize}, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.5pt, gray!70}, every axis plot/.append style={}, yticklabel style={font=\scriptsize}]
+\addplot[only marks, mark=*, mark size=2.1pt, color=cA, fill=cA] coordinates {(-0.7000,B0) += (0.2000,0) -= (0.1750,0) (-0.7000,B1) += (0.2000,0) -= (0.1750,0) (0.2250,B4) += (0.2250,0) -= (0.2000,0) (-0.7000,B6) += (0.2000,0) -= (0.1750,0)};
+\addplot[black, dashed, line width=0.5pt, mark=none, error bars/.cd, x dir=none] coordinates {(0.0000,B0) (0.0000,B6)};
 \end{axis}
-\begin{axis}[vsbase, xbar, at={(0.50\textwidth,0)}, width=0.46\textwidth, height=4.5cm, title={unsupported-fact rate: arm minus Full}, ytick=\empty, symbolic y coords={B0,B1,B4,B6}, ytick=data, yticklabel style={font=\scriptsize}, xmajorgrids, ymajorgrids=false, nodes near coords={}, xmin=-1.1, xmax=1.1, enlarge y limits=0.04, bar width=4pt, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.4pt, gray!70}, extra x ticks={0}, extra x tick style={grid=major, grid style={black, line width=0.4pt}}]
-\addplot[fill=cC, draw=none] coordinates {(-0.008,B0) += (0.072,0) -= (0.070,0) (-0.087,B1) += (0.071,0) -= (0.070,0) (-0.045,B4) += (0.059,0) -= (0.060,0) (0.127,B6) += (0.055,0) -= (0.050,0)};
+\begin{axis}[vsbase, at={(0.330\textwidth,0)}, width=0.225\textwidth, height=5.0cm, title={Answerable coverage\\{\scriptsize\mdseries right favours the arm}}, title style={font=\footnotesize\bfseries, align=center}, symbolic y coords={B0,B1,B4,B6}, ytick={B0,B1,B4,B6}, y dir=reverse, xmin=-1.05, xmax=1.05, xmajorgrids, grid style={gray!25}, enlarge y limits=0.03, enlarge x limits=0.04, nodes near coords={}, xticklabel style={font=\scriptsize}, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.5pt, gray!70}, every axis plot/.append style={}, yticklabels={}]
+\addplot[only marks, mark=*, mark size=2.1pt, color=cA, fill=cA] coordinates {(-0.5000,B0) += (0.2000,0) -= (0.2000,0) (-0.5000,B1) += (0.2000,0) -= (0.2000,0) (0.2500,B4) += (0.2250,0) -= (0.2250,0) (-0.5000,B6) += (0.2000,0) -= (0.2000,0)};
+\addplot[black, dashed, line width=0.5pt, mark=none, error bars/.cd, x dir=none] coordinates {(0.0000,B0) (0.0000,B6)};
 \end{axis}
+\begin{axis}[vsbase, at={(0.585\textwidth,0)}, width=0.225\textwidth, height=5.0cm, title={Citation precision\\{\scriptsize\mdseries right favours the arm}}, title style={font=\footnotesize\bfseries, align=center}, symbolic y coords={B0,B1,B4,B6}, ytick={B0,B1,B4,B6}, y dir=reverse, xmin=-1.05, xmax=1.05, xmajorgrids, grid style={gray!25}, enlarge y limits=0.03, enlarge x limits=0.04, nodes near coords={}, xticklabel style={font=\scriptsize}, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.5pt, gray!70}, every axis plot/.append style={}, yticklabels={}]
+\addplot[only marks, mark=*, mark size=2.1pt, color=cA, fill=cA] coordinates {(-0.7143,B1) += (0,0) -= (0,0)};
+\addplot[black, dashed, line width=0.5pt, mark=none, error bars/.cd, x dir=none] coordinates {(0.0000,B0) (0.0000,B6)};
+\end{axis}
+\begin{axis}[vsbase, at={(0.840\textwidth,0)}, width=0.225\textwidth, height=5.0cm, title={Unsupported-fact rate\\{\scriptsize\mdseries left favours the arm}}, title style={font=\footnotesize\bfseries, align=center}, symbolic y coords={B0,B1,B4,B6}, ytick={B0,B1,B4,B6}, y dir=reverse, xmin=-1.05, xmax=1.05, xmajorgrids, grid style={gray!25}, enlarge y limits=0.03, enlarge x limits=0.04, nodes near coords={}, xticklabel style={font=\scriptsize}, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.5pt, gray!70}, every axis plot/.append style={}, yticklabels={}]
+\addplot[only marks, mark=*, mark size=2.1pt, color=cA, fill=cA] coordinates {(-0.0079,B0) += (0.0721,0) -= (0.0701,0) (-0.0868,B1) += (0.0712,0) -= (0.0698,0) (-0.0451,B4) += (0.0590,0) -= (0.0604,0) (0.1271,B6) += (0.0547,0) -= (0.0498,0)};
+\addplot[black, dashed, line width=0.5pt, mark=none, error bars/.cd, x dir=none] coordinates {(0.0000,B0) (0.0000,B6)};
+\end{axis}
+\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cB}{$\bullet$} Full \quad \textcolor{cA}{$\bullet$} baselines (B) \quad \textcolor{cD}{$\bullet$} ablations (A) \quad \textcolor{cC}{$\bullet$} variants (S, P)};
 \end{tikzpicture}
-\caption{Family v1: each arm minus Full on the cases both answered, mean difference with a 95\% bootstrap interval; the line at zero is no difference. Right of zero favours the arm on objection recall and Full on the unsupported-fact rate.}
+\caption{Family v1: each arm minus Full on the cases both answered, mean difference with a 95\% bootstrap interval. The line at zero is no difference; an interval that crosses it is not resolved at this sample size. On the unsupported-fact rate a negative difference favours the arm.}
 \label{fig:forest_v1}
 \end{figure*}

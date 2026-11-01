@@ -1,11 +1,12 @@
-\begin{figure}[t]
+\begin{figure*}[!t]
 \centering
 \begin{tikzpicture}
-\begin{axis}[vsplot, width=\linewidth, height=4.4cm, ymode=log, ymin=1000, title={tokens per case}, symbolic x coords={FULL,B0,B1,B4,B6}, xtick={FULL,B0,B1,B4,B6}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08]
-\addplot[fill=cB, draw=none, bar shift=0pt] coordinates {(FULL,101770)};
-\addplot[fill=cA, draw=none, bar shift=0pt] coordinates {(B0,3862) (B1,7472) (B4,131239)};
+\begin{axis}[vsbase, at={(0.000\textwidth,0)}, width=0.620\textwidth, height=5.0cm, title={Tokens per case\\{\scriptsize\mdseries log scale}}, title style={font=\footnotesize\bfseries, align=center}, symbolic y coords={FULL,B0,B1,B4,B6}, ytick={FULL,B0,B1,B4,B6}, y dir=reverse, xmin=1000, xmax=400000, xmajorgrids, grid style={gray!25}, enlarge y limits=0.03, enlarge x limits=0.04, nodes near coords={}, xticklabel style={font=\scriptsize}, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.5pt, gray!70}, every axis plot/.append style={}, xmode=log, yticklabel style={font=\scriptsize}]
+\addplot[only marks, mark=*, mark size=2.1pt, color=cB, fill=cB] coordinates {(101769.8200,FULL) += (0,0) -= (0,0)};
+\addplot[only marks, mark=*, mark size=2.1pt, color=cA, fill=cA] coordinates {(3861.5800,B0) += (0,0) -= (0,0) (7471.9400,B1) += (0,0) -= (0,0) (131239.2200,B4) += (0,0) -= (0,0)};
 \end{axis}
+\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cB}{$\bullet$} Full \quad \textcolor{cA}{$\bullet$} baselines (B) \quad \textcolor{cD}{$\bullet$} ablations (A) \quad \textcolor{cC}{$\bullet$} variants (S, P)};
 \end{tikzpicture}
-\caption{Family v1: mean tokens per case (log scale); Full in orange.}
+\caption{Family v1: mean tokens per case (log scale), each arm on its own cases.}
 \label{fig:cost_v1}
-\end{figure}
+\end{figure*}

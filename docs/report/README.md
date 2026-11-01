@@ -1,6 +1,6 @@
-# Status report (ACL format) — draft
+# Status report (ACL format)
 
-LMA group project status report, written with the official ACL style files. Draft state: the system, evaluation design, limitations and plan are written; the results section is a template; `\todo{...}` markers (red, bold in the PDF) mark every number or fact still needed.
+LMA group project status report, written with the official ACL style files. Two PDFs: `main.pdf` (current: includes the OpenAI, Gemini and Sarvam blocks on the code tag `dev-sweep-v3`) and `midsubmission_v1.pdf` (the checkpoint version without the later blocks; sources `midsubmission_v1.tex`, `v1_sections/`, `build_v1.sh`).
 
 ## Files
 
@@ -9,7 +9,7 @@ LMA group project status report, written with the official ACL style files. Draf
 | `main.tex` | Preamble (`acl.sty`, `[preprint]` option), `\todo` macro, `\resulttable` macro, title, section includes |
 | `sections/*.tex` | abstract, introduction, related, system (with the TikZ architecture figure), evaluation, results (template), limitations, threats, status, ethics, appendix |
 | `references.bib` | only papers from the verification table of `docs/literature-to-code-map.md` or cited with a checked venue in `docs/plan.md` v6 and `docs/literature-review-and-usage.md` (see the header comment of the file) |
-| `acl.sty`, `acl_natbib.bst`, `acl_latex.tex` | official files from github.com/acl-org/acl-style-files (downloaded with curl; `acl_latex.tex` is the template, kept for reference) |
+| `acl.sty`, `acl_natbib.bst` | official files from github.com/acl-org/acl-style-files |
 | `build.sh`, `Makefile` | `pdflatex` + `bibtex` (no `latexmk` on this machine); `make` or `./build.sh` writes `main.pdf` |
 
 ## Build
@@ -37,3 +37,8 @@ Files read from `docs/results/dev-sweep/tables/` (by `\resulttable{stem}{n|w}`; 
 - Not in this folder: results (owner decision: no new paid runs for now; the dev reruns at tag `dev-sweep-v1` are on disk but unscored).
 
 Rules followed: past tense for what is built, no outcome claims, no AI attribution, authors are the four teammates.
+
+
+## Result tables and plots of the model families
+
+`tools/regen.sh` rebuilds `generated/*.tex` (per family openai, gemini, sarvam, v1, shravani_*: `master_` every arm on every metric, `ablate_` paired differences, `main_`, `table1a/b_`, and the plots `fig_`, `forest_`, `cost_`) from the per-case CSVs in `docs/results/`; `tools/make_result_tables.py` holds the code. The sections include them with `\gentable{name}`.

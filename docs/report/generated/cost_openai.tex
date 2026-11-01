@@ -1,11 +1,14 @@
-\begin{figure}[t]
+\begin{figure*}[!t]
 \centering
 \begin{tikzpicture}
-\begin{axis}[vsplot, width=\linewidth, height=4.4cm, ymode=log, ymin=1000, title={tokens per case}, symbolic x coords={FULL,B0,B1,B2,B3,B4,B5,A1,A2}, xtick={FULL,B0,B1,B2,B3,B4,B5,A1,A2}, xticklabel style={font=\scriptsize, rotate=45, anchor=east}, bar width=6pt, nodes near coords={}, enlarge x limits=0.08]
-\addplot[fill=cB, draw=none, bar shift=0pt] coordinates {(FULL,95466)};
-\addplot[fill=cA, draw=none, bar shift=0pt] coordinates {(B0,3682) (B1,7008) (B2,4352) (B3,7290) (B4,126301) (B5,94180) (A1,98772) (A2,90720)};
+\begin{axis}[vsbase, at={(0.000\textwidth,0)}, width=0.620\textwidth, height=8.5cm, title={Tokens per case\\{\scriptsize\mdseries log scale}}, title style={font=\footnotesize\bfseries, align=center}, symbolic y coords={FULL,B0,B1,B2,B3,B4,B5,A1,A2,A3,A6,A7,A8,A9,S1,S2,S3,S3B,S4,S5,S6,S8,S9,S10,S11,S12,S15,S18}, ytick={FULL,B0,B1,B2,B3,B4,B5,A1,A2,A3,A6,A7,A8,A9,S1,S2,S3,S3B,S4,S5,S6,S8,S9,S10,S11,S12,S15,S18}, y dir=reverse, xmin=1000, xmax=400000, xmajorgrids, grid style={gray!25}, enlarge y limits=0.03, enlarge x limits=0.04, nodes near coords={}, xticklabel style={font=\scriptsize}, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.5pt, gray!70}, every axis plot/.append style={}, xmode=log, yticklabel style={font=\scriptsize}]
+\addplot[only marks, mark=*, mark size=2.1pt, color=cB, fill=cB] coordinates {(95466.0263,FULL) += (0,0) -= (0,0)};
+\addplot[only marks, mark=*, mark size=2.1pt, color=cA, fill=cA] coordinates {(3682.3333,B0) += (0,0) -= (0,0) (7008.0870,B1) += (0,0) -= (0,0) (4351.5333,B2) += (0,0) -= (0,0) (7289.9565,B3) += (0,0) -= (0,0) (126301.3667,B4) += (0,0) -= (0,0) (94179.9000,B5) += (0,0) -= (0,0)};
+\addplot[only marks, mark=*, mark size=2.1pt, color=cD, fill=cD] coordinates {(98772.3571,A1) += (0,0) -= (0,0) (90719.8667,A2) += (0,0) -= (0,0) (101528.7333,A3) += (0,0) -= (0,0) (95831.2667,A6) += (0,0) -= (0,0) (89266.2333,A7) += (0,0) -= (0,0) (57383.5000,A8) += (0,0) -= (0,0) (57045.1333,A9) += (0,0) -= (0,0)};
+\addplot[only marks, mark=*, mark size=2.1pt, color=cC, fill=cC] coordinates {(123531.3000,S1) += (0,0) -= (0,0) (99420.9000,S2) += (0,0) -= (0,0) (102824.2000,S3) += (0,0) -= (0,0) (111345.9000,S3B) += (0,0) -= (0,0) (98335.7000,S4) += (0,0) -= (0,0) (101988.4000,S5) += (0,0) -= (0,0) (99689.1000,S6) += (0,0) -= (0,0) (113210.4000,S8) += (0,0) -= (0,0) (80815.7000,S9) += (0,0) -= (0,0) (124304.9000,S10) += (0,0) -= (0,0) (82988.7000,S11) += (0,0) -= (0,0) (99977.0000,S12) += (0,0) -= (0,0) (102941.9000,S15) += (0,0) -= (0,0) (99106.3000,S18) += (0,0) -= (0,0)};
 \end{axis}
+\node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cB}{$\bullet$} Full \quad \textcolor{cA}{$\bullet$} baselines (B) \quad \textcolor{cD}{$\bullet$} ablations (A) \quad \textcolor{cC}{$\bullet$} variants (S, P)};
 \end{tikzpicture}
-\caption{Family openai: mean tokens per case (log scale); Full in orange.}
+\caption{Family openai: mean tokens per case (log scale), each arm on its own cases.}
 \label{fig:cost_openai}
-\end{figure}
+\end{figure*}
