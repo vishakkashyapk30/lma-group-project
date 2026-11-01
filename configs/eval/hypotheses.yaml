@@ -1,6 +1,9 @@
 # Hypotheses fixed on dev before the test run; null results are still reported (plan §14.2).
-H1a: "Full has higher factor recall (G1) and lower unsupported-fact rate than each of B0-B4"
-H1b: "Full uses fewer tokens and store calls than B4 at equal or better quality"
-H1c: "On BNS-era cases, section-family + reasoning-only + factor filter has higher recall@10 (G2) than plain hybrid"
+# Registration status of each (dev-supported, dev-contradicted, unresolved) and the thresholds: docs/preregistration.md sections 1 and 1.2 to 1.4.
+H1a: "Full has higher factor recall (G1) and lower unsupported-fact rate than each of B0-B4"  # dev-contradicted, expected not supported
+H1b: "Full uses fewer tokens and store calls than B4 at equal or better quality"  # cost part dev-supported; quality part dev-contradicted
+H1c: "On BNS-era cases, section-family + reasoning-only + factor filter has higher recall@10 (G2) than plain hybrid"  # no dev data
+H1d: "Full finds more of the prosecution's objections (G4) and covers more answerable factors with a supported ground than B0-B3 (dev-supported, largely by construction)"
+H1e: "B4 is not worse than Full on objection recall and answerable coverage (the direction the dev data show); registered two-sided and descriptive"
 H2: "On degraded, photographed, Hindi and bundled inputs, Munshi beats P1-P3 and P5 and is within a dev-fixed margin of P4 at a fraction of its GPU time"
-margin_vs_p4: null  # TODO: fix on dev
+margin_vs_p4: 5  # points; PROVISIONAL (the plan's delta default, not derived from T1 dev scores; owner confirms or replaces after a T2 dev run)
