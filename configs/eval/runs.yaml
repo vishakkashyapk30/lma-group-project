@@ -41,7 +41,7 @@ jobs:
   s11_review_debate:  {where: ada, systems: [S11, S11b, S11c], cases: 100, testset: T1, node_hours: 7.5}  # plan job 32 (tier C)
   s13_workflow_search: {where: ada, systems: ["S13:stopping=llm"], cases: 50, testset: T1, node_hours: 36, runner: workflow_search}  # plan job 33 (tier C): dev only; the grid point is the smoke arm
   s18_authority_stance: {where: ada, systems: [S18], cases: 100, testset: T1}                      # not in the plan (sweep 4)
-  arch_search:        {where: laptop, systems: [X1, X2, X3, X4, X5, X6, X7, H1, H1m1, H1m2, H1m3, H1m4, H1m5, H1m6], cases: 30, testset: T1}  # not in the plan: the architecture search (docs/handoff/arch-search-results.md), dev cases 0-29 on Sarvam via scripts/midsub/arch-search-sarvam-queue.sh
+  arch_search:        {where: laptop, systems: [X1, X2, X3, X4, X5, X6, X7, X8, H1, H1m1, H1m2, H1m3, H1m4, H1m5, H1m6], cases: 30, testset: T1}  # not in the plan: the architecture search (docs/handoff/arch-search-results.md), dev cases 0-29 on Sarvam via scripts/midsub/arch-search-sarvam-queue.sh
   p_munshi_variants:  {where: ada, systems: [P5, P6, P7, P8], cases: 100, testset: T2, node_hours: 7.5}  # Munshi switches on bundles (P5, P6 as switches; P1-P4 are the rq2 pipelines); needs T2 bundles as case rows
   # --- Gold-source sensitivity (owner decision 2026-10-26): PRIMARY gold = agreed (rules + non-Qwen labeler, span-grounded; data/testsets/t1), SECONDARY = rule-only (data/testsets/t1_rule_only).
   # One declared sensitivity analysis, not a new test family: the gold-dependent metrics of every system output that exists are rescored against the other gold. No model call, cost 0.

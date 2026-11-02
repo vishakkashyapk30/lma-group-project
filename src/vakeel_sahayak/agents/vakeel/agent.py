@@ -137,6 +137,8 @@ REASONING_ROOM = 1.8  # S15: factor on the token limit of a drafting call, to le
 REASONING_LOG_CHARS = 1500  # S15: characters of reasoning kept in the log event
 MAX_AUTHORITIES = 4  # paragraphs offered to the drafter per factor
 PARAGRAPH_LIMIT = 2000  # characters of a paragraph shown to the model
+_QUOTE_STOP = frozenset({"that", "this", "with", "were", "been", "have", "from", "which", "their", "there", "they", "will", "would", "also", "into", "upon", "such", "said", "under", "being", "than", "then", "when"})
+QUOTE_OVERLAP = 0.5  # X8: share of a case-fact sentence's content words a record sentence must share to replace it
 SPAN_SHARE = 0.8  # X2: share of a case-fact sentence's words that must come from the facts text, in order
 # X4: a sentence that only says the record is silent (it states nothing a source can support; the gap belongs in the open issues)
 ABSENCE = re.compile(
@@ -320,7 +322,7 @@ class VakeelAgent(BaseAgent):
         self._dossier, self._rights, self._timeline = dossier, rights, timeline
         if sw.uses_dossier:
             self._facts = facts_of(dossier)
-            if sw.draft_source == "facts_text" or sw.argument_policy == "fact_law_split" or sw.signal_source == "merge":
+            if sw.draft_source == "facts_text" or sw.argument_policy == "fact_law_split" or sw.signal_source == "merge" or sw.fact_grounding == "verbatim":
                 # X5 drafts from the raw facts alone; X2 (always) and X1 (where the dossier has nothing for a factor) offer the facts text beside the dossier facts
                 text = text_fact(state.facts_text)
                 if text:
@@ -994,6 +996,8 @@ class VakeelAgent(BaseAgent):
                 self._run_check(w)
             if w.failing() and not w.empty and self.switches.check_and_repair:
                 self._repair(w, g.factor)
+            if self.switches.fact_grounding == "verbatim" and not w.unchecked and not w.empty:
+                self._ground_facts(w, g)  # X8: case-fact sentences become verbatim spans of the record before anything is withheld
             if self.switches.abstention == "strict" and self._abstain(w, g):
                 continue  # X4: nothing supportable was left; the factor is an open issue, not a ground
             out.append(self._finish(g, w))
@@ -1001,6 +1005,40 @@ class VakeelAgent(BaseAgent):
                 self._flag(w, g.id, g.factor.value)
         self._grounds = out
         return out
+
+    def _ground_facts(self, w: Work, g: Ground) -> None:
+        """X8 (`fact_grounding='verbatim'`): rewrite each case-fact sentence (fact markers, no authority) that is not a span of the facts text into the
+        sentence of the facts text it best matches, cited `[F:facts_text]`; no model call.
+
+        Slobodkin et al., "Attribute First, then Generate" (ACL 2024): select the source span first and let the text be that span. A sentence whose best
+        match shares fewer than `QUOTE_OVERLAP` of its content words with any record sentence is left as it is (the check and X4 decide on it); nothing is
+        added that the draft did not say, and the number of sentences does not change. The rewritten claim is checked again.
+        """
+        fact = self._facts.get(FACTS_TEXT_FIELD)
+        if fact is None:
+            return
+        from vakeel_sahayak.pipelines.text_utils import split_sentences
+
+        record = [r.strip() for r in split_sentences(fact.text) if len(r.split()) >= 4]
+        words = lambda t: {x for x in re.findall(r"[a-z0-9]+", t.lower()) if len(x) > 3 and x not in _QUOTE_STOP}  # noqa: E731
+        changed = 0
+        for i, s in enumerate(w.sentences):
+            if s.is_note or s.auths or not s.facts or span_share(s.plain, fact.text) >= SPAN_SHARE:
+                continue
+            mine = words(s.plain)
+            best, score = None, 0.0
+            for r in record:
+                o = len(mine & words(r)) / max(1, len(mine))
+                if o > score:
+                    best, score = r, o
+            if best is None or score < QUOTE_OVERLAP:
+                continue
+            w.sentences[i] = split_claim(f"{best.rstrip('. ')} [F:{FACTS_TEXT_FIELD}].")[0]
+            changed += 1
+        if changed:
+            self._run_check(w)
+            self._decision("ground_facts", f"{w.key} ({g.factor.value}): {changed} case-fact sentence(s) replaced by the record sentence they paraphrase.",
+                           claim=w.key, factor=g.factor.value, replaced=changed, variant="X8", fact_grounding="verbatim")
 
     def _abstain(self, w: Work, g: Ground) -> bool:
         """X4 (`abstention='strict'`): take out of the claim every sentence that still fails after repair and every sentence that only says the record is silent.

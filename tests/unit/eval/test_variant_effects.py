@@ -418,7 +418,7 @@ COVERED = {
     "full", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10", "B5", "P5", "P6", "P7", "P8", "S1", "S2", "S3", "S3b", "S4", "S5", "S6", "S7", "S8", "S9", "S10",
     "S11", "S11b", "S11c", "S12", "S12b", "S13", "S14", "S14b", "S14c", "S14d", "S15", "S15b", "S16", "S16b", "S17", "S17b", "S17c", "S17d", "S18",
     # RECONCILED: the architecture search ids are exercised in tests/unit/agents/test_arch_search_variants.py (effects, defaults, validators), not by this per-variant harness
-    "X1", "X2", "X3", "X4", "X5", "X6", "X7", "H1", "H1m1", "H1m2", "H1m3", "H1m4", "H1m5", "H1m6",
+    "X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "H1", "H1m1", "H1m2", "H1m3", "H1m4", "H1m5", "H1m6",
 }
 
 

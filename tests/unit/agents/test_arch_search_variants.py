@@ -26,7 +26,7 @@ PARITY, CUSTODY = Factor.PARITY_WITH_CO_ACCUSED, Factor.CUSTODY_PERIOD
 FACTS = "The applicant has been in judicial custody since 04.01.2024. Co-accused with an identical role were granted bail by this Court."
 X_FIELDS = {"X1": ("signal_source", "merge"), "X2": ("argument_policy", "fact_law_split"), "X3": ("sparring_scope", "all_factors"),
             "X4": ("abstention", "strict"), "X5": ("draft_source", "facts_text"), "X6": ("critic_material", "union_free"),
-            "X7": ("objection_grounding", "by_id")}
+            "X7": ("objection_grounding", "by_id"), "X8": ("fact_grounding", "verbatim")}
 
 
 # ---- selection and defaults -----------------------------------------------------------------------------------------
@@ -241,6 +241,30 @@ def test_x7_default_keeps_the_exact_check():
     vh.run_both(base)
     assert not vh.events_of(base, "ground_resolved")
     assert Switches().objection_grounding == "exact"
+
+
+def test_x8_replaces_a_paraphrased_case_fact_by_the_record_sentence_and_leaves_law_alone(dossier, expected_rights_report):
+    from vakeel_sahayak.agents.vakeel.work import Evidence, Work
+
+    record = "The applicant was arrested on 04.01.2024 by the police. Co-accused with an identical role were granted bail by this Court on 10.02.2024."
+    agent, _, _ = build_agent(VakeelAgent, switches=Switches(fact_grounding="verbatim"))
+    agent._prime(make_state(dossier, expected_rights_report, facts_text=record))
+    assert FACTS_TEXT_FIELD in agent._facts
+    w = Work(key="G1", ev=Evidence(factor=PARITY.value), sentences=split_claim(
+        "Person-2, a co-accused with an identical role, was granted bail by this Court [F:co_accused_bail]. "
+        "Parity requires the same relief [A:DLHC-2022-1187#14]. The weather was pleasant [F:personal]."))
+    agent._ground_facts(w, make_ground("G1", PARITY, "x"))
+    texts = [s.text for s in w.sentences]
+    assert texts[0].startswith("Co-accused with an identical role were granted bail by this Court on 10.02.2024") and texts[0].endswith("[F:facts_text].")
+    assert texts[1] == "Parity requires the same relief [A:DLHC-2022-1187#14]."  # a legal-basis sentence is never touched
+    assert texts[2] == "The weather was pleasant [F:personal]."  # no record sentence matches: left for the check and X4
+    assert len(texts) == 3  # nothing added
+
+
+def test_x8_default_rewrites_nothing():
+    base = vh.build()
+    vh.run_both(base)
+    assert not vh.events_of(base, "ground_facts") and Switches().fact_grounding == "off"
 
 
 def test_x6_adds_a_free_search_and_default_runs_none():

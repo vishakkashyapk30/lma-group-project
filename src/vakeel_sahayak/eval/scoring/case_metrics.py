@@ -221,10 +221,19 @@ def score_case(case: dict[str, Any], record: dict[str, Any], manifest: dict[str,
         if cfg.strict:
             raise NotImplementedError(f"{UNSUPPORTED_FN} is not implemented (unsupported-fact rate, MiniCheck)") from exc
         pending["unsupported_fact_rate"] = UNSUPPORTED_FN
+    m6a: float | None = None
+    n_case_fact: float | None = None
+    try:  # M6a, reported BESIDE M6 (never instead): the case-fact sentences alone against the same facts, same checker (eval/scoring/split_metric.py)
+        from vakeel_sahayak.eval.scoring.split_metric import case_fact_rate
+
+        m6a, n_fact = case_fact_rate(brief, str(case.get("facts_text") or case.get("facts") or ""))
+        n_case_fact = float(n_fact)
+    except NotImplementedError:
+        pending["unsupported_case_fact_rate"] = UNSUPPORTED_FN
     return {
         "case_id": case["case_id"], "factor_recall": recall, "factor_precision_strict": precision_strict, "factor_precision_lenient": precision_lenient,
         "factor_f1": f1, "court_discussed_recall": g5_recall, "factor_items": items, "unsupported_fact_rate": unsupported,
-        "n_claims": n_claims, "unsupported_fact_count": n_unsupported, "answerable_coverage": answerable_coverage(brief, ans),
+        "n_claims": n_claims, "unsupported_fact_count": n_unsupported, "unsupported_case_fact_rate": m6a, "n_case_fact": n_case_fact, "answerable_coverage": answerable_coverage(brief, ans),
         "recall_at_10": recall_at_k(retrieved, g2_labels, cfg.k) if g2_labels else None, "retrieved_source": rsource,
         "g2_gold_n": len(g2_labels), "g2_raw_n": len(g2.get("raw") or []), "g2_unresolved_n": len(g2.get("unresolved") or []),
         "objection_recall": obj_recall, "objection_precision": obj_precision, "n_objections": len(obj), "g4_n": len(set(g4)),

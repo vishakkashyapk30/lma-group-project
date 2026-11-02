@@ -9,11 +9,12 @@ W=$(cd "$(dirname "$0")/../.." && pwd); cd "$W" || exit 1
 set -a; . ./.env; set +a
 export PYTHONPATH=$W/src OMP_NUM_THREADS=2 MKL_NUM_THREADS=2
 export VS_ALLOW_PAID=sarvam VS_MODELS=auto VS_LLM_BACKEND=sarvam VS_EXTERNAL=pseudonymised VS_SARVAM=pseudonymised VS_SARVAM_CAP_INR=5000 VS_SARVAM_RUN_CAP_INR=60 VS_NLI=auto
-R=$W/data/eval/dev_runs/sarvam_search
+R=$W/data/eval/dev_runs/${OUT_ROOT:-sarvam_search}   # OUT_ROOT=sarvam_final for the final reruns, sarvam_holdout with SPLIT=holdout
 PY=${PY:-$W/.venv/bin/python}; [ -x "$PY" ] || PY=python   # a worktree without its own .venv: pass PY=<path to the venv python>
 WORKERS=${WORKERS:-4}; NSHARDS=${NSHARDS:-2}
 mkdir -p "$R/logs" "$R/cases"
-head -30 data/testsets/t1/dev.jsonl > "$R/cases/t1_30.jsonl"
+if [ "${SPLIT:-search}" = holdout ]; then sed -n 31,50p data/testsets/t1/dev.jsonl > "$R/cases/t1_30.jsonl"  # t1dev-030..049, touched once at the end
+else head -30 data/testsets/t1/dev.jsonl > "$R/cases/t1_30.jsonl"; fi
 job() { a=$1; s=$2; ns=$3; d=$(echo "$a" | tr 'A-Z:=,' 'a-z___')
   echo "start $a shard $s/$ns $(date +%T)"
   "$PY" -m vakeel_sahayak.eval.runners.driver run --system "$a" --cases "$R/cases/t1_30.jsonl" --out "$R/outputs/$d" --run-index 1 --shard "$s" --n-shards "$ns" >> "$R/logs/$d-s$s.log" 2>&1

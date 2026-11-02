@@ -33,6 +33,8 @@ METRICS: dict[str, tuple[str, bool]] = {
     "factor_f1": ("Factor F1 (M3)", True),
     "court_discussed_recall": ("Court-discussed factor recall, G5 (M4)", True),
     "unsupported_fact_rate": ("Unsupported-fact rate (M6)", False),
+    "unsupported_case_fact_rate": ("Unsupported case-fact rate (M6a; beside M6, never instead)", False),
+    "n_case_fact": ("Case-fact sentences per case (the count beside M6a)", True),
     "n_claims": ("Factual sentences per case", True),
     "unsupported_fact_count": ("Unsupported factual sentences per case (count, null-agent safe)", False),
     "answerable_coverage": ("Answerable factors with a supported argument", True),

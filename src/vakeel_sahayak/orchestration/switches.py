@@ -67,6 +67,7 @@ evaluation plan; rows in `docs/literature-to-code-map.md`, section "Architecture
 | X5 | `draft_source='facts_text'` | Vakeel drafts, checks and replies from the raw facts text while Sutradhar keeps the dossier (A1's drafting without A1's planner) |
 | X6 | `critic_material='union_free'` | Abhiyojak: the objection material is the union of the ground-keyed, factor-filtered search and a free (facts-keyed, unfiltered) search of its own stores (A7's idea inside the isolation rule) |
 | X7 | `objection_grounding='by_id'` | Abhiyojak: a reference is resolved to the offered item it names by id, whatever store label the model wrote (RARR, Gao et al., ACL 2023); nothing that was not offered is accepted |
+| X8 | `fact_grounding='verbatim'` | Vakeel: after repair, a case-fact sentence that is not a span of the facts text is replaced by the record sentence it paraphrases (Attribute First, then Generate, Slobodkin et al., ACL 2024); no model call, no sentence added |
 | H1 | the combination named in `H1_PARTS` | the combined arm; `H1m<k>` is H1 without Xk (the leave-one-out arms) |
 
 Id numbering: this module and `docs/evaluation-plan.md` use the plan's S-ids. The literature review numbers the same ideas differently
@@ -138,13 +139,14 @@ ARCHITECTURE: dict[str, dict[str, Any]] = {
     "X5": {"draft_source": "facts_text"},
     "X6": {"critic_material": "union_free"},
     "X7": {"objection_grounding": "by_id"},
+    "X8": {"fact_grounding": "verbatim"},
 }
 # H1 = the combination of X1-X6 (docs/handoff/arch-search-results.md); `H1m<k>` is H1 without part Xk, the leave-one-out arms.
 H1_PARTS: tuple[str, ...] = ("X1", "X2", "X3", "X4", "X5", "X6")
 ARCHITECTURE["H1"] = {k: v for part in H1_PARTS for k, v in ARCHITECTURE[part].items()}
 for _k in H1_PARTS:
     ARCHITECTURE[f"H1m{_k[1:]}"] = {k: v for part in H1_PARTS if part != _k for k, v in ARCHITECTURE[part].items()}
-ARCHITECTURE_SEARCH: tuple[str, ...] = ("X1", "X2", "X3", "X4", "X5", "X6", "X7", "H1", *(f"H1m{k[1:]}" for k in H1_PARTS))
+ARCHITECTURE_SEARCH: tuple[str, ...] = ("X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "H1", *(f"H1m{k[1:]}" for k in H1_PARTS))
 # The evaluation plan's ablation and baseline ids for the variants above (the canonical name is the S-id).
 VARIANT_ALIASES: dict[str, str] = {
     "A11B": "S3", "A11A": "S7", "A12": "S6", "S6B": "B5", "A16": "S5", "A2B": "S8", "A8B": "S9", "A8C": "S10", "A8D": "S11",
@@ -207,6 +209,7 @@ VARIANT_DESCRIPTIONS: dict[str, str] = {
     "X4": "strict abstention: a sentence that fails after repair, or only says the record is silent, leaves the argument and becomes an open issue",
     "X5": "drafting from the raw facts text (the dossier still drives the planner, Gate 1 and the open issues)",
     "X6": "union critic material: Abhiyojak's own stores searched both by ground (filtered) and freely by the facts",
+    "X8": "verbatim fact grounding: a paraphrased case-fact sentence is replaced by the record sentence it paraphrases",
     "X7": "objection grounding by id: a reference naming offered material under the wrong store label or field spelling is resolved, not discarded",
     "H1": "combined architecture: X1 to X6 together",
     **{f"H1m{k[1:]}": f"combined architecture without {k} (leave-one-out arm)" for k in H1_PARTS},
@@ -275,6 +278,8 @@ class Switches(BaseModel):
     critic_material: Literal["contract", "union_free"] = "contract"
     # X7: RARR (Gao et al., ACL 2023, https://aclanthology.org/2023.acl-long.910/): revise attributions to the evidence actually retrieved.
     objection_grounding: Literal["exact", "by_id"] = "exact"
+    # X8: Slobodkin et al., "Attribute First, then Generate", ACL 2024 (https://aclanthology.org/2024.acl-long.182/): the span is selected first.
+    fact_grounding: Literal["off", "verbatim"] = "off"
 
     @model_validator(mode="after")
     def _variants_need_the_planner(self) -> Switches:
@@ -332,6 +337,8 @@ class Switches(BaseModel):
             raise ValueError("objection_grounding='by_id' (X7) changes how Abhiyojak's references are checked: it cannot combine with no_sparring (A8) or critic_mode other than 'abhiyojak'")
         if self.critic_material != "contract" and no_abhiyojak:
             raise ValueError("critic_material='union_free' (X6) widens Abhiyojak's material: it cannot combine with no_sparring (A8) or critic_mode other than 'abhiyojak'")
+        if self.fact_grounding != "off" and (self.no_check_repair or self.repair_mode != "grounded"):
+            raise ValueError("fact_grounding='verbatim' (X8) acts after check-and-repair: it cannot combine with no_check_repair (A2) or repair_mode other than 'grounded'")
         if self.abstention == "strict" and (self.no_check_repair or self.repair_mode != "grounded"):
             raise ValueError("abstention='strict' (X4) acts on the result of check-and-repair: it cannot combine with no_check_repair (A2) or repair_mode other than 'grounded'")
         return self

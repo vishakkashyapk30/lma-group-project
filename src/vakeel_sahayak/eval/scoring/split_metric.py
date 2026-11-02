@@ -66,6 +66,21 @@ def case_row(brief: dict[str, Any], facts_text: str, case_id: str, score: Any, c
     }
 
 
+def case_fact_rate(brief: dict[str, Any], facts_text: str) -> tuple[float | None, int]:
+    """(M6a, number of case-fact sentences) of one brief, for the scorer's per-case row: only the case-fact class is checked (same checker and cut as M6).
+
+    None when the brief has no case-fact sentence (M6a undefined; the count 0 is reported beside it).
+    """
+    from vakeel_sahayak.eval.feature_common import sentences_of
+    from vakeel_sahayak.eval.metrics.unsupported_fact import _scorer
+
+    facts = [s for g in (brief or {}).get("grounds") or [] for s in sentences_of(str(g.get("argument") or "")) if classify(s) == "case_fact"]
+    if not facts:
+        return None, 0
+    _, score, cut = _scorer()
+    return sum(1 for s in facts if score(facts_text, s) < cut) / len(facts), len(facts)
+
+
 def run(runs: Path, cases: Path, out: Path) -> list[dict[str, Any]]:
     """Score every `<case_id>.json` of one arm's output folder; write the per-case CSV and return the rows."""
     from vakeel_sahayak.eval.metrics.unsupported_fact import _scorer

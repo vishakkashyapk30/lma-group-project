@@ -43,7 +43,7 @@ DECIDING = {
     "over_search_rate": ("Over-search", False), "unfinished_factor_share": ("Unfinished factors", False),
     "confident_wrong_rate": ("Confident wrong", False),
 }
-DESCRIPTIVE = {"n_claims", "tokens", "store_calls", "seconds", "cost_usd"}
+DESCRIPTIVE = {"n_claims", "n_case_fact", "tokens", "store_calls", "seconds", "cost_usd"}
 BASELINES = ["b0", "b0l", "b1", "b2", "b3", "b4", "b5", "b6"]
 ALPHA, N_BOOT, SEED = 0.05, 10000, 0
 
