@@ -1,0 +1,34 @@
+# Metrics, statistics and Rights (Satvik, 2 November 2026)
+
+The five items of `docs/handoff/team-todo-2026-11-02.md` under "Satvik". Branch `satvik-metrics-rights`. All scripted; nothing read or labelled by hand.
+
+## Done
+| Item | What | Where |
+|---|---|---|
+| Win/loss/tie table | Every arm against every baseline (B0 to B6, B0L) on every quality metric of the scorer, per backend family: paired cases answered without error, seeded paired bootstrap (10,000 resamples, seed 0), Holm at 0.05 within each (arm, metric) family over the baselines (`--holm-scope arm` for one family per arm), interval printed at the Holm level, a win only when it excludes zero in the arm's favour; fewer than 5 paired cases = too few (p = 1, never a win); a metric undefined for both sides is listed, not counted. Tokens, store calls, seconds, cost and the sentence count do not decide. `regen.sh` runs it. | `docs/report/tools/win_loss_tie.py`, `docs/report/generated/wlt_<family>.tex`, `docs/results/wlt/<family>.csv`, `tests/unit/eval/test_win_loss_tie.py` |
+| M6a beside M6 | Test that every committed scorer output has `unsupported_fact_rate`, `unsupported_case_fact_rate` and its count `n_case_fact` for every arm and baseline (blank M6a allowed only with count 0). The check of the committed outputs is skipped, with the reason printed, until the scorer emits M6a; the rule itself is tested on synthetic rows. | `tests/unit/eval/test_m6a_beside_m6.py` |
+| Rights rule check | For each rule: the statute sections it cites (found in its rule text and sources), looked up in the statute store; per section the heading, the sub-section and the conditions of `configs/rights_statute_checks.yaml`; every "n days / hours" of the rule text in the cited sections (or named as from a cited judgment). Writes `last_verified` + `verified_hash` only on a match, `null` otherwise; result in `docs/results/rights/rule_check.json` and in `docs/qa/rights-verification.md` (generated section at the end). `--check` writes nothing and fails when out of date. | `scripts/check_rights_rules.py`, `tests/unit/scripts/test_check_rights_rules.py` |
+| BNSS s.58 | `extract_gap_statutes.py --only bnss --fetch` downloads the Gazette of India (BNSS, No. 46 of 2023, `https://egazette.gov.in/WriteReadData/2023/250884.pdf`), refuses any file whose SHA-256 is not the pinned one, reads s.58 (body from the text column, heading from the margin note) and writes `data/gaps/statutes/bnss.jsonl`; the store build replaces the wrong row. NDPS s.36A (cited by `default_bail`, was missing) is added to the NDPS extraction from the same official PDF as before. | `scripts/extract_gap_statutes.py`, `tests/unit/stores/test_extract_gap_statutes.py` |
+| Consistency checks | Pre-registration against `configs/eval/hypotheses.yaml` (ids, `margin_vs_p4`, statuses) and `docs/results/prereg/dev_stats.json` (every number of the dev-evidence table), claim deltas against the frozen per-metric deltas, C4 ratios; Rights table regenerated from `per_scenario.csv` and compared byte for byte, manifest counts, every number of the Rights paragraph, every verification-count sentence of the report against `rule_check.json`. | `scripts/check_consistency.py`, `tests/unit/scripts/test_check_consistency.py` |
+
+## Results
+- Rights: 6 of 7 rules match the statute store and are dated 2026-11-02 with their hash. `antil_category` does not: it cites the Companies Act s.212(6), which is not in the store. Run against the store as it was before the fix, the check fails `production_24h` (wrong s.58 text) and `default_bail` (no NDPS s.36A), so it catches both known defects. It checks acts only; the judgments a rule relies on (Mihir Rajesh Shah, Antil, Ravindran, ...) are listed as outside the store.
+- Statute store rebuild: exactly two rows change, (BNSS, 58) replaced and (NDPS, 36A) added (1,427 rows). On the Gazette, the same reader reproduces the store's BNSS s.35, 47, 57, 59, 187 and 479 (text similarity 0.97 to 1.00), so the extraction is sound.
+- Win/loss/tie on the committed scores: no arm beats every baseline on every metric in any family (OpenAI 22 arms, Sarvam 31, Gemini 2, v1 1). Full on Sarvam wins coverage against B0 to B5 and citation precision, recall and fabricated citations against B4 and B5, and loses the unsupported-fact rate against B0, B1, B3 to B6 and the confident-wrong rate; most other cells are ties or have too few paired cases.
+- Consistency: 105 checks pass, 2 fail, both in the pre-registration's printed numbers (for Vishak; not edited here): the OpenAI store-call ratio Full/B4 is printed 0.518, `dev_stats.json` gives 99.23 / 190.67 = 0.520; and the store-call range is printed "0.52 to 0.54" (H1b, C4, status table) where the data give 0.52 to 0.53.
+- Report text updated to the new verification state (challenges, limitations, results Rights paragraph, status "Done" line and two work-left rows); `main.pdf` not rebuilt.
+
+## Not done / for others
+- **Data on every machine:** `data/` is not in git. Each machine (and the team bundle) needs: `.venv/bin/python scripts/extract_gap_statutes.py --only bnss,ndps --fetch` then `.venv/bin/python -m vakeel_sahayak.pipelines.store_builders.build_all --only statutes`. If the Gazette download fails certificate verification (egazette.gov.in sends no intermediates), pass `--cafile` with the Let's Encrypt YR1 and Root YR certificates (from the "CA Issuers" URLs `http://yr1.i.lencr.org/` and `http://yr.i.lencr.org/`; Root YR is cross-signed by ISRG Root X1) appended to the system bundle; verification is never switched off. Republishing the bundle (`make data-publish`) is the owner's step.
+- **M6a in the scorer:** `split_metric.py` is on `arch-search`; once `unsupported_case_fact_rate` and `n_case_fact` are in `engine.METRICS` and the outputs are rescored, `test_m6a_beside_m6.py` checks the committed outputs automatically, and `win_loss_tie.py` includes M6a (it reads any column it knows).
+- `antil_category` stays unverified until the Companies Act s.212 is added to the store from an official text (an `extract_gap_statutes.py` entry like s.58).
+- The `wlt_*` tables are generated but not yet included in the report (`\gentable{wlt_sarvam}` where the owner wants them).
+- The frontend sample case mirrors the rule state: on `frontend-merge` it shows the state of `main` before this branch.
+
+## Check
+```bash
+.venv/bin/python scripts/check_rights_rules.py --check   # 0 when yaml and report match the store
+python3 scripts/check_consistency.py                     # 2 failed until the pre-registration numbers above are corrected
+docs/report/tools/regen.sh                               # rebuilds generated tables incl. wlt_<family>.tex
+VS_MODELS=offline .venv/bin/pytest -q tests/unit/eval/test_win_loss_tie.py tests/unit/eval/test_m6a_beside_m6.py tests/unit/scripts tests/unit/rights tests/unit/stores
+```
