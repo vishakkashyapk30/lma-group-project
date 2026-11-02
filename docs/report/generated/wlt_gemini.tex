@@ -1,0 +1,15 @@
+\begin{table*}[!t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lcccccc@{}}
+\toprule
+Arm & B0 & B0L & B1 & B2 & B3 & Beats all \\
+\midrule
+A1 & 0/4/0+4 & 3/1/0+6 & 2/2/0+11 & 2/2/0+6 & 0/2/0+15 & no \\
+FULL & 1/4/1+4 & 2/3/1+4 & 2/10/1+4 & 1/4/1+4 & 1/5/0+11 & no \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\caption{Family Gemini block A: wins/ties/losses of each arm against each baseline over 24 metrics (paired bootstrap, 10,000 resamples, Holm at 0.05, one family per arm and metric over the baselines; a win only when the Holm-level interval excludes zero in the arm's favour). +n: comparisons with fewer than five paired cases (not a win). A dash: no metric defined for both. Beats all: every counted comparison is a win. Every comparison, with its interval, is in docs/results/wlt.}
+\label{tab:wlt_gemini}
+\end{table*}

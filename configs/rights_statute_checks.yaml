@@ -1,0 +1,172 @@
+# What `scripts/check_rights_rules.py` checks for each statute section a Rights rule cites (configs/rights_rules.yaml, its `rule` text and
+# `sources`). The script finds the citations itself; every statutory citation it finds must have an entry here, or the rule fails.
+# Each rule has `sections` (keyed by the citation as the script finds it, "BNSS s.187") and, optionally, `from_judgment`. Per cited
+# section: `heading` is the section heading the store row must carry (number and heading together identify the section), `sub` the
+# sub-section that must exist in its text, and `conditions` the parts of the rule that section must state: each `pattern` is a regular
+# expression matched against the store text after normalising it (lower case, whitespace collapsed, footnote marks and square brackets
+# removed, curly quotes made straight). `says` names the condition in the report. Nothing here is statute text typed in: the patterns are
+# what the rule claims, and the statute store (official texts) decides.
+# Sources that are not in the statute store (the Constitution, judgments) are listed in the report as "outside the store" and do not
+# decide the verdict: the store holds acts, not case law.
+default_bail:
+  sections:
+    "BNSS s.187":
+      heading: "Procedure when investigation cannot be completed in twenty-four hours"
+      sub: "(3)"
+      conditions:
+        - says: "90 days for death, life or ten years or more"
+          pattern: "ninety days, where the investigation relates to an offence punishable with death, imprisonment for life or imprisonment for a term of ten years or more"
+        - says: "60 days for any other offence"
+          pattern: "sixty days, where the investigation relates to any other offence"
+        - says: "release on bail at the end of the period if no charge sheet"
+          pattern: "accused person shall be released on bail if he is prepared to and does furnish bail"
+    "CrPC s.167":
+      heading: "Procedure when investigation cannot be completed in twenty-four hours"
+      sub: "(2)"
+      conditions:
+        - says: "90 days for death, life or not less than ten years"
+          pattern: "ninety days, where the investigation relates to an offence punishable with death, imprisonment for life or imprisonment for a term of not less than ten years"
+        - says: "60 days for any other offence"
+          pattern: "sixty days, where the investigation relates to any other offence"
+    "UAPA s.43D":
+      heading: "Modified application of certain provisions of the Code"
+      sub: "(2)"
+      conditions:
+        - says: "90 days under UAPA"
+          pattern: "references to \"fifteen days\", \"ninety days\" and \"sixty days\""
+        - says: "extendable to 180 days"
+          pattern: "extend the said period up to one hundred and eighty days"
+    "NDPS s.36A":
+      heading: "Offences triable by Special Courts"
+      sub: "(4)"
+      conditions:
+        - says: "s.19, 24, 27A and commercial quantity"
+          pattern: "section 19 or section 24 or section 27a or for offences involving commercial quantity"
+        - says: "180 days in place of 90"
+          pattern: "\"ninety days\", where they occur, shall be construed as reference to \"one hundred and eighty days\""
+        - says: "extendable to one year"
+          pattern: "extend the said period up to one year"
+undertrial_limit:
+  sections:
+    "BNSS s.479":
+      heading: "Maximum period for which under ?trial prisoner can be detained"
+      sub: "(2)"
+      conditions:
+        - says: "not for death or life"
+          pattern: "not being an offence for which the punishment of death or life imprisonment has been specified"
+        - says: "bail after one-half of the maximum"
+          pattern: "one-half of the maximum period of imprisonment specified for that offence under that law, he shall be released by the court on bail"
+        - says: "bond after one-third for a first-time offender"
+          pattern: "first-time offender \\(who has never been convicted of any offence in the past\\) he shall be released on bond by the court, if he has undergone detention for the period extending up to one-third"
+        - says: "continued detention after hearing the Public Prosecutor"
+          pattern: "after hearing the public prosecutor and for reasons to be recorded by it in writing, order the continued detention"
+        - says: "delay caused by the accused excluded"
+          pattern: "delay in proceeding caused by the accused shall be excluded"
+        - says: "other pending cases (s.479(2))"
+          pattern: "more than one offence or in multiple cases are pending against a person, he shall not be released on bail"
+    "CrPC s.436A":
+      heading: "Maximum period for which an under-?trial prisoner can be detained"
+      conditions:
+        - says: "bail after one-half of the maximum"
+          pattern: "one-half of the maximum period of imprisonment specified for that offence under that law, he shall be released by the court"
+        - says: "not for death"
+          pattern: "not being an offence for which the punishment of death has been specified"
+notice_of_appearance:
+  sections:
+    "BNSS s.35":
+      heading: "When police may arrest without warrant"
+      sub: "(3)"
+      conditions:
+        - says: "offences up to seven years"
+          pattern: "less than seven years or which may extend to seven years"
+        - says: "notice of appearance where arrest is not required"
+          pattern: "where the arrest of a person is not required under sub-section \\(1\\) issue a notice"
+        - says: "reasons recorded"
+          pattern: "record (while making such arrest, )?his reasons"
+    "CrPC s.41A":
+      heading: "Notice of appearance before police officer"
+      conditions:
+        - says: "notice where arrest is not required under s.41(1)"
+          pattern: "arrest of a person is not required under the provisions of sub-section \\(1\\) of section 41, issue a notice"
+grounds_of_arrest:
+  from_judgment:  # quantities in the rule text that come from a cited judgment, not from a section of an act
+    "2 hours": "Mihir Rajesh Shah v. State of Maharashtra (2025)"
+  sections:
+    "BNSS s.47":
+      heading: "Person arrested to be informed of grounds of arrest and of right to bail"
+      conditions:
+        - says: "grounds communicated forthwith"
+          pattern: "shall forthwith communicate to him full particulars of the offence for which he is arrested or other grounds for such arrest"
+    "CrPC s.50":
+      heading: "Person arrested to be informed of grounds of arrest and of right to bail"
+      conditions:
+        - says: "grounds communicated forthwith"
+          pattern: "shall forthwith communicate to him full particulars of the offence for which he is arrested or other grounds for such arrest"
+production_24h:
+  sections:
+    "BNSS s.58":
+      heading: "Person arrested not to be detained more than twenty-four hours"
+      conditions:
+        - says: "within 24 hours"
+          pattern: "exceed twenty-four hours"
+        - says: "excluding travel time"
+          pattern: "exclusive of the time necessary for the journey from the place of arrest to the magistrate's court"
+    "CrPC s.57":
+      heading: "Person arrested not to be detained more than twenty-four hours"
+      conditions:
+        - says: "within 24 hours"
+          pattern: "exceed twenty-four hours"
+        - says: "excluding travel time"
+          pattern: "exclusive of the time necessary for the journey from the place of arrest to the magistrate's court"
+antil_category:
+  sections:
+    "NDPS s.37":
+      heading: "Offences to be cognizable and non-bailable"
+      conditions:
+        - says: "stringent bail provision (twin conditions)"
+          pattern: "reasonable grounds for believing that he is not guilty of such offence and that he is not likely to commit any offence while on bail"
+    "PMLA s.45":
+      heading: "Offences to be cognizable and non-bailable"
+      conditions:
+        - says: "stringent bail provision (twin conditions)"
+          pattern: "reasonable grounds for believing that he is not guilty of such offence and that he is not likely to commit any offence while on bail"
+    "UAPA s.43D":
+      heading: "Modified application of certain provisions of the Code"
+      sub: "(5)"
+      conditions:
+        - says: "stringent bail provision"
+          pattern: "shall, if in custody, be released on bail or on his own bond unless the public prosecutor has been given an opportunity"
+    "Companies Act s.212":
+      heading: "Investigation into affairs of company by serious fraud investigation office"
+      sub: "(6)"
+      conditions:
+        - says: "stringent bail provision (twin conditions)"
+          pattern: "reasonable grounds for believing that he is not guilty of such offence and that he is not likely to commit any offence while on bail"
+statutory_bar:
+  sections:
+    "NDPS s.37":
+      heading: "Offences to be cognizable and non-bailable"
+      sub: "(1)"
+      conditions:
+        - says: "s.19, 24, 27A and commercial quantity only"
+          pattern: "section 19 or section 24 or section 27a and also for offences involving commercial quantity shall be released on bail or on his own bond unless"
+        - says: "twin conditions"
+          pattern: "reasonable grounds for believing that he is not guilty of such offence and that he is not likely to commit any offence while on bail"
+    "UAPA s.43D":
+      heading: "Modified application of certain provisions of the Code"
+      sub: "(5)"
+      conditions:
+        - says: "Chapters IV and VI only"
+          pattern: "offence punishable under chapters iv and vi of this act"
+        - says: "accusation prima facie true"
+          pattern: "reasonable grounds for believing that the accusation against such person is prima facie true"
+    "PMLA s.45":
+      heading: "Offences to be cognizable and non-bailable"
+      sub: "(1)"
+      conditions:
+        - says: "twin conditions"
+          pattern: "reasonable grounds for believing that he is not guilty of such offence and that he is not likely to commit any offence while on bail"
+        - says: "proviso: under sixteen, woman, sick or infirm"
+          pattern: "under the age of sixteen years, or is a woman or is sick or infirm"
+        - says: "proviso: under one crore"
+          pattern: "less than one crore rupees"
