@@ -1,0 +1,209 @@
+{
+  "checked_on": "2026-11-02",
+  "store": "data/stores/law/statutes.sqlite",
+  "rules": {
+    "default_bail": {
+      "matched": true,
+      "sections": [
+        {
+          "section": "BNSS s.187",
+          "subs": [
+            "(3)"
+          ],
+          "in_store": true,
+          "problems": []
+        },
+        {
+          "section": "CrPC s.167",
+          "subs": [
+            "(2)"
+          ],
+          "in_store": true,
+          "problems": []
+        },
+        {
+          "section": "NDPS s.36A",
+          "subs": [
+            "(4)"
+          ],
+          "in_store": true,
+          "problems": []
+        },
+        {
+          "section": "UAPA s.43D",
+          "subs": [
+            "(2)"
+          ],
+          "in_store": true,
+          "problems": []
+        }
+      ],
+      "problems": [],
+      "outside_store": [
+        "ED v. Kapil Wadhawan (2023)",
+        "M. Ravindran v. DRI (2020)"
+      ]
+    },
+    "undertrial_limit": {
+      "matched": true,
+      "sections": [
+        {
+          "section": "BNSS s.479",
+          "subs": [],
+          "in_store": true,
+          "problems": []
+        },
+        {
+          "section": "CrPC s.436A",
+          "subs": [],
+          "in_store": true,
+          "problems": []
+        }
+      ],
+      "problems": [],
+      "outside_store": [
+        "In Re Inhuman Conditions in 1382 Prisons (2024)"
+      ]
+    },
+    "notice_of_appearance": {
+      "matched": true,
+      "sections": [
+        {
+          "section": "BNSS s.35",
+          "subs": [
+            "(3)"
+          ],
+          "in_store": true,
+          "problems": []
+        },
+        {
+          "section": "CrPC s.41A",
+          "subs": [],
+          "in_store": true,
+          "problems": []
+        }
+      ],
+      "problems": [],
+      "outside_store": [
+        "Arnesh Kumar v. State of Bihar (2014)",
+        "Satender Kumar Antil v. CBI (2022)"
+      ]
+    },
+    "grounds_of_arrest": {
+      "matched": true,
+      "sections": [
+        {
+          "section": "BNSS s.47",
+          "subs": [],
+          "in_store": true,
+          "problems": []
+        },
+        {
+          "section": "CrPC s.50",
+          "subs": [],
+          "in_store": true,
+          "problems": []
+        }
+      ],
+      "problems": [],
+      "outside_store": [
+        "Art. 22(1)",
+        "Vihaan Kumar v. State of Haryana (2025)",
+        "Mihir Rajesh Shah v. State of Maharashtra (2025)"
+      ]
+    },
+    "production_24h": {
+      "matched": true,
+      "sections": [
+        {
+          "section": "BNSS s.58",
+          "subs": [],
+          "in_store": true,
+          "problems": []
+        },
+        {
+          "section": "CrPC s.57",
+          "subs": [],
+          "in_store": true,
+          "problems": []
+        }
+      ],
+      "problems": [],
+      "outside_store": [
+        "Art. 22(2)"
+      ]
+    },
+    "antil_category": {
+      "matched": false,
+      "sections": [
+        {
+          "section": "Companies Act s.212",
+          "subs": [
+            "(6)"
+          ],
+          "in_store": false,
+          "problems": [
+            "Companies Act s.212: not in the statute store"
+          ]
+        },
+        {
+          "section": "NDPS s.37",
+          "subs": [],
+          "in_store": true,
+          "problems": []
+        },
+        {
+          "section": "PMLA s.45",
+          "subs": [],
+          "in_store": true,
+          "problems": []
+        },
+        {
+          "section": "UAPA s.43D",
+          "subs": [
+            "(5)"
+          ],
+          "in_store": true,
+          "problems": []
+        }
+      ],
+      "problems": [
+        "Companies Act s.212: not in the statute store"
+      ],
+      "outside_store": [
+        "Satender Kumar Antil v. CBI (2022)"
+      ]
+    },
+    "statutory_bar": {
+      "matched": true,
+      "sections": [
+        {
+          "section": "NDPS s.37",
+          "subs": [
+            "(1)"
+          ],
+          "in_store": true,
+          "problems": []
+        },
+        {
+          "section": "PMLA s.45",
+          "subs": [
+            "(1)"
+          ],
+          "in_store": true,
+          "problems": []
+        },
+        {
+          "section": "UAPA s.43D",
+          "subs": [
+            "(5)"
+          ],
+          "in_store": true,
+          "problems": []
+        }
+      ],
+      "problems": [],
+      "outside_store": []
+    }
+  }
+}
