@@ -268,8 +268,8 @@ export const MOCK_TIMELINE: TimelineEvent[] = [
 
 /* ── RightsReport (plan §7.3, Appendix C) ───────────────────────────────────────────────────────────────────────── */
 
-// Mirrors configs/rights_rules.yaml: three rule texts re-checked against the bare act, four still unverified.
-const RULES_VERIFIED = "2026-10-27";
+// Mirrors configs/rights_rules.yaml after scripts/check_rights_rules.py: six rules match the statute store, antil_category does not.
+const RULES_VERIFIED = "2026-11-02";
 
 export const MOCK_RIGHTS: RightsReport = {
   case_id: MOCK_CASE_ID,
@@ -286,7 +286,7 @@ export const MOCK_RIGHTS: RightsReport = {
         "Release if no charge sheet is filed within 90 days (offences punishable with death, life imprisonment, or 10 years or more) or 60 days (other offences). Count from the first remand, with that day as day 1. The right lapses if the charge sheet is filed before an application is made.",
       sources: ["BNSS s.187(3) (CrPC s.167(2))", "ED v. Kapil Wadhawan (2023), on counting", "M. Ravindran v. DRI (2020), on the right lapsing"],
       dates: { first_remand: "2024-08-21", day_60: "2024-10-19", charge_sheet: "2024-11-02" },
-      last_verified: null,
+      last_verified: RULES_VERIFIED,
     },
     {
       check: "undertrial_limit",
@@ -299,7 +299,7 @@ export const MOCK_RIGHTS: RightsReport = {
         "Release on bond after half the maximum sentence, or one-third for a first-time offender. Does not apply to offences punishable with death or life imprisonment.",
       sources: ["BNSS s.479 (CrPC s.436A)", "In Re Inhuman Conditions in 1382 Prisons (2024): s.479 applies to pending cases"],
       dates: { arrest_date: "2024-08-20", as_of: MOCK_AS_OF, one_third: "2026-12-20", one_half: "2028-02-19" },
-      last_verified: null,
+      last_verified: RULES_VERIFIED,
     },
     {
       check: "notice_of_appearance",
@@ -356,7 +356,7 @@ export const MOCK_RIGHTS: RightsReport = {
       rule_text: "The twin conditions apply when a section of these acts is charged.",
       sources: ["NDPS Act s.37", "UAPA s.43D(5)", "PMLA s.45"],
       dates: {},
-      last_verified: null,
+      last_verified: RULES_VERIFIED,
     },
   ],
 };

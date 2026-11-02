@@ -40,7 +40,7 @@ describe("unverifiedChecks", () => {
     expect(unverifiedChecks({ checks }).map((c) => c.check)).toEqual(["default_bail"]);
   });
 
-  it("the sample case mirrors configs/rights_rules.yaml: four of seven rule texts unverified", () => {
-    expect(unverifiedChecks(MOCK_RIGHTS).map((c) => c.check)).toEqual(["default_bail", "undertrial_limit", "antil_category", "statutory_bar"]);
+  it("the sample case mirrors configs/rights_rules.yaml: one of seven rule texts unverified", () => {
+    expect(unverifiedChecks(MOCK_RIGHTS).map((c) => c.check)).toEqual(["antil_category"]);
   });
 });
