@@ -20,6 +20,8 @@ My tasks (split.md stream B): SA-01 to SA-08. Updated 2026-10-26. All finished w
 | SA-06 case flow in the UI against the real API | done (`frontend/e2e/live_flow.spec.ts`, run with `E2E_LIVE_API=1`) |
 | SA-03 workspace visual QA, DESIGN.md "Workspace principles" | done |
 | SA-07 onboarding, empty states, Hindi strings, axe audit | done, except a Hindi translation of the interface (see below) |
+| Frontend merge: `frontend-endeavours` into `main` (2026-11-01) | merged on local branch `frontend-merge` (clean, no conflicts; SA-06 was already on `main`); waits for the owner's go-ahead before it goes to `main` |
+| Rights rule verification in the UI (`docs/handoff/code-final.md` §6) | done on `frontend-merge`: every check's "Why" shows "Verified against the bare act on <date>" or "Rule text not yet verified against the bare act" beside the rule text; one line at the top of Check rights names the unverified checks; reads `verification` / `unverified_checks`, falls back to `last_verified` on an older backend. The sample case mirrors `configs/rights_rules.yaml` after the automatic Rights check (6 of 7 verified 2026-11-02, PR #6; was all 7 on a made-up date) |
 
 ## Test results (Python 3.10 venv, offline models)
 _Checked by Vishak 2026-10-27: Python 3.11 is now the minimum (`docs/handoff/python-and-defaults.md`), and `make setup` (the "still a stub" line below) is real (`docs/handoff/fresh-clone-fixes.md`)._
