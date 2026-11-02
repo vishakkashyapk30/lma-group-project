@@ -1,9 +1,9 @@
 \begin{figure*}[!t]
 \centering
 \begin{tikzpicture}
-\begin{axis}[vsbase, at={(0.000\textwidth,0)}, width=0.620\textwidth, height=5.0cm, title={Tokens per case\\{\scriptsize\mdseries log scale}}, title style={font=\footnotesize\bfseries, align=center}, symbolic y coords={FULL,A4,A5:BASE\_4B,S11B,S11C,S12B,S15B}, ytick={FULL,A4,A5:BASE\_4B,S11B,S11C,S12B,S15B}, y dir=reverse, xmin=1000, xmax=400000, xmajorgrids, grid style={gray!25}, enlarge y limits=0.03, enlarge x limits=0.04, nodes near coords={}, xticklabel style={font=\scriptsize}, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.5pt, gray!70}, every axis plot/.append style={}, xmode=log, yticklabel style={font=\scriptsize}]
+\begin{axis}[vsbase, at={(0.000\textwidth,0)}, width=0.620\textwidth, height=5.0cm, title={Tokens per case\\{\scriptsize\mdseries log scale}}, title style={font=\footnotesize\bfseries, align=center}, symbolic y coords={FULL,A4,A5 base 4b,S11B,S11C,S12B,S15B}, ytick={FULL,A4,A5 base 4b,S11B,S11C,S12B,S15B}, y dir=reverse, xmin=1000, xmax=400000, xmajorgrids, grid style={gray!25}, enlarge y limits=0.03, enlarge x limits=0.04, nodes near coords={}, xticklabel style={font=\scriptsize}, error bars/x dir=both, error bars/x explicit, error bars/error bar style={line width=0.5pt, gray!70}, every axis plot/.append style={}, xmode=log, yticklabel style={font=\scriptsize}]
 \addplot[only marks, mark=*, mark size=2.1pt, color=cB, fill=cB] coordinates {(89889.5000,FULL) += (0,0) -= (0,0)};
-\addplot[only marks, mark=*, mark size=2.1pt, color=cD, fill=cD] coordinates {(80478.5000,A4) += (0,0) -= (0,0) (89889.5000,A5:BASE\_4B) += (0,0) -= (0,0)};
+\addplot[only marks, mark=*, mark size=2.1pt, color=cD, fill=cD] coordinates {(80478.5000,A4) += (0,0) -= (0,0) (89889.5000,A5 base 4b) += (0,0) -= (0,0)};
 \addplot[only marks, mark=*, mark size=2.1pt, color=cC, fill=cC] coordinates {(102106.5000,S11B) += (0,0) -= (0,0) (96425.5000,S11C) += (0,0) -= (0,0) (84261.5000,S12B) += (0,0) -= (0,0) (96454.5000,S15B) += (0,0) -= (0,0)};
 \end{axis}
 \node[font=\scriptsize, anchor=north west] at (0,-1.3cm) {\textcolor{cB}{$\bullet$} Full \quad \textcolor{cD}{$\bullet$} ablations (A) \quad \textcolor{cC}{$\bullet$} variants (S, P)};
