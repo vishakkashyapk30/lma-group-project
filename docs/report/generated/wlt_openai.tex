@@ -1,0 +1,35 @@
+\begin{table*}[!t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+Arm & B0 & B1 & B2 & B3 & B4 & B5 & Beats all \\
+\midrule
+A1 & 2/6/0+3 & 1/5/0+12 & 2/6/0+3 & 2/4/0+5 & 3/6/0+3 & 1/3/1+16 & no \\
+A2 & 2/4/1+3 & 1/3/1+12 & 2/4/1+3 & 2/2/1+5 & 2/6/2+1 & 0/2/2+16 & no \\
+A3 & 2/6/0+3 & 1/5/0+12 & 2/6/0+3 & 2/4/0+5 & 3/7/1+1 & 1/3/1+16 & no \\
+A6 & 2/6/0+3 & 1/5/0+12 & 2/6/0+3 & 2/4/0+5 & 3/6/2+1 & 1/4/0+15 & no \\
+A7 & 2/5/1+3 & 1/4/1+5 & 2/5/1+3 & 2/3/1+5 & 2/8/1+1 & 0/4/0+7 & no \\
+A8 & 1/7/0+3 & 0/6/0+12 & 1/7/0+3 & 1/5/0+5 & 2/5/1+3 & 1/3/1+15 & no \\
+A9 & 1/5/1+3 & 0/4/1+12 & 1/5/1+3 & 1/3/1+5 & 1/5/3+1 & 0/2/2+15 & no \\
+FULL & 2/6/0+3 & 2/4/0+12 & 2/6/0+3 & 2/4/0+5 & 3/7/1+1 & 1/3/1+16 & no \\
+S1 & 0/4/0+4 & 0/2/0+8 & 1/3/0+4 & 1/3/0+6 & 2/2/0+7 & 1/3/1+16 & no \\
+S10 & 0/4/0+4 & 0/2/0+8 & 1/3/0+4 & 1/3/0+6 & 2/2/0+7 & 1/3/1+16 & no \\
+S11 & 0/4/0+4 & 0/2/0+8 & 1/3/0+4 & 1/3/0+6 & 2/2/0+7 & 1/3/1+16 & no \\
+S12 & 0/4/0+4 & 0/2/0+8 & 1/3/0+4 & 1/3/0+6 & 2/2/0+7 & 1/3/1+16 & no \\
+S15 & 0/3/1+4 & 0/2/0+8 & 1/2/1+4 & 1/2/1+6 & 2/0/2+7 & 1/3/1+16 & no \\
+S18 & 0/2/2+4 & 0/2/0+8 & 1/1/2+4 & 1/1/2+6 & 2/0/2+7 & 1/3/1+16 & no \\
+S2 & 0/4/0+4 & 0/2/0+8 & 1/3/0+4 & 1/3/0+6 & 2/2/0+7 & 1/3/1+16 & no \\
+S3 & 0/4/0+4 & 0/2/0+8 & 1/3/0+4 & 1/3/0+6 & 2/2/0+7 & 1/3/1+16 & no \\
+S3B & 0/4/0+4 & 0/2/0+8 & 1/3/0+4 & 1/3/0+6 & 2/2/0+7 & 1/3/1+16 & no \\
+S4 & 0/4/0+4 & 0/2/0+8 & 1/3/0+4 & 1/3/0+6 & 2/2/0+7 & 1/3/1+16 & no \\
+S5 & 0/4/0+4 & 0/2/0+8 & 1/3/0+4 & 1/2/1+6 & 2/2/0+7 & 1/3/1+16 & no \\
+S6 & 0/4/0+4 & 0/2/0+8 & 1/3/0+4 & 1/3/0+6 & 2/2/0+7 & 1/3/1+16 & no \\
+S8 & 0/4/0+4 & 0/2/0+8 & 1/3/0+4 & 1/3/0+6 & 2/1/1+7 & 1/3/1+16 & no \\
+S9 & 0/4/0+4 & 0/2/0+8 & 1/3/0+4 & 1/3/0+6 & 2/2/0+7 & 1/3/1+16 & no \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\caption{Family OpenAI: wins/ties/losses of each arm against each baseline over 24 metrics (paired bootstrap, 10,000 resamples, Holm at 0.05, one family per arm and metric over the baselines; a win only when the Holm-level interval excludes zero in the arm's favour). +n: comparisons with fewer than five paired cases (not a win). A dash: no metric defined for both. Beats all: every counted comparison is a win. Every comparison, with its interval, is in docs/results/wlt.}
+\label{tab:wlt_openai}
+\end{table*}
