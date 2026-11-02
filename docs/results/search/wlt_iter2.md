@@ -1,17 +1,17 @@
 | arm | wins | ties | losses | too few | losses (metric: baselines) |
 |---|---|---|---|---|---|
-| full | 14 | 33 | 12 | 49 | unsupported_fact_rate: b0,b3,b4; unsupported_fact_count: b5; coverage: b6; over_search_rate: b5; unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b3,b4,b6 |
-| a7 | 4 | 49 | 3 | 44 | coverage: b1,b3,b6 |
-| c14567 | 25 | 30 | 4 | 49 | unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b4 |
-| c1457 | 27 | 28 | 4 | 49 | unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b4 |
-| c457 | 27 | 23 | 9 | 49 | unsupported_fact_rate: b0,b4; over_search_rate: b5; unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b3,b4,b6 |
-| x1 | 14 | 39 | 6 | 49 | unsupported_fact_count: b2,b5; coverage: b6; unfinished_factor_share: b4,b5; confident_wrong_rate: b4 |
-| x2 | 9 | 16 | 3 | 63 | coverage: b6; unfinished_factor_share: b4,b5 |
-| x3 | 14 | 33 | 12 | 49 | unsupported_fact_rate: b0,b3,b4; unsupported_fact_count: b5; coverage: b6; over_search_rate: b5; unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b3,b4,b6 |
-| x4 | 21 | 29 | 9 | 49 | unsupported_fact_rate: b0,b4; over_search_rate: b5; unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b3,b4,b6 |
-| x5 | 12 | 43 | 4 | 49 | coverage: b6; unfinished_factor_share: b4,b5; confident_wrong_rate: b4 |
-| x6 | 20 | 27 | 12 | 49 | unsupported_fact_rate: b0,b3,b4; unsupported_fact_count: b5; coverage: b6; over_search_rate: b5; unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b3,b4,b6 |
-| x7 | 22 | 25 | 12 | 49 | unsupported_fact_rate: b0,b3,b4; unsupported_fact_count: b5; coverage: b6; over_search_rate: b5; unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b3,b4,b6 |
+| full | 14 | 35 | 12 | 49 | unsupported_fact_rate: b0,b3,b4; unsupported_fact_count: b5; coverage: b6; over_search_rate: b5; unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b3,b4,b6 |
+| a7 | 4 | 51 | 3 | 44 | coverage: b1,b3,b6 |
+| c14567 | 26 | 31 | 4 | 49 | unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b4 |
+| c1457 | 28 | 29 | 4 | 49 | unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b4 |
+| c457 | 27 | 25 | 9 | 49 | unsupported_fact_rate: b0,b4; over_search_rate: b5; unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b3,b4,b6 |
+| x1 | 14 | 41 | 6 | 49 | unsupported_fact_count: b2,b5; coverage: b6; unfinished_factor_share: b4,b5; confident_wrong_rate: b4 |
+| x2 | 10 | 16 | 3 | 64 | coverage: b6; unfinished_factor_share: b4,b5 |
+| x3 | 14 | 35 | 12 | 49 | unsupported_fact_rate: b0,b3,b4; unsupported_fact_count: b5; coverage: b6; over_search_rate: b5; unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b3,b4,b6 |
+| x4 | 21 | 31 | 9 | 49 | unsupported_fact_rate: b0,b4; over_search_rate: b5; unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b3,b4,b6 |
+| x5 | 13 | 44 | 4 | 49 | coverage: b6; unfinished_factor_share: b4,b5; confident_wrong_rate: b4 |
+| x6 | 20 | 29 | 12 | 49 | unsupported_fact_rate: b0,b3,b4; unsupported_fact_count: b5; coverage: b6; over_search_rate: b5; unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b3,b4,b6 |
+| x7 | 22 | 27 | 12 | 49 | unsupported_fact_rate: b0,b3,b4; unsupported_fact_count: b5; coverage: b6; over_search_rate: b5; unfinished_factor_share: b4,b5; confident_wrong_rate: b0,b3,b4,b6 |
 
 Outcome against each baseline (W win, T tie, L loss, f fewer than 5 paired cases, - undefined); Satvik's `docs/report/tools/win_loss_tie.py`: seeded paired bootstrap (10,000), Holm at 0.05 per (arm, metric) over the baselines, search cases t1dev-000..029.
 
@@ -25,6 +25,7 @@ Outcome against each baseline (W win, T tie, L loss, f fewer than 5 paired cases
 | factor_f1 | 0.333 | f | f | f | f | f | f | f |
 | court_discussed_recall | - | - | - | - | - | - | - | - |
 | unsupported_fact_rate | 1.000 | L +0.051 | T +0.057 | f | L +0.067 | L +0.042 | T +0.033 | T +0.030 |
+| unsupported_case_fact_rate | 0.844 | - | - | - | - | T +0.038 | T +0.111 | - |
 | unsupported_fact_count | 6.200 | T +2.240 | T -2.400 | T +3.200 | T -0.200 | W -9.033 | L +2.033 | T -0.700 |
 | answerable_coverage | 0.389 | T +0.389 | T +0.071 | T +0.389 | T +0.357 | T +0.136 | T +0.212 | W +0.379 |
 | recall_at_10 | - | - | - | - | - | - | - | - |
@@ -54,6 +55,7 @@ Outcome against each baseline (W win, T tie, L loss, f fewer than 5 paired cases
 | factor_f1 | 0.333 | f | f | f | f | f | f | f |
 | court_discussed_recall | - | - | - | - | - | - | - | - |
 | unsupported_fact_rate | 0.958 | T +0.010 | T +0.018 | f | T +0.028 | T +0.005 | T -0.004 | T -0.007 |
+| unsupported_case_fact_rate | 0.583 | - | - | - | - | T -0.113 | T -0.042 | - |
 | unsupported_fact_count | 4.720 | T +0.760 | T -4.300 | T +1.720 | T -2.100 | W -11.067 | T +0.000 | W -2.733 |
 | answerable_coverage | 0.056 | T +0.056 | T -0.214 | T +0.056 | T +0.071 | T -0.076 | T +0.000 | T +0.167 |
 | recall_at_10 | - | - | - | - | - | - | - | - |
@@ -83,6 +85,7 @@ Outcome against each baseline (W win, T tie, L loss, f fewer than 5 paired cases
 | factor_f1 | 0.000 | f | f | f | f | f | f | f |
 | court_discussed_recall | - | - | - | - | - | - | - | - |
 | unsupported_fact_rate | 0.976 | T +0.028 | T +0.021 | f | T +0.016 | T -0.044 | T -0.053 | T -0.056 |
+| unsupported_case_fact_rate | 0.500 | - | - | - | - | W -0.280 | T -0.071 | - |
 | unsupported_fact_count | 5.840 | T +1.880 | T -2.850 | T +2.840 | T -0.650 | W -9.767 | T +1.300 | T -1.433 |
 | answerable_coverage | 0.444 | W +0.444 | T +0.143 | W +0.444 | T +0.429 | T +0.273 | W +0.348 | W +0.515 |
 | recall_at_10 | - | - | - | - | - | - | - | - |
@@ -112,6 +115,7 @@ Outcome against each baseline (W win, T tie, L loss, f fewer than 5 paired cases
 | factor_f1 | 0.333 | f | f | f | f | f | f | f |
 | court_discussed_recall | - | - | - | - | - | - | - | - |
 | unsupported_fact_rate | 0.976 | T +0.028 | T +0.021 | f | T +0.016 | T -0.052 | T -0.061 | T -0.064 |
+| unsupported_case_fact_rate | 0.472 | - | - | - | - | W -0.292 | T -0.125 | - |
 | unsupported_fact_count | 5.880 | T +1.920 | T -2.800 | T +2.880 | T -0.600 | W -9.733 | T +1.333 | T -1.400 |
 | answerable_coverage | 0.556 | W +0.556 | T +0.286 | W +0.556 | W +0.571 | W +0.364 | W +0.439 | W +0.606 |
 | recall_at_10 | - | - | - | - | - | - | - | - |
@@ -141,6 +145,7 @@ Outcome against each baseline (W win, T tie, L loss, f fewer than 5 paired cases
 | factor_f1 | 0.333 | f | f | f | f | f | f | f |
 | court_discussed_recall | - | - | - | - | - | - | - | - |
 | unsupported_fact_rate | 1.000 | L +0.051 | T +0.029 | f | T +0.039 | L +0.034 | T +0.025 | T +0.022 |
+| unsupported_case_fact_rate | 0.400 | - | - | - | - | T -0.124 | T -0.100 | - |
 | unsupported_fact_count | 3.960 | T +0.000 | T -4.700 | T +0.960 | T -2.500 | W -11.233 | T -0.167 | W -2.900 |
 | answerable_coverage | 0.500 | W +0.500 | T +0.214 | W +0.500 | W +0.500 | T +0.288 | W +0.364 | W +0.530 |
 | recall_at_10 | - | - | - | - | - | - | - | - |
@@ -170,6 +175,7 @@ Outcome against each baseline (W win, T tie, L loss, f fewer than 5 paired cases
 | factor_f1 | 0.333 | f | f | f | f | f | f | f |
 | court_discussed_recall | - | - | - | - | - | - | - | - |
 | unsupported_fact_rate | 0.935 | T -0.013 | T -0.013 | f | T -0.018 | T -0.047 | T -0.056 | T -0.059 |
+| unsupported_case_fact_rate | 0.623 | - | - | - | - | T -0.199 | T +0.056 | - |
 | unsupported_fact_count | 8.400 | T +4.440 | T -0.450 | L +5.400 | T +1.750 | W -7.467 | L +3.600 | T +0.867 |
 | answerable_coverage | 0.444 | T +0.444 | T +0.143 | T +0.444 | T +0.429 | T +0.182 | T +0.258 | W +0.424 |
 | recall_at_10 | - | - | - | - | - | - | - | - |
@@ -199,6 +205,7 @@ Outcome against each baseline (W win, T tie, L loss, f fewer than 5 paired cases
 | factor_f1 | - | - | - | - | - | - | - | - |
 | court_discussed_recall | - | - | - | - | - | - | - | - |
 | unsupported_fact_rate | 0.804 | f | T -0.147 | f | f | W -0.228 | W -0.247 | W -0.225 |
+| unsupported_case_fact_rate | 0.445 | - | - | - | - | W -0.370 | f | - |
 | unsupported_fact_count | 6.833 | T +2.333 | T -6.300 | T +3.583 | T +0.400 | W -9.267 | T +1.867 | T -1.200 |
 | answerable_coverage | 0.167 | f | f | f | f | f | f | f |
 | recall_at_10 | - | - | - | - | - | - | - | - |
@@ -228,6 +235,7 @@ Outcome against each baseline (W win, T tie, L loss, f fewer than 5 paired cases
 | factor_f1 | 0.333 | f | f | f | f | f | f | f |
 | court_discussed_recall | - | - | - | - | - | - | - | - |
 | unsupported_fact_rate | 1.000 | L +0.051 | T +0.057 | f | L +0.067 | L +0.042 | T +0.033 | T +0.030 |
+| unsupported_case_fact_rate | 0.844 | - | - | - | - | T +0.038 | T +0.111 | - |
 | unsupported_fact_count | 6.200 | T +2.240 | T -2.400 | T +3.200 | T -0.200 | W -9.033 | L +2.033 | T -0.700 |
 | answerable_coverage | 0.389 | T +0.389 | T +0.071 | T +0.389 | T +0.357 | T +0.136 | T +0.212 | W +0.379 |
 | recall_at_10 | - | - | - | - | - | - | - | - |
@@ -257,6 +265,7 @@ Outcome against each baseline (W win, T tie, L loss, f fewer than 5 paired cases
 | factor_f1 | 0.333 | f | f | f | f | f | f | f |
 | court_discussed_recall | - | - | - | - | - | - | - | - |
 | unsupported_fact_rate | 1.000 | L +0.051 | T +0.029 | f | T +0.039 | L +0.034 | T +0.025 | T +0.022 |
+| unsupported_case_fact_rate | 0.400 | - | - | - | - | T -0.124 | T -0.100 | - |
 | unsupported_fact_count | 3.960 | T +0.000 | T -4.700 | T +0.960 | T -2.500 | W -11.233 | T -0.167 | W -2.900 |
 | answerable_coverage | 0.500 | W +0.500 | T +0.214 | W +0.500 | W +0.500 | T +0.288 | W +0.364 | W +0.530 |
 | recall_at_10 | - | - | - | - | - | - | - | - |
@@ -286,6 +295,7 @@ Outcome against each baseline (W win, T tie, L loss, f fewer than 5 paired cases
 | factor_f1 | 0.333 | f | f | f | f | f | f | f |
 | court_discussed_recall | - | - | - | - | - | - | - | - |
 | unsupported_fact_rate | 0.827 | T -0.121 | T +0.001 | f | T -0.055 | T -0.058 | T -0.067 | W -0.070 |
+| unsupported_case_fact_rate | 0.556 | - | - | - | - | W -0.251 | T +0.030 | - |
 | unsupported_fact_count | 5.880 | T +1.920 | T -2.900 | T +2.880 | T -0.700 | W -9.667 | T +1.400 | T -1.333 |
 | answerable_coverage | 0.333 | T +0.333 | T +0.000 | T +0.333 | T +0.286 | T +0.091 | T +0.167 | T +0.333 |
 | recall_at_10 | - | - | - | - | - | - | - | - |
@@ -315,6 +325,7 @@ Outcome against each baseline (W win, T tie, L loss, f fewer than 5 paired cases
 | factor_f1 | 0.333 | f | f | f | f | f | f | f |
 | court_discussed_recall | - | - | - | - | - | - | - | - |
 | unsupported_fact_rate | 1.000 | L +0.051 | T +0.057 | f | L +0.067 | L +0.042 | T +0.033 | T +0.030 |
+| unsupported_case_fact_rate | 0.844 | - | - | - | - | T +0.038 | T +0.111 | - |
 | unsupported_fact_count | 6.200 | T +2.240 | T -2.400 | T +3.200 | T -0.200 | W -9.033 | L +2.033 | T -0.700 |
 | answerable_coverage | 0.389 | T +0.389 | T +0.071 | T +0.389 | T +0.357 | T +0.136 | T +0.212 | W +0.379 |
 | recall_at_10 | - | - | - | - | - | - | - | - |
@@ -344,6 +355,7 @@ Outcome against each baseline (W win, T tie, L loss, f fewer than 5 paired cases
 | factor_f1 | 0.333 | f | f | f | f | f | f | f |
 | court_discussed_recall | - | - | - | - | - | - | - | - |
 | unsupported_fact_rate | 1.000 | L +0.051 | T +0.057 | f | L +0.067 | L +0.042 | T +0.033 | T +0.030 |
+| unsupported_case_fact_rate | 0.844 | - | - | - | - | T +0.038 | T +0.111 | - |
 | unsupported_fact_count | 6.200 | T +2.240 | T -2.400 | T +3.200 | T -0.200 | W -9.033 | L +2.033 | T -0.700 |
 | answerable_coverage | 0.389 | T +0.389 | T +0.071 | T +0.389 | T +0.357 | T +0.136 | T +0.212 | W +0.379 |
 | recall_at_10 | - | - | - | - | - | - | - | - |
