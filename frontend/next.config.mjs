@@ -8,6 +8,8 @@ const backendInternal = (process.env.BACKEND_INTERNAL_URL ?? "http://backend:800
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // NEXT_DIST_DIR lets a build run beside a dev server in the same checkout (default .next, which the Docker image uses).
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   // Self-contained server bundle for the Docker image (copies only the traced node_modules).
   output: "standalone",
   // gzip in Next's server would buffer the proxied SSE event stream, so it is off in proxy mode (put a CDN/proxy in front if needed).

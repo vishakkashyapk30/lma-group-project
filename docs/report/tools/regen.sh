@@ -6,4 +6,5 @@ R=docs/results
 specs="openai=$R/midsub/openai_v3b/per_case_agreed.csv,$R/midsub/a7/per_case_agreed.csv gemini=$R/midsub/gemini_A/per_case_agreed.csv v1=$R/midsub/v1/per_case_agreed.csv shravani_gem=$R/shravani/gemini_31/per_case_agreed.csv shravani_off=$R/shravani/offline_a10/per_case_agreed.csv"
 [ -f $R/midsub/sarvam/per_case_agreed.csv ] && specs="$specs sarvam=$R/midsub/sarvam/per_case_agreed.csv"
 python3 docs/report/tools/make_result_tables.py docs/report/generated $specs
+python3 docs/report/tools/win_loss_tie.py docs/report/generated docs/results/wlt $specs
 python3 docs/report/tools/mark_tables.py docs/results/dev-sweep/tables

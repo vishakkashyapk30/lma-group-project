@@ -136,3 +136,51 @@ def test_first_schedule_table_is_parsed_by_columns(tmp_path):
     assert by["420"]["cognisable"] is True and by["420"]["bailable"] is True  # Ditto repeats the row above (324: Cognizable, Ditto of Bailable)
     assert by["109"]["cognisable"] is None and by["109"]["bailable"] is None
     assert any("s.109" in n for n in notes)
+
+
+
+def _gazette(tmp_path: Path) -> Path:
+    """Two Gazette-style pages: body text 10 pt, headings as 8 pt margin notes (right on the first page, left on the second)."""
+    even = [
+        (142, 100, 10, "1. (1) This Act may be called the Sanhita."),
+        (487, 100, 8, "Short title."),
+        (142, 200, 10, "2. A police officer making an arrest shall take the person"),
+        (118, 212, 10, "before a Magistrate."),
+        (487, 200, 8, "Person arrested to"),
+        (487, 209, 8, "be taken before"),
+        (487, 218, 8, "Magistrate."),
+        (142, 300, 10, "3. No police officer shall detain a person"),
+        (118, 312, 10, "for more than twenty-four hours."),
+        (487, 300, 8, "Person arrested not"),
+        (487, 309, 8, "to be detained."),
+        (142, 330, 10, "(2) Second sub-section of 3."),
+        (217, 44, 8, "THE GAZETTE OF INDIA EXTRAORDINARY"),
+    ]
+    odd = [
+        (142, 100, 10, "4. Officers in charge shall report."),
+        (60, 100, 8, "Police to report."),
+        (142, 150, 10, "5. Not a heading: no margin note beside it."),
+    ]
+    return _pdf(tmp_path / "gazette.pdf", [even, odd])
+
+
+def test_gazette_sections_take_headings_from_either_margin(tmp_path):
+    found = gap.gazette_sections(_gazette(tmp_path), ["2", "3", "4"])
+    assert found["3"] == ("Person arrested not to be detained", "3. No police officer shall detain a person for more than twenty-four hours.\n(2) Second sub-section of 3.")
+    assert found["2"][0] == "Person arrested to be taken before Magistrate"
+    assert found["4"] == ("Police to report", "4. Officers in charge shall report. 5. Not a heading: no margin note beside it.")
+
+
+def test_build_gazette_rows_use_the_store_form(tmp_path):
+    rows, missing = gap.build_gazette_rows("BNSS", _gazette(tmp_path), "https://example.org/g.pdf", ["3", "999"], "2026-11-02")
+    assert missing == ["999"]
+    assert rows[0]["text"].startswith("Person arrested not to be detained\n\n3. Person arrested not to be detained.—No police officer")
+    assert (rows[0]["code"], rows[0]["section"], rows[0]["retrieved"]) == ("BNSS", "3", "2026-11-02")
+
+
+def test_fetch_pinned_refuses_a_file_with_another_hash(tmp_path):
+    f = tmp_path / "g.pdf"
+    f.write_bytes(b"%PDF-1.4 not the gazette")
+    with pytest.raises(ValueError, match="not the pinned"):
+        gap.fetch_pinned("https://example.org/g.pdf", f, "0" * 64)
+    assert gap.fetch_pinned("https://example.org/g.pdf", f, gap.sha256_of(f)) == f

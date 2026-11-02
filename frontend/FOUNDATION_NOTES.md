@@ -8,7 +8,7 @@ Demo mode: with `NEXT_PUBLIC_API_BASE` unset or the API unreachable, everything 
 
 ## Design system
 - `styles/tokens.css` (palette, status colours, type scale, spacing, radii, motion), `styles/fonts.css` (self-hosted @fontsource:
-  Fraunces, Tiro Devanagari Hindi, Noto Sans Devanagari, DM Sans, IBM Plex Mono; next/font/google could not download at build),
+  Newsreader, Schibsted Grotesk, Spline Sans Mono, Noto Serif Devanagari, Hind; see DESIGN.md "Typography"),
   `app/globals.css` (base, focus ring, jaali utility, reduced-motion base). Tailwind maps: `bg-parchment|cream|maroon|oxblood|gold-leaf|ink`,
   `text-neem|indigo|sindoor|haldi|clay`, `font-display|devanagari|devanagari-body|sans|mono`, `duration-fast`, `ease-standard`, `rounded-pill`.
 - `lib/utils`: `cn`, `isBrowser`, `sleep`, `clone`, `uid`, `clamp`, `groupBy`.
@@ -34,9 +34,10 @@ MOCK_PREP, MOCK_CHAT, MOCK_BUDGET, MOCK_CITATIONS, MOCK_DOC_TITLES, MOCK_CASES, 
 intakeScript/draftScript/..., MOCK_LIBRARY_RESULTS, MOCK_CITATION_GRAPH, MOCK_BRIDGE, MOCK_BRIDGES, MOCK_PAGES, getMockPage`.
 
 ## Hooks and helpers
+- `lib/lastCase`: the last open case for "Continue" on the landing page (`useLastCase`, `writeLastCase`).
 - `lib/useEventStream(caseId, opts)` SSE with reconnect (mock replay in demo); `lib/useReducedMotion` (`useReducedMotion, prefersReducedMotion`).
-- `lib/motion/register`: `registerMotion()` (idempotent, client-only), exports `gsap, ScrollTrigger, SplitText, DrawSVGPlugin, MorphSVGPlugin, useGSAP,
-  Lenis`, `MOTION`, `whenMotionAllowed`, `killAllScrollTriggers`, `startLenis`, `useLenis(enabled)`, `getLenis`, `scrollToTarget`.
+- `lib/motion`: spring maths and drag helpers for direct manipulation (DESIGN.md "Direct manipulation and springs"); there is no
+  gsap, ScrollTrigger or Lenis in this project (smooth scrolling and scroll scenes are banned).
 - `lib/status`: `getStatusMeta(status, kind?)`, `STATUS_META`, `*_META` per family, `TONE_CLASSES`, `parseRightsChip, sortRightsChips`, `BLOCKING_STATUSES`.
 - `lib/stages`: `STAGES, STAGE_BY_ID, WORKSPACE_TABS, TAB_LABELS, GATE_LABELS, isStageUnlocked, lockReason, stageState, tabForStage`.
 - `lib/agents`: `AGENTS, AGENT_LIST, agentTitle, agentForActor`. `lib/labels, lib/fields, lib/format, lib/diff, lib/stores` (label maps, field formatting, date and source helpers, word diff, store/tool metadata).
@@ -47,7 +48,7 @@ intakeScript/draftScript/..., MOCK_LIBRARY_RESULTS, MOCK_CITATION_GRAPH, MOCK_BR
 `useAgentActivity()`, `useWorkspaceEvents()`, `useEdits()` (`editField` marks USER_EDITED). Pure: `computeChecklist, checklistKey, attentionCount, deriveActivity`.
 
 ## Components
-- `components/ui`: `Button` (variants primary, secondary, ghost, link, danger, pill, pill-dark, play, gold; sizes sm, md, lg, icon, round), `PlayButton`, `Card*`, `Badge`, `Tabs*`,
+- `components/ui`: `Button` (variants primary, secondary, ghost, link, danger, pill; sizes sm, md, lg, icon, icon-sm), `Card*`, `Badge`, `Tabs*`,
   `Dialog*`, `Tooltip`/`TooltipProvider`, `ScrollArea`, `Separator`, `Input`, `Textarea`, `Skeleton`, `SkeletonText`.
-- `components/common`: `StatusBadge({status, kind?, label?, detail?, size?, solid?})`, `StatusIcon`, `SourceChip({source})`, `AgentGlyph({agent, size?, title?})`, `Logo`, `BandsMark`, `TopNav`.
-- Pages in `app/*/page.tsx` are thin wrappers (`/`, `/cases`, `/case/[id]`, `/desk`, `/library`, `/about`); component bodies elsewhere are still stubs (outdated, checked by Vishak 2026-10-27: the components are built; see `frontend/README.md` and `docs/handoff/workspace-redesign.md`).
+- `components/common`: `StatusBadge({status, kind?, label?, detail?, size?, solid?})`, `StatusIcon`, `SourceChip({source})`, `AgentGlyph({agent, size?, title?})`, `Logo`, `BandsMark`.
+- Pages in `app/*/page.tsx` are thin wrappers (`/`, `/cases`, `/case/[id]`, `/desk`, `/library`, `/about`). The component bodies are built; see `frontend/README.md` and `docs/handoff/workspace-redesign.md`.

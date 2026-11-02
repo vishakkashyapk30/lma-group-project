@@ -6,13 +6,14 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import dynamic from "next/dynamic";
 import { X } from "lucide-react";
-import { useMemo, useState, type ReactElement } from "react";
+import { useMemo, useRef, useState, type ReactElement, type RefObject } from "react";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { isAgentName } from "@/lib/agents";
 import { dossierEntries } from "@/lib/fields";
 import { formatClock, humanize } from "@/lib/format";
 import { FACTOR_LABELS } from "@/lib/labels";
 import { MOCK_CASE_ID, MOCK_RETRIEVAL_PLANS } from "@/lib/mock/case0007";
+import { ALLOWANCE, SPRINGS, useDragToClose } from "@/lib/motion";
 import { parseSlotAssessment } from "@/lib/status";
 import { toolLabel } from "@/lib/stores";
 import type { AgentEvent, BudgetLeft, Factor, PlanStep } from "@/lib/types";
@@ -88,8 +89,16 @@ function argSummary(args: Record<string, unknown>): string {
   return parts.join(" · ");
 }
 
+/** Lives inside the drawer's content, so the drag binds once the portal has mounted the panel. */
+function DragToClose({ panel, handle, onClose }: { panel: RefObject<HTMLDivElement | null>; handle: RefObject<HTMLElement | null>; onClose: () => void }): null {
+  useDragToClose(panel, handle, { axis: "x", onClose, spring: SPRINGS.panel, allowance: ALLOWANCE.panel, fraction: 0.5, speed: 500, killExitAnimation: true });
+  return null;
+}
+
 export function TraceDrawer({ caseId, open, onClose, className }: TraceDrawerProps): ReactElement {
   const ws = useWorkspace();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const handleRef = useRef<HTMLElement>(null);
   const [picked, setPicked] = useState<string | null>(null);
 
   const plans: PlanView[] = useMemo(() => {
@@ -109,6 +118,7 @@ export function TraceDrawer({ caseId, open, onClose, className }: TraceDrawerPro
     <DialogPrimitive.Root open={open} onOpenChange={(o) => !o && onClose()} modal={false}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Content
+          ref={panelRef}
           onInteractOutside={(e) => e.preventDefault()}
           data-testid="trace-drawer"
           aria-describedby="trace-desc"
@@ -118,7 +128,8 @@ export function TraceDrawer({ caseId, open, onClose, className }: TraceDrawerPro
             className,
           )}
         >
-          <header className="flex items-start gap-3 border-b border-line px-4 py-3">
+          <DragToClose panel={panelRef} handle={handleRef} onClose={onClose} />
+          <header ref={handleRef} data-testid="panel-handle" title="Drag to close, or press Escape" className="flex touch-pan-y select-none items-start gap-3 border-b border-line px-4 py-3">
             <div className="min-w-0 flex-1">
               <DialogPrimitive.Title className="font-display text-lg font-semibold text-ink">Details</DialogPrimitive.Title>
               <DialogPrimitive.Description id="trace-desc" className="text-sm text-ink-soft">

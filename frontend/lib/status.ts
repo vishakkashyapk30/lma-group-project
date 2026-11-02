@@ -290,6 +290,22 @@ export function rightsChipFromCheck(result: RightsCheckResult, detail?: string):
   return `${result.status} · ${detail ? `${label}: ${detail}` : label}`;
 }
 
+/** When the rule text was verified against the bare act (ISO date), or null if not yet. Reads `verification` and falls back to
+ *  `last_verified` for an older backend or the demo data. */
+export function ruleVerifiedOn(result: RightsCheckResult): string | null {
+  const v = result.verification ?? result.last_verified ?? "unverified";
+  return v && v !== "unverified" ? v : null;
+}
+
+/** The checks of a report whose rule text is not yet verified, in report order. */
+export function unverifiedChecks(report: { checks: RightsCheckResult[]; unverified_checks?: string[] }): RightsCheckResult[] {
+  if (report.unverified_checks) {
+    const names = new Set(report.unverified_checks);
+    return report.checks.filter((c) => names.has(c.check));
+  }
+  return report.checks.filter((c) => ruleVerifiedOn(c) === null);
+}
+
 /** Parse a RetrievalPlan.assessment value: "WEAK (1 of 2)" -> {status: "WEAK", note: "1 of 2"}. */
 export function parseSlotAssessment(value: string): { status: SlotStatus | null; note: string | null } {
   const m = /^\s*(FILLED|WEAK|MISSING)\b\s*(?:\((.*)\))?/.exec(value);
