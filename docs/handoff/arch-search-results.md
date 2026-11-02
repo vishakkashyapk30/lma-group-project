@@ -64,5 +64,28 @@ Readings:
 ## Spend
 Ledger: 229.44 at start; 291.60 after iteration 1 (about INR 62 for 9 arms x 30 cases, most Full-identical calls hit the response cache).
 
-## Next (being run)
-X2 (single), X7 (single), S13 X1+X4+X5+X7, S13 X1+X4+X5+X6+X7, S13 X4+X6+X7. Then the winner is renamed to a fixed id, Full/B4/A7 and the winner are rerun on that commit, the holdout is run once, and the ablations are run on the winner.
+## Iteration 2 (commit 568d445): X7, X2, and combinations
+
+| arm | obj. recall | obj. precision | answerable cov. | coverage | factor recall | factor prec. | factor F1 | citation prec. | fabricated | M6 | tokens |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| X2 | 0.000 | 0.000 | 0.045 | 0.199 | 0.000 | 0.000 | 0.000 | 0.795 | 0.000 | 0.730 | 94,457 |
+| X7 | 1.000 | 0.203 | 0.379 | 0.643 | 0.500 | 0.188 | 0.417 | 0.823 | 0.000 | 0.989 | 111,991 |
+| c457 = X4+X6+X7 | 0.909 | 0.182 | 0.530 | 1.000 | 0.500 | 0.286 | 0.500 | 0.880 | 0.000 | 0.981 | 105,397 |
+| c1457 = X1+X4+X5+X7 | 1.000 | 0.192 | 0.606 | 0.972 | 0.500 | 0.214 | 0.417 | 0.681 | 0.000 | 0.895 | 121,065 |
+| c14567 = X1+X4+X5+X6+X7 | 1.000 | 0.195 | 0.515 | 0.956 | 0.250 | 0.083 | 0.167 | 0.698 | 0.000 | 0.903 | 119,269 |
+
+- X7 (resolve an objection's reference by id) lifts objection recall from 0.364 to 1.000 on the 11 gold orders: the objections were there, they were being discarded for a store-label slip. Objection precision stays about 0.2 (Full raises 3 to 5 objection factors per order against 1 gold factor).
+- X2 failed on Sarvam: most grounds could not meet the 80% verbatim rule and ended empty or NEEDS_REVIEW (coverage 0.199); dropped.
+- c1457 is the best combination so far. Satvik's table (`docs/report/tools/win_loss_tie.py`, seeded paired bootstrap, Holm per arm and metric over B0-B6; merged on main 29297d0 and used from iteration 2 on): c1457 27 wins, 28 ties, 4 losses, 49 too-few cells; Full 14 wins, 33 ties, 12 losses. The 4 losses of c1457: `unfinished_factor_share` against B4 and B5, `confident_wrong_rate` against B0 and B4. M6 is no longer a loss against any baseline (ties after Holm; point estimates 0.895 against 0.90-0.97). Tables: `docs/results/search/wlt_iter2.md`, every comparison in `docs/results/search/wlt/search.csv`.
+
+### Why the four remaining losses are structural (declared, not chased)
+- `unfinished_factor_share` (M18, factors stopped with a required slot unfilled) against B4 and B5: B4 has one `fused` slot that is filled whenever any store returns anything, and B5 has no contract slots, so both are near 0 by construction. Full's contracts name required evidence; an unfilled slot is the system telling counsel what is missing. Removing the loss means removing the contracts or relabelling slots as optional, which changes what the metric counts rather than the quality.
+- `confident_wrong_rate` (M35, emitted sentences supported neither by the facts nor by the rest of the order) against B4 (n = 14) and B0 (n = 6): B4 emits 7.5% of its grounds (coverage 0.075) and B0 writes claims in 6 of 30 orders, so their few emitted sentences are a selected subset. c1457 emits 97% of its grounds and most of its sentences state law from a cited precedent, which the facts cannot entail. Lowering M35 needs either declining most grounds (losing coverage, where c1457 now wins against B0-B5 and ties B6) or dropping the legal reasoning; both are gaming the trade-off, not improving the brief.
+
+## Iteration 3 (commit 1ef5495): X8 and the final reruns
+- X8 (`fact_grounding='verbatim'`): after repair, a case-fact sentence that paraphrases the record is replaced by the record sentence itself (no model call, nothing added, law sentences untouched).
+- The scorer now emits M6a (`unsupported_case_fact_rate`) and its count `n_case_fact` beside M6 (`eval/scoring/engine.METRICS`, `case_metrics.py`); every committed per-case CSV under `docs/results` was given the two columns from its stored outputs by `scripts/midsub/add_m6a.py` (no other column touched), so `tests/unit/eval/test_m6a_beside_m6.py` runs.
+- Running now (unit `vs-final`, root `data/eval/dev_runs/sarvam_final`, all on commit 1ef5495): c14578 (= c1457 + X8), c1457, Full, B4, A7, B0, B1, B2, B3, B5, B6 on the 30 search cases, so the final table has one code stamp.
+
+## Next
+Score the `sarvam_final` arms; pick the winner (c1457 or c14578); give it a fixed id; run it with Full and the baselines once on the holdout `t1dev-030..049` (`SPLIT=holdout OUT_ROOT=sarvam_holdout`); run the ablations on the winner.
