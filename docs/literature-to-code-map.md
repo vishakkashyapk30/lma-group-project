@@ -144,3 +144,10 @@ Every paper cited in the rows above was checked against its official page (ACL A
 | Doyle, "A Truth Maintenance System" (plan 10) | checked on secondary sources | Artificial Intelligence 12 (1979) pp. 231-272 appears on the author's publication list and a bibliography; the publisher page redirected and could not be read |
 
 Switch ids, modules and tests in the rows were not touched.
+
+## Ablations that need an argument (dispatch)
+| Id | Source | Switch | Dispatch | Test |
+|---|---|---|---|---|
+| A5 | Plan 15.4 ablation (extractor model); LoRA vs base model, Hu et al., "LoRA", ICLR 2022, [link](https://arxiv.org/abs/2106.09685) | `extractor` (`Switches.extractor_role()`) | `driver run --system A5:base_4b` (or `A5:prompted_32b`); a bare `A5` is refused. Under `VS_LLM_BACKEND=sarvam` all agent roles share one hosted model, so A5:base_4b differs from Full only in the role name | `tests/unit/eval/test_arg_systems_dispatch.py`, `test_variant_effects.py` |
+| A10 | Plan 15.4 ablation (store knock-out); source-ablation practice in RAG evaluation, Lewis et al., "RAG", NeurIPS 2020, [link](https://arxiv.org/abs/2005.11401) | `knockout_store` | `driver run --system A10:<store>`, one of the seven shared stores (`A10:caselaw.reasoning`); retrieval and slot fill only; offline study `eval/ablations/a10_store_knockouts.py` | same |
+| S13 | AFlow, ADAS (row above) | grid point of other switches | `driver run --system S13:<field>=<value>[,...]` (for example `S13:stopping=llm`); the search itself (`workflow_search`) has no hosted arm | same |

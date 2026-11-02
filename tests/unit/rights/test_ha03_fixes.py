@@ -226,17 +226,22 @@ def test_other_grounds_outcomes_unchanged():
     assert grounds().status == S.UNKNOWN
 
 
-# 9. these rules stay unverified ---------------------------------------------------------------------------------------
-def test_the_four_corrected_rules_stay_unverified_until_re_checked():
+# 9. verification state ------------------------------------------------------------------------------------------------
+def test_verification_state_is_the_automatic_check_against_the_statute_store():
+    # RECONCILED: the owner's plan of 2 Nov (docs/handoff/team-todo-2026-11-02.md) replaces the re-check by hand with
+    # scripts/check_rights_rules.py, which writes `last_verified` (and its hash) only for a rule whose cited sections all match the
+    # statute store; its result is committed in docs/results/rights/rule_check.json. A rule reads verified exactly when that result
+    # says it matched, and an unmatched rule never carries a date.
+    import json
+    from pathlib import Path
+
+    report = json.loads((Path(__file__).resolve().parents[3] / "docs/results/rights/rule_check.json").read_text(encoding="utf-8"))
     by_id = {r.rule_id.value: r for r in default_rules()}
-    for rule in ("default_bail", "undertrial_limit", "antil_category", "statutory_bar"):
-        assert by_id[rule].last_verified is None, rule
-    # RECONCILED: design review 2026-10-27 item 7 binds a date to a hash of rule text plus code (rights/verify_hash.py);
-    # grounds_of_arrest changed behaviour after its check (oral grounds -> CHECK) and production_24h rests on a wrong
-    # BNSS s.58 store text, so both carry no verified_hash and read unverified until re-checked.
-    assert by_id["notice_of_appearance"].last_verified == "2026-10-27"
-    for rule in ("grounds_of_arrest", "production_24h"):
-        assert by_id[rule].last_verified is None, rule
+    assert set(report["rules"]) == set(by_id)
+    for rule, result in report["rules"].items():
+        assert (by_id[rule].last_verified is not None) == result["matched"], rule
+        if result["matched"]:
+            assert by_id[rule].last_verified == report["checked_on"], rule
 
 
 def test_parse_section():

@@ -1,4 +1,4 @@
-"""Extract chosen sections of the CrPC 1973 and the NDPS Act 1985 from official PDFs into data/gaps/statutes/*.jsonl.
+"""Extract chosen sections of the CrPC 1973, the NDPS Act 1985 and the BNSS 2023 from official PDFs into data/gaps/statutes/*.jsonl.
 
 Sources (all official, retrieved on the date written into every row's `retrieved` field):
 
@@ -9,6 +9,12 @@ Sources (all official, retrieved on the date written into every row's `retrieved
   https://dor.gov.in/files/acts_files/NDPS_1985.pdf  saved as `data/gaps/raw/ndps_dor_clean.pdf` (54 pages, clean text layer).
   The other copy we had (`ndps_candidate.pdf`, dor.gov.in `Narcotic-Drugs-...-1985_0.pdf`) is a bad OCR scan ('Sec. 27Al', 'tns.')
   and is NOT used; `--ndps-pdf` can still point at it, in which case rows get `ocr: true` and the mechanical fixes in `OCR_FIXES`.
+* BNSS 2023 (No. 46 of 2023), the Gazette of India, Extraordinary, Part II Section 1, 25 December 2023 (Legislative Department):
+  https://egazette.gov.in/WriteReadData/2023/250884.pdf  saved as `data/gaps/raw/bnss_gazette.pdf` (249 pages). `--fetch` downloads it
+  over verified TLS and refuses any file whose SHA-256 is not `BNSS_SHA256`. Only s.58 is taken: the Open India Law row for BNSS s.58
+  carries the heading of s.58 and the body of s.59 (`docs/handoff/rights-fixes.md`); the gap row replaces it in the statute store. The
+  Gazette prints a section's heading as a margin note, so `gazette_sections` reads the body from the text column and the heading from the
+  margin note level with it.
 
 Nothing is typed from memory. Every statutory word comes from the PDF text layer. The only mechanical edits are:
 
@@ -26,12 +32,15 @@ above, "According as the offence abetted is cognizable" and similar conditional 
 flags differ gets None for that flag. Flags go to `data/gaps/statutes/first_schedule_ipc.jsonl` as IPC rows with EMPTY text, which
 `StatuteStore._merge_gap_rows` treats as "add the flags to the existing (IPC, section) row". NDPS flags are derived from the parsed s.37 text.
 
-Usage: python scripts/extract_gap_statutes.py [--crpc-pdf P] [--ndps-pdf P] [--out DIR]
+Usage: python scripts/extract_gap_statutes.py [--crpc-pdf P] [--ndps-pdf P] [--bnss-pdf P] [--only crpc,ndps,bnss] [--fetch [--cafile PEM]] [--out DIR]
+(egazette.gov.in sends its certificate without the intermediates; if the download fails verification, pass `--cafile` with the
+intermediates named by the certificate's "CA Issuers" URLs, appended to the system bundle. Verification is never switched off.)
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -39,6 +48,7 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+from urllib.request import Request, urlopen
 
 import pymupdf
 
@@ -47,7 +57,10 @@ OUT = Path("data/gaps/statutes")
 CRPC_URL = "https://cdnbbsr.s3waas.gov.in/s3ec044a11654ad1e1e48352252859ff30/uploads/2023/11/2023110156.pdf"
 NDPS_URL = "https://dor.gov.in/files/acts_files/NDPS_1985.pdf"
 CRPC_SECTIONS = ["41", "41A", "50", "57", "167", "436", "436A", "437", "438", "439"]
-NDPS_SECTIONS = ["19", "24", "27A", "31A", "37"]
+NDPS_SECTIONS = ["19", "24", "27A", "31A", "36A", "37"]
+BNSS_URL = "https://egazette.gov.in/WriteReadData/2023/250884.pdf"
+BNSS_SHA256 = "5e60e2afe30d0fe7eca4f8126301146b76c86a444e690581f81eb564843517fe"
+BNSS_SECTIONS = ["58"]
 
 # Mechanical OCR repairs, used only with --ndps-pdf pointing at the OCR scan (rows then carry ocr: true).
 OCR_FIXES: list[tuple[str, str]] = [
@@ -162,6 +175,114 @@ def split_sections(lines: list[Line], wanted: list[str]) -> dict[str, str]:
             body.append(ln)
         out[num] = join_lines(body)
     return out
+
+
+# ---------------------------------------------------------------- Gazette of India layout (BNSS)
+
+GAZ_BODY_SIZE = 9.5  # body text is 10 pt; margin notes, running heads and footnotes are 8 pt
+GAZ_MARGIN_X = (110.0, 450.0)  # margin notes sit left of x = 110 on odd pages and right of x = 450 on even pages; body text lies between
+_GAZ_START = re.compile(r"^\s*(\d{1,3}[A-Z]{0,2})\.\s+\S")
+
+
+def gazette_sections(path: Path, wanted: list[str]) -> dict[str, tuple[str, str]]:
+    """{section: (heading, body)} for the wanted sections of an Act printed in the Gazette of India.
+
+    A section starts at a body line "<num>. ..." that has a margin note level with it (within 4 pt): the margin note is the heading (left
+    margin on odd pages, right margin on even pages). The
+    arrangement of sections at the front has no margin notes, and a body line inside a section that happens to start with a number is not
+    level with a note, so neither opens a section. Numbers must increase through the Act. A section ends where the next one starts or at
+    a CHAPTER line; lines are joined as in `join_lines`.
+    """
+    doc = pymupdf.open(path)
+    body: list[Line] = []
+    notes: list[Line] = []
+    for pno in range(len(doc)):
+        for block in doc[pno].get_text("dict")["blocks"]:
+            for ln in block.get("lines", []):
+                spans = ln["spans"]
+                text = "".join(s["text"] for s in spans).replace("\u00a0", " ")
+                if not text.strip():
+                    continue
+                x, y, size = ln["bbox"][0], ln["bbox"][1], next(s["size"] for s in spans if s["text"].strip())
+                if y < 60 or y > 790:  # running head, rule lines and page foot
+                    continue
+                in_margin = x < GAZ_MARGIN_X[0] or x >= GAZ_MARGIN_X[1]
+                if size > GAZ_BODY_SIZE and not in_margin:
+                    body.append(Line(pno, x, y, size, text))
+                elif size <= GAZ_BODY_SIZE and in_margin:
+                    notes.append(Line(pno, x, y, size, text))
+    body.sort(key=lambda ln: (ln.page, ln.y, ln.x))
+    notes.sort(key=lambda ln: (ln.page, ln.y, ln.x))
+    starts: list[tuple[str, int]] = []
+    last = (0, "")
+    for i, ln in enumerate(body):
+        m = _GAZ_START.match(ln.text)
+        if not m or not any(n.page == ln.page and abs(n.y - ln.y) <= 4 for n in notes):
+            continue
+        k = _key(m.group(1))
+        if k > last and k[0] - last[0] <= 4:
+            starts.append((m.group(1), i))
+            last = k
+    out: dict[str, tuple[str, str]] = {}
+    for n, (num, i) in enumerate(starts):
+        if num not in wanted:
+            continue
+        end = starts[n + 1][1] if n + 1 < len(starts) else len(body)
+        lines = [body[i]]
+        for ln in body[i + 1 : end]:
+            if _STOP.match(ln.text):
+                break
+            lines.append(ln)
+        first = body[i]
+        nxt = body[starts[n + 1][1]] if n + 1 < len(starts) else None
+        head = [
+            nt.text.strip() for nt in notes
+            if (nt.page, nt.y) >= (first.page, first.y - 4) and (nxt is None or (nt.page, nt.y) < (nxt.page, nxt.y - 4))
+        ]
+        heading = re.sub(r"\s+", " ", " ".join(head)).strip().rstrip(".")
+        out[num] = (heading, join_lines(lines))
+    return out
+
+
+def build_gazette_rows(code: str, pdf: Path, url: str, wanted: list[str], today: str) -> tuple[list[dict], list[str]]:
+    """StatuteRow dicts in the store's BNSS form ("<heading>\\n\\n<num>. <heading>.—<body>"); returns (rows, missing sections)."""
+    found = gazette_sections(pdf, wanted)
+    rows, missing = [], []
+    for s in wanted:
+        if s not in found:
+            missing.append(s)
+            continue
+        heading, body = found[s]
+        rest = re.sub(rf"^\s*{re.escape(s)}\.\s*", "", body)
+        rows.append(dict(code=code, section=s, text=f"{heading}\n\n{s}. {heading}.—{rest}", source_url=url, retrieved=today))
+    return rows, missing
+
+
+def sha256_of(path: Path) -> str:
+    """Hex SHA-256 of a file."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def fetch_pinned(url: str, dest: Path, sha256: str, cafile: Path | None = None) -> Path:
+    """Download `url` to `dest` (verified TLS; `cafile` adds intermediates) unless present, and refuse a file whose SHA-256 is not `sha256`."""
+    if not dest.exists():
+        import ssl
+
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        ctx = ssl.create_default_context(cafile=str(cafile) if cafile else None)
+        with urlopen(Request(url, headers={"User-Agent": "Mozilla/5.0"}), timeout=300, context=ctx) as r:  # noqa: S310 (fixed official URL)
+            data = r.read()
+        tmp = dest.with_suffix(dest.suffix + ".part")
+        tmp.write_bytes(data)
+        tmp.replace(dest)
+    got = sha256_of(dest)
+    if got != sha256:
+        raise ValueError(f"{dest}: SHA-256 {got} is not the pinned {sha256}; delete it and fetch again, or check the source")
+    return dest
 
 
 def apply_ocr_fixes(text: str) -> str:
@@ -372,21 +493,41 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--crpc-pdf", type=Path, default=RAW / "crpc_candidate.pdf")
     ap.add_argument("--ndps-pdf", type=Path, default=RAW / "ndps_dor_clean.pdf")
+    ap.add_argument("--bnss-pdf", type=Path, default=RAW / "bnss_gazette.pdf")
+    ap.add_argument("--only", default="crpc,ndps,bnss", help="comma list of crpc, ndps, bnss (crpc includes the First Schedule)")
+    ap.add_argument("--fetch", action="store_true", help="download the BNSS Gazette PDF if missing (verified TLS, checked against BNSS_SHA256)")
+    ap.add_argument("--cafile", type=Path, default=None, help="CA bundle with the intermediates egazette.gov.in leaves out (with --fetch)")
     ap.add_argument("--out", type=Path, default=OUT)
     args = ap.parse_args(argv)
+    only = {x.strip() for x in args.only.split(",") if x.strip()}
     today = date.today().isoformat()
     ocr = args.ndps_pdf.name == "ndps_candidate.pdf"
     failures = 0
-    for code, pdf, url, wanted, name, is_ocr in (
-        ("CrPC", args.crpc_pdf, CRPC_URL, CRPC_SECTIONS, "crpc.jsonl", False),
-        ("NDPS", args.ndps_pdf, NDPS_URL, NDPS_SECTIONS, "ndps.jsonl", ocr),
+    if "bnss" in only:
+        if args.fetch:
+            fetch_pinned(BNSS_URL, args.bnss_pdf, BNSS_SHA256, args.cafile)
+        elif sha256_of(args.bnss_pdf) != BNSS_SHA256:
+            print(f"WARNING {args.bnss_pdf} is not the pinned Gazette PDF (SHA-256 differs)", file=sys.stderr)
+        rows, missing = build_gazette_rows("BNSS", args.bnss_pdf, BNSS_URL, BNSS_SECTIONS, today)
+        write_jsonl(args.out / "bnss.jsonl", rows)
+        print("BNSS", [(r["section"], len(r["text"])) for r in rows])
+        for s in missing:
+            print(f"MISSING BNSS s.{s}", file=sys.stderr)
+            failures += 1
+    for key, code, pdf, url, wanted, name, is_ocr in (
+        ("crpc", "CrPC", args.crpc_pdf, CRPC_URL, CRPC_SECTIONS, "crpc.jsonl", False),
+        ("ndps", "NDPS", args.ndps_pdf, NDPS_URL, NDPS_SECTIONS, "ndps.jsonl", ocr),
     ):
+        if key not in only:
+            continue
         rows, missing = build_rows(code, pdf, url, wanted, today, is_ocr)
         write_jsonl(args.out / name, rows)
         print(code, [(r["section"], len(r["text"])) for r in rows])
         for s in missing:
             print(f"MISSING {code} s.{s}", file=sys.stderr)
             failures += 1
+    if "crpc" not in only:
+        return 1 if failures else 0
     sched, notes = parse_first_schedule(args.crpc_pdf)
     ipc_rows = [
         dict(code="IPC", section=r["section"], text="", bailable=r["bailable"], cognisable=r["cognisable"], source_url=CRPC_URL, retrieved=today)

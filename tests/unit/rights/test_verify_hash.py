@@ -38,7 +38,9 @@ def test_a_date_with_the_matching_hash_counts(config):
 @pytest.mark.parametrize("hash_value", [None, "0000000000000000"])
 def test_a_date_without_a_matching_hash_reads_unverified(config, hash_value):
     rule = "default_bail"
-    section = {**config[rule], "last_verified": "2026-11-01"}
+    # RECONCILED: default_bail now carries a verified_hash in the config (scripts/check_rights_rules.py), so the copied section drops it
+    # to build the "date without a hash" case this test is about.
+    section = {k: v for k, v in config[rule].items() if k != "verified_hash"} | {"last_verified": "2026-11-01"}
     if hash_value:
         section["verified_hash"] = hash_value
     assert effective_last_verified(rule, section, config) is None

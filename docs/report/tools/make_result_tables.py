@@ -68,6 +68,14 @@ def fam_label(f):
     return FAMNAME.get(f, f)
 
 
+def disp(x):
+    """Row label: the arm id in capitals, an ID:ARG argument in plain words (A10:law.statutes -> A10 law.statutes)."""
+    if ":" in x:
+        i, a = x.split(":", 1)
+        return i.upper() + " " + a.replace("_", " ").replace("=", " ")
+    return x.upper()
+
+
 def esc(s):
     return s.replace("_", r"\_")
 
@@ -111,7 +119,7 @@ def armorder(S):
 
 def dotplot(fam, kind, arms, panels, stat, lo_, hi_, xlabel, caption, log=False, single=False):
     """Full-width horizontal dot-and-interval plot: one row per arm, one panel per metric, all arms listed (grouped by family of arm)."""
-    labs = {x: esc(x.upper()) for x in arms}
+    labs = {x: esc(disp(x)) for x in arms}
     ys = ",".join(labs[x] for x in arms)
     h = max(5.0, 0.26 * len(arms) + 1.2)
     pw = 0.30 if len(panels) == 3 else (0.225 if len(panels) == 4 else 0.62)
@@ -188,7 +196,7 @@ def main(out, specs):
             for j in range(len(KEY)):
                 t = mrows[s_][1][j]
                 cells.append("--" if not t else style(f"{t[0]:.2f}", mm[j].get(xi)) + f" / {t[1]:.2f} ({t[2]})")
-            lines.append(esc(s_.upper()) + " & " + " & ".join(cells) + r" \\")
+            lines.append(esc(disp(s_)) + " & " + " & ".join(cells) + r" \\")
         lines += [r"\bottomrule", r"\end{tabular}",
                   r"\caption{" + f"Family {fam_label(fam)}: each baseline beside Full on the cases both answered without error. A cell is the arm's mean, then Full's mean on the same cases, over the cases where the metric is defined for both (the count in brackets). Unsupported facts: lower is better; the others: higher is better. The arm's value is bold for the best baseline in the column and underlined for the second best. A dash means the metric is undefined for the arm (for example, a baseline that cites no authority has no citation precision)." + r"}",
                   r"\label{tab:main_" + fam + "}", r"\end{table*}"]
@@ -208,7 +216,7 @@ def main(out, specs):
                 t = ab[x][1][j]
                 txt = (f"{t[0]:+.2f}" + (f" [{t[1]:+.2f}, {t[2]:+.2f}]" if t[1] is not None else "")) if t else "--"
                 cells.append(style(txt, abm[j].get(xi)) if t else txt)
-            rows.append(esc(x.upper()) + " & " + " & ".join(cells) + r" \\")
+            rows.append(esc(disp(x)) + " & " + " & ".join(cells) + r" \\")
         rows += [r"\bottomrule", r"\end{tabular}",
                  r"\caption{" + f"Family {fam_label(fam)}: each arm minus Full on the cases both answered (mean difference, 95\\% bootstrap interval). A positive difference favours the arm for the higher-is-better metrics and Full for unsupported facts and fabricated citations. Intervals that include zero are not resolved at this sample size. Bold: the most favourable mean difference in the column; underlined: the second most favourable." + r"}",
                  r"\label{tab:ablate_" + fam + "}", r"\end{table*}"]
@@ -232,7 +240,7 @@ def main(out, specs):
             for j, (m, _, dg) in enumerate(MM):
                 v = avg[x][j]
                 cs.append(style(f"{v:.{dg}f}", mk[j].get(xi)) if v is not None else "--")
-            ML.append((g if g != prev else "") + " & " + esc(x.upper()) + " & " + " & ".join(cs) + r" \\")
+            ML.append((g if g != prev else "") + " & " + esc(disp(x)) + " & " + " & ".join(cs) + r" \\")
             prev = g
         ML += [r"\bottomrule", r"\end{tabular}", r"\caption{" + f"Family {fam_label(fam)}: every arm on every metric, mean over the cases the arm answered without error where the metric is defined (a dash means undefined, for example no citation by that arm). Cases: orders answered. Higher is better except unsupported facts and fabricated citations; tokens (and USD where priced) are per case. Arms run on different numbers of orders (the Cases column), so read near-equal rows with the paired tables of the appendix, which carry intervals. Bold: best in the column; underlined: second best." + r"}", r"\label{tab:master_" + fam + "}", r"\end{table*}"]
         (out / f"master_{fam}.tex").write_text(fit("\n".join(ML)))
@@ -272,7 +280,7 @@ def main(out, specs):
                     t = st_[x][j]
                     txt = "--" if not t else (f"{t[0]:.{dg}f} [{t[1]:.{dg}f}, {t[2]:.{dg}f}] ({t[3]})" if t[1] is not None else f"{t[0]:.{dg}f} ({t[3]})")
                     cs.append(txt if not t else style(txt, pm[j].get(xi)))
-                L.append(esc(x.upper()) + " & " + " & ".join(cs) + r" \\")
+                L.append(esc(disp(x)) + " & " + " & ".join(cs) + r" \\")
             L += [r"\bottomrule", r"\end{tabular}", r"\caption{" + cap + " Bold: best in the column; underlined: second best." + r"}", r"\label{tab:" + name + "_" + fam + "}", r"\end{table}"]
             (out / f"{name}_{fam}.tex").write_text(fit("\n".join(L)))
         part("table1a", [("factor_recall", "Factor recall", 2), ("factor_precision_lenient", "Precision (lenient)", 2), ("factor_f1", "F1", 2)], f"Family {fam_label(fam)}: factor-level metrics, mean [95\\% bootstrap interval] over the orders where the metric is defined (their number in brackets). Each arm on its own orders.")

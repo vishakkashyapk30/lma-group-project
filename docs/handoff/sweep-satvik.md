@@ -1,3 +1,5 @@
+> **SUPERSEDED 2026-11-02. Satvik does not need to run this.** The owner opened Sarvam on 1 Nov (cap INR 5000) and the whole Sarvam block ran on dev-sweep-v3 with the owner's key; see `team-todo-2026-11-02.md` and `phase2-2026-11-01.md`.
+
 # Sarvam block of the dev-set sweep: instructions for Satvik (self-contained)
 
 > **Paid providers locked by owner decision 2026-10-28; do not unlock without the owner.** Every OpenAI and Sarvam call is refused in code (`src/vakeel_sahayak/models/paid_lock.py`) unless the operator sets `VS_ALLOW_PAID=openai` / `sarvam` / `openai,sarvam`. A locked call sends nothing and writes no ledger row; the factory falls back to the local client; `driver`, `eval.studies`, the labeler, the teacher, `scripts/sweep_dev.py` and `scripts/sweep_{openai,sarvam}_block.sh` refuse at once with the message naming the unlock. Arms of `configs/eval/sweep_dev.yaml` with `status: locked`, `blocked` or `moved` are never launched.

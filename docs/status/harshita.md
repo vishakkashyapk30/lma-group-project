@@ -1,5 +1,9 @@
 # Status — Harshita
 
+## Current assignment (2 Nov 2026, to the freeze on 10 Nov)
+Swapped with Satvik on 2 Nov. Frontend of the chosen architecture, live end-to-end tests, a Gemini key in the pool and a shard of the 5 to 7 Nov Gemini runs, Hindi labels translated with Sarvam and wired in (no review by hand).
+Full list, dates and rules: `docs/handoff/team-todo-2026-11-02.md`. The tables below are the earlier state.
+
 Assigned (owner's day-1 message §7): **metrics & statistics, the statutes, the Rights Radar verification, and the proposal PDF + README/QA docs.**
 
 ## Metrics & statistics  ← DONE (implemented 2026-10-26)

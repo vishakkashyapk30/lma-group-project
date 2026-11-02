@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { AppShell } from "@/components/shell/AppShell";
 import "../styles/fonts.css";
 import "./globals.css";
+import "../styles/transitions.css";
 
 const DESCRIPTION = "Prepare a bail application from the case file. Every fact traced to its source. AI-generated drafts for counsel, not legal advice.";
 

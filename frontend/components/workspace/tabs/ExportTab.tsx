@@ -9,6 +9,7 @@ import { errorMessage } from "@/lib/errors";
 import { DRAFT_LABEL, type ExportFormat } from "@/lib/types";
 import { plural } from "@/lib/format";
 import { useGateChecklist, useNeedsYou, useWorkspace } from "@/lib/workspace";
+import { GateFooter } from "../GateFooter";
 import { GateModal } from "../GateModal";
 import { NeedsYou } from "../NeedsYou";
 import { StepFooter, StepFrame } from "../StepFrame";
@@ -53,7 +54,6 @@ export function ExportTab({ caseId }: { caseId: string }): ReactElement {
   };
 
   const approved = gate2.approved;
-  const blocked = gate2.blocking.length > 0;
 
   return (
     <StepFrame
@@ -74,14 +74,7 @@ export function ExportTab({ caseId }: { caseId: string }): ReactElement {
             }
           />
         ) : (
-          <StepFooter
-            label="Approve this draft for export"
-            onClick={() => setGateOpen(true)}
-            disabled={blocked}
-            hint={blocked ? `${plural(gate2.blocking.length, "item")} above ${gate2.blocking.length === 1 ? "needs" : "need"} you before you can approve.` : undefined}
-            next={false}
-            testId="approve-export-button"
-          />
+          <GateFooter gate="GATE_2_EXPORT" label="Approve this draft for export" verb="approve" onApprove={() => setGateOpen(true)} next={false} testId="approve-export-button" />
         )
       }
     >

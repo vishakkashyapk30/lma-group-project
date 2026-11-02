@@ -5,10 +5,12 @@
 import { ChevronDown } from "lucide-react";
 import { useEffect, useState, type ReactElement } from "react";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import { RightsTimeline } from "@/components/rights/RightsTimeline";
+import { timelineFromReport } from "@/lib/rightsTimeline";
 import { fieldLabel } from "@/lib/fields";
 import { daysBetween, formatCourtDate, plural } from "@/lib/format";
 import { RIGHTS_CHECK_LABELS } from "@/lib/labels";
-import { RIGHTS_URGENCY } from "@/lib/status";
+import { RIGHTS_URGENCY, ruleVerifiedOn, unverifiedChecks } from "@/lib/status";
 import { DOSSIER_FIELD_NAMES, type RightsCheckResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useCaseData, useEdits, useStageNav, useWorkspace } from "@/lib/workspace";
@@ -52,6 +54,7 @@ function CheckRow({ check, asOf, focusedId, changed }: { check: RightsCheckResul
   const left = daysLeft(check, asOf);
   const dates = Object.entries(check.dates ?? {});
   const focused = focusedId === check.check;
+  const verifiedOn = ruleVerifiedOn(check);
   useEffect(() => {
     if (focused) setOpen(true);
   }, [focused]);
@@ -89,7 +92,13 @@ function CheckRow({ check, asOf, focusedId, changed }: { check: RightsCheckResul
           {check.rule ? (
             <>
               <dt className="text-ink-muted">Rule</dt>
-              <dd className="m-0 text-ink"><span className="cite">{check.rule}</span>{check.rule_text ? <span className="block text-ink-soft">{check.rule_text}</span> : null}</dd>
+              <dd className="m-0 text-ink">
+                <span className="cite">{check.rule}</span>
+                {check.rule_text ? <span className="block text-ink-soft">{check.rule_text}</span> : null}
+                <span data-testid="rule-verification" data-verified={verifiedOn ? "true" : "false"} className="mt-0.5 block text-ink-muted">
+                  {verifiedOn ? `Verified against the bare act on ${formatCourtDate(verifiedOn)}` : "Rule text not yet verified against the bare act"}
+                </span>
+              </dd>
             </>
           ) : null}
           {check.sources && check.sources.length > 0 ? (
@@ -141,12 +150,6 @@ function CheckRow({ check, asOf, focusedId, changed }: { check: RightsCheckResul
               </dd>
             </>
           ) : null}
-          {check.last_verified ? (
-            <>
-              <dt className="text-ink-muted">Rule checked</dt>
-              <dd className="m-0 text-ink-soft">{formatCourtDate(check.last_verified)}</dd>
-            </>
-          ) : null}
         </dl>
       ) : null}
     </li>
@@ -184,12 +187,44 @@ export function RightsTab(): ReactElement {
   const rest = sorted.filter((c) => !LEAD.has(c.status));
   const restOpen = showRest || rest.some((c) => c.check === focused?.id);
 
+  // The calendar view of the same checks; the list below stays the full record (and the path for screen readers).
+  const antecedents = data.dossier?.fields.antecedents;
+  const fields = data.dossier?.fields;
+  const cs = fields?.charge_sheet?.value as { filed?: boolean; date?: string | null } | null | undefined;
+  const timeline = timelineFromReport(rights, Boolean(antecedents && antecedents.status !== "UNSUPPORTED" && antecedents.value != null), {
+    arrest: typeof fields?.arrest_date?.value === "string" ? fields.arrest_date.value : null,
+    firstRemand: typeof fields?.first_remand?.value === "string" ? fields.first_remand.value : null,
+    chargeSheet: cs?.filed && cs.date ? cs.date : null,
+  });
+  const unverified = unverifiedChecks(rights);
+  const nextDate = (data.dates ?? []).map((e) => e.date).filter((d) => d > rights.as_of).sort()[0];
+
   return (
     <StepFrame
       title="Check rights"
       intro={`Possible rights worked out from the dates in the file as of ${formatCourtDate(rights.as_of)}. These are prompts to check, not advice or a prediction.`}
       footer={footer}
     >
+      {unverified.length > 0 ? (
+        <p data-testid="rights-unverified" className="max-w-prose text-sm text-ink-soft">
+          The rule text of {unverified.length === rights.checks.length ? `all ${rights.checks.length} checks` : `${unverified.length} of ${rights.checks.length} checks`} is not yet
+          verified against the bare act ({unverified.map((c) => RIGHTS_CHECK_LABELS[c.check] ?? c.check).join(", ")}). Read the section itself before you rely on it.
+        </p>
+      ) : null}
+
+      {timeline ? (
+        <section aria-labelledby="rights-calendar" data-testid="rights-calendar">
+          <SectionTitle id="rights-calendar">On the calendar</SectionTitle>
+          <RightsTimeline
+            input={timeline}
+            initialDate={nextDate ?? rights.as_of}
+            jumps={nextDate ? [{ label: "Next date in the file", date: nextDate }] : []}
+            testId="workspace-rights-timeline"
+            className="mt-2 border border-line"
+          />
+        </section>
+      ) : null}
+
       {lead.length > 0 ? (
         <section aria-labelledby="rights-lead">
           <SectionTitle id="rights-lead">Worth checking now</SectionTitle>

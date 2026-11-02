@@ -60,3 +60,44 @@ test("no infinite animation runs anywhere in the workspace", async ({ page }) =>
   );
   expect(infinite).toBe(0);
 });
+
+/**
+ * Added with the hands-on landing and the drag physics (frontend-endeavours): under reduced motion nothing keeps running after
+ * the visitor uses a demo, a panel or a gate, and every result is still reached.
+ */
+// Animations the reduced-motion CSS collapses to 0.01 ms may be caught mid-tick; they move nothing, so they do not count.
+const running = (page: Page) =>
+  page.evaluate(() => document.getAnimations().filter((a) => a.playState === "running" && Number(a.effect?.getComputedTiming().duration ?? 0) > 1).length);
+
+test("landing demos under reduced motion: every result is reached and nothing keeps moving", async ({ page }) => {
+  await MockBackend.install(page);
+  await page.goto("/");
+  await page.getByTestId("add-fir-button").click();
+  await expect(page.getByTestId("demo-row")).toHaveCount(5);
+  await page.getByTestId("read-row").nth(1).getByRole("button").click();
+  await expect(page.getByTestId("read-row").nth(1)).toHaveAttribute("data-open", "true");
+  await page.getByTestId("hearing-handle").focus();
+  await page.keyboard.press("End");
+  await expect(page.getByTestId("word-undertrial")).toHaveText("Check.");
+  await page.getByTestId("gate1-demo-button").click({ force: true });
+  await expect(page.getByTestId("gate1-list")).toBeVisible();
+  await page.getByTestId("draft-cite").nth(1).click();
+  await expect(page.getByTestId("draft-paragraph")).toContainText("SC-2014-0463");
+  await page.waitForTimeout(150);
+  expect(await running(page)).toBe(0);
+});
+
+test("panels and gates under reduced motion: nothing keeps moving after opening, holding or closing", async ({ page }) => {
+  await MockBackend.install(page, { gate1Approved: false, draft: "none" });
+  await page.goto("/case/case-0007");
+  await page.getByTestId(TID.stage("II")).click();
+  await page.getByTestId(TID.confirmFactsButton).click({ force: true });
+  await expect(page.getByTestId("gate-hold-list")).toBeVisible();
+  await page.locator('[data-testid=dossier-field][data-field="fir"]').getByTestId(TID.dossierFieldSource).click();
+  await expect(page.getByTestId(TID.sourcePanel)).toBeVisible();
+  await page.waitForTimeout(150);
+  expect(await running(page)).toBe(0);
+  await page.getByTestId(TID.sourcePanel).getByRole("button", { name: /close source/i }).click();
+  await expect(page.getByTestId(TID.sourcePanel)).toHaveCount(0);
+  expect(await running(page)).toBe(0);
+});

@@ -391,12 +391,16 @@ export interface RightsCheckResult {
   /** The dates the rule used, e.g. {first_remand: "2024-08-21"}. */
   dates?: Record<string, string>;
   last_verified?: string | null;
+  /** API view only: "unverified" until a person re-checks the rule text against the bare act, else that date (ISO). */
+  verification?: string;
 }
 
 export interface RightsReport {
   case_id: string;
   as_of: string;
   checks: RightsCheckResult[];
+  /** API view only: names of the checks whose rule text is not yet verified. Absent from older backends. */
+  unverified_checks?: RightsCheckName[];
 }
 
 /* ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════
