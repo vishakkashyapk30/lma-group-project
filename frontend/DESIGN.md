@@ -182,7 +182,7 @@ Landing motion (styles/landing.css; every element rests in its final state, so r
 `components/common`: Logo (mark, mark only, reversed), PageHeader, StatusBadge (icon and word, no pill), SourceChip, AgentGlyph.
 `components/agents/AgentSignature`: a quiet one-line status with a small glyph that breathes while the agent runs.
 `components/landing`: LandingPage, `demos/` (FileDemo, ReadDemo, CheckDemo, HoldDemo, DraftDemo, SparDemo, PrivacyDemo), DeskBand, CloseBand, ContinueCase, Footer, Reveal, `sample.ts`. `components/rights/RightsTimeline` (shared with the Check rights step), `components/common/HoldButton`, `components/motion` (Morph, MotionProvider).
-`components/workspace`: WorkspaceShell (stepper row, step, side panel, drawers), StageRail, StepView and `tabs/*` (one view per step), StepFrame and StepFooter, NeedsYou, SidePanel and SourcePanel, ChatPane, TraceDrawer, GateModal (confirm dialog), DocumentsMenu, ProgressLine, ChangeBanner.
+`components/workspace`: WorkspaceShell (stepper row, step, side panel, drawers), StageRail, StepView and `tabs/*` (one view per step), GapsSection (gaps by factor in Review facts), SentenceList (Draft grounds read by sentence), StepFrame and StepFooter, NeedsYou, SidePanel and SourcePanel, ChatPane, TraceDrawer, GateModal (confirm dialog), DocumentsMenu, ProgressLine, ChangeBanner.
 `components/settings`: SettingsPage (server address, live/demo mode, connection, the server's model, privacy and data settings).
 
 ## Things we do not do

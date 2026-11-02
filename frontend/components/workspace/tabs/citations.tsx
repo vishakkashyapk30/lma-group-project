@@ -24,10 +24,30 @@ export interface CitedProps {
   className?: string;
 }
 
-export function Cited({ text, authorities, className }: CitedProps): ReactElement {
+/** Opens what a citation points at: a fact's page in the side panel, an authority's detail (and its page when it is a case document). */
+export function useSourceOpener(authorities: Authority[]): { openFact: (field: string) => void; openAuthority: (docId: string, para: number | null, label: string) => void } {
   const ws = useWorkspace();
   const dossier = ws.data.dossier;
   const caseDocs = useMemo(() => new Set((ws.data.ingestion?.documents ?? []).map((d) => d.doc_id)), [ws.data.ingestion]);
+  const openFact = (field: string) => {
+    ws.clearSource();
+    const source = dossier?.fields[field as DossierFieldName]?.source ?? null;
+    ws.openDetail({ kind: "field", name: field as DossierFieldName });
+    if (toSelectedSource(source)) ws.selectSource(source, field);
+  };
+  const openAuthority = (docId: string, para: number | null, label: string) => {
+    ws.clearSource();
+    const found = authorities.find((a) => a.doc_id === docId && (para === null || a.para === para));
+    ws.openDetail({ kind: "authority", authority: found ?? { doc_id: docId, para: para ?? 0, good_law: "UNKNOWN" } });
+    if (caseDocs.has(docId)) ws.selectSource({ doc_id: docId, page: para ?? 1, origin: label });
+  };
+  return { openFact, openAuthority };
+}
+
+export function Cited({ text, authorities, className }: CitedProps): ReactElement {
+  const ws = useWorkspace();
+  const dossier = ws.data.dossier;
+  const { openFact, openAuthority } = useSourceOpener(authorities);
 
   const { parts, notes } = useMemo(() => {
     const notes: Note[] = [];
@@ -59,16 +79,8 @@ export function Cited({ text, authorities, className }: CitedProps): ReactElemen
       ws.focusItem("brief", note.claim_id);
       return;
     }
-    ws.clearSource();
-    if (note.kind === "fact") {
-      const source = dossier?.fields[note.field as DossierFieldName]?.source ?? null;
-      ws.openDetail({ kind: "field", name: note.field as DossierFieldName });
-      if (toSelectedSource(source)) ws.selectSource(source, note.field);
-      return;
-    }
-    const found = authorities.find((a) => a.doc_id === note.doc_id && (note.para === null || a.para === note.para));
-    ws.openDetail({ kind: "authority", authority: found ?? { doc_id: note.doc_id, para: note.para ?? 0, good_law: "UNKNOWN" } });
-    if (caseDocs.has(note.doc_id)) ws.selectSource({ doc_id: note.doc_id, page: note.para ?? 1, origin: note.label });
+    if (note.kind === "fact") openFact(note.field);
+    else openAuthority(note.doc_id, note.para, note.label);
   };
 
   return (

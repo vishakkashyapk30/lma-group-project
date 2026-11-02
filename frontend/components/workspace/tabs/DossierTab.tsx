@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { errorMessage } from "@/lib/errors";
+import { factorGaps } from "@/lib/factorGaps";
 import { DATE_FIELDS, dossierEntries, fieldLabel, parseEditText, STRING_LIST_FIELDS, valueToEditText } from "@/lib/fields";
 import { formatCourtDate, toSelectedSource } from "@/lib/format";
 import type { CaseDossier, DossierFieldName, SourceRef, TrackedField } from "@/lib/types";
@@ -22,6 +23,7 @@ import { NeedsYou } from "../NeedsYou";
 import { StepFooter, StepFrame } from "../StepFrame";
 import { DatesTab } from "./DatesTab";
 import { FieldValue } from "./FieldValue";
+import { GapsSection } from "./GapsSection";
 import { ChangedTag, focusClass, focusDomId, InlineNote, stepState, useFocusItem, type FocusedItem } from "./shared";
 
 export interface DossierTabProps {
@@ -248,7 +250,13 @@ export function DossierTab({ caseId }: DossierTabProps): ReactElement {
   const [gateOpen, setGateOpen] = useState(false);
   const dossier: CaseDossier | null = data.dossier;
   const focused = useFocusItem("dossier", Boolean(dossier));
-  const section = ws.activeTab === "dates" ? "dates" : "facts";
+  // Gaps is a view of the facts, not a workspace section of its own; a jump to a fact or a date leaves it.
+  // It stays open only while no newer jump has happened (the jump nonce it was opened at); null when closed.
+  const jumpNonce = ws.focusTarget?.nonce;
+  const [gapsAt, setGapsAt] = useState<number | undefined | null>(null);
+  const gapsOpen = gapsAt !== null && gapsAt === jumpNonce;
+  const section = ws.activeTab === "dates" ? "dates" : gapsOpen ? "gaps" : "facts";
+  const gapCount = factorGaps(dossier).filter((g) => g.coverage !== "full").length;
 
   const state = stepState({
     // A dossier with no fields yet (no papers read) is empty too: there is nothing to confirm, so Gate 1 is not offered.
@@ -290,13 +298,22 @@ export function DossierTab({ caseId }: DossierTabProps): ReactElement {
     >
       <NeedsYou items={needs} empty="Nothing needs your attention. Look through the facts, then confirm." />
 
-      <Tabs value={section} onValueChange={(v) => ws.setTab(v === "dates" ? "dates" : "dossier")}>
+      <Tabs
+        value={section}
+        onValueChange={(v) => {
+          setGapsAt(v === "gaps" ? jumpNonce : null);
+          ws.setTab(v === "dates" ? "dates" : "dossier");
+        }}
+      >
         <TabsList aria-label="Facts and dates" className="mb-5">
           <TabsTrigger value="facts" data-testid="right-tab-dossier">
             Facts <span className="tabular font-normal text-ink-muted">({entries.length})</span>
           </TabsTrigger>
           <TabsTrigger value="dates" data-testid="right-tab-dates">
             List of dates {data.dates ? <span className="tabular font-normal text-ink-muted">({data.dates.length})</span> : null}
+          </TabsTrigger>
+          <TabsTrigger value="gaps" data-testid="right-tab-gaps">
+            Gaps by factor <span className="tabular font-normal text-ink-muted">({gapCount})</span>
           </TabsTrigger>
         </TabsList>
         <TabsContent value="facts">
@@ -308,6 +325,9 @@ export function DossierTab({ caseId }: DossierTabProps): ReactElement {
         </TabsContent>
         <TabsContent value="dates">
           <DatesTab />
+        </TabsContent>
+        <TabsContent value="gaps">
+          <GapsSection onOpenFact={(name, edit) => ws.focusItem("dossier", name, edit ? "edit" : undefined)} />
         </TabsContent>
       </Tabs>
       <GateModal gate="GATE_1_DOSSIER" caseId={caseId} open={gateOpen} onClose={() => setGateOpen(false)} />

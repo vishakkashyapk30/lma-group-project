@@ -11,14 +11,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { diffWords } from "@/lib/diff";
 import { fieldLabel } from "@/lib/fields";
-import { formatCourtDate } from "@/lib/format";
+import { formatCourtDate, plural } from "@/lib/format";
 import { FACTOR_LABELS } from "@/lib/labels";
-import { DRAFT_LABEL, type DossierFieldName, type Ground, type GroundRevision, type OpenIssue } from "@/lib/types";
+import { DRAFT_LABEL, type DossierFieldName, type Ground, type GroundRevision, type Objection, type OpenIssue } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { checklistKey, useCaseData, useEdits, useGates, useNeedsYou, useStageNav, useWorkspace } from "@/lib/workspace";
 import { NeedsYou } from "../NeedsYou";
 import { StepFooter, StepFrame } from "../StepFrame";
 import { Cited } from "./citations";
+import { SentenceList, sentenceSummary } from "./SentenceList";
 import { ChangedTag, focusClass, focusDomId, InlineNote, SectionTitle, stepState, useFocusItem } from "./shared";
 import { ObjectionsSection } from "./SparTab";
 
@@ -229,9 +230,9 @@ function GroundDetails({ ground }: { ground: Ground }): ReactElement {
   );
 }
 
-function GroundBlock({ ground, revision, focusedId }: { ground: Ground; revision: GroundRevision | null; focusedId: string | null }): ReactElement {
+function GroundBlock({ ground, revision, focusedId, bySentence }: { ground: Ground; revision: GroundRevision | null; focusedId: string | null; bySentence: boolean }): ReactElement {
   const { resolutions } = useGates();
-  const { dossier } = useCaseData();
+  const { dossier, spar } = useCaseData();
   const { changes } = useEdits();
   const { focusItem } = useStageNav();
   const domId = focusDomId("brief", ground.id);
@@ -308,7 +309,8 @@ function GroundBlock({ ground, revision, focusedId }: { ground: Ground; revision
         </p>
       ) : null}
 
-      <Cited text={ground.argument} authorities={ground.authorities} className="mt-3" />
+      {bySentence ? <SentenceList argument={ground.argument} authorities={ground.authorities} /> : <Cited text={ground.argument} authorities={ground.authorities} className="mt-3" />}
+      <ObjectionsLink groundId={ground.id} objections={spar?.objections ?? []} onGo={(id) => focusItem("spar", id)} />
 
       {ground.check === "NEEDS_REVIEW" ? (
         <div className="mt-4">
@@ -317,6 +319,22 @@ function GroundBlock({ ground, revision, focusedId }: { ground: Ground; revision
       ) : null}
       <GroundDetails ground={ground} />
     </article>
+  );
+}
+
+/** "2 likely objections, 1 not answered": jumps to the first one against this ground. */
+function ObjectionsLink({ groundId, objections, onGo }: { groundId: string; objections: Objection[]; onGo: (id: string) => void }): ReactElement | null {
+  const against = objections.filter((o) => o.against === groundId);
+  if (against.length === 0) return null;
+  const open = against.filter((o) => o.verdict === "UNANSWERED");
+  const first = open[0] ?? against[0];
+  return (
+    <p className="mt-3 text-sm" data-print-hide>
+      <button type="button" data-testid="ground-objections-link" onClick={() => onGo(first.id)} className="rounded-sm text-maroon underline-offset-4 hover:underline">
+        {plural(against.length, "likely objection")}
+        {open.length > 0 ? `, ${open.length} not answered` : ""}
+      </button>
+    </p>
   );
 }
 
@@ -342,6 +360,7 @@ export function BriefTab({ caseId }: { caseId: string }): ReactElement {
   const needs = useNeedsYou("BRIEF");
   const brief = data.brief;
   const focused = useFocusItem("brief", Boolean(brief));
+  const [bySentence, setBySentence] = useState(false);
 
   const canDraft = ws.gates.approvals.gate1;
   const drafting = ws.drafting || ws.activity.byAgent.VAKEEL.phase === "working";
@@ -417,9 +436,26 @@ export function BriefTab({ caseId }: { caseId: string }): ReactElement {
       </section>
 
       <section aria-labelledby="brief-grounds" className="flex flex-col gap-10">
-        <SectionTitle id="brief-grounds">Grounds</SectionTitle>
+        <div className="flex flex-col gap-2">
+          <SectionTitle
+            id="brief-grounds"
+            aside={
+              <div role="group" aria-label="How to read the grounds" className="flex gap-1" data-print-hide>
+                <Button type="button" size="sm" variant={bySentence ? "ghost" : "secondary"} aria-pressed={!bySentence} data-testid="brief-view-draft" onClick={() => setBySentence(false)}>
+                  Read as draft
+                </Button>
+                <Button type="button" size="sm" variant={bySentence ? "secondary" : "ghost"} aria-pressed={bySentence} data-testid="brief-view-sentences" onClick={() => setBySentence(true)}>
+                  By sentence
+                </Button>
+              </div>
+            }
+          >
+            Grounds
+          </SectionTitle>
+          {bySentence ? <p data-testid="sentence-summary" className="text-sm text-ink-soft">{sentenceSummary(brief)}</p> : null}
+        </div>
         {brief.grounds.map((g) => (
-          <GroundBlock key={g.id} ground={g} revision={latestRevision(revisions, g.id)} focusedId={focused?.id ?? null} />
+          <GroundBlock key={g.id} ground={g} revision={latestRevision(revisions, g.id)} focusedId={focused?.id ?? null} bySentence={bySentence} />
         ))}
       </section>
 

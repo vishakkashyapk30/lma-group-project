@@ -11,7 +11,7 @@ import { useToast } from "@/components/ui/toast";
 import { fieldLabel } from "@/lib/fields";
 import { humanize, plural, toSelectedSource } from "@/lib/format";
 import { FACTOR_LABELS } from "@/lib/labels";
-import type { DossierFieldName, Factor, Objection, ObjectionGround } from "@/lib/types";
+import type { DossierFieldName, Factor, Ground, Objection, ObjectionGround } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { checklistKey, useCaseData, useGates, useStageNav, useWorkspace } from "@/lib/workspace";
 import { Cited } from "./citations";
@@ -187,6 +187,28 @@ function ObjectionItem({ objection, focusedId }: { objection: Objection; focused
   );
 }
 
+interface ObjectionGroup {
+  key: string;
+  title: string;
+  objections: Objection[];
+}
+
+/** Objections under the ground they answer, in the draft's order; general ones last. Within a group, unanswered first. */
+export function groupByGround(objections: Objection[], grounds: Ground[]): ObjectionGroup[] {
+  const order = new Map(grounds.map((g, i) => [g.id, i]));
+  const rank = (v: Objection["verdict"]) => (v === "UNANSWERED" ? 0 : v === "PARTLY" ? 1 : v === null ? 2 : 3);
+  const groups = new Map<string, Objection[]>();
+  for (const o of objections) groups.set(o.against, [...(groups.get(o.against) ?? []), o]);
+  const pos = (key: string) => (key === "general" ? Number.MAX_SAFE_INTEGER : (order.get(key) ?? Number.MAX_SAFE_INTEGER - 1));
+  return [...groups.entries()]
+    .sort(([a], [b]) => pos(a) - pos(b) || a.localeCompare(b))
+    .map(([key, list]) => {
+      const ground = grounds.find((g) => g.id === key);
+      const title = key === "general" ? "General" : ground ? `Against ${FACTOR_LABELS[ground.factor] ?? humanize(ground.factor)} (ground ${key})` : `Against ground ${key}`;
+      return { key, title, objections: [...list].sort((x, y) => rank(x.verdict) - rank(y.verdict)) };
+    });
+}
+
 export function ObjectionsSection(): ReactElement | null {
   const data = useCaseData();
   const spar = data.spar;
@@ -218,11 +240,16 @@ export function ObjectionsSection(): ReactElement | null {
           <p className="mt-1 text-ink-soft" aria-live="polite">
             {plural(objections.length, "objection")}: {count("ANSWERED")} answered, {count("PARTLY")} partly answered, {count("UNANSWERED")} not answered yet.
           </p>
-          <ul className="mt-3 divide-y divide-line border-y border-line">
-            {objections.map((o) => (
-              <ObjectionItem key={o.id} objection={o} focusedId={focused?.id ?? null} />
-            ))}
-          </ul>
+          {groupByGround(objections, data.brief?.grounds ?? []).map((group) => (
+            <div key={group.key} data-testid="spar-group" data-against={group.key} className="mt-5">
+              <h4 className="font-sans text-sm font-medium text-ink-soft">{group.title}</h4>
+              <ul className="mt-1 divide-y divide-line border-y border-line">
+                {group.objections.map((o) => (
+                  <ObjectionItem key={o.id} objection={o} focusedId={focused?.id ?? null} />
+                ))}
+              </ul>
+            </div>
+          ))}
         </>
       )}
       {spar.discarded.length > 0 ? (
