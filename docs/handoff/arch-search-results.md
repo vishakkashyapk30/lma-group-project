@@ -1,6 +1,6 @@
 # Architecture search on Sarvam-105B (1-2 November 2026): results
 
-Status: IN PROGRESS (this note is updated after every iteration). Branch `arch-search`. Inputs: the failure analysis in `docs/handoff/architecture-search-2026-11-01.md`.
+Status: WINNER CHOSEN (3 Nov); holdout and ablations running (this note is updated after every iteration). Branch `arch-search`. Inputs: the failure analysis in `docs/handoff/architecture-search-2026-11-01.md`.
 
 ## Rules followed
 - Search cases `t1dev-000..029` only (`data/eval/dev_runs/sarvam_search/cases/t1_30.jsonl` = the first 30 rows of `data/testsets/t1/dev.jsonl`). The holdout `030..049` is touched once, at the end, for the winner only. The sealed blind slice was not opened.
@@ -87,5 +87,35 @@ Ledger: 229.44 at start; 291.60 after iteration 1 (about INR 62 for 9 arms x 30 
 - The scorer now emits M6a (`unsupported_case_fact_rate`) and its count `n_case_fact` beside M6 (`eval/scoring/engine.METRICS`, `case_metrics.py`); every committed per-case CSV under `docs/results` was given the two columns from its stored outputs by `scripts/midsub/add_m6a.py` (no other column touched), so `tests/unit/eval/test_m6a_beside_m6.py` runs.
 - Running now (unit `vs-final`, root `data/eval/dev_runs/sarvam_final`, all on commit 1ef5495): c14578 (= c1457 + X8), c1457, Full, B4, A7, B0, B1, B2, B3, B5, B6 on the 30 search cases, so the final table has one code stamp.
 
-## Next
-Score the `sarvam_final` arms; pick the winner (c1457 or c14578); give it a fixed id; run it with Full and the baselines once on the holdout `t1dev-030..049` (`SPLIT=holdout OUT_ROOT=sarvam_holdout`); run the ablations on the winner.
+## Final table (3 Nov): every arm rerun on one commit (1ef5495), 30 search cases
+Per-case CSVs and the win/loss/tie table: `docs/results/search/final/` (Satvik's `win_loss_tie.py`, seeded paired bootstrap, Holm over B0-B6 per arm and metric, a win only when the interval excludes zero; 25 quality metrics, M6a beside M6).
+
+| arm | obj. recall | obj. prec. | answerable cov. | coverage | citation prec. | fabricated | M6 | M6a | confident wrong | tokens |
+|---|---|---|---|---|---|---|---|---|---|---|
+| full | 0.364 | 0.225 | 0.379 | 0.643 | 0.823 | 0.000 | 0.989 | 0.844 | 0.980 | 95,413 |
+| **c1457** | **1.000** | 0.192 | **0.606** | 0.972 | 0.681 | 0.000 | **0.895** | **0.472** | 0.893 | 121,065 |
+| c14578 (+X8) | 1.000 | 0.198 | 0.606 | 0.972 | 0.681 | 0.000 | 0.895 | 0.444 | 0.893 | 120,492 |
+| a7 | 0.364 | 0.361 | 0.167 | 0.068 | 0.143 | 0.643 | 0.952 | 0.583 | 0.429 | 71,502 |
+| b0 | 0.000 | - | 0.000 | 0.400 | - | - | 0.989 | - | 0.969 | 3,331 |
+| b1 | 0.000 | - | 0.182 | 0.367 | 0.167 | 0.000 | 0.966 | - | 0.903 | 5,506 |
+| b2 | 0.000 | - | 0.091 | 0.500 | 0.000 | 1.000 | 0.953 | - | 0.916 | 3,671 |
+| b3 | 0.000 | - | 0.000 | 0.367 | 0.056 | 0.000 | 0.983 | - | 0.940 | 5,393 |
+| b4 | 0.273 | 0.048 | 0.242 | 0.075 | 0.011 | 0.933 | 0.947 | 0.845 | 0.301 | 118,183 |
+| b5 | 0.364 | 0.361 | 0.167 | 0.074 | 0.214 | 0.643 | 0.953 | 0.625 | 0.524 | 76,842 |
+| b6 | 0.000 | - | 0.000 | 1.000 | - | - | 0.981 | - | 0.947 | 0 |
+
+Win / tie / loss against B0-B6 (cells with fewer than 5 paired cases or a metric undefined on both sides are not counted):
+
+| arm | wins | ties | losses | losses are |
+|---|---|---|---|---|
+| full | 11 | 49 | 10 | M6 vs B4, B5; M6 count vs B5; coverage vs B6; over-search vs B5; unfinished-factor share vs B4, B5; confident-wrong vs B0, B4, B5 |
+| **c1457** | **30** | 37 | **3** | unfinished-factor share vs B4, B5; confident-wrong vs B4 |
+| c14578 | 33 | 33 | 4 | the three above and confident-wrong vs B5 |
+| a7 | 7 | 47 | 5 | coverage vs B0-B3, B6 |
+
+**Winner: c1457**, driver id `S13:signal_source=merge,abstention=strict,draft_source=facts_text,objection_grounding=by_id` (X1 + X4 + X5 + X7). It has the fewest losses; X8 adds one loss (confident-wrong vs B5) for 3 more wins, so it is not taken. No arm beats every baseline on every metric: the three losses left are the structural cells declared above (B4 and B5 have no required-evidence slots; B4 emits 7.5% of its grounds, so its few sentences are a selected subset). Removing them would mean removing the evidence contracts or declining most grounds, i.e. changing what the metric counts, not improving the brief. Citation precision falls from 0.82 to 0.68 against Full (still a win over B4 and B5, which fabricate) and tokens rise 27%.
+
+## Running (unit `vs-winner`, commit of `scripts/midsub/winner-holdout-ablations.sh`)
+1. Holdout `t1dev-030..049`, touched once: c1457, Full, B0-B6 (`data/eval/dev_runs/sarvam_holdout`).
+2. Ablations on the 30 search cases (`data/eval/dev_runs/sarvam_ablate`): c1457 rerun on this commit; leave-one-out (no X1, no X4, no X5, no X7); A1-A4 and A6-A9 applied on top of c1457 (`no_dossier`, `no_check_repair`, `no_tools`, `plain_retrieval`, `fixed_router`, `free_planner`, `no_sparring`, both).
+Log: `data/eval/dev_runs/winner.log` (prints HOLDOUT_DONE, ABLATE_DONE). Score each arm with the scratchpad pattern of `score.sh` (one arm per call, `VS_M6_CHECKER=minicheck`).
