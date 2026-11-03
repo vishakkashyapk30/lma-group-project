@@ -1,7 +1,7 @@
 # Status: Satvik
 
 ## Current assignment (2 Nov 2026, to the freeze on 10 Nov)
-Swapped with Harshita on 2 Nov. No blocker: the Sarvam block is superseded (already run with the owner's key). All scripted, no manual work: win/loss/tie table (every arm against every baseline on every metric, paired intervals, Holm), a test that M6a is reported beside the unsupported-fact rate for every arm, an automatic Rights rule check against the statute store, BNSS s.58 fixed from the official Gazette PDF by script, consistency checks of the pre-registration and the Rights table.
+Metrics, statistics and Rights: DONE 2 Nov (PR #6). Next: Companies Act s.212 from the official text by script; rerun the win/loss/tie table and the M6a test once the architecture search is merged; statute store rebuild after the search. Details in `docs/handoff/team-todo-2026-11-02.md`.
 Full list, dates and rules: `docs/handoff/team-todo-2026-11-02.md`. The tables below are the earlier state.
 
 **2 Nov, branch `satvik-metrics-rights`: all five done** (details, results and the steps left for others in `docs/handoff/metrics-rights-2026-11-02.md`). Rights: 6 of 7 rules match the statute store (`antil_category` cites the Companies Act s.212(6), not in the store); BNSS s.58 from the Gazette; no arm beats every baseline on every metric yet; consistency checks find two numbers in the pre-registration that disagree with `dev_stats.json`.
