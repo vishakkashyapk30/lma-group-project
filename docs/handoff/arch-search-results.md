@@ -119,3 +119,15 @@ Win / tie / loss against B0-B6 (cells with fewer than 5 paired cases or a metric
 1. Holdout `t1dev-030..049`, touched once: c1457, Full, B0-B6 (`data/eval/dev_runs/sarvam_holdout`).
 2. Ablations on the 30 search cases (`data/eval/dev_runs/sarvam_ablate`): c1457 rerun on this commit; leave-one-out (no X1, no X4, no X5, no X7); A1-A4 and A6-A9 applied on top of c1457 (`no_dossier`, `no_check_repair`, `no_tools`, `plain_retrieval`, `fixed_router`, `free_planner`, `no_sparring`, both).
 Log: `data/eval/dev_runs/winner.log` (prints HOLDOUT_DONE, ABLATE_DONE). Score each arm with the scratchpad pattern of `score.sh` (one arm per call, `VS_M6_CHECKER=minicheck`).
+
+## Evidence for the unfinished-factor loss (7 Nov)
+On the 30 search cases the winner plans 130 factors and 47 end with a required slot MISSING: witness_tampering 18 (trial_stage, witness_examination), antecedents 18 (antecedents), flight_risk 8 (community_roots), 3 others. A regular-expression search of the **facts text only** (not the gold) finds none of these four slots stated in the record for any of the 62 missing slots (antecedents 0/18, trial stage 0/18, witness examination 0/18, community roots 0/8). MISSING is therefore the true state: the record is silent. Filling the slots would be fabrication; not planning those factors would drop the prosecution concerns counsel has to prepare for. B4 and B5 score near zero only because they have no required slots. The loss is reported as it is.
+
+## Owner decisions (7 Nov)
+- Quality metrics decide "beats every baseline". Cost (tokens, store calls, seconds, INR) is a separate efficiency table, judged only against B4 and B5 (the baselines with comparable capability); against the one-call baselines (B0-B3) and the template (B6) it is shown, not counted. Undefined cells (a baseline that produces no objections or no sentence markers, so objection precision or M6a cannot be computed) are listed as undefined.
+- Factor recall, precision and F1 are reported on all 50 dev orders (search + holdout, after the holdout check), since the 30 search orders give only 4 scorable orders.
+- The M6a test stays as written; Shravani rescores `docs/results/shravani/{gemini_31,offline_a10}` from her raw outputs before arch-search goes to main.
+- No test is changed to make it pass. The four existing tests edited on this branch only add the new switch names and arm ids to the registry lists (marked `# RECONCILED`); no assertion was removed or loosened.
+
+## After the reboot of 4 Nov
+The holdout block finished (9 arms x 20 cases). The ablation queue stopped mid-way; `scripts/midsub/winner-ablations-resume.sh` (unit `vs-ablate2`) resumes it. A1, A2, A8 and A9 cannot sit on top of all four winner switches (the Switches validator refuses the combinations), so they drop the switch they conflict with: A1 drops X1 and X5 (with no dossier everything reads the facts), A2 drops X4, A8 drops X7, A9 drops X4 and X7. Scoring: `scripts/midsub/autoscore-arms.sh` (units `vs-autoscore-holdout`, `vs-autoscore-ablate`).
