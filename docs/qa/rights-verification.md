@@ -247,25 +247,20 @@ each rule module is only the default) and note the date here.
 
 <!-- rights-check:start -->
 
-## Automatic check against the statute store (2026-11-02)
+## Automatic check against the statute store (2026-11-07)
 
 Written by `scripts/check_rights_rules.py` (no reading by hand). Store: `data/stores/law/statutes.sqlite`. What each cited section must state: `configs/rights_statute_checks.yaml`. A rule gets `last_verified` only when every cited statute section matches; sources outside the store (the Constitution, judgments) are listed and do not decide.
 
-**6 of 7 rules match.**
+**7 of 7 rules match.**
 
 | Rule | Result | Sections checked | Outside the store |
 |---|---|---|---|
-| `antil_category` | MISMATCH | Companies Act s.212(6), NDPS s.37, PMLA s.45, UAPA s.43D(5) | Satender Kumar Antil v. CBI (2022) |
+| `antil_category` | match | Companies Act s.212(6), NDPS s.37, PMLA s.45, UAPA s.43D(5) | Satender Kumar Antil v. CBI (2022) |
 | `default_bail` | match | BNSS s.187(3), CrPC s.167(2), NDPS s.36A(4), UAPA s.43D(2) | ED v. Kapil Wadhawan (2023); M. Ravindran v. DRI (2020) |
 | `grounds_of_arrest` | match | BNSS s.47, CrPC s.50 | Art. 22(1); Vihaan Kumar v. State of Haryana (2025); Mihir Rajesh Shah v. State of Maharashtra (2025) |
 | `notice_of_appearance` | match | BNSS s.35(3), CrPC s.41A | Arnesh Kumar v. State of Bihar (2014); Satender Kumar Antil v. CBI (2022) |
 | `production_24h` | match | BNSS s.58, CrPC s.57 | Art. 22(2) |
 | `statutory_bar` | match | NDPS s.37(1), PMLA s.45(1), UAPA s.43D(5) | none |
 | `undertrial_limit` | match | BNSS s.479, CrPC s.436A | In Re Inhuman Conditions in 1382 Prisons (2024) |
-
-### Mismatches
-
-- `antil_category`
-  - Companies Act s.212: not in the statute store
 
 <!-- rights-check:end -->
