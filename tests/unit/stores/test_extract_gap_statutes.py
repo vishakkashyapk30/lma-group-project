@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import re
 import sys
 from pathlib import Path
 
@@ -184,3 +186,37 @@ def test_fetch_pinned_refuses_a_file_with_another_hash(tmp_path):
     with pytest.raises(ValueError, match="not the pinned"):
         gap.fetch_pinned("https://example.org/g.pdf", f, "0" * 64)
     assert gap.fetch_pinned("https://example.org/g.pdf", f, gap.sha256_of(f)) == f
+
+
+def _companies_act(tmp_path: Path) -> Path:
+    """A consolidated-Act page in the CrPC layout (numbers rise in small steps, as the reader requires): s.2 ends at s.3, its footnote is dropped."""
+    return _pdf(tmp_path / "companies.pdf", [[
+        (72, 80, 10, "1. Short title.-This Act may be called the Companies Act."),
+        (72, 110, 10, "2. Investigation into affairs of Company by Serious Fraud Investigation Office.-(1) Text."),
+        (72, 125, 10, "(6) No person accused shall be released on bail unless the court is satisfied."),
+        (72, 155, 10, "3. Investigation into company's affairs in other cases.-Other text."),
+        (72, 500, 9, "1. Subs. by Act 21 of 2015, s. 19."),
+    ]])
+
+
+def test_companies_act_row_is_the_wanted_section_alone(tmp_path):
+    rows, missing = gap.build_rows("Companies Act", _companies_act(tmp_path), gap.COMPANIES_URL, ["2", "999"], "2026-11-07")
+    assert missing == ["999"] and [r["section"] for r in rows] == ["2"]
+    assert rows[0]["code"] == "Companies Act" and rows[0]["source_url"] == gap.COMPANIES_URL
+    assert "(6) No person accused" in rows[0]["text"] and "Other text" not in rows[0]["text"] and "Subs. by" not in rows[0]["text"]
+
+
+def test_store_build_keeps_a_companies_act_gap_row(tmp_path):
+    from vakeel_sahayak.schemas.store_rows import StatuteRow
+    from vakeel_sahayak.stores.law_statutes import _merge_gap_rows
+
+    (tmp_path / "companies_act.jsonl").write_text(
+        json.dumps({"code": "Companies Act", "section": "212", "text": "212. Investigation.-(6) bail", "source_url": "u", "retrieved": "d"}) + "\n",
+        encoding="utf-8",
+    )
+    rows = _merge_gap_rows([StatuteRow(code="IPC", section="420", text="cheating")], tmp_path)
+    assert {(r.code, r.section) for r in rows} == {("IPC", "420"), ("Companies Act", "212")}
+
+
+def test_companies_act_pdf_is_pinned_to_a_sha256():
+    assert re.fullmatch(r"[0-9a-f]{64}", gap.COMPANIES_SHA256) and gap.COMPANIES_URL.startswith("https://")
