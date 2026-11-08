@@ -278,6 +278,7 @@ Deviations (append, never edit above). Declared at the freeze, before the blind 
 - D5. Tests failing at the freeze (full suite: 5,334 passed, 7 skipped, then 3 failures fixed in code before the tag; 19 left, none changed):
   17 golden-digest tests of Peshkar and Sutradhar (`tests/unit/agents/{peshkar,sutradhar}/test_variants_*.py`) fail on the event-log digest only (the dossier, List of Dates and prompt digests match). A bisect between `dev-sweep-v2` and `dev-sweep-v3` names commit 5bf4cd3 (29 Oct, design-review item 7): Rights results now carry the rule's verification state, which the events record. The goldens were not re-captured; they fail on `dev-sweep-v3` too, so every dev run and the blind run share this behaviour. Re-capturing them is a test change and waits for the owner.
   2 cells of `tests/unit/eval/test_m6a_beside_m6.py`: `docs/results/shravani/{gemini_31,offline_a10}` lack M6a until Shravani rescores them from her raw outputs (not on this machine).
+- D6. Running the blind slice needs its inputs, so `scripts/midsub/blind-run.sh` reads the 80 sealed ids to select the input rows of `data/testsets/t1/cases.jsonl` and strips the gold field from the run file (the driver reads no gold); no gold or output is looked at. The gated opening (`--slice blind --open-blind`, which needs the tag `eval-freeze-v1` and writes `data/eval/blind.lock`) happens once, in one scoring call over all nine arms after every run ends.
 
 ## 9. Order of evaluation
 

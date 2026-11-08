@@ -19,7 +19,7 @@ while true; do
     a=$(basename "$d")
     [ -f "$R/scores/$a/per_case_agreed.csv" ] && continue
     [ -f "$R/scores/$a.started" ] && { queued=1; continue; }
-    [ "$(ls "$d" | grep -c '^t1dev-.*json$')" -lt "$N" ] && { queued=1; continue; }
+    if [ "$(ls "$d" | grep -c '^t1dev-.*json$')" -lt "$N" ]; then systemctl --user is-active --quiet "$U" && queued=1; continue; fi  # a partial arm waits only while its queue runs
     [ "$(jobs -r | wc -l)" -ge 2 ] && { queued=1; continue; }
     touch "$R/scores/$a.started"; score_one "$a" & queued=1
   done

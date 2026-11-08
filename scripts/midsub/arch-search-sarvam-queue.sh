@@ -13,7 +13,8 @@ R=$W/data/eval/dev_runs/${OUT_ROOT:-sarvam_search}   # OUT_ROOT=sarvam_final for
 PY=${PY:-$W/.venv/bin/python}; [ -x "$PY" ] || PY=python   # a worktree without its own .venv: pass PY=<path to the venv python>
 WORKERS=${WORKERS:-4}; NSHARDS=${NSHARDS:-2}
 mkdir -p "$R/logs" "$R/cases"
-if [ "${SPLIT:-search}" = holdout ]; then sed -n 31,50p data/testsets/t1/dev.jsonl > "$R/cases/t1_30.jsonl"  # t1dev-030..049, touched once at the end
+if [ "${SPLIT:-search}" = blind ]; then [ -s "$R/cases/t1_30.jsonl" ] || { echo "blind: write the case file first (scripts/midsub/blind-run.sh)"; exit 2; }  # the 80 blind inputs, gold stripped
+elif [ "${SPLIT:-search}" = holdout ]; then sed -n 31,50p data/testsets/t1/dev.jsonl > "$R/cases/t1_30.jsonl"  # t1dev-030..049, touched once at the end
 else head -30 data/testsets/t1/dev.jsonl > "$R/cases/t1_30.jsonl"; fi
 job() { a=$1; s=$2; ns=$3; d=$(echo "$a" | tr 'A-Z:=,' 'a-z___')
   echo "start $a shard $s/$ns $(date +%T)"
