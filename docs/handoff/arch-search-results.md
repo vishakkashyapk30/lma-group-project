@@ -131,3 +131,9 @@ On the 30 search cases the winner plans 130 factors and 47 end with a required s
 
 ## After the reboot of 4 Nov
 The holdout block finished (9 arms x 20 cases). The ablation queue stopped mid-way; `scripts/midsub/winner-ablations-resume.sh` (unit `vs-ablate2`) resumes it. A1, A2, A8 and A9 cannot sit on top of all four winner switches (the Switches validator refuses the combinations), so they drop the switch they conflict with: A1 drops X1 and X5 (with no dossier everything reads the facts), A2 drops X4, A8 drops X7, A9 drops X4 and X7. Scoring: `scripts/midsub/autoscore-arms.sh` (units `vs-autoscore-holdout`, `vs-autoscore-ablate`).
+
+## Freeze and blind run (9 Nov)
+- Tags `prereg-v1` and `eval-freeze-v1` on 22fce4f (pushed). Pre-registration section 1.5 registers H-A1 to H-A5 for c1457; deviations D1 to D6 in its section 8.
+- Unit `vs-blind` runs `scripts/midsub/blind-run.sh` in the worktree `.claude/worktrees/agent-a8400ab774cc73e44`, which stays **detached at eval-freeze-v1 and must not be edited or committed in** until the blind run ends (a new shard would record another git SHA or a dirty tree, and the scorer refuses mixed code). Report work happens in `.claude/worktrees/report-arch` (branch `arch-search`), with `VS_RUNS=<that worktree>/data/eval/dev_runs python3 scripts/midsub/final_tables.py`.
+- Log: `data/eval/dev_runs/blind.log` in the run worktree; prints BLIND_RUNS_DONE, then BLIND_SCORED (one gated scoring call, `--slice blind --open-blind`, writes `data/eval/blind.lock`), then resumes the paused ablations (`vs-ablate2`) and scores them, then ALL_DONE.
+- Test suite at the freeze: 22 failures in the full run, 3 fixed in code (runner for `arch_search`, the BGE-M3 job as an interactive script, no owner home paths); 19 remain and are declared in D5 (17 stale golden digests since 5bf4cd3, which needs an owner decision on re-capturing them; 2 M6a cells waiting for Shravani's rescore). No test was edited.
