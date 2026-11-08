@@ -24,7 +24,7 @@ sys.path.insert(0, str(ROOT / "docs/report/tools"))
 import win_loss_tie as wlt  # noqa: E402
 from make_result_tables import esc, fit  # noqa: E402
 
-RUNS = ROOT / "data/eval/dev_runs"
+RUNS = Path(__import__("os").environ.get("VS_RUNS", ROOT / "data/eval/dev_runs"))  # VS_RUNS: the worktree that holds the runs
 OUT = ROOT / "docs/results/search/final_report"
 GEN = ROOT / "docs/report/generated"
 WIN = "s13:signal_source=merge,abstention=strict,draft_source=facts_text,objection_grounding=by_id"
