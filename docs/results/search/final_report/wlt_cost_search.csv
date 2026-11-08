@@ -1,0 +1,13 @@
+arm,baseline,metric,higher_better,n,arm_mean,base_mean,diff,lo,hi,p,holm_level,holm_m,outcome
+"s13:signal_source=merge,abstention=strict,draft_source=facts_text,objection_grounding=by_id",b4,tokens,False,30,121065,118183,2881.8,-3514.92,9854.87,0.392561,0.05,2,tie
+"s13:signal_source=merge,abstention=strict,draft_source=facts_text,objection_grounding=by_id",b5,tokens,False,30,121065,76841.9,44223,38105.2,50199.4,0.00019998,0.025,2,loss
+"s13:signal_source=merge,abstention=strict,draft_source=facts_text,objection_grounding=by_id",b4,store_calls,False,30,108.633,185.567,-76.9333,-84.2004,-67.8667,0.00019998,0.025,2,win
+"s13:signal_source=merge,abstention=strict,draft_source=facts_text,objection_grounding=by_id",b5,store_calls,False,30,108.633,86.8333,21.8,18.1,25.7,0.00019998,0.05,2,loss
+"s13:signal_source=merge,abstention=strict,draft_source=facts_text,objection_grounding=by_id",b4,seconds,False,30,533.737,175.655,358.081,294.934,425.329,0.00019998,0.025,2,loss
+"s13:signal_source=merge,abstention=strict,draft_source=facts_text,objection_grounding=by_id",b5,seconds,False,30,533.737,138.011,395.726,342.337,449.52,0.00019998,0.05,2,loss
+full,b4,tokens,False,30,95413,118183,-22770.1,-28730.9,-16877.8,0.00019998,0.025,2,win
+full,b5,tokens,False,30,95413,76841.9,18571.1,14551.3,22234.8,0.00019998,0.05,2,loss
+full,b4,store_calls,False,30,98.3667,185.567,-87.2,-93.0333,-80,0.00019998,0.025,2,win
+full,b5,store_calls,False,30,98.3667,86.8333,11.5333,9.73333,13.4,0.00019998,0.05,2,loss
+full,b4,seconds,False,30,271.367,175.655,95.7119,51.7368,157.86,0.00019998,0.025,2,loss
+full,b5,seconds,False,30,271.367,138.011,133.356,107.972,161.47,0.00019998,0.05,2,loss

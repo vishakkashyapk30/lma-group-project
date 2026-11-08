@@ -1,0 +1,19 @@
+\begin{table*}[!t]
+\centering\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}llcccccccc@{}}
+\toprule
+Block & Arm & B0 & B1 & B2 & B3 & B4 & B5 & B6 & Total \\
+\midrule
+search & c1457 (winner) & 3/3/0 & 2/11/0 & 4/2/0 & 3/3/0 & 9/5/2 & 5/11/1 & 4/2/0 & 30/37/3 \\
+ & Full & 0/5/1 & 1/12/0 & 0/6/0 & 0/6/0 & 5/8/3 & 4/8/5 & 1/4/1 & 11/49/10 \\
+ & A7 & 0/4/1 & 1/3/1 & 1/3/1 & 1/3/1 & 2/14/0 & 0/17/0 & 2/3/1 & 7/47/5 \\
+holdout & c1457 (winner) & 3/2/0 & 1/2/0 & 2/3/0 & 2/1/0 & 5/9/2 & 5/7/1 & 4/2/0 & 22/26/3 \\
+pooled & c1457 (winner) & 4/4/0 & 4/9/0 & 6/6/0 & 4/9/0 & 9/7/2 & 7/13/2 & 5/4/1 & 39/52/5 \\
+ & Full & 0/5/1 & 1/12/0 & 0/6/0 & 0/6/0 & 5/8/3 & 4/8/5 & 1/4/1 & 11/49/10 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\caption{Architecture search on Sarvam-105B: wins/ties/losses on the quality metrics against each baseline (paired bootstrap, Holm at 0.05 per arm and metric; a win only when the interval excludes zero). Search: 30 dev orders, every arm on one commit; holdout: 20 further dev orders, touched once; pooled: all 50. c1457 is Full with X1, X4, X5 and X7. Cost is in Table~\ref{tab:arch_cost}.}
+\label{tab:arch_wlt}
+\end{table*}
