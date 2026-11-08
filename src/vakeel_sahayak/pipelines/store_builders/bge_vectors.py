@@ -12,7 +12,7 @@ read by `stores.hybrid.HybridIndex` only when `VS_STORES=bge`. Three steps:
         (500 rows per store) with the hashed embedder and comparing the bytes to the stored vector blobs; any mismatch stops the export.
 
     python bge_vectors.py embed --texts-dir T --out-dir O [--outbox B] --model-dir M
-        GPU node (scripts/ada/embed_bge_m3.sbatch). transformers AutoModel, CLS pooling, L2 normalisation (what Bgem3EmbeddingClient gets
+        GPU node (scripts/ada/embed_bge_m3.sh). transformers AutoModel, CLS pooling, L2 normalisation (what Bgem3EmbeddingClient gets
         from sentence-transformers for BAAI/bge-m3), fp16, length-sorted batches, max_length 512. Writes per store and shard of 20,000 rows
         `<store>.<k>.npy` (float16) and `<store>.<k>.ids.npy` (int64), then `<store>.<k>.json` (row count, sha256) as the completion marker;
         shards already present (or listed in --skip-file) are skipped, so a rerun resumes. Before the first shard it embeds 32 texts with

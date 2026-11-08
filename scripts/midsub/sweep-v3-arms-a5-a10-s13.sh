@@ -1,9 +1,11 @@
 #!/bin/bash
 # A5:base_4b, A10:<store> (7 stores) and S13:stopping=llm on Sarvam-105B, first 10 dev cases, dev-sweep-v3 code (owner go-ahead 2026-11-01).
 # Stops by itself once this script has spent more than BUDGET_INR (default 380) according to the Sarvam ledger.
-cd /home/vishak/IIITH-IV-I/lma/sweep-v3; set -a; . ./.env; set +a; export PYTHONPATH=$PWD/src OMP_NUM_THREADS=2 MKL_NUM_THREADS=2
+VS_REPO=${VS_REPO:-$(cd "$(dirname "$0")" && dirname "$(git rev-parse --path-format=absolute --git-common-dir)")}  # main checkout (holds .venv), also from a worktree
+VS_LMA=${VS_LMA:-$(dirname "$VS_REPO")}  # its parent folder (sweep-v3 worktree, scratch case files)
+cd $VS_LMA/sweep-v3; set -a; . ./.env; set +a; export PYTHONPATH=$PWD/src OMP_NUM_THREADS=2 MKL_NUM_THREADS=2
 export VS_ALLOW_PAID=sarvam VS_MODELS=auto VS_LLM_BACKEND=sarvam VS_EXTERNAL=pseudonymised VS_SARVAM=pseudonymised VS_SARVAM_CAP_INR=5000 VS_SARVAM_RUN_CAP_INR=90 VS_NLI=auto
-R=$PWD/data/eval/dev_runs/sarvam_block_v3; PY=/home/vishak/IIITH-IV-I/lma/lma-group-project/.venv/bin/python; BUDGET=${BUDGET_INR:-380}
+R=$PWD/data/eval/dev_runs/sarvam_block_v3; PY=$VS_REPO/.venv/bin/python; BUDGET=${BUDGET_INR:-380}
 mkdir -p $R/logs $R/cases; [ -f $R/cases/t1_10.jsonl ] || head -10 data/testsets/t1/dev.jsonl > $R/cases/t1_10.jsonl
 spent() { $PY -m vakeel_sahayak.models.sarvam.spend 2>&1 | grep -oiE 'INR *[0-9.]+|[0-9.]+ *INR' | head -1 | grep -oE '[0-9.]+'; }
 START=$(spent); echo "start ledger=$START $(date +%T)"

@@ -1,10 +1,12 @@
 #!/bin/bash
 # usage: autoscore-arms.sh <root under data/eval/dev_runs> <n cases> <unit to wait for>
 # Scores each finished arm (one scorer call per arm, at most 2 at once, MiniCheck on CPU) until every arm is scored and the unit has stopped.
+VS_REPO=${VS_REPO:-$(cd "$(dirname "$0")" && dirname "$(git rev-parse --path-format=absolute --git-common-dir)")}  # main checkout (holds .venv), also from a worktree
+VS_LMA=${VS_LMA:-$(dirname "$VS_REPO")}  # its parent folder (sweep-v3 worktree, scratch case files)
 W=$(cd "$(dirname "$0")/../.." && pwd); cd "$W" || exit 1
 export PYTHONPATH=$W/src VS_MODELS=auto VS_EXTERNAL=off VS_GEMINI=off VS_M6_CHECKER=minicheck OMP_NUM_THREADS=3
 R=$W/data/eval/dev_runs/$1; N=$2; U=$3
-PY=${PY:-/home/vishak/IIITH-IV-I/lma/lma-group-project/.venv/bin/python}
+PY=${PY:-$VS_REPO/.venv/bin/python}
 mkdir -p "$R/scores" "$R/views" "$R/logs"
 score_one() { a=$1; V=$R/views/$a; rm -rf "$V"; mkdir -p "$V"; cp -r "$R/outputs/$a" "$V/$a"
   "$PY" -m vakeel_sahayak.eval.scoring score --runs "$V" --slice dev --gold-source agreed --out "$R/scores/$a" > "$R/logs/score_$a.log" 2>&1

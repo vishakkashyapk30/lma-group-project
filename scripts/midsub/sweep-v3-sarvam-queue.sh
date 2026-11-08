@@ -1,8 +1,10 @@
 #!/bin/bash
 # Sarvam-105B block on dev-sweep-v3 code. Paid lock opened for sarvam only, cap INR 5000 (owner go-ahead 2026-11-01). Pseudonymised payloads.
-cd /home/vishak/IIITH-IV-I/lma/sweep-v3; set -a; . ./.env; set +a; export PYTHONPATH=$PWD/src OMP_NUM_THREADS=2 MKL_NUM_THREADS=2
+VS_REPO=${VS_REPO:-$(cd "$(dirname "$0")" && dirname "$(git rev-parse --path-format=absolute --git-common-dir)")}  # main checkout (holds .venv), also from a worktree
+VS_LMA=${VS_LMA:-$(dirname "$VS_REPO")}  # its parent folder (sweep-v3 worktree, scratch case files)
+cd $VS_LMA/sweep-v3; set -a; . ./.env; set +a; export PYTHONPATH=$PWD/src OMP_NUM_THREADS=2 MKL_NUM_THREADS=2
 export VS_ALLOW_PAID=sarvam VS_MODELS=auto VS_LLM_BACKEND=sarvam VS_EXTERNAL=pseudonymised VS_SARVAM=pseudonymised VS_SARVAM_CAP_INR=5000 VS_SARVAM_RUN_CAP_INR=60 VS_NLI=auto
-R=$PWD/data/eval/dev_runs/sarvam_block_v3; PY=/home/vishak/IIITH-IV-I/lma/lma-group-project/.venv/bin/python
+R=$PWD/data/eval/dev_runs/sarvam_block_v3; PY=$VS_REPO/.venv/bin/python
 mkdir -p $R/logs $R/cases; head -30 data/testsets/t1/dev.jsonl > $R/cases/t1_30.jsonl; head -10 data/testsets/t1/dev.jsonl > $R/cases/t1_10.jsonl
 job() { a=$1; c=$2; s=$3; ns=$4; d=$(echo $a | tr A-Z a-z)
   echo "start $a s$s/$ns $(date +%T)"
