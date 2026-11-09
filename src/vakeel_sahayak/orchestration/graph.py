@@ -25,7 +25,7 @@ from typing import Any
 
 from vakeel_sahayak.config import AppConfig
 from vakeel_sahayak.orchestration.gates import await_gate
-from vakeel_sahayak.orchestration.state import CaseGraphState, open_graph_checkpointer
+from vakeel_sahayak.orchestration.state import CaseGraphState, local_facts_text, open_graph_checkpointer
 from vakeel_sahayak.schemas.enums import AgentName, GateId, Stage
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -89,6 +89,11 @@ def dossier_node(state: CaseGraphState) -> CaseGraphState:
         Updated state.
     """
     state = _drive(state, AgentName.PESHKAR)
+    if state.product:
+        # Munshi has now filed pseudonymised chunks in the local case shelf. The
+        # selected c1457 signals and drafter can read the bounded source text;
+        # evaluation states never take this product-only path.
+        state = state.model_copy(update={"facts_text": local_facts_text(state.case_id)})
     return state.model_copy(update={"stage": Stage.DOSSIER})
 
 

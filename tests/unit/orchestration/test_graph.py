@@ -49,6 +49,24 @@ def test_route_and_build_signatures():
     assert list(inspect.signature(graph.build_graph).parameters) == ["config"]
 
 
+def test_product_dossier_node_refreshes_local_facts_text(monkeypatch):
+    """The LangGraph product flow sees the pseudonymised case shelf after intake."""
+    state = CaseGraphState.for_product("case-0007", facts_text="stale")
+    monkeypatch.setattr(graph, "_drive", lambda state, name: state)
+    monkeypatch.setattr(graph, "local_facts_text", lambda case_id: "Person-1 has been in custody since 04.01.2024.")
+    out = graph.dossier_node(state)
+    assert out.stage is Stage.DOSSIER
+    assert out.facts_text == "Person-1 has been in custody since 04.01.2024."
+
+
+def test_eval_dossier_node_does_not_read_the_product_case_shelf(monkeypatch):
+    """The frozen evaluation Full flow does not acquire local product inputs."""
+    state = CaseGraphState(case_id="case-0007", facts_text="fixture facts")
+    monkeypatch.setattr(graph, "_drive", lambda state, name: state)
+    monkeypatch.setattr(graph, "local_facts_text", lambda case_id: pytest.fail("evaluation path must not read product facts"))
+    assert graph.dossier_node(state).facts_text == "fixture facts"
+
+
 # ---------------------------------------------------------------------------------------------------------------------
 # route_after_gate
 # ---------------------------------------------------------------------------------------------------------------------

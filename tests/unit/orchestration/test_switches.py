@@ -14,6 +14,7 @@ from vakeel_sahayak.orchestration.switches import (
     VARIANT_ALIASES,
     Switches,
     assert_variant_implemented,
+    production_switches,
 )
 from vakeel_sahayak.schemas.enums import StoreName
 
@@ -59,6 +60,18 @@ def test_defaults_are_the_full_system():
     assert all(getattr(s, f) is False for f in FLAGS)
     assert s.knockout_store is None
     assert s.extractor == "finetuned_4b"
+
+
+def test_production_preset_is_c1457_without_changing_the_eval_default():
+    """The selected product architecture is explicit; eval's Full baseline stays frozen."""
+    product = production_switches()
+    assert product.model_dump(exclude_defaults=True) == {
+        "signal_source": "merge",
+        "abstention": "strict",
+        "draft_source": "facts_text",
+        "objection_grounding": "by_id",
+    }
+    assert Switches().model_dump(exclude_defaults=True) == {}
 
 
 @pytest.mark.parametrize("flag,ablation", sorted(FLAGS.items()))

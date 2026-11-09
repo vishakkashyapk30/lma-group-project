@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import sys
+from types import ModuleType
+
+import pytest
+
 from tests.fixtures import pdfgen
 from vakeel_sahayak.ingestion.classify import page_type_hint
 from vakeel_sahayak.ingestion.pipeline import read_file, split_and_label
@@ -98,15 +103,22 @@ def test_english_bundle_with_a_high_court_order_splits(require_pymupdf, pdfs):
 
 def test_image_only_pdf_asks_counsel_when_the_vision_model_cannot_load(require_pymupdf, pdfs, monkeypatch):
     """Torchvision or weights missing is 'no vision model', not a crash: the page falls through to ask-counsel."""
-    import transformers
-
     from vakeel_sahayak.models import factory
     from vakeel_sahayak.models.vlm import LocalVisionClient
+
+    # RECONCILED: `make setup` deliberately omits transformers/torch.  The
+    # safety behaviour belongs in the default test environment, so model the
+    # optional package and make its processor loader fail as a broken
+    # torchvision/weights installation would.
+    transformers = ModuleType("transformers")
 
     def boom(*a, **k):
         raise ImportError("Qwen3VLVideoProcessor requires the Torchvision library")
 
-    monkeypatch.setattr(transformers.AutoProcessor, "from_pretrained", boom)
+    transformers.AutoProcessor = type("AutoProcessor", (), {"from_pretrained": staticmethod(boom)})
+    transformers.AutoModelForImageTextToText = type("AutoModelForImageTextToText", (), {})
+    monkeypatch.setitem(sys.modules, "transformers", transformers)
+    monkeypatch.setattr(LocalVisionClient, "available", staticmethod(lambda: True))
     LocalVisionClient._load_failures.clear()
     monkeypatch.setattr(factory, "get_vision", lambda: LocalVisionClient("test/none", quant_4bit=False))
     monkeypatch.setattr("vakeel_sahayak.ingestion.routes.vision.get_vision", lambda: LocalVisionClient("test/none", quant_4bit=False))
@@ -114,6 +126,17 @@ def test_image_only_pdf_asks_counsel_when_the_vision_model_cannot_load(require_p
     f = read_file(str(pdf), TH)
     assert [p.outcome.route for p in f.pages] == [ParseRoute.ASK_COUNSEL] * 2
     LocalVisionClient._load_failures.clear()
+
+
+def test_vision_client_missing_pillow_is_model_unavailable():
+    """A partly installed vision stack must still let the ladder ask counsel."""
+    from vakeel_sahayak.models.base import ModelUnavailable
+    from vakeel_sahayak.models.vlm import LocalVisionClient
+
+    client = LocalVisionClient("test/loaded", quant_4bit=False)
+    client._loaded = (object(), object())
+    with pytest.raises(ModelUnavailable, match="Pillow"):
+        client.transcribe_page(b"not read because Pillow is unavailable")
 
 
 def test_untitled_high_court_orders_split_from_their_neighbours():

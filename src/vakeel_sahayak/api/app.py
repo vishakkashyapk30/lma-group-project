@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import os
 
 from fastapi import FastAPI
@@ -30,14 +31,16 @@ def create_app(config_dir: str | None = None) -> FastAPI:
     if config_dir:
         os.environ["VS_CONFIG_DIR"] = config_dir
     app = FastAPI(title="Vakeel-Sahayak.ai", description="Bail-preparation assistant API (plan §13).")
-    # `include_router` wires each router so routing and `dependency_overrides` work (this FastAPI resolves included
-    # routers lazily at request time). It also means the routes do not appear in `app.routes` until the app is built, so
-    # we additionally append each router's concrete routes for enumeration (route-listing tests, OpenAPI). Routing still
-    # goes through the included routers, which are matched first; the appended copies are never matched.
+    # This FastAPI version materialises included routers lazily, so add schema-excluded copies solely for route
+    # enumeration. The included routes remain the active routes (and therefore retain dependency overrides); without
+    # `include_in_schema=False`, the copies duplicate every OpenAPI operation id.
     for module in ROUTERS:
         app.include_router(module.router)
     for module in ROUTERS:
-        app.router.routes.extend(module.router.routes)
+        for route in module.router.routes:
+            listed_route = copy.copy(route)
+            listed_route.include_in_schema = False
+            app.router.routes.append(listed_route)
     app.add_middleware(BearerTokenMiddleware)  # opt-in (VS_API_TOKEN); added first so CORS stays outermost and 401/403 answers carry the CORS headers
     app.add_middleware(
         CORSMiddleware, allow_origins=_origins(), allow_methods=["*"], allow_headers=["*"], allow_credentials=False
