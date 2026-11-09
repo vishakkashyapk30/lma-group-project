@@ -145,3 +145,31 @@ def test_real_minicheck_roberta_separates_supported_from_unsupported():
     premise = "The applicant was arrested on 12.03.2024 by Hili police. He has been in custody for 90 days and the charge sheet has been filed."
     assert score(premise, "The charge sheet has been filed.") > 0.5
     assert score(premise, "The applicant was arrested in 2019 by the CBI.") < 0.5
+
+
+@pytest.mark.models
+@pytest.mark.slow
+def test_real_minicheck_scores_a_sentence_longer_than_its_window():
+    """Pre-registration D10: a brief sentence over ~490 tokens crashed the tokenizer (truncation only_first). It is now checked in
+    pieces and is supported only as far as its least supported piece, so an unsupported tail cannot hide behind a supported head."""
+    from vakeel_sahayak.models.nli import local_checkpoint
+
+    path = local_checkpoint(uf.MINICHECK_ID)
+    if path is None:
+        pytest.skip("MiniCheck-RoBERTa-Large not under models/hf (make models)")
+    pytest.importorskip("torch")
+    score = uf._roberta_scorer(path)
+    from transformers import AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained(path)
+    premise = "The applicant was arrested on 12.03.2024 by Hili police. He has been in custody for 90 days and the charge sheet has been filed."
+    long = " ".join(["The charge sheet has been filed."] * 50 + ["The applicant was arrested in 2019 by the CBI."] * 50)
+    ids = tok(long, add_special_tokens=False)["input_ids"]
+    assert len(ids) > uf.MAX_LEN
+    with pytest.raises(Exception, match="Truncation error"):  # what the scorer did before the fix, with its smallest chunk
+        tok([premise[:40]], [long], truncation="only_first", max_length=uf.MAX_LEN)
+    got = score(premise, long)
+    pieces = [tok.decode(ids[i:i + uf.LONG_PIECE], clean_up_tokenization_spaces=False) for i in range(0, len(ids), uf.LONG_PIECE)]
+    assert len(pieces) > 1
+    assert got == min(score(premise, p) for p in pieces)  # supported only as far as its least supported piece
+    assert 0.0 <= got <= 1.0
