@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import inspect
 
+import httpx
 import pytest
 
 from tests.unit.api._helpers import scenario
@@ -71,24 +72,24 @@ def test_openapi_operation_ids_are_unique():
     assert len(operation_ids) == len(set(operation_ids))
 
 
-def test_cors_allows_the_nextjs_dev_server(tmp_path, monkeypatch):
+async def test_cors_allows_the_nextjs_dev_server(tmp_path, monkeypatch):
     """The UI (http://localhost:3000) may call the API (plan §13.1)."""
-    client = scenario(tmp_path, monkeypatch).client()
-    res = client.options("/api/cases", headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "GET"})
+    scenario(tmp_path, monkeypatch)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=create_app()), base_url="http://testserver") as client:
+        res = await client.options("/api/cases", headers={"Origin": "http://localhost:3000", "Access-Control-Request-Method": "GET"})
     assert res.headers.get("access-control-allow-origin") == "http://localhost:3000"
 
 
 @pytest.mark.parametrize("origin", ["http://evil.example", "https://localhost:9999.evil.example"])
-def test_cors_does_not_allow_other_origins(tmp_path, monkeypatch, origin):
-    client = scenario(tmp_path, monkeypatch).client()
-    res = client.options("/api/cases", headers={"Origin": origin, "Access-Control-Request-Method": "GET"})
+async def test_cors_does_not_allow_other_origins(tmp_path, monkeypatch, origin):
+    scenario(tmp_path, monkeypatch)
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=create_app()), base_url="http://testserver") as client:
+        res = await client.options("/api/cases", headers={"Origin": origin, "Access-Control-Request-Method": "GET"})
     assert res.headers.get("access-control-allow-origin") not in (origin, "*")
 
 
-def test_dependency_override_replaces_the_event_log(tmp_path, monkeypatch):
+async def test_dependency_override_replaces_the_event_log(tmp_path, monkeypatch):
     """Tests override the log through `app.dependency_overrides` (the convention of tests/README.md)."""
-    from fastapi.testclient import TestClient
-
     from tests.fakes.log import InMemoryEventLog
 
     monkeypatch.setenv("VS_DATA_DIR", str(tmp_path))
@@ -96,4 +97,5 @@ def test_dependency_override_replaces_the_event_log(tmp_path, monkeypatch):
     log = InMemoryEventLog()
     app = create_app()
     app.dependency_overrides[deps.get_event_log] = lambda case_id=None: log
-    assert TestClient(app).get("/api/cases/case-0007/dossier").status_code == 404  # the overriding log is empty
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://testserver") as client:
+        assert (await client.get("/api/cases/case-0007/dossier")).status_code == 404  # the overriding log is empty
