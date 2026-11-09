@@ -64,6 +64,13 @@ def test_no_route_outside_the_api_prefix_except_docs():
     assert stray == []
 
 
+def test_openapi_operation_ids_are_unique():
+    """The schema exposes every endpoint once; enumeration-only route copies stay out of it."""
+    schema = create_app().openapi()
+    operation_ids = [operation["operationId"] for path in schema["paths"].values() for operation in path.values() if isinstance(operation, dict)]
+    assert len(operation_ids) == len(set(operation_ids))
+
+
 def test_cors_allows_the_nextjs_dev_server(tmp_path, monkeypatch):
     """The UI (http://localhost:3000) may call the API (plan §13.1)."""
     client = scenario(tmp_path, monkeypatch).client()

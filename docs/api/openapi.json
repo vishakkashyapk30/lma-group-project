@@ -1,0 +1,3789 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Vakeel-Sahayak.ai",
+    "description": "Bail-preparation assistant API (plan \u00a713).",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/cases": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "List Cases",
+        "description": "Cause list, urgent cases first (plan \u00a713.5).",
+        "operationId": "list_cases_api_cases_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CaseSummary"
+                  },
+                  "title": "Response List Cases Api Cases Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Create Case",
+        "description": "Create a case at the intake stage (plan \u00a713.5).",
+        "operationId": "create_case_api_cases_post",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewCaseRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Get Case",
+        "description": "One case (plan \u00a713.5).",
+        "operationId": "get_case_api_cases__case_id__get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/ingestion": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Get Ingestion",
+        "description": "Latest IngestionReport.",
+        "operationId": "get_ingestion_api_cases__case_id__ingestion_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionReport"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/dossier": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Get Dossier",
+        "description": "Dossier tab.",
+        "operationId": "get_dossier_api_cases__case_id__dossier_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDossier"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/dossier/{field}": {
+      "patch": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Edit Field",
+        "description": "Counsel edits a field; status becomes USER_EDITED and the edit is logged as counsel (audit trail).",
+        "operationId": "edit_field_api_cases__case_id__dossier__field__patch",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "field",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Field"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldEditRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDossier"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/dates": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Get Dates",
+        "description": "Dates tab (List of Dates), oldest first.",
+        "operationId": "get_dates_api_cases__case_id__dates_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TimelineEvent"
+                  },
+                  "title": "Response Get Dates Api Cases  Case Id  Dates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/rights": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Get Rights",
+        "description": "Rights tab. Each check carries `verification` ('unverified' until a person re-checks its rule text; else the date) and the report lists `unverified_checks`.",
+        "operationId": "get_rights_api_cases__case_id__rights_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RightsReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/draft": {
+      "post": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Start Draft",
+        "description": "Draft the bail brief: Sutradhar plans, Vakeel drafts, Abhiyojak spars (plan \u00a713.6 flow 3). Only after Gate 1.",
+        "operationId": "start_draft_api_cases__case_id__draft_post",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Start Draft Api Cases  Case Id  Draft Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/brief": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Get Brief",
+        "description": "Brief tab (404 before drafting).",
+        "operationId": "get_brief_api_cases__case_id__brief_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BailBrief"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/spar": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Get Spar",
+        "description": "Spar tab (404 before sparring).",
+        "operationId": "get_spar_api_cases__case_id__spar_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SparringRecord"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/prep": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Get Prep",
+        "description": "Hearing-prep card (404 before drafting); no prediction, no grant rate (plan \u00a78.3).",
+        "operationId": "get_prep_api_cases__case_id__prep_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Prep Api Cases  Case Id  Prep Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/budget": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Get Budget",
+        "description": "Spend and the per-case cap (plan \u00a76.2).",
+        "operationId": "get_budget_api_cases__case_id__budget_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/files/{doc_id}/pages/{page}": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Get Page Image",
+        "description": "Page image for the PDF viewer, served from the case's laptop directory only (plan \u00a713.5).",
+        "operationId": "get_page_image_api_cases__case_id__files__doc_id__pages__page__get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "doc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Doc Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Page"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/upload": {
+      "post": {
+        "tags": [
+          "upload"
+        ],
+        "summary": "Upload Files",
+        "description": "Upload PDFs, photos or DOCX (plan \u00a74.1); raw files stay on the laptop.",
+        "operationId": "upload_files_api_cases__case_id__upload_post",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_files_api_cases__case_id__upload_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/audio": {
+      "post": {
+        "tags": [
+          "upload"
+        ],
+        "summary": "Upload Audio",
+        "description": "Voice dictation (plan \u00a74.5): transcribe, read the dates and sections back for confirmation, delete the audio unless kept.",
+        "operationId": "upload_audio_api_cases__case_id__audio_post",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "keep",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Keep"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_audio_api_cases__case_id__audio_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/chat": {
+      "post": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "Post Chat",
+        "description": "Chat (core): Sutradhar routes to a store or tool; short cited answers; predictions and lay advice refused (plan \u00a76.4).",
+        "operationId": "post_chat_api_cases__case_id__chat_post",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatMessage"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "chat"
+        ],
+        "summary": "Get History",
+        "description": "Chat history, in order.",
+        "operationId": "get_history_api_cases__case_id__chat_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChatMessage"
+                  },
+                  "title": "Response Get History Api Cases  Case Id  Chat Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/events": {
+      "get": {
+        "tags": [
+          "events"
+        ],
+        "summary": "Stream Events",
+        "description": "SSE agent events for the live trace and animations (plan \u00a713.1).",
+        "operationId": "stream_events_api_cases__case_id__events_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/gates/{gate}": {
+      "get": {
+        "tags": [
+          "gates"
+        ],
+        "summary": "Get Gate",
+        "description": "Gate checklist (plan \u00a713.5).",
+        "operationId": "get_gate_api_cases__case_id__gates__gate__get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "gate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/GateId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GateStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/gates/{gate}/approve": {
+      "post": {
+        "tags": [
+          "gates"
+        ],
+        "summary": "Approve Gate",
+        "description": "Approve Gate 1 or Gate 2 once the checklist is cleared (counsel only); 409 while items remain.",
+        "operationId": "approve_gate_api_cases__case_id__gates__gate__approve_post",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "gate",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/GateId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GateStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/export": {
+      "post": {
+        "tags": [
+          "export"
+        ],
+        "summary": "Export Case",
+        "description": "Gated export of DOCX/PDF; 403 unless Gate 2 is approved for this case (plan \u00a716).\n\nWrites the application, the List of Dates, the objections sheet and the hearing-prep card as DOCX files (and a PDF of each\nfor format PDF) under the case directory, and returns their paths; `GET .../export/files/{name}` serves them.",
+        "operationId": "export_case_api_cases__case_id__export_post",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response Export Case Api Cases  Case Id  Export Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/export/files/{name}": {
+      "get": {
+        "tags": [
+          "export"
+        ],
+        "summary": "Download File",
+        "description": "Download one exported file of this case; only after Gate 2, and only a file inside the case's export folder.",
+        "operationId": "download_file_api_cases__case_id__export_files__name__get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/desk/upload": {
+      "post": {
+        "tags": [
+          "desk"
+        ],
+        "summary": "Upload Folder",
+        "description": "Upload a zip of PDFs or a single PDF (plan \u00a713.5 /desk); each PDF becomes a case id (its file stem).",
+        "operationId": "upload_folder_api_desk_upload_post",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_folder_api_desk_upload_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "Response Upload Folder Api Desk Upload Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/desk/board": {
+      "get": {
+        "tags": [
+          "desk"
+        ],
+        "summary": "Get Board",
+        "description": "Triage board, most urgent first (ascending urgency_rank).",
+        "operationId": "get_board_api_desk_board_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeskBoard"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/desk/{case_id}/open": {
+      "post": {
+        "tags": [
+          "desk"
+        ],
+        "summary": "Open Case",
+        "description": "Open a case from the board; it approves nothing, so the case still needs its own Gate 2 (plan \u00a716).",
+        "operationId": "open_case_api_desk__case_id__open_post",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/library/search": {
+      "get": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Search Precedents",
+        "description": "Precedent explorer search over caselaw.reasoning; every query carries a before date (plan \u00a72, \u00a713.5).",
+        "operationId": "search_precedents_api_library_search_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ParagraphRecord"
+                  },
+                  "title": "Response Search Precedents Api Library Search Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/library/citations/{doc_id}": {
+      "get": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Get Citation Graph",
+        "description": "Citation graph with good-law badges and the SC root (plan \u00a75.3).",
+        "operationId": "get_citation_graph_api_library_citations__doc_id__get",
+        "parameters": [
+          {
+            "name": "doc_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Doc Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Citation Graph Api Library Citations  Doc Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/library/bridge/{code}/{section}": {
+      "get": {
+        "tags": [
+          "library"
+        ],
+        "summary": "Get Bridge",
+        "description": "IPC <-> BNS / CrPC <-> BNSS bridge with a text diff; a split provision lists candidates and does not guess (plan \u00a75.4).",
+        "operationId": "get_bridge_api_library_bridge__code___section__get",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Code"
+            }
+          },
+          {
+            "name": "section",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Section"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Bridge Api Library Bridge  Code   Section  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AgentName": {
+        "type": "string",
+        "enum": [
+          "MUNSHI",
+          "PESHKAR",
+          "SUTRADHAR",
+          "VAKEEL",
+          "ABHIYOJAK",
+          "PAIROKAR"
+        ],
+        "title": "AgentName",
+        "description": "The six agents (plan \u00a73.2)."
+      },
+      "ApproveRequest": {
+        "properties": {
+          "acknowledged_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Acknowledged Fields"
+          }
+        },
+        "type": "object",
+        "title": "ApproveRequest",
+        "description": "Gate approval."
+      },
+      "Authority": {
+        "properties": {
+          "doc_id": {
+            "type": "string",
+            "title": "Doc Id"
+          },
+          "para": {
+            "type": "integer",
+            "title": "Para"
+          },
+          "citation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Citation"
+          },
+          "transfer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TransferFlag"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "good_law": {
+            "$ref": "#/components/schemas/GoodLawStatus",
+            "default": "UNKNOWN"
+          },
+          "sc_root": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sc Root"
+          }
+        },
+        "type": "object",
+        "required": [
+          "doc_id",
+          "para"
+        ],
+        "title": "Authority",
+        "description": "A cited authority; citation text is rendered from corpus metadata, never model-written (plan \u00a78.1)."
+      },
+      "BailBrief": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Case Id"
+          },
+          "statutory_position": {
+            "$ref": "#/components/schemas/StatutoryPosition"
+          },
+          "grounds": {
+            "items": {
+              "$ref": "#/components/schemas/Ground"
+            },
+            "type": "array",
+            "title": "Grounds"
+          },
+          "open_issues": {
+            "items": {
+              "$ref": "#/components/schemas/OpenIssue"
+            },
+            "type": "array",
+            "title": "Open Issues"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "default": "AI-generated draft. Not legal advice."
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id"
+        ],
+        "title": "BailBrief",
+        "description": "Vakeel's brief (plan \u00a78.1)."
+      },
+      "Body_upload_audio_api_cases__case_id__audio_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_audio_api_cases__case_id__audio_post"
+      },
+      "Body_upload_files_api_cases__case_id__upload_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_upload_files_api_cases__case_id__upload_post"
+      },
+      "Body_upload_folder_api_desk_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_folder_api_desk_upload_post"
+      },
+      "BudgetState": {
+        "properties": {
+          "tokens_spent": {
+            "type": "integer",
+            "title": "Tokens Spent",
+            "default": 0
+          },
+          "tokens_cap": {
+            "type": "integer",
+            "title": "Tokens Cap",
+            "default": 150000
+          },
+          "store_calls": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Store Calls"
+          }
+        },
+        "type": "object",
+        "title": "BudgetState",
+        "description": "Spend shown in the UI (plan \u00a76.2)."
+      },
+      "CaseDossier": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Case Id"
+          },
+          "court": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Court"
+          },
+          "as_of": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "fields": {
+            "$ref": "#/components/schemas/DossierFields"
+          },
+          "open_questions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Open Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id"
+        ],
+        "title": "CaseDossier",
+        "description": "Peshkar's dossier (plan \u00a77.1)."
+      },
+      "CaseSummary": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Case Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/Stage"
+          },
+          "rights_chips": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Rights Chips"
+          },
+          "needs_attention": {
+            "type": "integer",
+            "title": "Needs Attention",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id",
+          "title",
+          "stage"
+        ],
+        "title": "CaseSummary",
+        "description": "Card on the /cases cause list (plan \u00a713.5)."
+      },
+      "ChargeSheetValue": {
+        "properties": {
+          "filed": {
+            "type": "boolean",
+            "title": "Filed"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filed"
+        ],
+        "title": "ChargeSheetValue",
+        "description": "Charge-sheet status."
+      },
+      "ChatMessage": {
+        "properties": {
+          "message_id": {
+            "type": "string",
+            "title": "Message Id"
+          },
+          "case_id": {
+            "type": "string",
+            "title": "Case Id"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "agent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentName"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "chips": {
+            "items": {
+              "$ref": "#/components/schemas/ToolChip"
+            },
+            "type": "array",
+            "title": "Chips"
+          },
+          "refused": {
+            "type": "boolean",
+            "title": "Refused",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_id",
+          "case_id",
+          "role",
+          "text"
+        ],
+        "title": "ChatMessage",
+        "description": "A chat turn (plan \u00a76.4, \u00a713.5)."
+      },
+      "ChatRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "ChatRequest",
+        "description": "Counsel's chat message."
+      },
+      "ClaimCheck": {
+        "type": "string",
+        "enum": [
+          "SUPPORTED",
+          "REPAIRED",
+          "NEEDS_REVIEW"
+        ],
+        "title": "ClaimCheck",
+        "description": "Outcome of Vakeel's check-and-repair on a claim (plan \u00a78.1)."
+      },
+      "ClaimState": {
+        "type": "string",
+        "enum": [
+          "CURRENT",
+          "STALE"
+        ],
+        "title": "ClaimState",
+        "description": "Truth-maintenance state of a brief claim (plan \u00a710)."
+      },
+      "CoAccusedBail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "outcome"
+        ],
+        "title": "CoAccusedBail",
+        "description": "A co-accused's bail outcome."
+      },
+      "DependsOn": {
+        "properties": {
+          "facts": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Facts"
+          },
+          "events": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "rights": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Rights"
+          },
+          "authorities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Authorities"
+          },
+          "claims": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Claims"
+          }
+        },
+        "type": "object",
+        "title": "DependsOn",
+        "description": "Dependencies of a claim for truth maintenance (plan \u00a710)."
+      },
+      "DeskBoard": {
+        "properties": {
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/TriageCard"
+            },
+            "type": "array",
+            "title": "Cards"
+          }
+        },
+        "type": "object",
+        "title": "DeskBoard",
+        "description": "Triage board."
+      },
+      "DocumentEntry": {
+        "properties": {
+          "doc_id": {
+            "type": "string",
+            "title": "Doc Id"
+          },
+          "type": {
+            "$ref": "#/components/schemas/DocumentType"
+          },
+          "pages": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Pages"
+          },
+          "lang": {
+            "type": "string",
+            "title": "Lang"
+          },
+          "type_confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type Confidence"
+          },
+          "page_routes": {
+            "items": {
+              "$ref": "#/components/schemas/PageRoute"
+            },
+            "type": "array",
+            "title": "Page Routes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "doc_id",
+          "type",
+          "pages",
+          "lang"
+        ],
+        "title": "DocumentEntry",
+        "description": "One document found in a file (plan \u00a74.6)."
+      },
+      "DocumentType": {
+        "type": "string",
+        "enum": [
+          "FIR",
+          "ARREST_MEMO",
+          "REMAND_ORDER",
+          "BAIL_ORDER",
+          "ORDER_SHEET",
+          "CHARGE_SHEET_COVER",
+          "CUSTODY_CERTIFICATE",
+          "MEDICAL_RECORD",
+          "AFFIDAVIT",
+          "OTHER"
+        ],
+        "title": "DocumentType",
+        "description": "Document labels assigned by Munshi (plan \u00a74.3)."
+      },
+      "DossierFields": {
+        "properties": {
+          "fir": {
+            "$ref": "#/components/schemas/TrackedField_FirValue_"
+          },
+          "offence_date": {
+            "$ref": "#/components/schemas/TrackedField_str_"
+          },
+          "sections": {
+            "$ref": "#/components/schemas/TrackedField_list_SectionValue__"
+          },
+          "arrest_date": {
+            "$ref": "#/components/schemas/TrackedField_str_"
+          },
+          "first_remand": {
+            "$ref": "#/components/schemas/TrackedField_str_"
+          },
+          "custody_days": {
+            "$ref": "#/components/schemas/TrackedField_int_"
+          },
+          "charge_sheet": {
+            "$ref": "#/components/schemas/TrackedField_ChargeSheetValue_"
+          },
+          "trial_stage": {
+            "$ref": "#/components/schemas/TrackedField_str_"
+          },
+          "previous_bail": {
+            "$ref": "#/components/schemas/TrackedField_list_PreviousBail__"
+          },
+          "co_accused_bail": {
+            "$ref": "#/components/schemas/TrackedField_list_CoAccusedBail__"
+          },
+          "antecedents": {
+            "$ref": "#/components/schemas/TrackedField_list_str__"
+          },
+          "personal": {
+            "$ref": "#/components/schemas/TrackedField_list_str__"
+          },
+          "parties": {
+            "$ref": "#/components/schemas/TrackedField_list_str__"
+          }
+        },
+        "type": "object",
+        "title": "DossierFields",
+        "description": "The ~15 dossier fields, each tracked (plan \u00a77.1). Note: bnss_479 moved to RightsReport."
+      },
+      "ExportFormat": {
+        "type": "string",
+        "enum": [
+          "DOCX",
+          "PDF"
+        ],
+        "title": "ExportFormat",
+        "description": "Export formats (plan \u00a78.2, \u00a713.1)."
+      },
+      "ExportRequest": {
+        "properties": {
+          "format": {
+            "$ref": "#/components/schemas/ExportFormat",
+            "default": "DOCX"
+          }
+        },
+        "type": "object",
+        "title": "ExportRequest",
+        "description": "Export request."
+      },
+      "Factor": {
+        "type": "string",
+        "enum": [
+          "gravity_and_punishment",
+          "custody_period",
+          "charge_sheet_filed",
+          "trial_delay",
+          "parity_with_co_accused",
+          "antecedents",
+          "flight_risk",
+          "witness_tampering",
+          "weak_prima_facie",
+          "health_age_family",
+          "statutory_bar",
+          "undertrial_period"
+        ],
+        "title": "Factor",
+        "description": "The 12 bail factors (plan Appendix A). Values are contract file stems."
+      },
+      "FactorStance": {
+        "type": "string",
+        "enum": [
+          "favourable",
+          "adverse",
+          "not_applicable"
+        ],
+        "title": "FactorStance",
+        "description": "Sutradhar's per-factor stance (plan \u00a76.2)."
+      },
+      "FieldEditRequest": {
+        "properties": {
+          "value": {
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "FieldEditRequest",
+        "description": "Counsel edits a dossier field (status becomes USER_EDITED)."
+      },
+      "FieldStatus": {
+        "type": "string",
+        "enum": [
+          "VERIFIED",
+          "COMPUTED",
+          "UNSUPPORTED",
+          "AMBIGUOUS",
+          "USER_STATED",
+          "USER_EDITED"
+        ],
+        "title": "FieldStatus",
+        "description": "Status of a dossier field (plan \u00a77.1)."
+      },
+      "FiledCounts": {
+        "properties": {
+          "timeline_events": {
+            "type": "integer",
+            "title": "Timeline Events",
+            "default": 0
+          },
+          "parties": {
+            "type": "integer",
+            "title": "Parties",
+            "default": 0
+          },
+          "sections": {
+            "type": "integer",
+            "title": "Sections",
+            "default": 0
+          },
+          "chunks": {
+            "type": "integer",
+            "title": "Chunks",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "FiledCounts",
+        "description": "Counts of items filed into the case shelf (plan \u00a74.6)."
+      },
+      "FirValue": {
+        "properties": {
+          "number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Number"
+          },
+          "police_station": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Police Station"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          }
+        },
+        "type": "object",
+        "title": "FirValue",
+        "description": "FIR number, police station and date."
+      },
+      "Gap": {
+        "properties": {
+          "item": {
+            "type": "string",
+            "title": "Item"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item",
+          "action"
+        ],
+        "title": "Gap",
+        "description": "A bail-file checklist gap and the action taken (plan \u00a74.3 step 4)."
+      },
+      "GateId": {
+        "type": "string",
+        "enum": [
+          "GATE_1_DOSSIER",
+          "GATE_2_EXPORT"
+        ],
+        "title": "GateId",
+        "description": "The two approval gates (plan \u00a73.1)."
+      },
+      "GateStatus": {
+        "properties": {
+          "gate": {
+            "$ref": "#/components/schemas/GateId"
+          },
+          "open": {
+            "type": "boolean",
+            "title": "Open"
+          },
+          "unresolved_unsupported": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unresolved Unsupported"
+          },
+          "unresolved_needs_review": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unresolved Needs Review"
+          },
+          "unresolved_unanswered": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unresolved Unanswered"
+          }
+        },
+        "type": "object",
+        "required": [
+          "gate",
+          "open"
+        ],
+        "title": "GateStatus",
+        "description": "State of an approval gate (plan \u00a713.5)."
+      },
+      "GoodLawStatus": {
+        "type": "string",
+        "enum": [
+          "OK",
+          "OVERRULED",
+          "DISTINGUISHED",
+          "UNKNOWN"
+        ],
+        "title": "GoodLawStatus",
+        "description": "Good-law flag on an authority (plan \u00a75.3)."
+      },
+      "Ground": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "factor": {
+            "$ref": "#/components/schemas/Factor"
+          },
+          "stance": {
+            "$ref": "#/components/schemas/FactorStance"
+          },
+          "argument": {
+            "type": "string",
+            "title": "Argument"
+          },
+          "authorities": {
+            "items": {
+              "$ref": "#/components/schemas/Authority"
+            },
+            "type": "array",
+            "title": "Authorities"
+          },
+          "depends_on": {
+            "$ref": "#/components/schemas/DependsOn"
+          },
+          "check": {
+            "$ref": "#/components/schemas/ClaimCheck",
+            "default": "NEEDS_REVIEW"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ClaimState",
+            "default": "CURRENT"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "factor",
+          "stance",
+          "argument"
+        ],
+        "title": "Ground",
+        "description": "One ground of the brief (plan \u00a78.1)."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "IngestionReport": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Case Id"
+          },
+          "file": {
+            "type": "string",
+            "title": "File"
+          },
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentEntry"
+            },
+            "type": "array",
+            "title": "Documents"
+          },
+          "filed": {
+            "$ref": "#/components/schemas/FiledCounts"
+          },
+          "gaps": {
+            "items": {
+              "$ref": "#/components/schemas/Gap"
+            },
+            "type": "array",
+            "title": "Gaps"
+          },
+          "questions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id",
+          "file"
+        ],
+        "title": "IngestionReport",
+        "description": "Munshi's output (plan \u00a74.6)."
+      },
+      "NewCaseRequest": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "title": "NewCaseRequest",
+        "description": "Create a case."
+      },
+      "Objection": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "against": {
+            "type": "string",
+            "title": "Against"
+          },
+          "factor": {
+            "type": "string",
+            "title": "Factor"
+          },
+          "objection": {
+            "type": "string",
+            "title": "Objection"
+          },
+          "grounds": {
+            "items": {
+              "$ref": "#/components/schemas/ObjectionGround"
+            },
+            "type": "array",
+            "title": "Grounds"
+          },
+          "reply": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Reply"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SparringVerdict"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "against",
+          "factor",
+          "objection"
+        ],
+        "title": "Objection",
+        "description": "One prosecution objection (plan \u00a79)."
+      },
+      "ObjectionGround": {
+        "properties": {
+          "store": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Store"
+          },
+          "doc_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doc Id"
+          },
+          "para": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Para"
+          },
+          "fact": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fact"
+          }
+        },
+        "type": "object",
+        "title": "ObjectionGround",
+        "description": "What grounds an objection (plan \u00a79): a bank paragraph, refusal reasoning, statute or dossier fact."
+      },
+      "OpenIssue": {
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/OpenIssueType"
+          },
+          "item": {
+            "type": "string",
+            "title": "Item"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "item"
+        ],
+        "title": "OpenIssue",
+        "description": "Open issue surfaced to counsel (plan \u00a78.1)."
+      },
+      "OpenIssueType": {
+        "type": "string",
+        "enum": [
+          "NEEDS_REVIEW",
+          "CHANGED_PROVISION",
+          "MISSING_EVIDENCE"
+        ],
+        "title": "OpenIssueType",
+        "description": "Type of open issue in a BailBrief (plan \u00a78.1)."
+      },
+      "OrderPart": {
+        "type": "string",
+        "enum": [
+          "facts",
+          "defense_submissions",
+          "prosecution_submissions",
+          "reasoning",
+          "operative_order"
+        ],
+        "title": "OrderPart",
+        "description": "Part of a court order (plan \u00a75.2)."
+      },
+      "PageRoute": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "PageStatus": {
+        "type": "string",
+        "enum": [
+          "OK",
+          "UNREADABLE"
+        ],
+        "title": "PageStatus",
+        "description": "Final status of a page after routing (plan \u00a74.6)."
+      },
+      "ParagraphRecord": {
+        "properties": {
+          "doc_id": {
+            "type": "string",
+            "title": "Doc Id"
+          },
+          "para": {
+            "type": "integer",
+            "title": "Para"
+          },
+          "court": {
+            "type": "string",
+            "title": "Court"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "part": {
+            "$ref": "#/components/schemas/OrderPart"
+          },
+          "sections": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sections"
+          },
+          "section_family": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Section Family"
+          },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/Factor"
+            },
+            "type": "array",
+            "title": "Factors"
+          },
+          "cites": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cites"
+          },
+          "authority": {
+            "type": "number",
+            "title": "Authority",
+            "default": 0.0
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "doc_id",
+          "para",
+          "court",
+          "date",
+          "part"
+        ],
+        "title": "ParagraphRecord",
+        "description": "A paragraph row with metadata (plan \u00a75.2)."
+      },
+      "PreviousBail": {
+        "properties": {
+          "court": {
+            "type": "string",
+            "title": "Court"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome"
+          }
+        },
+        "type": "object",
+        "required": [
+          "court",
+          "date",
+          "outcome"
+        ],
+        "title": "PreviousBail",
+        "description": "An earlier bail outcome."
+      },
+      "Reply": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "authorities": {
+            "items": {
+              "$ref": "#/components/schemas/Authority"
+            },
+            "type": "array",
+            "title": "Authorities"
+          },
+          "check": {
+            "$ref": "#/components/schemas/ClaimCheck",
+            "default": "NEEDS_REVIEW"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "Reply",
+        "description": "Vakeel's reply to an objection (plan \u00a79)."
+      },
+      "RightsCheckName": {
+        "type": "string",
+        "enum": [
+          "default_bail",
+          "undertrial_limit",
+          "notice_of_appearance",
+          "grounds_of_arrest",
+          "production_24h",
+          "antil_category",
+          "statutory_bar"
+        ],
+        "title": "RightsCheckName",
+        "description": "The seven Rights Radar checks (plan \u00a77.3, Appendix C)."
+      },
+      "RightsCheckOut": {
+        "properties": {
+          "check": {
+            "$ref": "#/components/schemas/RightsCheckName"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RightsStatus"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "uses": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Uses"
+          },
+          "rule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule"
+          },
+          "rule_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Text"
+          },
+          "sources": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "dates": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Dates"
+          },
+          "last_verified": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Verified"
+          },
+          "verification": {
+            "type": "string",
+            "title": "Verification",
+            "default": "unverified"
+          }
+        },
+        "type": "object",
+        "required": [
+          "check",
+          "status"
+        ],
+        "title": "RightsCheckOut",
+        "description": "One Rights Radar check as the API returns it: the stored fields plus `verification` ('unverified' until a person re-checks the rule text against the bare act, else the date)."
+      },
+      "RightsReportOut": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Case Id"
+          },
+          "as_of": {
+            "type": "string",
+            "title": "As Of"
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/RightsCheckOut"
+            },
+            "type": "array",
+            "title": "Checks"
+          },
+          "unverified_checks": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unverified Checks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id",
+          "as_of"
+        ],
+        "title": "RightsReportOut",
+        "description": "`GET /api/cases/{id}/rights`: the stored report plus, additively, `verification` on every check and `unverified_checks` (the names). The stored report and its golden files are unchanged.",
+        "example": {
+          "as_of": "2025-02-03",
+          "case_id": "case-0007",
+          "checks": [
+            {
+              "check": "default_bail_window",
+              "dates": {
+                "first_remand": "2024-08-21"
+              },
+              "detail": "Default-bail window opens in 3 days",
+              "rule": "BNSS s.187(3)",
+              "rule_text": "Default bail if the charge sheet is not filed within 60 or 90 days.",
+              "sources": [
+                "BNSS s.187(3)"
+              ],
+              "status": "WINDOW_OPEN",
+              "uses": [
+                "custody_start"
+              ],
+              "verification": "unverified"
+            }
+          ],
+          "unverified_checks": [
+            "default_bail_window"
+          ]
+        }
+      },
+      "RightsStatus": {
+        "type": "string",
+        "enum": [
+          "ELIGIBLE",
+          "NOT_YET",
+          "WINDOW_CLOSED",
+          "CHECK",
+          "NOT_APPLICABLE",
+          "FLAG",
+          "OK",
+          "UNKNOWN",
+          "BAR_APPLIES",
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "title": "RightsStatus",
+        "description": "Union of all Rights Radar output statuses (plan \u00a77.3). Per-rule allowed subsets live in rights/rules/*."
+      },
+      "SectionValue": {
+        "properties": {
+          "as_written": {
+            "type": "string",
+            "title": "As Written"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "section": {
+            "type": "string",
+            "title": "Section"
+          },
+          "equivalent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equivalent"
+          },
+          "bailable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bailable"
+          },
+          "max_punishment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Punishment"
+          }
+        },
+        "type": "object",
+        "required": [
+          "as_written",
+          "code",
+          "section"
+        ],
+        "title": "SectionValue",
+        "description": "One charged section with its concordance equivalent (plan \u00a77.1)."
+      },
+      "SourceRef": {
+        "properties": {
+          "doc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doc"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "box": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Box"
+          },
+          "lang": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lang"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Route"
+          },
+          "quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quote"
+          },
+          "quote_en": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quote En"
+          },
+          "tool": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool"
+          },
+          "chat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "title": "SourceRef",
+        "description": "Where a value came from (plan \u00a74.4, \u00a77.1): page, box, route, language and quote."
+      },
+      "SparringRecord": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Case Id"
+          },
+          "rounds": {
+            "type": "integer",
+            "title": "Rounds",
+            "default": 0
+          },
+          "objections": {
+            "items": {
+              "$ref": "#/components/schemas/Objection"
+            },
+            "type": "array",
+            "title": "Objections"
+          },
+          "discarded": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Discarded"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id"
+        ],
+        "title": "SparringRecord",
+        "description": "Abhiyojak's output (plan \u00a79)."
+      },
+      "SparringVerdict": {
+        "type": "string",
+        "enum": [
+          "ANSWERED",
+          "PARTLY",
+          "UNANSWERED"
+        ],
+        "title": "SparringVerdict",
+        "description": "Abhiyojak's verdict on a reply (plan \u00a79)."
+      },
+      "Stage": {
+        "type": "string",
+        "enum": [
+          "INTAKE",
+          "DOSSIER",
+          "RIGHTS",
+          "BRIEF",
+          "SPAR",
+          "HEARING_PREP",
+          "FILE"
+        ],
+        "title": "Stage",
+        "description": "Workspace stages (plan \u00a713.5)."
+      },
+      "StatutoryPosition": {
+        "properties": {
+          "sections": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sections"
+          },
+          "bailable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bailable"
+          },
+          "max_punishment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Punishment"
+          },
+          "rights": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rights"
+          }
+        },
+        "type": "object",
+        "title": "StatutoryPosition",
+        "description": "Statutory position block (plan \u00a78.1)."
+      },
+      "StoreName": {
+        "type": "string",
+        "enum": [
+          "law.statutes",
+          "law.concordance",
+          "caselaw.reasoning",
+          "caselaw.citations",
+          "caselaw.similar",
+          "advocacy.arguments",
+          "advocacy.objections",
+          "case.docs",
+          "case.timeline",
+          "case.facts"
+        ],
+        "title": "StoreName",
+        "description": "The ten stores (plan \u00a75.1)."
+      },
+      "TimelineEvent": {
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "title": "Event Id"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/FieldStatus",
+            "default": "VERIFIED"
+          },
+          "conflicts_with": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Conflicts With"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_id",
+          "date",
+          "label"
+        ],
+        "title": "TimelineEvent",
+        "description": "A dated event with source (plan \u00a74.4, \u00a77.2)."
+      },
+      "ToolChip": {
+        "properties": {
+          "tool": {
+            "type": "string",
+            "title": "Tool"
+          },
+          "store": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StoreName"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "tool"
+        ],
+        "title": "ToolChip",
+        "description": "Store/tool chip shown on an answer (plan \u00a713.5)."
+      },
+      "TrackedField_ChargeSheetValue_": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChargeSheetValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/FieldStatus",
+            "default": "UNSUPPORTED"
+          }
+        },
+        "type": "object",
+        "title": "TrackedField[ChargeSheetValue]"
+      },
+      "TrackedField_FirValue_": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FirValue"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/FieldStatus",
+            "default": "UNSUPPORTED"
+          }
+        },
+        "type": "object",
+        "title": "TrackedField[FirValue]"
+      },
+      "TrackedField_int_": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/FieldStatus",
+            "default": "UNSUPPORTED"
+          }
+        },
+        "type": "object",
+        "title": "TrackedField[int]"
+      },
+      "TrackedField_list_CoAccusedBail__": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CoAccusedBail"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/FieldStatus",
+            "default": "UNSUPPORTED"
+          }
+        },
+        "type": "object",
+        "title": "TrackedField[list[CoAccusedBail]]"
+      },
+      "TrackedField_list_PreviousBail__": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PreviousBail"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/FieldStatus",
+            "default": "UNSUPPORTED"
+          }
+        },
+        "type": "object",
+        "title": "TrackedField[list[PreviousBail]]"
+      },
+      "TrackedField_list_SectionValue__": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SectionValue"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/FieldStatus",
+            "default": "UNSUPPORTED"
+          }
+        },
+        "type": "object",
+        "title": "TrackedField[list[SectionValue]]"
+      },
+      "TrackedField_list_str__": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/FieldStatus",
+            "default": "UNSUPPORTED"
+          }
+        },
+        "type": "object",
+        "title": "TrackedField[list[str]]"
+      },
+      "TrackedField_str_": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/FieldStatus",
+            "default": "UNSUPPORTED"
+          }
+        },
+        "type": "object",
+        "title": "TrackedField[str]"
+      },
+      "TransferFlag": {
+        "type": "string",
+        "enum": [
+          "SAME_TEXT",
+          "CHANGED",
+          "NEW"
+        ],
+        "title": "TransferFlag",
+        "description": "IPC-to-BNS transfer flag on a precedent (plan \u00a75.4)."
+      },
+      "TriageCard": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Case Id"
+          },
+          "urgency_rank": {
+            "type": "integer",
+            "title": "Urgency Rank"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reasons"
+          },
+          "flags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Flags"
+          },
+          "missing_docs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Docs"
+          },
+          "next_step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Step"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id",
+          "urgency_rank"
+        ],
+        "title": "TriageCard",
+        "description": "Pairokar's per-case card (plan \u00a711)."
+      },
+      "UploadResponse": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "title": "Case Id"
+          },
+          "accepted": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Accepted"
+          },
+          "questions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Questions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id"
+        ],
+        "title": "UploadResponse",
+        "description": "Result of an upload."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
