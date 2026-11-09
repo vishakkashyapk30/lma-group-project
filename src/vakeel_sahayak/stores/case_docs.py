@@ -100,3 +100,30 @@ class CaseDocsStore(CaseStore):
         facets = {"doc_type": [DocumentType(t).value for t in doc_types]} if doc_types else {}
         hits = self._need().search(query, facets=facets, k=k)
         return [CaseChunk.model_validate(h.payload) for h in hits]
+
+    def facts_text(self, max_chars: int = 12_000) -> str:
+        """Pseudonymised source text for the product's local facts-text switches.
+
+        The case shelf is local-only and Munshi files pseudonymised chunks into it.
+        Chunks are ordered deterministically by document, page and chunk id; a
+        bounded result prevents a large bundle from becoming an unbounded prompt.
+        This method never searches a shared store or calls a model.
+        """
+        if max_chars <= 0:
+            raise ValueError("max_chars must be positive")
+        chunks = [CaseChunk.model_validate(row) for row in self._need().payloads()]
+        chunks.sort(key=lambda c: (c.doc_id, c.page, c.chunk_id))
+        parts: list[str] = []
+        used = 0
+        for chunk in chunks:
+            text = chunk.text.strip()
+            if not text or text in parts:
+                continue
+            room = max_chars - used
+            if room <= 0:
+                break
+            piece = text[:room].strip()
+            if piece:
+                parts.append(piece)
+                used += len(piece) + 1
+        return "\n".join(parts)
