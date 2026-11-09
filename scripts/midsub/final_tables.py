@@ -8,9 +8,11 @@ bootstrap, Holm at 0.05 per arm and metric over the comparators, a win only when
   holdout  20 dev orders t1dev-030..049, touched once (data/eval/dev_runs/sarvam_holdout)
   pooled   all 50 dev orders (search + holdout; same src tree), the only block where the factor metrics have enough orders
   ablate   the winner rerun against each ablation on the 30 search orders (data/eval/dev_runs/sarvam_ablate)
+  blind    the 80 sealed blind orders, opened once (data/eval/dev_runs/sarvam_blind, one gated scoring call over all nine arms), with the
+           registered hypotheses H-A1 to H-A5 of pre-registration 1.5 and the declared sensitivity analyses (errored records kept, 1.4; D7)
 Quality metrics decide. Cost (tokens, store calls, seconds) is a separate table judged only against B4 and B5, the baselines of
 comparable capability; against B0-B3 and B6 it is shown, not counted. Every numeric column the scorer writes gets a mean.
-Writes docs/results/search/final_report/{means_<block>.csv, wlt_<block>.csv, cost.csv, summary.md} and
+Writes docs/results/search/final_report/{means_<block>.csv, wlt_<block>.csv, hypotheses_blind.json, summary.md} and
 docs/report/generated/arch_{wlt,ablate,cost}.tex.
 """
 import csv
@@ -53,7 +55,8 @@ def name(s):
 
 def rows_of(block):
     rows = []
-    for f in sorted((RUNS / block / "scores").glob("*/per_case_agreed.csv")):
+    # one scorer call per arm writes scores/<arm>/per_case_agreed.csv; the blind slice's single gated call writes scores/per_case_agreed.csv
+    for f in sorted((RUNS / block / "scores").glob("per_case_agreed.csv")) + sorted((RUNS / block / "scores").glob("*/per_case_agreed.csv")):
         rows += list(csv.DictReader(open(f)))
     for r in rows:
         r["system"] = r["system"].lower()
@@ -178,9 +181,119 @@ def main():
         missing = [name(a) for a in ABL if a not in comps]
         if missing:
             md += ["", "Not scored yet: " + ", ".join(missing)]
+    blind = rows_of("sarvam_blind")
+    if blind:
+        md += blind_block(blind, tex_rows, cost_cells)
+    else:
+        md += ["## blind: not scored yet", ""]
     (OUT / "summary.md").write_text("\n".join(md) + "\n")
     write_tex(tex_rows, abl_rows, cost_cells)
     print("\n".join(md))
+
+
+# Pre-registration 1.5: cells declared structural on dev before the blind slice was opened (H-A1 excepts exactly these)
+STRUCTURAL = {("unfinished_factor_share", "b4"), ("unfinished_factor_share", "b5"), ("confident_wrong_rate", "b4"), ("coverage", "b6")}
+D7_SET_ASIDE = {"full": "t1-000", WIN: "t1-002"}  # pre-registration D7: the two cases rerun after a local SQLite error at start-up
+
+
+def _cell(cells, arm, base, metric):
+    return next((c for c in cells if c["arm"] == arm and c["baseline"] == base and c["metric"] == metric), None)
+
+
+def _show(c):
+    if c is None:
+        return "not computed"
+    if c["outcome"] in ("undefined",):
+        return "undefined"
+    s = f"{c['outcome']} (diff {c['diff']:+.3f}"
+    if "lo" in c:
+        s += f", interval {c['lo']:+.3f} to {c['hi']:+.3f}"
+    return s + f", n={c['n']})"
+
+
+def hypotheses(rows, tag):
+    """H-A1..H-A5 of pre-registration 1.5, exactly as registered; returns (markdown lines, verdict dict)."""
+    by = wlt.answered(rows)
+    if WIN not in by:
+        return [f"c1457 has no answered case ({tag})"], {}
+    bases = [b for b in BASES if b in by]
+    metrics = [m for m in wlt.DECIDING if m in rows[0]]
+    q = wlt.compare(by, [WIN], bases, metrics)
+    out, v = [], {}
+    # H-A1: no loss against B0-B6 on any quality metric outside the four structural cells
+    bad = [c for c in q if c["outcome"] == "loss" and (c["metric"], c["baseline"]) not in STRUCTURAL]
+    struct = [c for c in q if (c["metric"], c["baseline"]) in STRUCTURAL]
+    v["H-A1"] = "supported" if len(bases) == 7 and not bad else "falsified"
+    out.append(f"- **H-A1** ({v['H-A1']}): losses outside the structural cells: "
+               + ("; ".join(f"{wlt.DECIDING[c['metric']][0]} vs {c['baseline'].upper()} {_show(c)}" for c in bad) or "none")
+               + ". Structural cells as found: " + "; ".join(f"{wlt.DECIDING[c['metric']][0]} vs {c['baseline'].upper()} {c['outcome']}" for c in struct)
+               + (f". Baselines present: {', '.join(b.upper() for b in bases)}" if len(bases) < 7 else "") + ".")
+    # H-A2: beats Full on objection recall and answerable coverage (one comparator, Holm level 0.05)
+    h2 = wlt.compare(by, [WIN], ["full"], ["objection_recall", "answerable_coverage"]) if "full" in by else []
+    ok = len(h2) == 2 and all(c["outcome"] == "win" for c in h2)
+    v["H-A2"] = "supported" if ok else "falsified"
+    out.append(f"- **H-A2** ({v['H-A2']}): " + "; ".join(f"{wlt.DECIDING[c['metric']][0]} vs Full {_show(c)}" for c in h2))
+    # H-A3: beats B4 and B5 on citation precision and fabricated-citation rate (cells of the B0-B6 family)
+    h3 = [(m, b, _cell(q, WIN, b, m)) for m in ("citation_precision", "fabricated_citation_rate") for b in ("b4", "b5")]
+    v["H-A3"] = "supported" if all(c and c["outcome"] == "win" for _, _, c in h3) else "falsified"
+    out.append(f"- **H-A3** ({v['H-A3']}): " + "; ".join(f"{wlt.DECIDING[m][0]} vs {b.upper()} {_show(c)}" for m, b, c in h3))
+    # H-A4: M6 not a loss against any of B0-B6
+    h4 = [(b, _cell(q, WIN, b, "unsupported_fact_rate")) for b in BASES]
+    v["H-A4"] = "falsified" if any(c and c["outcome"] == "loss" for _, c in h4) or len(bases) < 7 else "supported"
+    out.append(f"- **H-A4** ({v['H-A4']}): " + "; ".join(f"M6 vs {b.upper()} {_show(c)}" for b, c in h4))
+    # H-A5: fewer store calls than B4 (cost family: B4 and B5)
+    COSTM = {"store_calls": ("Store calls", False)}
+    wlt.DECIDING.update(COSTM)
+    h5 = wlt.compare(by, [WIN], [b for b in ("b4", "b5") if b in by], ["store_calls"])
+    wlt.DECIDING.pop("store_calls")
+    c = _cell(h5, WIN, "b4", "store_calls")
+    v["H-A5"] = "supported" if c and c["outcome"] == "win" else "falsified"
+    out.append(f"- **H-A5** ({v['H-A5']}): store calls vs B4 {_show(c)}"
+               + (f" (means {c['arm_mean']:.0f} against {c['base_mean']:.0f})" if c and "arm_mean" in c else ""))
+    return out, v
+
+
+def blind_block(rows, tex_rows, cost_cells):
+    md = []
+    errs = Counter(r["system"] for r in rows if int(float(r.get("n_errors") or 0)) > 0)
+    n = len({r["case_id"] for r in rows})
+    means(rows, "blind")
+    cells, arms, comps = run_wlt(rows, [WIN, "full"], BASES, "blind")
+    md += [f"## blind ({n} orders, opened once): quality, against B0-B6", "",
+           "Errored records per system (left out of every paired comparison, as in win_loss_tie.py): "
+           + (", ".join(f"{name(s)} {k}" for s, k in sorted(errs.items())) or "none") + ".", "",
+           "| arm | " + " | ".join(b.upper() for b in comps) + " | total W/T/L (+too few, undefined) | losses |",
+           "|---|" + "---|" * (len(comps) + 2)]
+    for a in arms:
+        t = tally(cells, a)
+        md.append(f"| {name(a)} | " + " | ".join(f"{tally(cells, a, b)['win']}/{tally(cells, a, b)['tie']}/{tally(cells, a, b)['loss']}" for b in comps)
+                  + f" | {t['win']}/{t['tie']}/{t['loss']} (+{t['too_few']}, {t['undefined']}) | " + ("; ".join(losses(cells, a)) or "none") + " |")
+        tex_rows.append(("blind", name(a), [tally(cells, a, b) for b in comps], t))
+    cc, _, _ = run_wlt(rows, [WIN, "full"], ["b4", "b5"], "cost_blind", metrics=list(COST), extra=COST)
+    cost_cells += [dict(c, block="blind") for c in cc]
+    h = wlt.compare(wlt.answered(rows), [WIN], ["full"], [m for m in wlt.DECIDING if m in rows[0]]) if "full" in {r["system"] for r in rows} else []
+    wlt.write_csv(OUT / "wlt_blind_c1457_vs_full.csv", h)
+    t = tally(h, WIN)
+    md += ["", f"c1457 against Full, head to head on the blind slice: {t['win']}/{t['tie']}/{t['loss']} (+{t['too_few']}, {t['undefined']}); "
+           f"better on {', '.join(wlt.DECIDING[c['metric']][0] for c in h if c['outcome'] == 'win') or '-'}; "
+           f"worse on {', '.join(wlt.DECIDING[c['metric']][0] for c in h if c['outcome'] == 'loss') or '-'}.", ""]
+    lines, v = hypotheses(rows, "primary")
+    md += ["### Registered hypotheses H-A1 to H-A5 (pre-registration 1.5), primary analysis", ""] + lines + [""]
+    # sensitivity 1 (pre-registration 1.4): errored records kept as scored instead of left out
+    kept = [dict(r, n_errors="0") for r in rows]
+    lines1, v1 = hypotheses(kept, "errors kept")
+    # sensitivity 2 (D7): the two rerun cases dropped for the arm that was rerun (the original degraded records were errored, so they
+    # would be left out of every paired comparison; dropping the rerun gives the same 79 paired cases)
+    d7 = [r for r in rows if D7_SET_ASIDE.get(r["system"]) != r["case_id"]]
+    lines2, v2 = hypotheses(d7, "D7")
+    md += ["### Declared sensitivity analyses (add no test, cannot change a verdict)", "",
+           "| hypothesis | primary | errored records kept as scored (1.4) | D7: rerun cases dropped, 79 paired |", "|---|---|---|---|"]
+    for k in v:
+        md.append(f"| {k} | {v[k]} | {v1.get(k, '-')} | {v2.get(k, '-')} |")
+    md += ["", "Errored records kept as scored:", ""] + lines1 + ["", "D7, 79 paired cases:", ""] + lines2 + [""]
+    md += ["Not run on the blind slice: the rule-only gold sensitivity (the gated opening is one scoring call, on the agreed gold).", ""]
+    (OUT / "hypotheses_blind.json").write_text(__import__("json").dumps({"primary": v, "errors_kept": v1, "d7_79": v2}, indent=1) + "\n")
+    return md
 
 
 def write_tex(tex_rows, abl_rows, cost_cells):
@@ -194,7 +307,7 @@ def write_tex(tex_rows, abl_rows, cost_cells):
         prev = block
     L += [r"\bottomrule", r"\end{tabular}", r"\caption{Architecture search on Sarvam-105B: wins/ties/losses on the quality metrics "
           r"against each baseline (paired bootstrap, Holm at 0.05 per arm and metric; a win only when the interval excludes zero). "
-          r"Search: 30 dev orders, every arm on one commit; holdout: 20 further dev orders, touched once; pooled: all 50. "
+          r"Search: 30 dev orders, every arm on one commit; holdout: 20 further dev orders, touched once; pooled: all 50; blind: the 80 sealed orders, opened once. "
           r"c1457 is Full with X1, X4, X5 and X7. Cost is in Table~\ref{tab:arch_cost}.}", r"\label{tab:arch_wlt}", r"\end{table*}"]
     (GEN / "arch_wlt.tex").write_text(fit("\n".join(L) + "\n"))
     L = [r"\begin{table}[!t]", r"\centering\small", r"\begin{tabular}{@{}lcl@{}}", r"\toprule", r"Ablation & W/T/L & Winner loses on \\", r"\midrule"]
