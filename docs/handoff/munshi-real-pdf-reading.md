@@ -35,3 +35,26 @@ Before the fixes, on 10 bundles (3 K1, 3 K5, one each K2 to K4 and K6): K2 to K6
 Done: when the ladder would end in ask-counsel and the text layer was rejected only for a dictionary-word share of 60% to 84%, the layer's text is kept as a low-confidence read (`ingestion/ladder.py` `weak_layer_read`, `WEAK_TEXT_FLOOR` 0.60; both ladders: `read_file`/`route_page_from` and the tooled `route_page_with_tools`). `RouteOutcome.low_confidence` and `.confidence` (the share); `PageRoute.confidence` in the intake report (omitted from the JSON when None, so default reports are byte-identical); a Gap line per file naming the pages and their share, "counsel to check against the original". Tests: `tests/unit/ingestion/test_keep_weak_text.py` (7, real generated PDFs). Variant id P8; row in `docs/literature-to-code-map.md` Sweep 4 (no paper: a plan 4.2 design choice).
 Measured on T2 K1 (100 bundles, 391 pages, offline, no OCR or vision): 10 pages had an empty read before; with the switch 9 are kept (shares 66.7%, 69.8%, 72.4%, 78.5%, 82.2%, 83.3%, 84.4%, 84.5%, 84.6%) and 1 stays empty (under the 60% floor or another rejection reason). Whether the kept text yields correct facts was not measured (it needs the Peshkar extraction on those pages against T2 truth; next step).
 Not done: `Switches.munshi_keep_weak_text` is not yet passed by any runner (set it in `Switches(...)`); the UI does not show the badge yet (the data is in `page_routes[].confidence` and the Gap).
+
+## Stage-1 audit, 2026-11-09
+
+The live environment was checked before changing the intake logic.  It has PyMuPDF, but no Tesseract binary or Hindi language data, no
+`pytesseract`, Docling, Pillow, Torch or Transformers; only 23 GB of the project disk remains free.  A representative real-T2 run (two bundles
+of each K1--K6 kind) was saved under `/tmp/munshi-stage1-audit-2026-11-09` and made the capability boundary explicit rather than inventing a
+number:
+
+| arm | readable K1/K5 boundary F1 | readable K1/K5 field accuracy | image-only / legacy K2--K4/K6 result |
+|---|---:|---:|---|
+| P1 text layer | n/a (does not split) | 0.79 / 0.71 | no text read |
+| P5 fixed ladder | 1.00 / 1.00 | 0.86 / 0.71 | counsel escalation, no text read |
+| Munshi | 1.00 / 1.00 | 0.86 / 0.71 | counsel escalation, no text read |
+
+P2 (OCR), P3 (Docling) and P4 (vision) wrote `ARM_UNAVAILABLE` records with their exact missing dependency.  This is an environment limit,
+not evidence that a different threshold or prompt would recover scans.  The high-yield next measurement is Tesseract `eng+hin` (small system
+packages) followed by the same RQ2 command; do not install Surya, Docling or Qwen3-VL on this nearly full disk before observing that baseline.
+
+The audit also fixed safe degradation in `models/vlm.py`: Pillow is now loaded after the protected model load and a missing Pillow raises
+`ModelUnavailable`, so the ladder reaches `ask-counsel` instead of crashing.  The real-PDF test now simulates a broken optional Transformers
+installation in the default lightweight environment, and a separate regression covers a missing Pillow.  Verification:
+`pytest -q -p no:cacheprovider tests/unit/ingestion tests/unit/agents/munshi tests/unit/eval/test_ingestion_pipelines.py tests/unit/eval/test_metrics.py`
+gave 339 passed (one PyMuPDF deprecation warning); Ruff was clean.

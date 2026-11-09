@@ -75,9 +75,11 @@ class LocalVisionClient(VisionClient):
         Raises:
             ModelUnavailable: transformers or torch is missing.
         """
-        from PIL import Image
-
         processor, model = self._load()
+        try:
+            from PIL import Image
+        except Exception as exc:  # noqa: BLE001 - Pillow is an optional vision dependency
+            raise ModelUnavailable(f"Pillow is unavailable for the vision model ({type(exc).__name__})", "vision") from exc
         hint = {"hi": " The page is mostly Hindi.", "en": " The page is mostly English."}.get(lang_hint or "", "")
         messages = [{"role": "user", "content": [{"type": "image"}, {"type": "text", "text": TRANSCRIBE_PROMPT + hint}]}]
         prompt = processor.apply_chat_template(messages, add_generation_prompt=True)
