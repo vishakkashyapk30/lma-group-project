@@ -33,10 +33,8 @@ async def post_chat(case_id: str, body: ChatRequest, log: Annotated[EventLog, De
     service.require_case(log, case_id)
 
     from vakeel_sahayak.agents.registry import create_agent
-    from vakeel_sahayak.orchestration.state import CaseGraphState
-
     cs = service.case_state(log, case_id)
-    state = CaseGraphState(case_id=case_id, log_path=log.db_path, dossier=cs.dossier(), rights=cs.rights_report())
+    state = service.product_state(log, case_id, dossier=cs.dossier(), rights=cs.rights_report())
     # Counsel may type a name: the log and the agents see the case's alias instead (plan §16); the alias map stays on the laptop.
     from vakeel_sahayak.privacy.pseudonymise import load_map, pseudonymise_text, save_map
 
@@ -47,7 +45,7 @@ async def post_chat(case_id: str, body: ChatRequest, log: Annotated[EventLog, De
     _persist(log, case_id, question, EventKind.USER_ACTION, COUNSEL)
 
     def answer_in_thread() -> ChatMessage:
-        sutradhar = create_agent(AgentName.SUTRADHAR, service.agent_context(log, case_id))
+        sutradhar = create_agent(AgentName.SUTRADHAR, service.product_agent_context(log, case_id))
         try:
             return sutradhar.answer_chat(state, text)
         finally:

@@ -74,19 +74,18 @@ def _run_intake(log: EventLog, case_id: str, paths: list[str]) -> list[str]:
         return []
     from vakeel_sahayak.agents.registry import create_agent
     from vakeel_sahayak.api import service
-    from vakeel_sahayak.orchestration.state import CaseGraphState
     from vakeel_sahayak.schemas.enums import AgentName
 
     try:
-        state = CaseGraphState(case_id=case_id, log_path=log.db_path, files=paths)
-        munshi = create_agent(AgentName.MUNSHI, service.agent_context(log, case_id))
+        state = service.product_state(log, case_id, files=paths)
+        munshi = create_agent(AgentName.MUNSHI, service.product_agent_context(log, case_id))
         try:
             state = munshi.run(state)
         finally:
             munshi.close()
         report = state.ingestion
         questions = list(report.questions) if report is not None else []
-        peshkar = create_agent(AgentName.PESHKAR, service.agent_context(log, case_id))
+        peshkar = create_agent(AgentName.PESHKAR, service.product_agent_context(log, case_id))
         try:
             peshkar.run(state)
         finally:

@@ -1069,7 +1069,8 @@ class VakeelAgent(BaseAgent):
         w.sentences, w.checks = keep, checks
         self._decision(
             "abstain", f"{w.key} ({g.factor.value}): {len(w.abstained)} sentence(s) left out of the argument and handed to counsel; {len(keep)} remain.",
-            claim=w.key, factor=g.factor.value, removed=len(w.abstained), kept=len(keep), variant="X4", abstention="strict",
+            claim=w.key, factor=g.factor.value, removed=len(w.abstained), kept=len(keep),
+            withheld=[{"sentence": text[:200], "reason": reason} for text, reason in w.abstained], variant="X4", abstention="strict",
         )  # fmt: skip
         if not keep:
             w.empty = True

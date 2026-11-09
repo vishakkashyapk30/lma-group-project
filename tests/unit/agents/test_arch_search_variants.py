@@ -13,7 +13,12 @@ import pytest
 from tests.unit.agents._helpers import build_agent, make_ground, make_state
 from tests.unit.agents.vakeel import _variants_helpers as vh
 from tests.unit.agents.vakeel._scripts import SUPPORTED_G1, UNSUPPORTED_G1, ground_llm, model_ground, pack, reword_llm
-from vakeel_sahayak.agents.sutradhar.factor_pick import custody_days_wide, pick_stances, signals_from_dossier, signals_merged
+from vakeel_sahayak.agents.sutradhar.factor_pick import (
+    custody_days_wide,
+    pick_stances,
+    signals_from_dossier,
+    signals_merged,
+)
 from vakeel_sahayak.agents.vakeel.agent import ABSENCE, VakeelAgent
 from vakeel_sahayak.agents.vakeel.claims import split_claim
 from vakeel_sahayak.agents.vakeel.facts import FACTS_TEXT_FIELD, span_share, text_fact
@@ -174,6 +179,9 @@ def test_x4_default_keeps_a_failing_ground_and_strict_hands_it_to_counsel(dossie
     issues = [i.item for i in brief.open_issues]
     assert any("G1" in i and "left out of the argument" in i for i in issues)  # nothing dropped silently
     assert any("No supported argument could be drafted for" in i for i in issues)
+    event = next(e for e in strict.log.events if e.outputs.get("type") == "abstain")
+    assert event.outputs["withheld"][0]["sentence"] == "The accused was granted default bail on 05.12.2024"
+    assert "not supported" in event.outputs["withheld"][0]["reason"]
 
 
 def test_x4_removes_only_the_failing_sentence_of_a_mixed_ground():
