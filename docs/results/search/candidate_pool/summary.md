@@ -8,9 +8,16 @@ Order: fewest losses, then most wins, then fewer tokens (the rule the search use
 
 | arm | vs B0-B6 | mean claims per order | mean tokens | losses |
 |---|---|---|---|---|
+| X1+X4+X5+X7 with free_planner=true | 38/19/1 (+52, 65) | 4.07 | 104,651 | Coverage vs B6 |
 | X4+X5+X7 | 38/29/3 (+43, 62) | 5.07 | 110,042 | Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B4 |
+| X1+X4+X5+X7 with plain_retrieval=true | 37/30/3 (+43, 62) | 6.87 | 120,641 | Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B4 |
+| X1+X4+X5+X7 with fixed_router=true | 32/35/3 (+43, 62) | 7.03 | 116,548 | Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B4 |
+| X1+X4+X5+X7 with no_tools=true | 31/36/3 (+43, 62) | 6.17 | 120,475 | Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B4 |
+| X4+X7 with no_dossier=true | 30/37/3 (+43, 62) | 5.73 | 117,855 | Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B4 |
 | c1457 (X1+X4+X5+X7, registered headline) | 30/37/3 (+43, 62) | 6.83 | 121,065 | Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B4 |
 | X1+X4+X5+X6+X7 | 27/40/3 (+43, 62) | 6.77 | 119,269 | Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B4 |
+| X1+X4+X5 with no_sparring=true | 22/43/3 (+43, 64) | 6.83 | 70,637 | Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B4 |
+| X1+X4+X5 | 22/45/3 (+43, 62) | 6.83 | 98,651 | Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B4 |
 | X1+X4+X5+X7+X8 | 33/33/4 (+43, 62) | 6.83 | 120,492 | Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B4; Confident wrong vs B5 |
 | X1+X4+X7 | 31/35/4 (+43, 62) | 7.40 | 119,757 | Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B4; Confident wrong vs B5 |
 | X2 | 15/14/4 (+60, 82) | 9.00 | 97,440 | Coverage vs B2; Coverage vs B6; Unfinished factors vs B4; Unfinished factors vs B5 |
@@ -22,8 +29,10 @@ Order: fewest losses, then most wins, then fewer tokens (the rule the search use
 | X4 | 25/37/8 (+43, 62) | 4.73 | 85,838 | Unsupported facts (M6) vs B4; Unsupported facts (M6) vs B5; Over-search vs B5; Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B0; Confident wrong vs B4; Confident wrong vs B5 |
 | X7 | 19/41/10 (+43, 62) | 6.93 | 111,991 | Unsupported facts (M6) vs B4; Unsupported facts (M6) vs B5; Unsupported facts, count vs B5; Coverage vs B6; Over-search vs B5; Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B0; Confident wrong vs B4; Confident wrong vs B5 |
 | X6 | 17/43/10 (+43, 62) | 6.93 | 94,458 | Unsupported facts (M6) vs B4; Unsupported facts (M6) vs B5; Unsupported facts, count vs B5; Coverage vs B6; Over-search vs B5; Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B0; Confident wrong vs B4; Confident wrong vs B5 |
+| X1+X5+X7 with no_check_repair=true | 14/39/10 (+43, 69) | 7.53 | 115,001 | Unsupported facts, count vs B5; Coverage vs B0; Coverage vs B1; Coverage vs B2; Coverage vs B3; Coverage vs B4; Coverage vs B5; Coverage vs B6; Unfinished factors vs B4; Unfinished factors vs B5 |
 | FULL | 11/49/10 (+43, 62) | 6.93 | 95,413 | Unsupported facts (M6) vs B4; Unsupported facts (M6) vs B5; Unsupported facts, count vs B5; Coverage vs B6; Over-search vs B5; Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B0; Confident wrong vs B4; Confident wrong vs B5 |
 | X3 | 11/49/10 (+43, 62) | 6.93 | 114,481 | Unsupported facts (M6) vs B4; Unsupported facts (M6) vs B5; Unsupported facts, count vs B5; Coverage vs B6; Over-search vs B5; Unfinished factors vs B4; Unfinished factors vs B5; Confident wrong vs B0; Confident wrong vs B4; Confident wrong vs B5 |
+| X1+X5 with no_sparring=true,no_check_repair=true | 6/45/10 (+43, 71) | 7.53 | 64,896 | Unsupported facts, count vs B5; Coverage vs B0; Coverage vs B1; Coverage vs B2; Coverage vs B3; Coverage vs B4; Coverage vs B5; Coverage vs B6; Unfinished factors vs B4; Unfinished factors vs B5 |
 
 ### c1457 head to head against each arm (paired, same orders, one pair at a time at 0.05; descriptive, no correction over pairs)
 
@@ -33,10 +42,19 @@ Order: fewest losses, then most wins, then fewer tokens (the rule the search use
 | FULL | 7/10/3 (+2, 3) | Unsupported facts (M6), Objection recall, Coverage, Authorities: SC, Known treatment, Over-search, Confident wrong | Citation precision, Citation recall, Unfinished factors |
 | X4+X6+X7 | 5/11/3 (+3, 3) | Unsupported facts (M6), Authorities: SC, Known treatment, Over-search, Confident wrong | Unsupported facts, count, Citation precision, Citation recall |
 | X4+X5+X7 | 2/17/1 (+2, 3) | Authorities: SC, Known treatment | Unsupported facts, count |
+| X4+X7 with no_dossier=true | 0/19/1 (+2, 3) | - | Unsupported facts, count |
+| X1+X4+X5 | 2/18/0 (+2, 3) | Objection recall, Unfinished factors | - |
 | X1+X4+X5+X6+X7 | 1/19/0 (+2, 3) | Unfinished factors | - |
+| X1+X4+X5 with no_sparring=true | 2/17/0 (+2, 4) | Objection recall, Unfinished factors | - |
 | X1+X4+X5+X7+X8 | 0/20/0 (+2, 3) | - | - |
+| X1+X4+X5+X7 with fixed_router=true | 0/17/3 (+2, 3) | - | Citation precision, Over-search, Unfinished factors |
+| X1+X4+X5+X7 with free_planner=true | 0/15/5 (+2, 3) | - | Unsupported facts (M6), Unsupported facts, count, Over-search, Unfinished factors, Confident wrong |
+| X1+X4+X5+X7 with no_tools=true | 0/20/0 (+2, 3) | - | - |
+| X1+X4+X5+X7 with plain_retrieval=true | 2/18/0 (+2, 3) | Authorities: SC, Known treatment | - |
 | X1+X4+X7 | 0/20/0 (+2, 3) | - | - |
+| X1+X5 with no_sparring=true,no_check_repair=true | 6/10/2 (+2, 5) | Unsupported case facts (M6a), Answerable coverage, Objection recall, Coverage, Citation precision, Citation recall | Over-search, Unfinished factors |
 | X1+X5+X7 | 4/15/1 (+2, 3) | Unsupported facts, count, Coverage, Citation precision, Citation recall | Unfinished factors |
+| X1+X5+X7 with no_check_repair=true | 5/12/2 (+2, 4) | Unsupported case facts (M6a), Answerable coverage, Coverage, Citation precision, Citation recall | Over-search, Unfinished factors |
 | X1 | 6/14/0 (+2, 3) | Unsupported facts, count, Objection recall, Objection precision, Coverage, Citation precision, Citation recall | - |
 | X2 | 2/10/3 (+5, 5) | Coverage, Authorities: SC | Unsupported facts (M6), Unfinished factors, Confident wrong |
 | X3 | 7/10/3 (+2, 3) | Unsupported facts (M6), Objection recall, Coverage, Authorities: SC, Known treatment, Over-search, Confident wrong | Citation precision, Citation recall, Unfinished factors |
