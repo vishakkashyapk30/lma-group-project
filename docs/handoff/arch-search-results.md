@@ -162,3 +162,16 @@ The holdout block finished (9 arms x 20 cases). The ablation queue stopped mid-w
   `sarvam_blind/logs/score_blind.attempt1.log`. Final call started 20:42:10 (unit `vs-blind-rescore`, lock SHA d096088); D10 makes it final.
 - The holdout Full arm is rescored with the same fixed code (unit `vs-hfull-fixed`). The ablation autoscore inside `vs-blind` still uses the frozen scorer:
   an ablation arm with a long sentence will loop the same way and must be rescored with the score-fix worktree.
+
+## Blind result and the free-planner check (10 Nov)
+
+- Final gated call (D10) 20:42 to 03:35: 9 systems, 80 orders, nothing pending. c1457 46/69/5 against B0-B6, Full 29/76/15. H-A2 to H-A5 supported,
+  H-A1 falsified on one cell (unsupported-sentence count vs B5, +1.9 per order; B5 writes 4.4 sentences against 7.0, c1457 wins the rate). Same verdicts
+  with errored records kept and with the two D7 cases dropped. `docs/results/search/final_report/{summary.md, hypotheses_blind.json, wlt_blind*.csv}`.
+- c1457 + free planner (A7) on the 30 dev orders: 38/19/1 against B0-B6 (only coverage vs the B6 template). Three independent read-only checks
+  (workflow wf_c5c5ec67-5ad: mechanism, statistics, what is lost) all say artefact: `run_free_planner` emits no plan/assess events, so M18 has nothing to
+  count (Sutradhar open issues 88 to 1); its model rarely searches precedent stores, so Vakeel restates the facts text (grounds with an authority 18%
+  against 90%, 19 of 30 briefs cite none, 29 fewer grounds, "counsel to draft it" 23 to 52); M6, the count and confident-wrong are one signal (equal in
+  57 of 59 orders) driven by the sentence mix; M6a is a tie. Not taken further. c1457 stays.
+- Still running after this note: nothing of the search. The worktree `.claude/worktrees/score-fix` (branch `eval-freeze-v1-scorefix`) is the scoring code
+  of record for the blind slice; keep it until the submission.
