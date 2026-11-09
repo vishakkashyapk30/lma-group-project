@@ -145,3 +145,20 @@ The holdout block finished (9 arms x 20 cases). The ablation queue stopped mid-w
 - c1457 against Full head to head: 7 better, 10 tied, 3 worse (worse: citation precision, citation recall, unfinished-factor share).
 - No configuration beats every baseline and every ablation on every metric. The cells nobody wins are the structural ones above, plus citation precision and recall where drafting from the facts text (X5) trades citation precision for faithfulness.
 - Caveats: one run per arm, and the c1457 "second run" of the ablation batch is a response-cache replay (1846 of 1846 calls), not a replication; run-to-run variance on live Sarvam calls is not measured.
+
+## Blind scoring: first call crashed, D10 fix, one final call (9 Nov)
+
+- The gated call of `blind-run.sh` (10:54 to 15:48 IST) crashed in M6 before writing any score: MiniCheck's tokenizer raised `Truncation error` on a brief
+  sentence over about 490 tokens. The holdout Full scorer (dev) had been dying on the same line since the early morning (the autoscore loop restarted it
+  every ~25 minutes with no score; the log only showed the traceback once the run was taken out of the loop).
+- Owner decision (18:10): fix the scorer and rescore once; long sentences are split into 240-token pieces, minimum over pieces. Commit b22953d on
+  `arch-search`; pre-registration D10 (5221f5e) pushed before the rescoring.
+- The rescoring code is the worktree `.claude/worktrees/score-fix` (branch `eval-freeze-v1-scorefix` = eval-freeze-v1 22fce4f plus the fix, d096088),
+  with `VS_DATA_DIR` pointing at the frozen run worktree's `data/`; the run worktree itself is untouched.
+- Equality check before reopening: the fixed scorer rescored the already-scored c1457 holdout arm (20 dev orders); its `per_case_agreed.csv` is byte-identical
+  to the stored one (0 differing cells).
+- The 1,449 saved blind output files were hashed before the rescoring (`sarvam_blind/logs/outputs_sha256_before_rescore.txt`, sha256 of the list
+  9d1d188c...); none was modified after 10:54. First lock kept as `data/eval/blind.lock.attempt1` (SHA 22fce4f), first log as
+  `sarvam_blind/logs/score_blind.attempt1.log`. Final call started 20:42:10 (unit `vs-blind-rescore`, lock SHA d096088); D10 makes it final.
+- The holdout Full arm is rescored with the same fixed code (unit `vs-hfull-fixed`). The ablation autoscore inside `vs-blind` still uses the frozen scorer:
+  an ablation arm with a long sentence will loop the same way and must be rescored with the score-fix worktree.
