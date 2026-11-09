@@ -18,6 +18,28 @@ def test_defaults_start_at_intake_with_no_gate_pending():
         assert getattr(s, name) is None, name
 
 
+def test_product_state_selects_c1457_without_changing_the_plain_state_default(monkeypatch):
+    """The product flow opts into the selected architecture, while eval states remain Full."""
+    monkeypatch.setattr("vakeel_sahayak.orchestration.state.local_facts_text", lambda case_id: "Person-1 has been in custody since 04.01.2024.")
+    product = CaseGraphState.for_product("case-0007")
+    assert product.switches.model_dump(exclude_defaults=True) == {
+        "signal_source": "merge",
+        "abstention": "strict",
+        "draft_source": "facts_text",
+        "objection_grounding": "by_id",
+    }
+    assert product.facts_text == "Person-1 has been in custody since 04.01.2024."
+    assert product.product is True
+    assert CaseGraphState(case_id="case-0007").switches.model_dump(exclude_defaults=True) == {}
+    assert CaseGraphState(case_id="case-0007").product is False
+
+
+def test_product_state_does_not_accept_an_unrelated_switch_set():
+    """A product boundary cannot accidentally run a partial experiment."""
+    with pytest.raises(ValueError, match="c1457"):
+        CaseGraphState.for_product("case-0007", switches={})
+
+
 def test_case_id_is_required():
     """case_id has no default."""
     with pytest.raises(ValidationError):

@@ -143,6 +143,16 @@ ARCHITECTURE: dict[str, dict[str, Any]] = {
 }
 # H1 = the combination of X1-X6 (docs/handoff/arch-search-results.md); `H1m<k>` is H1 without part Xk, the leave-one-out arms.
 H1_PARTS: tuple[str, ...] = ("X1", "X2", "X3", "X4", "X5", "X6")
+
+# The product configuration selected by the architecture search.  This is deliberately
+# separate from `Switches()` so every evaluation arm retains its frozen Full-system
+# default and manifests continue to describe the system that was scored.
+C1457_SWITCHES: dict[str, str] = {
+    "signal_source": "merge",
+    "abstention": "strict",
+    "draft_source": "facts_text",
+    "objection_grounding": "by_id",
+}
 ARCHITECTURE["H1"] = {k: v for part in H1_PARTS for k, v in ARCHITECTURE[part].items()}
 for _k in H1_PARTS:
     ARCHITECTURE[f"H1m{_k[1:]}"] = {k: v for part in H1_PARTS if part != _k for k, v in ARCHITECTURE[part].items()}
@@ -461,6 +471,17 @@ class Switches(BaseModel):
         """One line for run logs and the UI."""
         name = self.variant()
         return VARIANT_DESCRIPTIONS.get(name, "custom switch set: " + ", ".join(f"{k}={v}" for k, v in self.model_dump(exclude_defaults=True).items()))
+
+
+def production_switches() -> Switches:
+    """The selected c1457 product configuration.
+
+    Evaluation callers must continue to construct ``Switches()`` or an explicit
+    named variant.  Product entry points use this factory so the selected
+    architecture is visible at the boundary rather than changing experiment
+    defaults globally.
+    """
+    return Switches(**C1457_SWITCHES)
 
 
 def _variant_table() -> dict[str, dict[str, Any]]:

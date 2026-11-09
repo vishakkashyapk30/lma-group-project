@@ -17,7 +17,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from vakeel_sahayak.orchestration.switches import Switches
+from vakeel_sahayak.orchestration.switches import Switches, production_switches
 from vakeel_sahayak.schemas.bail_brief import BailBrief
 from vakeel_sahayak.schemas.case import BudgetState
 from vakeel_sahayak.schemas.change_set import ChangeSet
@@ -35,10 +35,34 @@ GATE_OPEN, GATE_APPROVED, GATE_REJECTED = "open", "approved", "rejected"
 _OPEN_LOGS: dict[str, Any] = {}  # event logs opened from a state's log_path, one per file
 
 
+def local_facts_text(case_id: str) -> str | None:
+    """The product's bounded pseudonymised source text from its private case shelf.
+
+    Evaluation states always supply their own fixture facts and never call this
+    helper.  A missing shelf is normal for a just-created case and remains
+    ``None`` rather than creating a database as a side effect.
+    """
+    from vakeel_sahayak.schemas.enums import StoreName
+    from vakeel_sahayak.stores.case_docs import CaseDocsStore
+    from vakeel_sahayak.stores.paths import resolve_case_path
+
+    path = Path(resolve_case_path(StoreName.CASE_DOCS, case_id, None))
+    if not path.is_file():
+        return None
+    store = CaseDocsStore()
+    store.bind_case(case_id)
+    store.open(str(path))
+    try:
+        return store.facts_text() or None
+    finally:
+        store.close()
+
+
 class CaseGraphState(BaseModel):
     """State carried through the case graph."""
 
     case_id: str
+    product: bool = False  # c1457 is active for this product flow; eval states stay false
     stage: Stage = Stage.INTAKE
     log_path: str | None = None  # the event-log handle: SQLite file of the case's log; None = the configured per-case log
     switches: Switches = Field(default_factory=Switches)
@@ -69,6 +93,15 @@ class CaseGraphState(BaseModel):
     exported: list[str] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
     done: bool = False
+
+    @classmethod
+    def for_product(cls, case_id: str, **kwargs: Any) -> CaseGraphState:
+        """A new product-flow state using c1457, without changing evaluation defaults."""
+        if "switches" in kwargs:
+            raise ValueError("product states select c1457 themselves; pass no switches")
+        if "facts_text" not in kwargs:
+            kwargs["facts_text"] = local_facts_text(case_id)
+        return cls(case_id=case_id, product=True, switches=production_switches(), **kwargs)
 
     def event_log(self):  # noqa: ANN201
         """The case's EventLog: the file at `log_path`, else the tool runtime's per-case log (shared with the tools)."""
