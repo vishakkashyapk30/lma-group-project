@@ -13,13 +13,14 @@
 | arm | B0 | B1 | B2 | B3 | B4 | B5 | B6 | total W/T/L (+too few, undefined) | losses |
 |---|---|---|---|---|---|---|---|---|---|
 | c1457 (winner) | 3/2/0 | 1/2/0 | 2/3/0 | 2/1/0 | 5/9/2 | 5/7/1 | 4/2/0 | 22/26/3 (+62, 62) | Unfinished factors vs b4; Unfinished factors vs b5; Confident wrong vs b4 |
+| Full | 1/4/0 | 0/5/0 | 0/5/0 | 0/3/0 | 5/9/2 | 3/10/2 | 1/4/1 | 10/40/5 (+58, 62) | Unsupported facts, count vs b5; Coverage vs b6; Unfinished factors vs b4; Unfinished factors vs b5; Confident wrong vs b4 |
 
 ## pooled (50 orders): quality, against B0-B6
 
 | arm | B0 | B1 | B2 | B3 | B4 | B5 | B6 | total W/T/L (+too few, undefined) | losses |
 |---|---|---|---|---|---|---|---|---|---|
 | c1457 (winner) | 4/4/0 | 4/9/0 | 6/6/0 | 4/9/0 | 9/7/2 | 7/13/2 | 5/4/1 | 39/52/5 (+24, 55) | Coverage vs b6; Unfinished factors vs b4; Unfinished factors vs b5; Confident wrong vs b4; Confident wrong vs b5 |
-| Full | 0/5/1 | 1/12/0 | 0/6/0 | 0/6/0 | 5/8/3 | 4/8/5 | 1/4/1 | 11/49/10 (+43, 62) | Unsupported facts (M6) vs b4; Unsupported facts (M6) vs b5; Unsupported facts, count vs b5; Coverage vs b6; Over-search vs b5; Unfinished factors vs b4; Unfinished factors vs b5; Confident wrong vs b0; Confident wrong vs b4; Confident wrong vs b5 |
+| Full | 2/6/0 | 2/11/0 | 4/8/0 | 3/10/0 | 5/10/3 | 4/14/4 | 2/7/1 | 22/66/8 (+24, 55) | Unsupported facts (M6) vs b4; Unsupported facts, count vs b5; Coverage vs b6; Over-search vs b5; Unfinished factors vs b4; Unfinished factors vs b5; Confident wrong vs b4; Confident wrong vs b5 |
 
 ## Cost against B4 and B5 (lower is better; not counted against B0-B3 and B6)
 
@@ -43,6 +44,12 @@
 | holdout | c1457 (winner) | Store calls | B5 | 99 | 82 | loss |
 | holdout | c1457 (winner) | Seconds | B4 | 547 | 256 | loss |
 | holdout | c1457 (winner) | Seconds | B5 | 547 | 100 | loss |
+| holdout | Full | Tokens | B4 | 90914 | 111186 | win |
+| holdout | Full | Tokens | B5 | 90914 | 72603 | loss |
+| holdout | Full | Store calls | B4 | 95 | 185 | win |
+| holdout | Full | Store calls | B5 | 95 | 82 | loss |
+| holdout | Full | Seconds | B4 | 303 | 256 | tie |
+| holdout | Full | Seconds | B5 | 303 | 100 | loss |
 
 ## Ablations: the winner against each ablation (30 search orders)
 
@@ -51,5 +58,76 @@
 | minus X1 (dossier gaps from facts) | 1/18/1 (+2, 3) | Unsupported facts, count |
 | minus X4 (strict abstention) | 4/16/0 (+2, 3) | none |
 | minus X5 (draft from facts) | 0/20/0 (+2, 3) | none |
+| minus X7 (objections by id) | 2/18/0 (+2, 3) | none |
+| A3 no tools | 0/20/0 (+2, 3) | none |
+| A4 plain retrieval | 1/19/0 (+2, 3) | none |
+| A6 fixed router | 0/19/1 (+2, 3) | Unfinished factors |
+| A7 free planner | 0/16/4 (+2, 3) | Unsupported facts (M6), Unsupported facts, count, Unfinished factors, Confident wrong |
+| A1 no dossier (without X1, X5) | 0/20/0 (+2, 3) | none |
+| A2 no check-repair (without X4) | 5/13/1 (+2, 4) | Unfinished factors |
+| A8 no sparring (without X7) | 2/17/0 (+2, 4) | none |
+| A9 neither (without X4, X7) | 6/11/1 (+2, 5) | Unfinished factors |
+## blind (80 orders, opened once): quality, against B0-B6
 
-Not scored yet: minus X7 (objections by id), A3 no tools, A4 plain retrieval, A6 fixed router, A7 free planner, A1 no dossier (without X1, X5), A2 no check-repair (without X4), A8 no sparring (without X7), A9 neither (without X4, X7)
+Errored records per system (left out of every paired comparison, as in win_loss_tie.py): b0 7, b1 25, b2 7, b3 25.
+
+| arm | B0 | B1 | B2 | B3 | B4 | B5 | B6 | total W/T/L (+too few, undefined) | losses |
+|---|---|---|---|---|---|---|---|---|---|
+| c1457 (winner) | 4/8/0 | 6/10/0 | 7/12/0 | 7/9/0 | 10/9/2 | 7/15/2 | 5/6/1 | 46/69/5 (+13, 42) | Unsupported facts, count vs b5; Coverage vs b6; Unfinished factors vs b4; Unfinished factors vs b5; Confident wrong vs b4 |
+| Full | 3/7/2 | 4/12/0 | 4/14/1 | 5/10/1 | 6/11/4 | 4/15/5 | 3/7/2 | 29/76/15 (+13, 42) | Court-discussed recall vs b4; Unsupported facts (M6) vs b0; Unsupported facts (M6) vs b3; Unsupported facts (M6) vs b4; Unsupported facts (M6) vs b5; Unsupported facts, count vs b5; Coverage vs b6; Over-search vs b5; Unfinished factors vs b4; Unfinished factors vs b5; Confident wrong vs b0; Confident wrong vs b2; Confident wrong vs b4; Confident wrong vs b5; Confident wrong vs b6 |
+
+Cost against B4 and B5 (lower is better):
+
+| arm | metric | vs | arm mean | baseline mean | outcome |
+|---|---|---|---|---|---|
+| c1457 (winner) | Tokens | B4 | 122387 | 120614 | tie |
+| c1457 (winner) | Tokens | B5 | 122387 | 79877 | loss |
+| c1457 (winner) | Store calls | B4 | 110 | 188 | win |
+| c1457 (winner) | Store calls | B5 | 110 | 89 | loss |
+| c1457 (winner) | Seconds | B4 | 719 | 269 | loss |
+| c1457 (winner) | Seconds | B5 | 719 | 160 | loss |
+| Full | Tokens | B4 | 98814 | 120614 | win |
+| Full | Tokens | B5 | 98814 | 79877 | loss |
+| Full | Store calls | B4 | 103 | 188 | win |
+| Full | Store calls | B5 | 103 | 89 | loss |
+| Full | Seconds | B4 | 398 | 269 | loss |
+| Full | Seconds | B5 | 398 | 160 | loss |
+
+c1457 against Full, head to head on the blind slice: 8/13/3 (+0, 1); better on Unsupported facts (M6), Unsupported facts, count, Answerable coverage, Objection recall, Coverage, Authorities: SC, Over-search, Confident wrong; worse on Citation precision, Citation recall, Unfinished factors.
+
+### Registered hypotheses H-A1 to H-A5 (pre-registration 1.5), primary analysis
+
+- **H-A1** (falsified): losses outside the structural cells: Unsupported facts, count vs B5 loss (diff +1.875, interval +0.875 to +3.067, n=80). Structural cells as found: Coverage vs B6 loss; Unfinished factors vs B4 loss; Unfinished factors vs B5 loss; Confident wrong vs B4 loss.
+- **H-A2** (supported): Objection recall vs Full win (diff +0.215, interval +0.024 to +0.400, n=25); Answerable coverage vs Full win (diff +0.250, interval +0.109 to +0.406, n=32)
+- **H-A3** (supported): Citation precision vs B4 win (diff +0.691, interval +0.607 to +0.771, n=75); Citation precision vs B5 win (diff +0.724, interval +0.574 to +0.852, n=24); Fabricated citations vs B4 win (diff -0.953, interval -1.000 to -0.887, n=75); Fabricated citations vs B5 win (diff -0.639, interval -0.854 to -0.403, n=24)
+- **H-A4** (supported): M6 vs B0 win (diff -0.051, interval -0.100 to -0.001, n=38); M6 vs B1 win (diff -0.116, interval -0.241 to -0.022, n=23); M6 vs B2 win (diff -0.061, interval -0.120 to -0.010, n=38); M6 vs B3 win (diff -0.092, interval -0.167 to -0.019, n=18); M6 vs B4 win (diff -0.050, interval -0.096 to -0.009, n=79); M6 vs B5 win (diff -0.055, interval -0.101 to -0.010, n=79); M6 vs B6 win (diff -0.109, interval -0.160 to -0.066, n=79)
+- **H-A5** (supported): store calls vs B4 win (diff -77.713, interval -81.950 to -72.775, n=80) (means 110 against 188)
+
+### Declared sensitivity analyses (add no test, cannot change a verdict)
+
+| hypothesis | primary | errored records kept as scored (1.4) | D7: rerun cases dropped, 79 paired |
+|---|---|---|---|
+| H-A1 | falsified | falsified | falsified |
+| H-A2 | supported | supported | supported |
+| H-A3 | supported | supported | supported |
+| H-A4 | supported | supported | supported |
+| H-A5 | supported | supported | supported |
+
+Errored records kept as scored:
+
+- **H-A1** (falsified): losses outside the structural cells: Unsupported facts, count vs B5 loss (diff +1.875, interval +0.875 to +3.067, n=80). Structural cells as found: Coverage vs B6 loss; Unfinished factors vs B4 loss; Unfinished factors vs B5 loss; Confident wrong vs B4 loss.
+- **H-A2** (supported): Objection recall vs Full win (diff +0.215, interval +0.024 to +0.400, n=25); Answerable coverage vs Full win (diff +0.250, interval +0.109 to +0.406, n=32)
+- **H-A3** (supported): Citation precision vs B4 win (diff +0.691, interval +0.607 to +0.771, n=75); Citation precision vs B5 win (diff +0.724, interval +0.574 to +0.852, n=24); Fabricated citations vs B4 win (diff -0.953, interval -1.000 to -0.887, n=75); Fabricated citations vs B5 win (diff -0.639, interval -0.854 to -0.403, n=24)
+- **H-A4** (supported): M6 vs B0 win (diff -0.051, interval -0.100 to -0.001, n=38); M6 vs B1 win (diff -0.116, interval -0.241 to -0.022, n=23); M6 vs B2 win (diff -0.061, interval -0.120 to -0.010, n=38); M6 vs B3 win (diff -0.092, interval -0.167 to -0.019, n=18); M6 vs B4 win (diff -0.050, interval -0.096 to -0.009, n=79); M6 vs B5 win (diff -0.055, interval -0.101 to -0.010, n=79); M6 vs B6 win (diff -0.109, interval -0.160 to -0.066, n=79)
+- **H-A5** (supported): store calls vs B4 win (diff -77.713, interval -81.950 to -72.775, n=80) (means 110 against 188)
+
+D7, 79 paired cases:
+
+- **H-A1** (falsified): losses outside the structural cells: Unsupported facts, count vs B5 loss (diff +1.899, interval +0.886 to +3.055, n=79). Structural cells as found: Coverage vs B6 loss; Unfinished factors vs B4 loss; Unfinished factors vs B5 loss; Confident wrong vs B4 loss.
+- **H-A2** (supported): Objection recall vs Full win (diff +0.233, interval +0.029 to +0.438, n=23); Answerable coverage vs Full win (diff +0.250, interval +0.109 to +0.406, n=32)
+- **H-A3** (supported): Citation precision vs B4 win (diff +0.687, interval +0.603 to +0.764, n=74); Citation precision vs B5 win (diff +0.724, interval +0.574 to +0.852, n=24); Fabricated citations vs B4 win (diff -0.953, interval -1.000 to -0.878, n=74); Fabricated citations vs B5 win (diff -0.639, interval -0.854 to -0.403, n=24)
+- **H-A4** (supported): M6 vs B0 win (diff -0.051, interval -0.100 to -0.001, n=38); M6 vs B1 win (diff -0.116, interval -0.241 to -0.022, n=23); M6 vs B2 win (diff -0.061, interval -0.120 to -0.010, n=38); M6 vs B3 win (diff -0.092, interval -0.167 to -0.019, n=18); M6 vs B4 win (diff -0.051, interval -0.096 to -0.008, n=78); M6 vs B5 win (diff -0.055, interval -0.102 to -0.010, n=78); M6 vs B6 win (diff -0.110, interval -0.162 to -0.066, n=78)
+- **H-A5** (supported): store calls vs B4 win (diff -77.582, interval -81.911 to -72.595, n=79) (means 110 against 188)
+
+Not run on the blind slice: the rule-only gold sensitivity (the gated opening is one scoring call, on the agreed gold).
+

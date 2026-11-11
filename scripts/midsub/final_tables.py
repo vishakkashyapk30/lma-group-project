@@ -271,6 +271,9 @@ def blind_block(rows, tex_rows, cost_cells):
         tex_rows.append(("blind", name(a), [tally(cells, a, b) for b in comps], t))
     cc, _, _ = run_wlt(rows, [WIN, "full"], ["b4", "b5"], "cost_blind", metrics=list(COST), extra=COST)
     cost_cells += [dict(c, block="blind") for c in cc]
+    md += ["", "Cost against B4 and B5 (lower is better):", "", "| arm | metric | vs | arm mean | baseline mean | outcome |", "|---|---|---|---|---|---|"]
+    md += [f"| {name(c['arm'])} | {COST[c['metric']][0]} | {c['baseline'].upper()} | {c.get('arm_mean', float('nan')):.0f} | "
+           f"{c.get('base_mean', float('nan')):.0f} | {c['outcome']} |" for c in cc]
     h = wlt.compare(wlt.answered(rows), [WIN], ["full"], [m for m in wlt.DECIDING if m in rows[0]]) if "full" in {r["system"] for r in rows} else []
     wlt.write_csv(OUT / "wlt_blind_c1457_vs_full.csv", h)
     t = tally(h, WIN)
