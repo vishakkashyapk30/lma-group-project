@@ -605,8 +605,11 @@ def _heavy(kind: str) -> object | None:
     """The first installed heavy backend for a kind, built once (None when none is installed)."""
     if kind == "ocr":
         from vakeel_sahayak.models.ocr import SuryaOcrClient
+        from vakeel_sahayak.models.tesseract import TesseractCliOcr
 
-        return SuryaOcrClient() if SuryaOcrClient.available() else None
+        if SuryaOcrClient.available():
+            return SuryaOcrClient()
+        return TesseractCliOcr() if TesseractCliOcr.available() else None
     if kind == "vision":
         from vakeel_sahayak.models.vlm import LocalVisionClient
 

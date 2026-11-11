@@ -9,15 +9,13 @@ adopt them unchanged.
 from __future__ import annotations
 
 import re
-import shutil
-import subprocess
-import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from vakeel_sahayak.ingestion.hindi import lang_of
-from vakeel_sahayak.models.base import ModelUnavailable, OcrClient
+from vakeel_sahayak.models.base import OcrClient
+from vakeel_sahayak.models.tesseract import TesseractCliOcr, tesseract_languages
 from vakeel_sahayak.schemas.enums import DocumentType, PageStatus
 from vakeel_sahayak.schemas.ingestion_report import DocumentEntry, IngestionReport, PageRoute
 
@@ -69,73 +67,13 @@ def page_count(pdf_path: str) -> int:
     return open_source(pdf_path).page_count
 
 
-# ---------------------------------------------------------------------------------------------- Tesseract command line
-def tesseract_languages() -> set[str]:
-    """Languages the installed Tesseract binary has data for (empty when there is no binary)."""
-    exe = shutil.which("tesseract")
-    if not exe:
-        return set()
-    out = subprocess.run([exe, "--list-langs"], capture_output=True, text=True, timeout=30).stdout.splitlines()
-    return {ln.strip() for ln in out[1:] if ln.strip()}
-
-
-class TesseractCliOcr(OcrClient):
-    """Tesseract through its command line (no pytesseract needed), for the P2 arm when no OCR client is configured.
-
-    Asked for 'hin+eng' it uses the languages the machine has: when Hindi data is missing it reads with English only, and `last_note` says so
-    (the plan names eng+hin; a Hindi page then scores a high CER, which is the measured effect of the missing data, not of the pipeline).
-    """
-
-    name = "tesseract-cli"
-
-    def __init__(self) -> None:
-        """No state until the first call."""
-        self.last_note = ""
-
-    def ocr(self, image: bytes, lang: str) -> tuple[str, float, list[list[float]]]:
-        """Text, mean word confidence (0-1) and word boxes of a page image.
-
-        Raises:
-            ModelUnavailable: no tesseract binary.
-        """
-        exe = shutil.which("tesseract")
-        if not exe:
-            raise ModelUnavailable("the tesseract binary is not installed", "ocr")
-        have = tesseract_languages()
-        want = [x for x in lang.replace("hin+eng", "hin+eng").split("+") if x]
-        use = [x for x in want if x in have] or (["eng"] if "eng" in have else [])
-        self.last_note = "" if len(use) == len(want) else f"tesseract data missing for {sorted(set(want) - set(use))}; read with {use}"
-        with tempfile.TemporaryDirectory() as tmp:
-            src = Path(tmp) / "page.png"
-            src.write_bytes(image)
-            proc = subprocess.run([exe, str(src), "stdout", "-l", "+".join(use), "tsv"], capture_output=True, text=True, timeout=300)
-        lines, words, confs, boxes, current, key = [], 0, [], [], [], None
-        for row in proc.stdout.splitlines()[1:]:
-            cols = row.split("\t")
-            if len(cols) < 12 or not cols[11].strip():
-                continue
-            k = (cols[2], cols[3], cols[4])
-            if key is not None and k != key:
-                lines.append(" ".join(current))
-                current = []
-            key = k
-            current.append(cols[11])
-            words += 1
-            confs.append(max(0.0, float(cols[10])) / 100.0)
-            x, y, w, h = (float(cols[i]) for i in (6, 7, 8, 9))
-            boxes.append([x, y, x + w, y + h])
-        if current:
-            lines.append(" ".join(current))
-        return "\n".join(lines), (sum(confs) / len(confs) if confs else 0.0), boxes
-
-
 def ocr_client() -> OcrClient:
     """The configured OCR client; when only the offline stand-in is configured and a Tesseract binary exists, Tesseract through its command line."""
     from vakeel_sahayak.models import factory
     from vakeel_sahayak.models.offline import OfflineOcrClient
 
     client = factory.get_ocr()
-    if isinstance(client, OfflineOcrClient) and shutil.which("tesseract"):
+    if isinstance(client, OfflineOcrClient) and tesseract_languages():
         return TesseractCliOcr()
     return client
 

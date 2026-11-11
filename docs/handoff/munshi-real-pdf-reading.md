@@ -58,3 +58,23 @@ The audit also fixed safe degradation in `models/vlm.py`: Pillow is now loaded a
 installation in the default lightweight environment, and a separate regression covers a missing Pillow.  Verification:
 `pytest -q -p no:cacheprovider tests/unit/ingestion tests/unit/agents/munshi tests/unit/eval/test_ingestion_pipelines.py tests/unit/eval/test_metrics.py`
 gave 339 passed (one PyMuPDF deprecation warning); Ruff was clean.
+
+## OCR enabled and product-wired, 2026-11-11
+
+Tesseract 5.3.4 with `eng` and `hin` language data is now installed locally.  A matched one-bundle-per-kind T2 smoke
+(`VS_MODELS=offline`, where the RQ2 runner temporarily chooses the local binary) shows the expected large first-stage
+gain: P1's pooled CER was 0.62 and field accuracy 0.29; OCR-only P2 reached CER 0.14; the fixed ladder and full Munshi
+both reached CER 0.17 and field accuracy 0.40, while retaining boundary F1 0.78 and type accuracy 0.62.  This is a
+six-bundle directional smoke, not a reportable final result; results are under `/tmp/munshi-stage1-ocr-2026-11-11`.
+
+The smoke exposed and fixed a production wiring gap: Tesseract was used by RQ2 only, while the normal model factory
+returned the offline stand-in.  `models/tesseract.py` now provides the dependency-light command-line adapter and the
+factory selects it after Surya when `VS_MODELS=auto` (the default `offline` mode is unchanged).  A direct normal-ladder
+read of the K4 bundle with `VS_MODELS=auto` accepted four of five pages through Tesseract.  The remaining page had a
+high OCR confidence but only 25% dictionary-word share, so it remains unreadable and is sent to counsel.  Do not relax
+that threshold yet: P2's lower K4 CER (0.19) did not improve K4 field accuracy over the conservative ladder (both 0.14).
+
+Verification after the wiring change:
+`pytest -q -p no:cacheprovider tests/unit/models/test_factory.py tests/unit/models/test_interfaces.py tests/unit/eval/test_ingestion_pipelines.py tests/unit/ingestion/test_ladder.py`
+gave 133 passed (one PyMuPDF deprecation warning).  Use `VS_MODELS=auto` (and do not set `VS_HEAVY_CLIENTS=offline`)
+for real local OCR in the product or evaluation driver.
