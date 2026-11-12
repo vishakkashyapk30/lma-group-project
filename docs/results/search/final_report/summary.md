@@ -105,13 +105,13 @@ c1457 against Full, head to head on the blind slice: 8/13/3 (+0, 1); better on U
 
 ### Declared sensitivity analyses (add no test, cannot change a verdict)
 
-| hypothesis | primary | errored records kept as scored (1.4) | D7: rerun cases dropped, 79 paired |
-|---|---|---|---|
-| H-A1 | falsified | falsified | falsified |
-| H-A2 | supported | supported | supported |
-| H-A3 | supported | supported | supported |
-| H-A4 | supported | supported | supported |
-| H-A5 | supported | supported | supported |
+| hypothesis | primary | errored records kept as scored (1.4) | D7: rerun cases dropped, 79 paired | rule-only gold (D11) | robust to the label source |
+|---|---|---|---|---|---|
+| H-A1 | falsified | falsified | falsified | not run | - |
+| H-A2 | supported | supported | supported | not run | - |
+| H-A3 | supported | supported | supported | not run | - |
+| H-A4 | supported | supported | supported | not run | - |
+| H-A5 | supported | supported | supported | not run | - |
 
 Errored records kept as scored:
 
@@ -130,4 +130,6 @@ D7, 79 paired cases:
 - **H-A5** (supported): store calls vs B4 win (diff -77.582, interval -81.911 to -72.595, n=79) (means 110 against 188)
 
 Not run on the blind slice: the rule-only gold sensitivity (the gated opening is one scoring call, on the agreed gold).
+
+## Run-to-run spread (D12): not scored yet
 

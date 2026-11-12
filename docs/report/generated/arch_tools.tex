@@ -1,0 +1,23 @@
+\begin{table}[!t]
+\centering\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+ & c1457 & Full & B4 & B5 \\
+\midrule
+Tool calls per order & 149 & 152 & 234 & 117 \\
+Distinct tools used & 17 & 16 & 16 & 13 \\
+Calls refused for a bad argument & 1.0\% & 3.1\% & 4.9\% & 6.4\% \\
+Calls refused by the budget & 3.8\% & 1.1\% & 4.3\% & 0.1\% \\
+Lookups with no result & 1.7\% & 0.0\% & 0.0\% & 0.4\% \\
+Orders with a tool or model error & 80 & 80 & 79 & 78 \\
+\quad of which finished & 100\% & 100\% & 100\% & 100\% \\
+Exports tried before Gate 2 & 80 & 80 & 80 & 80 \\
+Exports executed & 0 & 0 & 0 & 0 \\
+Payloads refused by the privacy gate & 175 & 60 & 126 & 49 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\caption{Tool calling and unapproved actions on the 80 blind orders, counted from the saved event logs (no model, no gold). A refused call returns a typed error and the agent continues; ``finished'' means the order still ends with a complete, scored brief. Every arm tries to export once per order without Gate~2 approval; every attempt is refused in code. B0--B3 and B6 call no tool.}
+\label{tab:tools}
+\end{table}

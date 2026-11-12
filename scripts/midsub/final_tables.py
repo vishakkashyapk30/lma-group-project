@@ -186,6 +186,7 @@ def main():
         md += blind_block(blind, tex_rows, cost_cells)
     else:
         md += ["## blind: not scored yet", ""]
+    md += variance_block()
     (OUT / "summary.md").write_text("\n".join(md) + "\n")
     write_tex(tex_rows, abl_rows, cost_cells)
     print("\n".join(md))
@@ -396,18 +397,20 @@ def write_tex(tex_rows, abl_rows, cost_cells):
           r"Search: 30 dev orders, every arm on one commit; holdout: 20 further dev orders, touched once; pooled: all 50; blind: the 80 sealed orders, opened once. "
           r"c1457 is Full with X1, X4, X5 and X7. Cost is in Table~\ref{tab:arch_cost}.}", r"\label{tab:arch_wlt}", r"\end{table*}"]
     (GEN / "arch_wlt.tex").write_text(fit("\n".join(L) + "\n"))
-    L = [r"\begin{table}[!t]", r"\centering\small", r"\begin{tabular}{@{}lcl@{}}", r"\toprule", r"Ablation & W/T/L & Winner loses on \\", r"\midrule"]
+    # one column wide: the loss list wraps in its own column instead of the table being scaled past the column
+    L = [r"\begin{table}[!t]", r"\centering\small", r"\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.42\linewidth}c>{\raggedright\arraybackslash}p{0.36\linewidth}@{}}",
+         r"\toprule", r"Ablation & W/T/L & Winner loses on \\", r"\midrule"]
     for b, t, ls in abl_rows:
         L.append(f"{esc(b)} & {t['win']}/{t['tie']}/{t['loss']} & {esc(', '.join(ls) or 'none')} \\\\")
     L += [r"\bottomrule", r"\end{tabular}", r"\caption{The winner c1457 against each ablation on the 30 search orders (wins, ties, "
           r"losses of the winner; same statistics as Table~\ref{tab:arch_wlt}).}", r"\label{tab:arch_ablate}", r"\end{table}"]
-    (GEN / "arch_ablate.tex").write_text(fit("\n".join(L) + "\n"))
-    L = [r"\begin{table}[!t]", r"\centering\small", r"\begin{tabular}{@{}llllrrl@{}}", r"\toprule",
+    (GEN / "arch_ablate.tex").write_text("\n".join(L) + "\n")
+    L = [r"\begin{table}[!t]", r"\centering\small", r"\begin{adjustbox}{max width=\linewidth}", r"\begin{tabular}{@{}llllrrl@{}}", r"\toprule",
          r"Block & Arm & Metric & vs & Arm & Base & Outcome \\", r"\midrule"]
     for c in cost_cells:
         L.append(f"{c['block']} & {esc(name(c['arm']))} & {COST[c['metric']][0]} & {c['baseline'].upper()} & "
                  f"{c.get('arm_mean', 0):.0f} & {c.get('base_mean', 0):.0f} & {c['outcome']} \\\\")
-    L += [r"\bottomrule", r"\end{tabular}", r"\caption{Cost per order against B4 and B5, the baselines of comparable capability "
+    L += [r"\bottomrule", r"\end{tabular}", r"\end{adjustbox}", r"\caption{Cost per order against B4 and B5, the baselines of comparable capability "
           r"(lower is better). Against the one-call baselines B0--B3 and the template B6 cost is shown in the means tables, not counted.}",
           r"\label{tab:arch_cost}", r"\end{table}"]
     (GEN / "arch_cost.tex").write_text(fit("\n".join(L) + "\n"))
