@@ -15,6 +15,7 @@ CODE_ALIASES = {
     "UAPA": "UAPA",
     "PMLA": "PMLA",
     "POCSO": "POCSO",
+    "COMPANIESACT": "Companies Act",
 }
 OLD_TO_NEW = {"IPC": "BNS", "CrPC": "BNSS"}
 NEW_TO_OLD = {new: old for old, new in OLD_TO_NEW.items()}

@@ -1,4 +1,4 @@
-"""Extract chosen sections of the CrPC 1973, the NDPS Act 1985 and the BNSS 2023 from official PDFs into data/gaps/statutes/*.jsonl.
+"""Extract chosen sections of the CrPC 1973, the NDPS Act 1985, the BNSS 2023 and the Companies Act 2013 from official PDFs into data/gaps/statutes/*.jsonl.
 
 Sources (all official, retrieved on the date written into every row's `retrieved` field):
 
@@ -15,6 +15,11 @@ Sources (all official, retrieved on the date written into every row's `retrieved
   carries the heading of s.58 and the body of s.59 (`docs/handoff/rights-fixes.md`); the gap row replaces it in the statute store. The
   Gazette prints a section's heading as a margin note, so `gazette_sections` reads the body from the text column and the heading from the
   margin note level with it.
+* Companies Act 2013, the Ministry of Corporate Affairs text with its amendment footnotes as hosted by the Technology Development Board
+  (Government of India): https://tdb.gov.in/sites/default/files/2024-05/companiesact2013.pdf  saved as `data/gaps/raw/companies_act_2013.pdf`
+  (288 pages, PDF dated 3 March 2016, so amendments after that date are not in it; mca.gov.in answers Access Denied to scripts and India
+  Code was down when this was written). `--fetch` refuses any file whose SHA-256 is not `COMPANIES_SHA256`. Only s.212 is taken: the Rights
+  rule `antil_category` cites s.212(6).
 
 Nothing is typed from memory. Every statutory word comes from the PDF text layer. The only mechanical edits are:
 
@@ -32,7 +37,7 @@ above, "According as the offence abetted is cognizable" and similar conditional 
 flags differ gets None for that flag. Flags go to `data/gaps/statutes/first_schedule_ipc.jsonl` as IPC rows with EMPTY text, which
 `StatuteStore._merge_gap_rows` treats as "add the flags to the existing (IPC, section) row". NDPS flags are derived from the parsed s.37 text.
 
-Usage: python scripts/extract_gap_statutes.py [--crpc-pdf P] [--ndps-pdf P] [--bnss-pdf P] [--only crpc,ndps,bnss] [--fetch [--cafile PEM]] [--out DIR]
+Usage: python scripts/extract_gap_statutes.py [--crpc-pdf P] [--ndps-pdf P] [--bnss-pdf P] [--companies-pdf P] [--only crpc,ndps,bnss,companies] [--fetch [--cafile PEM]] [--out DIR]
 (egazette.gov.in sends its certificate without the intermediates; if the download fails verification, pass `--cafile` with the
 intermediates named by the certificate's "CA Issuers" URLs, appended to the system bundle. Verification is never switched off.)
 """
@@ -61,6 +66,9 @@ NDPS_SECTIONS = ["19", "24", "27A", "31A", "36A", "37"]
 BNSS_URL = "https://egazette.gov.in/WriteReadData/2023/250884.pdf"
 BNSS_SHA256 = "5e60e2afe30d0fe7eca4f8126301146b76c86a444e690581f81eb564843517fe"
 BNSS_SECTIONS = ["58"]
+COMPANIES_URL = "https://tdb.gov.in/sites/default/files/2024-05/companiesact2013.pdf"
+COMPANIES_SHA256 = "325a7d09574541cd2cd48f558c42d8a8f9109830a271007c46196caa6675a832"
+COMPANIES_SECTIONS = ["212"]
 
 # Mechanical OCR repairs, used only with --ndps-pdf pointing at the OCR scan (rows then carry ocr: true).
 OCR_FIXES: list[tuple[str, str]] = [
@@ -494,8 +502,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--crpc-pdf", type=Path, default=RAW / "crpc_candidate.pdf")
     ap.add_argument("--ndps-pdf", type=Path, default=RAW / "ndps_dor_clean.pdf")
     ap.add_argument("--bnss-pdf", type=Path, default=RAW / "bnss_gazette.pdf")
-    ap.add_argument("--only", default="crpc,ndps,bnss", help="comma list of crpc, ndps, bnss (crpc includes the First Schedule)")
-    ap.add_argument("--fetch", action="store_true", help="download the BNSS Gazette PDF if missing (verified TLS, checked against BNSS_SHA256)")
+    ap.add_argument("--companies-pdf", type=Path, default=RAW / "companies_act_2013.pdf")
+    ap.add_argument("--only", default="crpc,ndps,bnss,companies", help="comma list of crpc, ndps, bnss, companies (crpc includes the First Schedule)")
+    ap.add_argument("--fetch", action="store_true", help="download the BNSS and Companies Act PDFs if missing (verified TLS, checked against the pinned SHA-256)")
     ap.add_argument("--cafile", type=Path, default=None, help="CA bundle with the intermediates egazette.gov.in leaves out (with --fetch)")
     ap.add_argument("--out", type=Path, default=OUT)
     args = ap.parse_args(argv)
@@ -503,11 +512,14 @@ def main(argv: list[str] | None = None) -> int:
     today = date.today().isoformat()
     ocr = args.ndps_pdf.name == "ndps_candidate.pdf"
     failures = 0
-    if "bnss" in only:
+    for key, pdf, url, pin in (("bnss", args.bnss_pdf, BNSS_URL, BNSS_SHA256), ("companies", args.companies_pdf, COMPANIES_URL, COMPANIES_SHA256)):
+        if key not in only:
+            continue
         if args.fetch:
-            fetch_pinned(BNSS_URL, args.bnss_pdf, BNSS_SHA256, args.cafile)
-        elif sha256_of(args.bnss_pdf) != BNSS_SHA256:
-            print(f"WARNING {args.bnss_pdf} is not the pinned Gazette PDF (SHA-256 differs)", file=sys.stderr)
+            fetch_pinned(url, pdf, pin, args.cafile)
+        elif sha256_of(pdf) != pin:
+            print(f"WARNING {pdf} is not the pinned PDF (SHA-256 differs)", file=sys.stderr)
+    if "bnss" in only:
         rows, missing = build_gazette_rows("BNSS", args.bnss_pdf, BNSS_URL, BNSS_SECTIONS, today)
         write_jsonl(args.out / "bnss.jsonl", rows)
         print("BNSS", [(r["section"], len(r["text"])) for r in rows])
@@ -517,6 +529,7 @@ def main(argv: list[str] | None = None) -> int:
     for key, code, pdf, url, wanted, name, is_ocr in (
         ("crpc", "CrPC", args.crpc_pdf, CRPC_URL, CRPC_SECTIONS, "crpc.jsonl", False),
         ("ndps", "NDPS", args.ndps_pdf, NDPS_URL, NDPS_SECTIONS, "ndps.jsonl", ocr),
+        ("companies", "Companies Act", args.companies_pdf, COMPANIES_URL, COMPANIES_SECTIONS, "companies_act.jsonl", False),
     ):
         if key not in only:
             continue

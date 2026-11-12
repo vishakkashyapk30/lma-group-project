@@ -268,8 +268,8 @@ export const MOCK_TIMELINE: TimelineEvent[] = [
 
 /* ── RightsReport (plan §7.3, Appendix C) ───────────────────────────────────────────────────────────────────────── */
 
-// Mirrors configs/rights_rules.yaml after scripts/check_rights_rules.py: six rules match the statute store, antil_category does not.
-const RULES_VERIFIED = "2026-11-02";
+// Mirrors configs/rights_rules.yaml after scripts/check_rights_rules.py: all seven rules match the statute store.
+const RULES_VERIFIED = "2026-11-07";
 
 export const MOCK_RIGHTS: RightsReport = {
   case_id: MOCK_CASE_ID,
@@ -345,7 +345,7 @@ export const MOCK_RIGHTS: RightsReport = {
         "A: punishable up to 7 years (not B or D). B: death, life, or more than 7 years. C: special acts with strict bail conditions. D: economic offences not under special acts.",
       sources: ["Satender Kumar Antil v. CBI (2022)"],
       dates: {},
-      last_verified: null,
+      last_verified: RULES_VERIFIED,
     },
     {
       check: "statutory_bar",

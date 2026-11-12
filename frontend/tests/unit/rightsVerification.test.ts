@@ -40,7 +40,9 @@ describe("unverifiedChecks", () => {
     expect(unverifiedChecks({ checks }).map((c) => c.check)).toEqual(["default_bail"]);
   });
 
-  it("the sample case mirrors configs/rights_rules.yaml: one of seven rule texts unverified", () => {
-    expect(unverifiedChecks(MOCK_RIGHTS).map((c) => c.check)).toEqual(["antil_category"]);
+  // RECONCILED: the Companies Act s.212 is now in the statute store, so the automatic check verifies antil_category too (2026-11-07).
+  it("the sample case mirrors configs/rights_rules.yaml: all seven rule texts verified", () => {
+    expect(MOCK_RIGHTS.checks).toHaveLength(7);
+    expect(unverifiedChecks(MOCK_RIGHTS)).toEqual([]);
   });
 });
