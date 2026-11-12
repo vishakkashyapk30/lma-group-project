@@ -16,6 +16,9 @@ from vakeel_sahayak.agents.sutradhar.contracts_runtime import contract_for
 from vakeel_sahayak.orchestration.switches import Switches
 from vakeel_sahayak.schemas.enums import EventKind
 
+# RECONCILED 2026-11-09: only the `events` digests of golden_default_run.json were re-captured. The sole difference is the `last_verified`
+# date on the rights_check results (5bf4cd3 binds verification to a rule hash and clears it for unverified rules; the rules were re-verified
+# on 2026-11-02). Same event count and order, every status the same; the packs, plans and budget digests did not move.
 GOLDEN = json.loads((Path(__file__).parent / "golden_default_run.json").read_text())
 S12, S12B = Switches.for_variant("S12"), Switches.for_variant("S12b")
 

@@ -52,6 +52,7 @@ from vakeel_sahayak.agents.sutradhar.factor_pick import (
     pick_stances,
     signals_from_dossier,
     signals_from_text,
+    signals_merged,
 )
 from vakeel_sahayak.agents.sutradhar.planning import (
     AUTHORITY_SLOTS,
@@ -254,6 +255,8 @@ class SutradharAgent(BaseAgent):
                 pass
         if not self.switches.uses_dossier:
             return signals_from_text(state.facts_text, state.before, rights)
+        if self.switches.signal_source == "merge":  # X1: the dossier first, the facts text for every field it lacks
+            return signals_merged(dossier, state.facts_text, state.before, rights)
         return signals_from_dossier(dossier, rights)
 
     def plan_context(self, state: CaseGraphState) -> PlanContext:

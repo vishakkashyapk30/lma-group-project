@@ -190,6 +190,21 @@ def text_fact(facts_text: str | None) -> dict[str, Fact]:
     return {FACTS_TEXT_FIELD: Fact(FACTS_TEXT_FIELD, body, FACTS_TEXT_FIELD, hash_value(body))} if body else {}
 
 
+def span_share(sentence: str, source: str) -> float:
+    """X2: the share of the sentence's words that sit in runs matching the source text in order (1.0 for a verbatim span; 0.0 for none).
+
+    Words are lower-cased alphanumeric runs; the matching runs are those of `difflib.SequenceMatcher` over the two word lists. A sentence with no word scores 1.0.
+    """
+    from difflib import SequenceMatcher
+
+    words = re.findall(r"[a-z0-9]+", sentence.lower())
+    if not words:
+        return 1.0
+    ref = re.findall(r"[a-z0-9]+", source.lower())
+    blocks = SequenceMatcher(None, words, ref, autojunk=False).get_matching_blocks()
+    return sum(b.size for b in blocks) / len(words)
+
+
 def quote_of(dossier: CaseDossier | None, field: str) -> str:
     """The source quote the dossier holds for a field (English for a Hindi quote), '' when there is none."""
     if dossier is None or field not in FACT_FIELDS:

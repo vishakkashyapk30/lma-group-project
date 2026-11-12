@@ -47,6 +47,7 @@ class CaseSignals:
     rights: dict[str, tuple[str, str]] = field(default_factory=dict)  # check -> (status, detail)
     source: str = "dossier"
     as_of: str | None = None  # the date the dossier (and the Rights Radar) was counted to
+    merged: list[str] = field(default_factory=list)  # X1: the fields read from the facts text because the dossier had none
 
     @property
     def refs(self) -> list[str]:
@@ -135,6 +136,68 @@ def signals_from_text(text: str | None, before: str | None, rights: RightsReport
     return sig
 
 
+def custody_days_wide(text: str, before: str | None) -> int | None:
+    """X1 only: days in custody read from the facts text with wider patterns than `order_facts.custody_days` (which A1 and the gold builders use and which is left as it is).
+
+    Tries the narrow rule first, then 'in custody / detention / jail / behind bars / lodged ... since <date>', then 'arrested on <date>' when the text speaks of custody or jail
+    and the application is not anticipatory bail. Needs the order date for a date form; None when the text states nothing countable.
+    """
+    from datetime import date
+
+    from vakeel_sahayak.pipelines.order_facts import DATE_RE, custody_days
+    from vakeel_sahayak.pipelines.text_utils import normalise_date
+
+    days = custody_days(text, before)
+    if days is not None or not before:
+        return days
+    flat = re.sub(r"\s+", " ", text)
+    for pattern in (
+        re.compile(rf"(?:custody|detention|jail|behind\s+bars|incarcerat\w*|languish\w*|lodged|confined)[^;]{{0,60}}?\bsince\s+({DATE_RE.pattern})", re.IGNORECASE),
+        re.compile(rf"\barrest(?:ed)?\b[^;]{{0,60}}?\bon\s+({DATE_RE.pattern})", re.IGNORECASE),
+    ):
+        if pattern.pattern.startswith("\\barrest") and (not re.search(r"\b(?:custody|jail|detention|remand)\b", flat, re.IGNORECASE) or re.search(r"anticipatory|apprehend", flat, re.IGNORECASE)):
+            continue
+        if m := pattern.search(flat):
+            since = normalise_date(m.group(1))
+            if since:
+                try:
+                    return max(0, (date.fromisoformat(before) - date.fromisoformat(since)).days)
+                except ValueError:
+                    continue
+    return None
+
+
+def signals_merged(dossier: CaseDossier | None, text: str | None, before: str | None, rights: RightsReport | None) -> CaseSignals:
+    """X1 (`signal_source='merge'`): the dossier's values where it states them, the facts text's where the dossier is silent.
+
+    Sufficient Context (Joren et al., ICLR 2025): when the structured field is missing, read the source. The dossier wins whenever it has a value
+    (it is the approved record); `signals_from_text` fills only `sections`, `custody_days`, `charge_sheet_filed`, `co_accused`, `fir_known`
+    and `personal` that the dossier left empty. `sig.merged` names the fields that came from the text, so a reason can say so.
+    """
+    sig = signals_from_dossier(dossier, rights)
+    if not text:
+        return sig
+    txt = signals_from_text(text, before, rights)
+    merged: list[str] = []
+    if not sig.sections and txt.sections:
+        sig.sections, merged = txt.sections, [*merged, "sections"]
+    wide = txt.custody_days if txt.custody_days is not None else custody_days_wide(text, before)
+    if sig.custody_days is None and wide is not None:
+        sig.custody_days, merged = wide, [*merged, "custody_days"]
+    if sig.charge_sheet_filed is None and txt.charge_sheet_filed is not None:
+        sig.charge_sheet_filed, merged = txt.charge_sheet_filed, [*merged, "charge_sheet"]
+    if not sig.co_accused and txt.co_accused:
+        sig.co_accused, merged = txt.co_accused, [*merged, "co_accused_bail"]
+    if not sig.fir_known and txt.fir_known:
+        sig.fir_known, merged = True, [*merged, "fir"]
+    if not sig.personal and txt.personal:
+        sig.personal, merged = txt.personal, [*merged, "personal"]
+    sig.merged = merged
+    if merged:
+        sig.source = "merge"
+    return sig
+
+
 def max_years(sig: CaseSignals) -> int | None:
     """Longest maximum punishment of the charged sections in years (life or death count as 99 and 100)."""
     best: int | None = None
@@ -155,6 +218,8 @@ def pick_stances(sig: CaseSignals) -> list[tuple[Factor, FactorStance, str]]:
     """Stance and reason for every factor, in Appendix A order (rules over `CaseSignals`)."""
     out: dict[Factor, tuple[FactorStance, str]] = {}
     where = "the facts text" if sig.source == "facts_text" else "the dossier"
+    if sig.source == "merge":
+        where = "the dossier and the facts text"
 
     # 1 gravity and punishment: always applies
     years = max_years(sig)

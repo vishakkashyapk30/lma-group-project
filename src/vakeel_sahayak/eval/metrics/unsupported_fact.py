@@ -32,6 +32,7 @@ CHECKER_ENV = "VS_M6_CHECKER"  # auto (default) | minicheck | nli
 ALLOW_SYSTEM_ENV = "VS_M6_ALLOW_SYSTEM_CHECKER"
 CHUNK_TOKENS = 400  # MiniCheck's RoBERTa chunk size: the premise is split into chunks of about 400 tokens and the claim's score is the max over chunks
 MAX_LEN = 512
+LONG_PIECE = 240  # a sentence that does not fit beside a premise chunk is checked in pieces of this many tokens (pre-registration D10)
 
 
 class SystemCheckerRefused(RuntimeError):
@@ -54,6 +55,19 @@ def _roberta_scorer(path: str):  # noqa: ANN202
     supported = 1  # config.json id2label {0: "0", 1: "1"}: label 1 is "supported" in MiniCheck
 
     def score(premise: str, claim: str) -> float:
+        try:
+            return score_fitting(premise, claim)
+        except Exception as exc:  # the tokenizers library raises a bare Exception
+            if "Truncation error" not in str(exc):
+                raise
+        # A sentence too long to sit beside even the smallest premise chunk in 512 tokens (pre-registration D10): split it into pieces
+        # of LONG_PIECE tokens and call it supported only as far as its least supported piece (min over pieces; never lenient).
+        # Only sentences that raised above take this path, so every sentence that scored before scores byte-identically.
+        ids = tok(claim, add_special_tokens=False)["input_ids"]
+        pieces = [tok.decode(ids[i:i + LONG_PIECE], clean_up_tokenization_spaces=False) for i in range(0, len(ids), LONG_PIECE)]
+        return min(score_fitting(premise, p) for p in pieces)
+
+    def score_fitting(premise: str, claim: str) -> float:
         claim_ids = tok(claim, add_special_tokens=False)["input_ids"]
         doc_ids = tok(premise, add_special_tokens=False)["input_ids"] or [tok.unk_token_id]
         size = max(16, min(CHUNK_TOKENS, MAX_LEN - len(claim_ids) - 4))

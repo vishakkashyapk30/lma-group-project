@@ -1,21 +1,11 @@
 #!/bin/bash
-#SBATCH -J vs_bge_m3
-#SBATCH -A research
-#SBATCH --qos=medium
-#SBATCH -p u22
-#SBATCH --constraint=2080ti
-#SBATCH -N 1
-#SBATCH -n 1
-#SBATCH -c 4
-#SBATCH --mem=12G
-#SBATCH --gres=gpu:1
-#SBATCH -x gnode069
-#SBATCH --time=03:00:00
-#SBATCH -o /home2/%u/vs_bge/logs/embed_%j.log
+# Runs inside an interactive session on one RTX 2080 Ti (plan section 17: inference runs in interactive sessions only; the one batch job is QLoRA training).
+# Open the session with: srun -A research --qos=medium -p u22 --constraint=2080ti -N 1 -n 1 -c 4 --mem=12G --gres=gpu:1 -x gnode069 --time=03:00:00 --pty bash
+# then: bash ~/vs_bge/embed_bge_m3.sh 2>&1 | tee ~/vs_bge/logs/embed_$(date +%s).log
 # BGE-M3 vectors for the four vector stores on one RTX 2080 Ti (opt-in side vectors, VS_STORES=bge; docs/handoff/bge-vectors-2026-10-28.md).
 #
 # Staging (from the laptop, see scripts/ada/stage_bge_m3.sh): ~/vs_bge/{bge_vectors.py, texts/*.texts.jsonl.gz, texts/texts_manifest.json}, and the
-# folders ~/vs_bge/logs and ~/vs_bge/outbox. Submit with `sbatch ~/vs_bge/embed_bge_m3.sbatch`.
+# folders ~/vs_bge/logs and ~/vs_bge/outbox. Run it inside an interactive session (header above).
 # Disk facts (docs/handoff/ada-qwen32b.md): compute nodes cannot see /share1; /home2 has well under 1 GB free, so only the texts (about 100 MB), the
 # logs and an outbox of at most 4 shards (about 40 MB each) live there; the laptop pulls each shard and deletes it (scripts/ada/pull_bge_shards.sh),
 # and the job waits while the outbox is full. Everything else (venv, pip cache, temp files, weights, shards in progress) is on node-local /scratch

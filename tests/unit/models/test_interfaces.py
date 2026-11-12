@@ -40,6 +40,7 @@ CONCRETE = {
     "vakeel_sahayak.models.local_llm": ("LocalLLMClient", "LLMClient"),
     "vakeel_sahayak.models.vlm": ("LocalVisionClient", "VisionClient"),
     "vakeel_sahayak.models.ocr": ("SuryaOcrClient", "OcrClient"),
+    "vakeel_sahayak.models.tesseract": ("TesseractCliOcr", "OcrClient"),
     "vakeel_sahayak.models.asr": ("WhisperAsrClient", "AsrClient"),
     "vakeel_sahayak.models.translation": ("IndicTrans2Client", "TranslationClient"),
     "vakeel_sahayak.models.nli": ("DebertaNliClient", "NliClient"),

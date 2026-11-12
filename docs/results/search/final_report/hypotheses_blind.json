@@ -1,0 +1,23 @@
+{
+ "primary": {
+  "H-A1": "falsified",
+  "H-A2": "supported",
+  "H-A3": "supported",
+  "H-A4": "supported",
+  "H-A5": "supported"
+ },
+ "errors_kept": {
+  "H-A1": "falsified",
+  "H-A2": "supported",
+  "H-A3": "supported",
+  "H-A4": "supported",
+  "H-A5": "supported"
+ },
+ "d7_79": {
+  "H-A1": "falsified",
+  "H-A2": "supported",
+  "H-A3": "supported",
+  "H-A4": "supported",
+  "H-A5": "supported"
+ }
+}

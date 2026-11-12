@@ -39,6 +39,32 @@ def agent_context(log: EventLog, case_id: str) -> object:
     return AgentContext(case_id=case_id, log=log, tools=tools)
 
 
+def product_agent_context(log: EventLog, case_id: str) -> object:
+    """An API product context using the selected c1457 architecture.
+
+    The similarly shaped ``agent_context`` deliberately remains available to
+    evaluation-style callers and tests that need the frozen Full baseline.
+    """
+    from vakeel_sahayak.agents.base import AgentContext
+    from vakeel_sahayak.orchestration.switches import production_switches
+    from vakeel_sahayak.tools.registry import discover_tools, get_tool
+
+    tools: dict[str, object] = {}
+    for name in discover_tools():
+        try:
+            tools[name] = get_tool(name)
+        except Exception:  # noqa: BLE001 - a tool the environment does not provide is simply left out
+            pass
+    return AgentContext(case_id=case_id, log=log, tools=tools, switches=production_switches())
+
+
+def product_state(log: EventLog, case_id: str, **kwargs: object):
+    """A c1457 graph state rooted in this API case's event log."""
+    from vakeel_sahayak.orchestration.state import CaseGraphState
+
+    return CaseGraphState.for_product(case_id, log_path=log.db_path, **kwargs)
+
+
 def case_exists(log: EventLog, case_id: str) -> bool:
     """True once the case has any event (plan §13.5: a case is its record)."""
     return bool(log.read(case_id))

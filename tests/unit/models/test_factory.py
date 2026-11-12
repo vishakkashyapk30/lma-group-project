@@ -84,3 +84,17 @@ def test_get_llm_refuses_the_evaluation_labeler_role():
 def test_other_getters_return_the_right_interface(getter, iface, no_heavy_imports):
     """Each getter returns a client implementing its interface, constructed lazily."""
     assert isinstance(getattr(factory, getter)(), iface)
+
+
+def test_auto_mode_uses_local_tesseract_when_surya_is_unavailable(monkeypatch):
+    """A system Tesseract install is a real OCR backend, not an evaluation-only override."""
+    from vakeel_sahayak.models.ocr import SuryaOcrClient
+    from vakeel_sahayak.models.tesseract import TesseractCliOcr
+
+    monkeypatch.setenv("VS_MODELS", "auto")
+    monkeypatch.delenv("VS_HEAVY_CLIENTS", raising=False)
+    monkeypatch.setattr(SuryaOcrClient, "available", staticmethod(lambda: False))
+    monkeypatch.setattr(TesseractCliOcr, "available", staticmethod(lambda: True))
+    factory.reset_clients()
+    assert isinstance(factory.get_ocr(), TesseractCliOcr)
+    factory.reset_clients()

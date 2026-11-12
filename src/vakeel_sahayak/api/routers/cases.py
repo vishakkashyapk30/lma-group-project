@@ -112,15 +112,13 @@ async def start_draft(case_id: str, log: Annotated[EventLog, Depends(get_event_l
     if not guard.is_approved(case_id, GateId.GATE_1_DOSSIER):
         raise HTTPException(status_code=409, detail="Gate 1 (dossier) is not approved yet")
 
-    from vakeel_sahayak.agents.base import AgentContext
     from vakeel_sahayak.agents.registry import create_agent
-    from vakeel_sahayak.orchestration.state import CaseGraphState
     from vakeel_sahayak.schemas.enums import AgentName
 
-    def draft() -> CaseGraphState:
+    def draft():  # noqa: ANN202 - threadpool callback returns the typed product graph state
         cs = service.case_state(log, case_id)
-        state = CaseGraphState(case_id=case_id, log_path=log.db_path, dossier=cs.dossier(), rights=cs.rights_report())
-        sutradhar = create_agent(AgentName.SUTRADHAR, AgentContext(case_id=case_id, log=log))
+        state = service.product_state(log, case_id, dossier=cs.dossier(), rights=cs.rights_report())
+        sutradhar = create_agent(AgentName.SUTRADHAR, service.product_agent_context(log, case_id))
         try:
             state = sutradhar.run(state)
             return sutradhar.delegate(state, list(state.evidence_packs))

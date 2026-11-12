@@ -55,6 +55,21 @@ Two opt-in switches added after the evaluation plan (ids S18 and P8 are given he
 bail and marks the ones that refused it as adverse authority to distinguish; Wachsmuth et al., ACL 2018) and `munshi_keep_weak_text=True` (P8: a text layer with
 60-84% dictionary words is kept as a low-confidence read, flagged to counsel, instead of dropping to ask-counsel).
 
+Architecture search of 2026-11-01 (`docs/handoff/architecture-search-2026-11-01.md`, `docs/handoff/arch-search-results.md`; ids X1-X6 and the combined H1 are not in the
+evaluation plan; rows in `docs/literature-to-code-map.md`, section "Architecture search"). All default to today's behaviour:
+
+| Id | Switch | Who reads it |
+|---|---|---|
+| X1 | `signal_source='merge'` | Sutradhar's factor picker: dossier values first, every field the dossier lacks read from the raw facts text by the order-facts rules (Sufficient Context, Joren et al., ICLR 2025: when a field is missing, read the source) |
+| X2 | `argument_policy='fact_law_split'` | Vakeel: case-fact sentences are near-verbatim spans of the facts text, legal-principle sentences carry only their `[A:]` marker (ALCE, Gao et al., EMNLP 2023; Claimify, Metropolitansky and Larson, ACL 2025) |
+| X3 | `sparring_scope='all_factors'` | Abhiyojak: after the per-ground and general rounds, one more call raises at most one objection per factor that has no ground and no general objection (equal-breadth critic; Debate or Vote, Choi et al., NeurIPS 2025) |
+| X4 | `abstention='strict'` | Vakeel: a sentence that still fails after repair, or that only says the record is silent, leaves `argument` and becomes an open issue (Trust-Align, Song et al., ICLR 2025; Conformal Factuality, Mohri and Hashimoto, ICML 2024) |
+| X5 | `draft_source='facts_text'` | Vakeel drafts, checks and replies from the raw facts text while Sutradhar keeps the dossier (A1's drafting without A1's planner) |
+| X6 | `critic_material='union_free'` | Abhiyojak: the objection material is the union of the ground-keyed, factor-filtered search and a free (facts-keyed, unfiltered) search of its own stores (A7's idea inside the isolation rule) |
+| X7 | `objection_grounding='by_id'` | Abhiyojak: a reference is resolved to the offered item it names by id, whatever store label the model wrote (RARR, Gao et al., ACL 2023); nothing that was not offered is accepted |
+| X8 | `fact_grounding='verbatim'` | Vakeel: after repair, a case-fact sentence that is not a span of the facts text is replaced by the record sentence it paraphrases (Attribute First, then Generate, Slobodkin et al., ACL 2024); no model call, no sentence added |
+| H1 | the combination named in `H1_PARTS` | the combined arm; `H1m<k>` is H1 without Xk (the leave-one-out arms) |
+
 Id numbering: this module and `docs/evaluation-plan.md` use the plan's S-ids. The literature review numbers the same ideas differently
 (its S2 = plan S5 graph retrieval, its R1 = plan S3 stopping, its R2 = plan S4 skew signal); `docs/literature-to-code-map.md` names both.
 """
@@ -116,7 +131,32 @@ ARCHITECTURE: dict[str, dict[str, Any]] = {
     "S17c": {"no_guard": True},
     "S17d": {"no_typed_handoff": True, "no_spotlighting": True, "no_guard": True},
     "S18": {"authority_stance": "outcome"},  # sweep 4: not in the evaluation plan; id added here
+    # Architecture search 2026-11-01 (X1-X6; H1 is their combination, see `H1_PARTS`): not in the evaluation plan.
+    "X1": {"signal_source": "merge"},
+    "X2": {"argument_policy": "fact_law_split"},
+    "X3": {"sparring_scope": "all_factors"},
+    "X4": {"abstention": "strict"},
+    "X5": {"draft_source": "facts_text"},
+    "X6": {"critic_material": "union_free"},
+    "X7": {"objection_grounding": "by_id"},
+    "X8": {"fact_grounding": "verbatim"},
 }
+# H1 = the combination of X1-X6 (docs/handoff/arch-search-results.md); `H1m<k>` is H1 without part Xk, the leave-one-out arms.
+H1_PARTS: tuple[str, ...] = ("X1", "X2", "X3", "X4", "X5", "X6")
+
+# The product configuration selected by the architecture search.  This is deliberately
+# separate from `Switches()` so every evaluation arm retains its frozen Full-system
+# default and manifests continue to describe the system that was scored.
+C1457_SWITCHES: dict[str, str] = {
+    "signal_source": "merge",
+    "abstention": "strict",
+    "draft_source": "facts_text",
+    "objection_grounding": "by_id",
+}
+ARCHITECTURE["H1"] = {k: v for part in H1_PARTS for k, v in ARCHITECTURE[part].items()}
+for _k in H1_PARTS:
+    ARCHITECTURE[f"H1m{_k[1:]}"] = {k: v for part in H1_PARTS if part != _k for k, v in ARCHITECTURE[part].items()}
+ARCHITECTURE_SEARCH: tuple[str, ...] = ("X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "H1", *(f"H1m{k[1:]}" for k in H1_PARTS))
 # The evaluation plan's ablation and baseline ids for the variants above (the canonical name is the S-id).
 VARIANT_ALIASES: dict[str, str] = {
     "A11B": "S3", "A11A": "S7", "A12": "S6", "S6B": "B5", "A16": "S5", "A2B": "S8", "A8B": "S9", "A8C": "S10", "A8D": "S11",
@@ -130,7 +170,7 @@ BASELINE_SWITCHES: dict[str, dict[str, Any]] = {"B5": {"store_prior": "only"}}  
 # Ids whose behaviour exists today: full, A1-A10, S1-S18 including S3b, S11b, S11c, S12b, S14b-S14d, S15b, S16b, S17b-S17d, B5 and P5-P8 (S13 as the search harness, S14b, S14c, S16, S16b as studies and
 # scheduler/chunking switches read outside the per-case pipeline: `eval/runners/systems.SCOPES` says which). No id of the variant table is declared but unbuilt today; an id added to the
 # table and left out of this set is refused by `assert_variant_implemented` until its behaviour exists.
-IMPLEMENTED_VARIANTS: frozenset[str] = frozenset({"full", *ABLATIONS, "S1", "S2", "S3", "S3b", "S4", "S5", "S6", "B5", "S12", "S12b", "S13", "S16", "S16b", "S8", "S9", "S10", "S11", "S11b", "S11c", "S7", "S14", "S14b", "S14c", "S14d", "S15", "S15b", "S17", "S17b", "S17c", "S17d", "S18", "P5", "P6", "P7", "P8"})
+IMPLEMENTED_VARIANTS: frozenset[str] = frozenset({"full", *ABLATIONS, "S1", "S2", "S3", "S3b", "S4", "S5", "S6", "B5", "S12", "S12b", "S13", "S16", "S16b", "S8", "S9", "S10", "S11", "S11b", "S11c", "S7", "S14", "S14b", "S14c", "S14d", "S15", "S15b", "S17", "S17b", "S17c", "S17d", "S18", "P5", "P6", "P7", "P8", *ARCHITECTURE_SEARCH})
 VARIANT_DESCRIPTIONS: dict[str, str] = {
     "full": "Munshi -> Peshkar -> Sutradhar, with Vakeel, Abhiyojak and all checks",
     "A1": "no dossier: Sutradhar and Vakeel read the raw facts",
@@ -173,6 +213,16 @@ VARIANT_DESCRIPTIONS: dict[str, str] = {
     "S17c": "injection defence off: no guard",
     "S17d": "all three injection defences off",
     "S18": "authority stance: Vakeel prefers authorities from orders that granted bail and marks refusals as adverse authority to distinguish",
+    "X1": "signals merge: Sutradhar's factor picker reads the dossier first and fills every field it lacks from the raw facts text",
+    "X2": "fact/law split: case-fact sentences are near-verbatim spans of the facts text; legal principles carry only their authority marker",
+    "X3": "all-factors sparring: one more objection call covers the factors that have no ground and no general objection",
+    "X4": "strict abstention: a sentence that fails after repair, or only says the record is silent, leaves the argument and becomes an open issue",
+    "X5": "drafting from the raw facts text (the dossier still drives the planner, Gate 1 and the open issues)",
+    "X6": "union critic material: Abhiyojak's own stores searched both by ground (filtered) and freely by the facts",
+    "X8": "verbatim fact grounding: a paraphrased case-fact sentence is replaced by the record sentence it paraphrases",
+    "X7": "objection grounding by id: a reference naming offered material under the wrong store label or field spelling is resolved, not discarded",
+    "H1": "combined architecture: X1 to X6 together",
+    **{f"H1m{k[1:]}": f"combined architecture without {k} (leave-one-out arm)" for k in H1_PARTS},
     "B5": "learned store router alone: no evidence contracts",
     "P5": "Munshi fixed cascade: no gap check, no re-reading, no questions",
     "P6": "Munshi without bundle splitting and document labelling",
@@ -223,6 +273,23 @@ class Switches(BaseModel):
     authority_stance: Literal["off", "outcome"] = "off"
     munshi_keep_weak_text: bool = False  # P8 (not in the evaluation plan): Munshi keeps a 67-84% dictionary-word text layer as a low-confidence read (agents/munshi, ingestion/pipeline.py)
     chunking: Literal["structure", "proposition", "late", "fixed", "recursive", "semantic", "page"] = "structure"  # S16 (not named in plan 3.4: the chunker of the retrieval-only runner)
+    # Architecture search 2026-11-01 (ids X1-X6, H1; docs/handoff/arch-search-results.md). Every default is today's behaviour.
+    # X1: Sufficient Context (Joren et al., ICLR 2025, https://openreview.net/forum?id=Jjr2Odj8DJ): a missing field is read from the source; IntrAgent (plan S7).
+    signal_source: Literal["dossier", "merge"] = "dossier"
+    # X2: ALCE (Gao et al., EMNLP 2023, https://aclanthology.org/2023.emnlp-main.398/); Claimify (Metropolitansky and Larson, ACL 2025, https://aclanthology.org/2025.acl-long.1451/).
+    argument_policy: Literal["single", "fact_law_split"] = "single"
+    # X3: Debate or Vote (Choi et al., NeurIPS 2025, https://neurips.cc/virtual/2025/poster/116557) for the equal-breadth critic; plan A1/A2 (Abhiyojak).
+    sparring_scope: Literal["per_ground", "all_factors"] = "per_ground"
+    # X4: Trust-Align (Song et al., ICLR 2025, https://openreview.net/forum?id=Iyrtb9EJBp); Conformal Language Model Factuality (Mohri and Hashimoto, ICML 2024, https://proceedings.mlr.press/v235/mohri24a.html).
+    abstention: Literal["flag", "strict"] = "flag"
+    # X5: CRITIC (Gou et al., ICLR 2024, https://openreview.net/forum?id=Sx038qxjek): check against outside evidence; plan C11 (A1 drafts from the raw facts).
+    draft_source: Literal["dossier", "facts_text"] = "dossier"
+    # X6: Debate or Vote (as X3); the union of two retrievals as in A7's free planner (plan section 15.4).
+    critic_material: Literal["contract", "union_free"] = "contract"
+    # X7: RARR (Gao et al., ACL 2023, https://aclanthology.org/2023.acl-long.910/): revise attributions to the evidence actually retrieved.
+    objection_grounding: Literal["exact", "by_id"] = "exact"
+    # X8: Slobodkin et al., "Attribute First, then Generate", ACL 2024 (https://aclanthology.org/2024.acl-long.182/): the span is selected first.
+    fact_grounding: Literal["off", "verbatim"] = "off"
 
     @model_validator(mode="after")
     def _variants_need_the_planner(self) -> Switches:
@@ -269,6 +336,21 @@ class Switches(BaseModel):
             raise ValueError(f"abhiyojak_isolation=False (S10) changes what Abhiyojak reads: it cannot combine with critic_mode={self.critic_mode!r}, which replaces Abhiyojak")
         if not self.abhiyojak_isolation and self.no_sparring:
             raise ValueError("abhiyojak_isolation=False (S10) widens what Abhiyojak sees: it cannot combine with no_sparring (A8) or critic_mode='none'")
+        if self.draft_source == "facts_text" and self.no_dossier:
+            raise ValueError("draft_source='facts_text' (X5) reads the raw facts while the dossier stays: it cannot combine with no_dossier (A1), which has no dossier")
+        if self.signal_source == "merge" and self.no_dossier:
+            raise ValueError("signal_source='merge' (X1) merges the dossier with the facts text: it cannot combine with no_dossier (A1), which reads the facts text alone")
+        no_abhiyojak = self.no_sparring or self.critic_mode in {"sampling", "three_role", "none"}
+        if self.sparring_scope != "per_ground" and no_abhiyojak:
+            raise ValueError("sparring_scope='all_factors' (X3) widens Abhiyojak's objections: it cannot combine with no_sparring (A8) or critic_mode other than 'abhiyojak'")
+        if self.objection_grounding != "exact" and no_abhiyojak:
+            raise ValueError("objection_grounding='by_id' (X7) changes how Abhiyojak's references are checked: it cannot combine with no_sparring (A8) or critic_mode other than 'abhiyojak'")
+        if self.critic_material != "contract" and no_abhiyojak:
+            raise ValueError("critic_material='union_free' (X6) widens Abhiyojak's material: it cannot combine with no_sparring (A8) or critic_mode other than 'abhiyojak'")
+        if self.fact_grounding != "off" and (self.no_check_repair or self.repair_mode != "grounded"):
+            raise ValueError("fact_grounding='verbatim' (X8) acts after check-and-repair: it cannot combine with no_check_repair (A2) or repair_mode other than 'grounded'")
+        if self.abstention == "strict" and (self.no_check_repair or self.repair_mode != "grounded"):
+            raise ValueError("abstention='strict' (X4) acts on the result of check-and-repair: it cannot combine with no_check_repair (A2) or repair_mode other than 'grounded'")
         return self
 
     # ------------------------------------------------------------------ what the agents ask
@@ -287,6 +369,11 @@ class Switches(BaseModel):
     def uses_dossier(self) -> bool:
         """Sutradhar and Vakeel read the approved dossier (not in A1)."""
         return not self.no_dossier
+
+    @property
+    def drafts_from_facts_text(self) -> bool:
+        """Vakeel's fact source is the raw facts text: A1 (no dossier) or X5 (`draft_source='facts_text'`)."""
+        return self.no_dossier or self.draft_source == "facts_text"
 
     @property
     def uses_rule_tools(self) -> bool:
@@ -384,6 +471,17 @@ class Switches(BaseModel):
         """One line for run logs and the UI."""
         name = self.variant()
         return VARIANT_DESCRIPTIONS.get(name, "custom switch set: " + ", ".join(f"{k}={v}" for k, v in self.model_dump(exclude_defaults=True).items()))
+
+
+def production_switches() -> Switches:
+    """The selected c1457 product configuration.
+
+    Evaluation callers must continue to construct ``Switches()`` or an explicit
+    named variant.  Product entry points use this factory so the selected
+    architecture is visible at the boundary rather than changing experiment
+    defaults globally.
+    """
+    return Switches(**C1457_SWITCHES)
 
 
 def _variant_table() -> dict[str, dict[str, Any]]:

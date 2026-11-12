@@ -1,6 +1,6 @@
-# Pre-registration (partly filled 2026-10-29, not yet frozen)
+# Pre-registration (frozen 2026-11-09 with tags `prereg-v1` and `eval-freeze-v1`)
 
-Status: DRAFT FOR FREEZE (2026-11-01, branch `prereg-v1-draft`). The decision thresholds are fixed on the DEV slice only (50 dev orders; the per-case score files
+Status: FROZEN 2026-11-09 (branch `arch-search`; the 2026-11-01 draft plus section 1.5, the freeze record and the declared deviations of section 8, all written before the blind slice was opened). The decision thresholds are fixed on the DEV slice only (50 dev orders; the per-case score files
 `docs/results/midsub/{openai_v3b,a7,sarvam,gemini_A,v1}/per_case_agreed.csv`, derivation in section 1.2 and `docs/results/prereg/dev_stats.json`, produced by
 `scripts/prereg_dev_stats.py`). The blind slice (`data/testsets/t1/blind_sealed.json`) was not opened to write this file. Items that only exist at the freeze (SHAs, date, final switch
 set re-paste, budgets, seeds) stay as angle-bracket placeholders and are listed in `docs/handoff/prereg.md` for the owner. Nothing below is a result of the blind slice. Written from `docs/evaluation-plan.md` (sections 1, 2.6, 2.7, 3, 5, 7)
@@ -13,20 +13,20 @@ tags exist, the blind scoring entry point refuses to run (`testsets/blind.py`).
 
 | Item | Value |
 |---|---|
-| Date and time of the freeze | `<YYYY-MM-DD HH:MM>` |
-| Git SHA of `eval-freeze-v1` | `<40-hex SHA>` |
-| Git SHA of the commit carrying this file (`prereg-v1`) | `<40-hex SHA>` |
-| Tracked switch set (the output of `Switches.implemented_variants()` at the freeze) | at `dev-sweep-v3` (46): A1, A10, A2, A3, A4, A5, A6, A7, A8, A9, B5, P5, P6, P7, P8, S1, S10, S11, S11b, S11c, S12, S12b, S13, S14, S14b, S14c, S14d, S15, S15b, S16, S16b, S17, S17b, S17c, S17d, S18, S2, S3, S3b, S4, S5, S6, S7, S8, S9, full (re-paste at the freeze) |
-| Prompt hash (`driver.prompt_hash()`, also in every run manifest) | `f4e2c690b94aaad3` at `dev-sweep-v3` (re-check at the freeze) |
-| Config hash (`driver.config_hash()`) | `bcc7d5d5f409c8ca` at `dev-sweep-v3` (re-check at the freeze) |
+| Date and time of the freeze | 2026-11-09, before the blind slice was opened (the tag message carries the exact time) |
+| Git SHA of `eval-freeze-v1` | the commit the tag `eval-freeze-v1` points to (`git rev-parse eval-freeze-v1`); the same commit as `prereg-v1` |
+| Git SHA of the commit carrying this file (`prereg-v1`) | the commit the tag `prereg-v1` points to (`git rev-parse prereg-v1`; a file cannot hold its own commit hash) |
+| Tracked switch set (the output of `Switches.implemented_variants()` at the freeze) | at the freeze (61): A1, A10, A2, A3, A4, A5, A6, A7, A8, A9, B5, H1, H1m1, H1m2, H1m3, H1m4, H1m5, H1m6, P5, P6, P7, P8, S1, S10, S11, S11b, S11c, S12, S12b, S13, S14, S14b, S14c, S14d, S15, S15b, S16, S16b, S17, S17b, S17c, S17d, S18, S2, S3, S3b, S4, S5, S6, S7, S8, S9, X1, X2, X3, X4, X5, X6, X7, X8, full. At `dev-sweep-v3` (46): A1, A10, A2, A3, A4, A5, A6, A7, A8, A9, B5, P5, P6, P7, P8, S1, S10, S11, S11b, S11c, S12, S12b, S13, S14, S14b, S14c, S14d, S15, S15b, S16, S16b, S17, S17b, S17c, S17d, S18, S2, S3, S3b, S4, S5, S6, S7, S8, S9, full (re-paste at the freeze) |
+| Prompt hash (`driver.prompt_hash()`, also in every run manifest) | `927168ea9cf51f22` at the freeze (`f4e2c690b94aaad3` at `dev-sweep-v3`; the architecture-search switches added prompts, defaults unchanged) |
+| Config hash (`driver.config_hash()`) | `de9ccc201439c41e` at the freeze (`bcc7d5d5f409c8ca` at `dev-sweep-v3`) |
 | Blind-slice set hash (`python scripts/prereg_hash.py`) | `9185e1cce6f981a70df4cf4aaaa5a35bc0648dfa216dff6900010512be8ebe32` (recomputed 2026-10-29; equals `manifest_blind.json`) |
-| Blind slice: size, BNS-era count, post-release count | `<80>`, `<n>`, `<n>` (from `manifest.json`, counts only) |
+| Blind slice: size, BNS-era count, post-release count | 80, 40, 80 (counts only) |
 | Dev ids | `data/testsets/t1/manifest_dev.json` (identical in `t1_rule_only`), sha256 `61c4bc451d40fcb26c0b5d3d418371c3ba2f3e8f08148a2474d7cd4bfaa3ba06` |
 | Test-set manifests and hashes (T1 to T9) | sha256 (first 16 hex) of the row files on 2026-10-29. The blind slice's gold is sealed by the hash of the whole T1 file, not only its ids (design review item 11): T1 `cases.jsonl` 2262383a77f3a7b0, `dev.jsonl` 9a22f359b9f4c5ba, T1 rule-only `cases.jsonl` 0c440657ff99e885, T2 `truth.jsonl` 422fab921f0a3512, T2 Hindi native c88583c2adbac7b9, T3 ca2fb11a401d143d, T4 (627) f9946f466ec36e95, T5 0ce0b029d7483806, T6 313918794447744d, T7 71e68c8bf6e9398e, T8 f55cecccea2677f3, T9 3c26048bd62bf7ad |
-| Seeds | generation seeds `<seed 1, seed 2, seed 3>` (owner: fill at the freeze; the same seeds for every system, run r of every system shares seed r, plan 5.1). Scoring seed: bootstrap seed 0 (`eval/scoring/stats_extra.SEED`), 10,000 resamples (`engine.N_BOOT`), fixed in code |
+| Seeds | one run per system (run index 1, the driver's seed for run 1; every system shares it). Runs 2 and 3 are not made (budget and time; deviation D2 in section 8). Scoring seed: bootstrap seed 0 (`eval/scoring/stats_extra.SEED`), 10,000 resamples (`engine.N_BOOT`), fixed in code |
 | Code stamp | every run manifest records `git_sha`, `git_dirty` and `code_tree_hash`; the scoring loader refuses to mix runs from different commits (`--allow-mixed-code` overrides, for exploration only); frozen runs must come from a clean worktree of the tag (a `-dirty` sha is not admissible) |
 | Models and versions | agents: Gemini `gemini-3.5-flash-lite` (free tier, public court text, pseudonymised) for the dev sweep at `dev-sweep-v3`; B0L: `gemini-3.6-flash` (not paired); system claim checker DeBERTa-v3 NLI; evaluation checker MiniCheck-RoBERTa-Large (refuses the system's checker); gold labeler OpenAI `gpt-6-luna` (the system model of the v1 runs: a declared threat, rule-only gold co-primary). Paste the run manifests' `models` block at the freeze |
-| Budgets | tokens per case `<n>`, store calls and tokens per factor `<n>` (`configs/budgets.yaml`), hosted caps `<USD>` and `<INR>` (`configs/eval/runs.yaml` `budgets:`; at 2026-10-27 the OpenAI ledger ceiling is 4.90 USD, the owner's Sarvam key INR 30 in total, and the large Sarvam block runs on Satvik's own key, `docs/handoff/sweep-satvik.md`) |
+| Budgets | tokens per case 150,000, store calls and tokens per factor 8 and 12,000, drafting 16,000 per factor (`configs/budgets.yaml`); hosted: Sarvam only, total cap INR 5,000 on the owner's key (opened 2026-11-01), per-process cap INR 60 to 90; OpenAI locked (no blind run) |
 
 ## 1. Claims and hypotheses
 
@@ -101,7 +101,22 @@ Thresholds (defaults of evaluation plan 1.1; fixed on dev, then frozen):
 | C41 | No hidden collapse in a slice | pooled mean | per-court, per-script, per-input-kind, BNS vs IPC era slices | T1, T2 | in any slice with n >= 20 the Full-minus-B0 difference on C1 is below 0 (weak slice, exploratory) | exploratory, not corrected | exploratory, not corrected |
 | C42 | The brief reduces what counsel must check | B1, B4 | sources to open per supported claim; share with a verbatim span | T1 | not lower than B1's, or fewer than 95% of SUPPORTED claims carry a verifiable span | own | plan default |
 
-Claims that will not be run (owner decides at the freeze; the report names each as "not run"): `<list>`; candidates, because their inputs are not in this fixing: C6, C9, C14, C15, C17, C18 (no dev run), C19 to C27 and C29 to C35 (T2 to T9 runs not scored here). Arms that are declared and not built: none (S15b was built on 2026-10-27, `output_format='free_then_parse'`, and `exclusions` in `configs/eval/runs.yaml` is empty). Arms that are built but only offline-smoked: S13 (model-backed search is planned), S15b (needs a real model), M17 removal; S6 and B5 are a no-op until a store prior is trained (event `store_prior_untrained`); S14b, S14c, S16, S16b, S4/S5 retrieval are studies (`eval/studies/`), not per-case arms.
+Claims that will not be run (the report names each as "not run"): C6, C9, C14, C15, C17, C18, C19 to C27, C29 to C35, C40 (pass^3 needs three runs); candidates, because their inputs are not in this fixing: C6, C9, C14, C15, C17, C18 (no dev run), C19 to C27 and C29 to C35 (T2 to T9 runs not scored here). Arms that are declared and not built: none (S15b was built on 2026-10-27, `output_format='free_then_parse'`, and `exclusions` in `configs/eval/runs.yaml` is empty). Arms that are built but only offline-smoked: S13 (model-backed search is planned), S15b (needs a real model), M17 removal; S6 and B5 are a no-op until a store prior is trained (event `store_prior_untrained`); S14b, S14c, S16, S16b, S4/S5 retrieval are studies (`eval/studies/`), not per-case arms.
+
+### 1.5 The architecture-search system c1457 (added 2026-11-09, before the blind slice was opened)
+
+c1457 is Full with four opt-in switches (`docs/handoff/arch-search-results.md`): X1 `signal_source=merge`, X4 `abstention=strict`, X5 `draft_source=facts_text`, X7 `objection_grounding=by_id`. It was selected among about ten configurations on the 30 dev search orders t1dev-000..029 and checked once on the 20 holdout dev orders t1dev-030..049 (22 wins, 26 ties, 3 losses against B0 to B6 on the quality metrics, the same three losses as on the search orders). Selection on dev is declared: the blind slice is the confirmatory test.
+
+Statistics: as in section 6 and `docs/report/tools/win_loss_tie.py` (paired bootstrap, 10,000 resamples, seed 0; Holm at 0.05 within each (arm, metric) family over B0 to B6; a win only when the Holm-level interval excludes zero). Quality metrics decide; cost (tokens, store calls, seconds) is judged only against B4 and B5; a cell undefined for the baseline (no objections, no sentence markers) is listed as undefined.
+
+| Id | Claim | Falsified if (blind slice, 80 orders) |
+|---|---|---|
+| H-A1 | c1457 has no loss against B0 to B6 on any quality metric, except the four cells declared structural on dev: unfinished-factor share against B4 and B5, confident-wrong rate against B4, coverage against B6 (a template scores 1.00 by construction) | any other quality cell is a loss |
+| H-A2 | c1457 beats Full on objection recall and answerable coverage | either is not a win (dev search: +0.64, +0.23) |
+| H-A3 | c1457 beats B4 and B5 on citation precision and fabricated-citation rate | any of the four is not a win |
+| H-A4 | c1457's unsupported-fact rate (M6) is not worse than any baseline's | M6 is a loss against any of B0 to B6 |
+| H-A5 | c1457 uses fewer store calls than B4 | not a win (dev: 109 against 186) |
+Declared expected losses (not claims): tokens and seconds against B5, store calls against B5.
 
 ### 1.2 What the dev slice says, and how the thresholds were fixed from it
 
@@ -183,10 +198,10 @@ the prompt hash, the code and config hashes and the model stamp. Fill the table 
 
 | System id | Switch set (`Switches.model_dump(exclude_defaults=True)`) | Describe line | Manifest hash of `MANIFEST.json` | Backend |
 |---|---|---|---|---|
-| full | `{}` | Munshi -> Peshkar -> Sutradhar, with Vakeel, Abhiyojak and all checks | `<>` | `<ada / sarvam / openai>` |
-| b0, b0l, b0s, b1, b2, b3, b4, b6 | baseline runners | `<>` | `<>` | `<>` |
-| A1-A10 (A5 and A10 per arm) | `<>` | `<>` | `<>` | `<>` |
-| `<each S, P and B5 id in the run plan>` | `<>` | `<>` | `<>` | `<>` |
+| c1457 (headline) | `{signal_source: merge, abstention: strict, draft_source: facts_text, objection_grounding: by_id}`; driver id `S13:signal_source=merge,abstention=strict,draft_source=facts_text,objection_grounding=by_id` | Full with X1, X4, X5, X7 (section 1.5) | in each run's `MANIFEST.json` | sarvam-105b |
+| full | `{}` | Munshi -> Peshkar -> Sutradhar, with Vakeel, Abhiyojak and all checks | in each run's `MANIFEST.json` | sarvam-105b |
+| b0, b1, b2, b3, b4, b5, b6 | baseline runners | as in `eval/baselines` | in each run's `MANIFEST.json` | sarvam-105b (b6 makes no model call) |
+| ablations of c1457 | `scripts/midsub/winner-ablations-resume.sh` | dev search orders only, not run on the blind slice | | sarvam-105b |
 
 An arm is only compared with Full on the same backend, model and cases. The job table, sizes and estimated costs: `configs/eval/runs.yaml`, `driver plan --all`.
 
@@ -201,32 +216,32 @@ Definitions are those of evaluation plan section 4; the following are fixed here
 | MiniCheck threshold | 0.5 (the code default of `eval/metrics/unsupported_fact.py`; when MiniCheck is absent the NLI facade's `fact_support` threshold applies and the table names the checker). Not tuned on dev: the dev rate is near ceiling (0.86 to 1.00), so a cut moved on dev would only move the ceiling |
 | pass^3 quality bar | a case passes a run when factor recall >= 0.5 and the record has no error; pass^3 needs all three runs to pass (`eval/metrics/agentic.pass_hat_k`, `ScoreConfig.pass_bar` 0.5). Only about 16 % of orders have a defined recall, so pass^3 is exploratory |
 | Coverage for each table | answerable coverage: share of answerable gold factors with a non-placeholder, non-declined ground; M33 coverage: share of grounds emitted without NEEDS_REVIEW and not the placeholder (a baseline without gate fields cannot decline: 1.0); every G-based number prints n of orders with a label |
-| Label sources for G1 to G7 | PRIMARY = agreed (rules and a non-Qwen labeler, span-grounded; `data/testsets/t1`); SECONDARY = rule-only (`data/testsets/t1_rule_only`), pre-declared; coverage (n of orders with a label) reported beside every G-based number. Hash of each gold: `details.gold.gold_sha256` in `data/testsets/<t1|t1_rule_only>/manifest.json` (`<hash agreed>`, `<hash rule>`). Since the G2 merge of 2026-10-27 (`docs/handoff/dev-baselines.md`) the agreed gold carries the candidate G2 built with the SC-metadata citation index: 14 of 200 test cases changed, 0 of 50 dev; dev has 0 orders with a resolved court citation, so M10 is n/a on dev and shows only on the test slice. Hashes after the merge: agreed `gold_sha256` 5583690e...05be, rule-only 4cde3451...8ab0 (full values in `dev-baselines.md`; re-read from the manifests at the freeze) |
+| Label sources for G1 to G7 | PRIMARY = agreed (rules and a non-Qwen labeler, span-grounded; `data/testsets/t1`); SECONDARY = rule-only (`data/testsets/t1_rule_only`), pre-declared; coverage (n of orders with a label) reported beside every G-based number. Hash of each gold: `details.gold.gold_sha256` in `data/testsets/<t1|t1_rule_only>/manifest.json` (agreed `5583690e3754dacd8f2ebd4e27987ae7cfa0c3df9eb2fd9e8bc9a879d86c05be`; rule-only: see its manifest). Since the G2 merge of 2026-10-27 (`docs/handoff/dev-baselines.md`) the agreed gold carries the candidate G2 built with the SC-metadata citation index: 14 of 200 test cases changed, 0 of 50 dev; dev has 0 orders with a resolved court citation, so M10 is n/a on dev and shows only on the test slice. Hashes after the merge: agreed `gold_sha256` 5583690e...05be, rule-only 4cde3451...8ab0 (full values in `dev-baselines.md`; re-read from the manifests at the freeze) |
 | Gold-source sensitivity | one rescoring sweep of the gold-dependent metrics against the other gold (job `gold_source_sweep`, no model call, cost 0); a single declared sensitivity analysis, not a new test family: Holm applies to the registered primary family on the primary gold only. Coverage: G1 169 of 250 orders with an agreed label, G3 249, G4 88, G5 155, G6 133 of 152 grants, G7 1 (C30 rests on T4). Claims by gold: C1, C3, C10, M46 on G1 (G5 for lenient precision); C7, C8, C28 on G4; C33 on G5 and G6; C32 and C25 on G3; C5, C14 on G2; C30 on T4. See evaluation plan 5.9 |
-| Null-agent audit | the five degenerate agents of plan 5.7 score near the floor before any run: `tests/unit/eval/test_null_agent_audit.py` (passed on 2026-10-27; re-run at the freeze: `<pass/fail>`) |
+| Null-agent audit | the five degenerate agents of plan 5.7 score near the floor before any run: `tests/unit/eval/test_null_agent_audit.py` (passed on 2026-10-27; part of the full test run at the freeze) |
 
 ## 4. Sets
 
 | Set | Rule | Manifest and hash |
 |---|---|---|
-| Train | orders before 2024-01-01; test and same-FIR orders excluded from every store and from fine-tuning | `<>` |
+| Train | orders before 2024-01-01; test and same-FIR orders excluded from every store and from fine-tuning | `data/interim` (team bundle) |
 | Dev | 50 orders, 2024-01-01 to 2024-04-01: the only set anyone may look at freely | `manifest_dev.json`, full sha256 in section 0 |
-| Test, open part | 120 of the 200 T1 orders: after the freeze, for ablations and error analysis; never used to tune | `<>` |
-| Test, blind slice | 80 of the 200, drawn with a seeded draw before the freeze, at least 25 BNS-era, post-release orders first; ids stored only as hashes; scored once | set hash `<64-hex>` (section 0) |
-| T2 to T9 | built by their builders | `<name: hash>` |
+| Test, open part | 120 of the 200 T1 orders: not run at this freeze (deviation D1) | `data/testsets/t1/manifest_open.json` |
+| Test, blind slice | 80 of the 200, drawn with a seeded draw before the freeze, at least 25 BNS-era, post-release orders first; ids stored only as hashes; scored once | set hash `9185e1cce6f981a70df4cf4aaaa5a35bc0648dfa216dff6900010512be8ebe32` (section 0) |
+| T2 to T9 | built by their builders | hashes in section 0 |
 
 Blind slice procedure (plan 5.8): freeze, run all systems on all 200 cases, analyse the open 120, open the blind slice once (lock file `data/eval/blind.lock`, date and git SHA recorded), report both;
-if they differ the blind numbers are the headline. Opened on `<date>` at `<SHA>`.
+if they differ the blind numbers are the headline. Opened once on 2026-11-09 at the commit of `eval-freeze-v1`; the date and SHA are in `data/eval/blind.lock`.
 
 ## 5. Runs
 
 | Item | Rule |
 |---|---|
-| Runs per system | Full, B0, B1, B4: `<3 or the floor 2 for Full and B4>` runs on `<200 or 150>` T1 cases. B0L, B2, B3, B6: 1 run. Ablations and S-variants: 1 run on `<100 or 60>` cases. pass^3 and paraphrase: 3 runs on 50 cases |
-| Which cases | the first `<n>` of the fixed run order (`data/testsets/t1/cases.jsonl`, order fixed by the seeded run key) |
-| Sampling | extractor, labeler, checks: temperature 0; generation temperature `<0.6>`, top-p `<0.95>` (confirm against the model card) |
+| Runs per system | c1457, Full, B0 to B6: 1 run each on the 80 blind orders (deviations D1, D2). Ablations: 1 run on the 30 dev search orders. pass^3 and paraphrase: not run |
+| Which cases | the 80 blind orders, from `open_blind` (`testsets/blind.py`), in the order of `data/testsets/t1/cases.jsonl` |
+| Sampling | extractor, labeler, checks: temperature 0; generation: the Sarvam client's defaults in `models/sarvam` (temperature 0 unless a role sets it), recorded in each manifest |
 | Budgets | as in section 0 |
-| Backends and caps | OpenAI `<USD cap>`, Sarvam `<INR cap>`; every hosted run uses a spend ledger with a hard cap; counts of case-runs per backend `<>` |
+| Backends and caps | OpenAI locked; Sarvam INR 5,000 in total; every hosted run uses a spend ledger with a hard cap; 9 x 80 = 720 case-runs on Sarvam |
 | Order | jobs in `priority` of `configs/eval/runs.yaml`; the sparring 2x2 and S8-S10 are never cut |
 
 ## 6. Statistics
@@ -255,11 +270,32 @@ Only the changes of split.md appendix C 8.2: `post-freeze:fix` (a bug fix that t
 shown by the prompt-hash test: an addendum committed before the arm's first run), `post-freeze:product` (API, frontend, export, packaging, docs), and `post-freeze:behaviour` (only for a safety or privacy defect,
 listed as a deviation, a smoke subset re-run, tag `eval-patch-<n>`). Any change to a metric after seeing results is a deviation in the report.
 
-Deviations (append, never edit above): none yet.
+Deviations (append, never edit above). Declared at the freeze, before the blind slice was opened:
+- D1. The blind slice (80 orders) is run, the open 120 are not: the plan's "run all 200, analyse the open 120 first" does not fit the time to 10 Nov or the Sarvam budget (about INR 5,500 for 200 orders against INR 4,600 left). The holdout dev orders t1dev-030..049 (touched once, after the search) play the role of the open check.
+- D2. One run per system, not three: pass^3 (C40) is not run.
+- D3. The headline system is c1457 (section 1.5), chosen on dev by an architecture search, not Full. Full is run beside it on the same orders and every claim registered for Full in section 1 stays registered and is reported.
+- D4. Model family: Sarvam-105B only (OpenAI locked by owner decision 2026-10-28; Gemini's free tier has no B4 and too low a quota).
+- D5. Tests failing at the freeze (full suite: 5,334 passed, 7 skipped, then 3 failures fixed in code before the tag; 19 left, none changed):
+  17 golden-digest tests of Peshkar and Sutradhar (`tests/unit/agents/{peshkar,sutradhar}/test_variants_*.py`) fail on the event-log digest only (the dossier, List of Dates and prompt digests match). A bisect between `dev-sweep-v2` and `dev-sweep-v3` names commit 5bf4cd3 (29 Oct, design-review item 7): Rights results now carry the rule's verification state, which the events record. The goldens were not re-captured; they fail on `dev-sweep-v3` too, so every dev run and the blind run share this behaviour. Re-capturing them is a test change and waits for the owner.
+  2 cells of `tests/unit/eval/test_m6a_beside_m6.py`: `docs/results/shravani/{gemini_31,offline_a10}` lack M6a until Shravani rescores them from her raw outputs (not on this machine).
+- D6. Running the blind slice needs its inputs, so `scripts/midsub/blind-run.sh` reads the 80 sealed ids to select the input rows of `data/testsets/t1/cases.jsonl` and strips the gold field from the run file (the driver reads no gold); no gold or output is looked at. The gated opening (`--slice blind --open-blind`, which needs the tag `eval-freeze-v1` and writes `data/eval/blind.lock`) happens once, in one scoring call over all nine arms after every run ends.
+
+Declared after the freeze, before the blind slice was opened (no blind score or gold has been read):
+- D7 (2026-11-09, post-freeze:fix of the run, not of a system). Two blind cases failed on the laptop's local SQLite store at start-up, when five driver processes opened it at once: Full on `t1-000` (`file_facts: OperationalError: disk I/O error`) and c1457 on `t1-002` (`file_facts: ... attempt to write a readonly database`). `file_facts` pseudonymises and files the facts text; on failure the driver records the error and runs the rest of the case with no facts text, so the saved output is a degraded run, not the system's answer. The driver saves an errored case and a resume skips it, so the two files were moved aside, unread, to `sarvam_blind/infra_errors_set_aside/` and the queue's second pass reruns the two cases on the same frozen code. Nothing else was rerun.
+- D8 (2026-11-09). The 17 golden digests of D5 were re-captured on the `arch-search` branch after the freeze (commit c09b617, test files only, marked RECONCILED): dumping the canonical default runs at 5bf4cd3^, 5bf4cd3 and HEAD shows the only difference is the `last_verified` date on the rights_check results (same event count, order and statuses; packs, plans, budget, dossier, List of Dates and prompt digests unchanged). No source file changed, so the frozen code under test is unaffected.
+- D7 clarified (appended, D7 is not edited). D7 departs from section 1.4 ("never retried beyond the driver's recorded retry or replaced") and is a procedural deviation, not a code fix. Criterion, applied identically to every blind arm: a `sqlite3.OperationalError` raised in `file_facts` on the harness's local store, found by the error string only. Exactly one rerun on the same frozen code; the rerun's record is final (an error on the rerun counts as an error). A sensitivity analysis reports c1457 and Full with the original degraded records kept (`sarvam_blind/infra_errors_set_aside/`), i.e. the same arms on 79 paired cases.
+- D9 (2026-11-09, 04:14 to 04:24 IST). After the freeze I ranked every Sarvam-scored dev configuration (`scripts/midsub/candidate_pool.py`, a ranking rule written that day) and "c1457 minus X1" (`S13:abstention=strict,draft_source=facts_text,objection_grounding=by_id`) came first on win counts against B0-B6 (38/29/3 against 30/37/3). I started it on the holdout orders t1dev-030..049 (unit `vs-hx457`, frozen worktree at 22fce4f), which breaks D1's "holdout touched once". Three independent read-only checks then found that it is not better than c1457: head to head 1 win, 18 ties, 1 loss; the M6 difference is unresolved (-0.034, 95% interval -0.10 to +0.03); its lower unsupported-fact count comes from writing fewer claims (5.07 against 6.83 per order, supported claims 0.70 in both); it cites no Supreme Court authority (authority SC share 0.000 against 0.051, a resolved loss); the extra wins are cells near the Holm level where c1457 has the same sign. The run was stopped after one case, its outputs moved to `sarvam_holdout/stopped_unscored/` and never scored, and the arm is not added to the blind slice. c1457 stays the only headline; nothing in section 1.5 changes. The candidate-pool tables are post-freeze exploratory dev analyses, not registered tests.
+
+Declared after the blind slice was opened, before any blind score existed (the first scoring call wrote no score file; no blind score, gold row or per-case result has been read):
+- D10 (2026-11-09, post-freeze:fix of the scorer, owner decision of 18:10 IST). The single gated scoring call (`blind-run.sh`, 10:54 to 15:48 IST; `data/eval/blind.lock` written at 10:54 with git SHA 22fce4f) crashed in M6 before writing anything: `unsupported_fact.py` (MiniCheck-RoBERTa) raised `Exception: Truncation error: Sequence to truncate too short to respect the provided max_length` on a brief sentence longer than about 490 tokens, which cannot sit beside even the smallest premise chunk in the 512-token window. The holdout Full scorer (dev) crashed on the same line, so the defect is in the scorer, not in the blind data. Fix (commit on `arch-search`, tests in `tests/unit/eval/test_m6_checker_independence.py`): a sentence that raises that error is split into pieces of 240 tokens and scored as the minimum over its pieces (supported only as far as its least supported piece; chosen by the owner as the rule that is never lenient to the system). Every sentence that scored before takes the unchanged code path, so every earlier score is unchanged (checked by rescoring a scored dev arm, recorded in `docs/handoff/arch-search-results.md`). No system under test, prompt, output or metric definition changes; no system is rerun. The first lock is kept as `data/eval/blind.lock.attempt1` and the blind slice is scored once more, in one gated call over the same nine arms' saved outputs (`sarvam_blind/outputs`, unchanged since 10:54), with the freeze tag's code plus this one fix. That second call is final: if it fails, the blind slice is reported as not scored.
+
+Declared after the blind slice was scored (2026-11-10, owner decision of 10:50 IST), before either analysis below was run:
+- D11 (2026-11-10, post-freeze:a declared analysis that was left out). Section 0 ("Gold-source sensitivity") and section 3 declare the rule-only gold rescoring as the one sensitivity analysis of the label source, and a claim is called robust only when its sign and Holm decision hold on both golds. The single gated blind call (D10) passed `--gold-source agreed`, so this analysis was not run on the blind slice. It is now run once: the same saved outputs (`sarvam_blind/outputs`, checked against `logs/outputs_sha256_before_rescore.txt` first), the same scoring code as D10 (eval-freeze-v1 plus d096088), `--gold-source rule`, written to `sarvam_blind/scores_rule/`. No system is run, no model is called, and the agreed-gold results (the headline) are not rescored, replaced or changed whatever this analysis shows. The gate refuses a second opening while `data/eval/blind.lock` exists, so the D10 lock is kept as `data/eval/blind.lock.d10-agreed` and the rule call writes a new lock. It adds no test to any family and is not corrected (section 3); each blind hypothesis H-A1 to H-A5 is reported as robust or not robust to the label source.
+- D12 (2026-11-10, post-freeze:an added exploratory analysis). Run-to-run spread (evaluation plan, "Run-to-run spread": the SD of each per-case score across runs and the share of cases whose pass or fail flips) has had no measurement, because every Sarvam call is at temperature 0 and answered from the response cache when repeated. c1457, Full and B0 to B6 are run twice more on the 30 dev search orders t1dev-000..029, on the frozen code (worktree at eval-freeze-v1, 22fce4f), with the response cache off (`VS_SARVAM_NO_CACHE=1`), into `data/eval/dev_runs/sarvam_var1` and `sarvam_var2`, and scored with the D10 scoring code on the agreed gold. Reported: per metric and arm, the mean absolute per-case difference and SD between the two runs, the share of cases whose pass (factor recall >= 0.5) flips, and the win/tie/loss table of c1457 against B0 to B6 in each run. Exploratory: no registered test, no Holm family; the holdout and blind slices are not touched. Budget: Sarvam only, about INR 400 expected, inside the INR 5000 cap; OpenAI stays locked.
 
 ## 9. Order of evaluation
 
-`<the order of jobs and the date of the blind opening>`; default order: baselines independent of Full, then RQ1 main with the hosted blocks, the sparring 2x2 and the new arms, ablations, smaller variants,
+2026-11-09: tags, then the blind slice opened once and run (c1457, Full, B0 to B6; one queue on Sarvam), then scored; the paused ablations of c1457 on dev resume after it; default order: baselines independent of Full, then RQ1 main with the hosted blocks, the sparring 2x2 and the new arms, ablations, smaller variants,
 safety, scoring of the open 120, error analysis, the blind slice once, tables and figures (plan 7.3, 5.8).
 
 ## 10. Results
