@@ -16,6 +16,7 @@ make data-check    # table of present/missing items (interim, stores, testsets, 
 Handoff notes (what is done, not done, next steps) are in `docs/handoff/*.md`; data and model notes: `docs/handoff/data-and-models.md`, `data/README.md`.
 
 ## Read in this order
+0. `docs/handoff/team-todo-2026-11-02.md`, section "What each person does next": the current per-person to-do (13 Nov 2026).
 1. `split.md`: who does what now, file ownership, merge waves, PR and review rules (appendices).
 2. `progress.md`: sections 0 to 0e hold the master to-do list, the data assessment, the plans written, the decisions, and the status of every workstream; section 5 has the per-phase test commands.
 3. `docs/plan.md` (the design; v6, which applies the 25 edits of `docs/literature-review-and-usage.md` §7), `docs/architecture/skeleton.md` (module map and conventions).

@@ -1,6 +1,10 @@
 # Status — Shravani
 
-## Current assignment (2 Nov 2026, to the freeze on 10 Nov)
+## Current assignment (13 Nov 2026)
+Backend of c1457 is done and on `main` (product preset, API, abstention events, OpenAPI). New from 13 Nov: the product-gap and checklist sweep of `progress.md` and `docs/product-readiness.md` (tick stale boxes with evidence; one-command installer; CrPC 1973, NDPS s.37 and First Schedule texts by script; one person-in-browser run of flows AC-0 to AC-7). The two M6a cells stay as declared failures (raw outputs gone).
+Full list: `docs/handoff/team-todo-2026-11-02.md`, section "What each person does next (13 November)".
+
+## Earlier assignment (2 Nov 2026, to the freeze on 10 Nov)
 Backend of the chosen architecture (LangGraph flow, API, new agents' nodes, events and Swagger, integration and system tests); review the `arch-search` switch code before 4 Nov; report layout fixes; final PDF and submission on 10 Nov.
 Full list, dates and rules: `docs/handoff/team-todo-2026-11-02.md`. The tables below are the earlier state.
 

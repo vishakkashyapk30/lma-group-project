@@ -1,6 +1,10 @@
 # Status: Satvik
 
-## Current assignment (2 Nov 2026, to the freeze on 10 Nov)
+## Current assignment (13 Nov 2026)
+Open the PR for `satvik-companies-act-212` (rebased on `main`); one statute store rebuild with the BNSS s.58 and s.212 fixes (with Shravani's CrPC/NDPS texts if ready) and a bundle refresh, never touching the frozen run worktree; rerun `win_loss_tie.py` on every family and confirm the M6a test runs.
+Full list: `docs/handoff/team-todo-2026-11-02.md`, section "What each person does next (13 November)".
+
+## Earlier assignment (2 Nov 2026, to the freeze on 10 Nov)
 Metrics, statistics and Rights: DONE 2 Nov (PR #6). Next: Companies Act s.212 from the official text by script; rerun the win/loss/tie table and the M6a test once the architecture search is merged; statute store rebuild after the search. Details in `docs/handoff/team-todo-2026-11-02.md`.
 Full list, dates and rules: `docs/handoff/team-todo-2026-11-02.md`. The tables below are the earlier state.
 

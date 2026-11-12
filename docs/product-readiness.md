@@ -1,5 +1,7 @@
 # Product readiness: what is left to present Vakeel-Sahayak.ai as a finished product
 
+> **13 Nov 2026:** Shravani owns the pass over this file: tick each gap that has landed, with the commit or file, and give each open one an owner and next step (`docs/handoff/team-todo-2026-11-02.md`).
+
 Status date: 2026-10-24. Branch `ideation-v1`. This document is a planning note. It changes no code. Task IDs `PR-01` to `PR-86` are stable and are used by the team-plan document that follows.
 
 > **Checked by Vishak 2026-10-27: sections 0 and 2 below describe 2026-10-24 and are partly outdated.** Since then (verified in code and tests): `create_app()` builds the API (42 routes, Swagger) and the frontend has a live mode (`frontend/lib/api.ts`); the export modules (DOCX application, List of Dates, hearing card, PDF, gated export) are built (`tests/unit/export` passes, 119 passed together with the eval metrics and stats tests); `scripts/download_models.sh` and `make models` exist; the CrPC and NDPS statutes and First Schedule flags are in the store (`docs/handoff/data-and-models.md`). Still open: real OCR, vision and translation paths, the Windows/macOS install path, court-specific format, Rights rule verification (`last_verified`). For the current state read `split.md` section 1 and `progress.md` section 0f. The task list is kept as written.

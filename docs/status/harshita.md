@@ -1,6 +1,10 @@
 # Status — Harshita
 
-## Current assignment (2 Nov 2026, to the freeze on 10 Nov)
+## Current assignment (13 Nov 2026)
+Still open (no commits since 2 Nov): per-ground list of the sentences c1457 withholds and why (the `withheld` field of the X4 event) and every Abhiyojak objection in the workspace; the live end-to-end run on `main`; Hindi interface labels via Sarvam. The Gemini open-slice shard is dropped.
+Full list: `docs/handoff/team-todo-2026-11-02.md`, section "What each person does next (13 November)".
+
+## Earlier assignment (2 Nov 2026, to the freeze on 10 Nov)
 Swapped with Satvik on 2 Nov. Frontend of the chosen architecture, live end-to-end tests, a Gemini key in the pool and a shard of the 5 to 7 Nov Gemini runs, Hindi labels translated with Sarvam and wired in (no review by hand).
 Full list, dates and rules: `docs/handoff/team-todo-2026-11-02.md`. The tables below are the earlier state.
 

@@ -1,5 +1,7 @@
 # split.md: who does what from here (written 2026-10-25)
 
+> **Current to-do (13 Nov 2026):** `docs/handoff/team-todo-2026-11-02.md`, section "What each person does next". It supersedes the per-person lists below.
+
 > Checked by Vishak 2026-10-27: section 1 (state table) was corrected: DOCX export, hearing card, real-API frontend mode, metrics and statistics are built (commits `5dac4ed`, `b936931`, `0e5897b`, `de93b64`; `tests/unit/export` and `tests/unit/eval/test_{metrics,stats}.py` pass). The task tables in section 4 keep their original wording. Where `docs/api/contract.md`, `docs/api/openapi.json`, `docs/api/README.md`, `docs/qa/manual-test.md` and `docs/qa/rights-verification.md` are named as deliverables (SH-02, SH-06, HA-03, HA-06), those files do not exist yet (flagged). State of the VI tasks on 2026-10-27 (from `docs/status/vishak.md`): VI-01 to VI-08 and VI-10 done (VI-07 offline; P3, P4, F5, F6 were blocked when written), VI-09 (freeze and real runs) blocked on the real runs, Harshita's checks and the preregistration hashes, and the dev-set sweep is the work in progress (`docs/handoff/sweep-dev.md`); VI-11 stretch.
 
 This replaces the earlier team plan (the former `docs/team/` folder, now removed), because a lot has changed since it was written (hosted LLMs, the redesigned frontend, the literature variants, the eval infrastructure). The PR and review rules, history-sync steps, freeze and definition of done are in the appendices at the end of this file (copied from the old team plan, which has been removed).
