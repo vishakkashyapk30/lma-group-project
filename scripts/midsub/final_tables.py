@@ -294,8 +294,91 @@ def blind_block(rows, tex_rows, cost_cells):
     for k in v:
         md.append(f"| {k} | {v[k]} | {v1.get(k, '-')} | {v2.get(k, '-')} |")
     md += ["", "Errored records kept as scored:", ""] + lines1 + ["", "D7, 79 paired cases:", ""] + lines2 + [""]
-    md += ["Not run on the blind slice: the rule-only gold sensitivity (the gated opening is one scoring call, on the agreed gold).", ""]
-    (OUT / "hypotheses_blind.json").write_text(__import__("json").dumps({"primary": v, "errors_kept": v1, "d7_79": v2}, indent=1) + "\n")
+    # sensitivity 3 (pre-registration section 0 and 3, run under D11): the same saved outputs scored against the rule-only gold
+    v3 = {}
+    rule_csv = RUNS / "sarvam_blind" / "scores_rule" / "per_case_rule.csv"
+    if rule_csv.exists():
+        rule = list(csv.DictReader(open(rule_csv)))
+        for r in rule:
+            r["system"] = r["system"].lower()
+        lines3, v3 = hypotheses(rule, "rule-only gold")
+        means(rule, "blind_rule")
+        rc, _, _ = run_wlt(rule, [WIN, "full"], BASES, "blind_rule")
+        md += ["### Rule-only gold (D11: the declared label-source sensitivity, run once on the same saved outputs)", "",
+               "| arm | " + " | ".join(b.upper() for b in BASES) + " | total W/T/L (+too few, undefined) | losses |", "|---|" + "---|" * (len(BASES) + 2)]
+        for a in (WIN, "full"):
+            t = tally(rc, a)
+            md.append(f"| {name(a)} | " + " | ".join(f"{tally(rc, a, b)['win']}/{tally(rc, a, b)['tie']}/{tally(rc, a, b)['loss']}" for b in BASES)
+                      + f" | {t['win']}/{t['tie']}/{t['loss']} (+{t['too_few']}, {t['undefined']}) | " + ("; ".join(losses(rc, a)) or "none") + " |")
+        # a cell is robust to the label source when its outcome (sign and Holm decision) is the same on both golds (pre-registration 3)
+        agreed_cells = {(c["arm"], c["baseline"], c["metric"]): c["outcome"] for c in cells}
+        diff = [(k, agreed_cells[k], c["outcome"]) for c in rc for k in [(c["arm"], c["baseline"], c["metric"])] if k in agreed_cells and agreed_cells[k] != c["outcome"]]
+        md += ["", f"Cells whose outcome differs between the golds ({len(diff)} of {len(rc)}): "
+               + ("; ".join(f"{name(a)} vs {b.upper()} {wlt.DECIDING[m][0]}: agreed {x}, rule {y}" for (a, b, m), x, y in diff) or "none") + ".", "",
+               "Hypotheses on the rule-only gold:", ""] + lines3 + [""]
+    else:
+        md += ["Not run on the blind slice: the rule-only gold sensitivity (the gated opening is one scoring call, on the agreed gold).", ""]
+    md[md.index("| hypothesis | primary | errored records kept as scored (1.4) | D7: rerun cases dropped, 79 paired |")] = (
+        "| hypothesis | primary | errored records kept as scored (1.4) | D7: rerun cases dropped, 79 paired | rule-only gold (D11) | robust to the label source |")
+    md[md.index("|---|---|---|---|")] = "|---|---|---|---|---|---|"
+    for k in v:
+        i = next(j for j, line in enumerate(md) if line.startswith(f"| {k} | {v[k]} | {v1.get(k, '-')} | {v2.get(k, '-')} |"))
+        md[i] += f" {v3.get(k, 'not run')} | {('yes' if v3.get(k) == v[k] else 'no') if v3 else '-'} |"
+    (OUT / "hypotheses_blind.json").write_text(__import__("json").dumps({"primary": v, "errors_kept": v1, "d7_79": v2, "rule_gold_d11": v3}, indent=1) + "\n")
+    return md
+
+
+def variance_block():
+    """Pre-registration D12 (exploratory): the nine arms run twice more on the 30 search orders, frozen code, Sarvam cache off.
+    Per arm and metric: the mean of each run, the mean absolute per-case difference, the mean per-case SD across the two runs, the share of
+    cases whose pass (factor recall >= 0.5) flips; c1457's W/T/L against B0-B6 in each run; and each arm against itself (run 1 vs run 2),
+    where any 'win' or 'loss' is a false alarm of the decision rule."""
+    r1, r2 = rows_of("sarvam_var1"), rows_of("sarvam_var2")
+    if not (r1 and r2):
+        return ["## Run-to-run spread (D12): not scored yet", ""]
+    md = ["## Run-to-run spread (D12, exploratory): two fresh runs, cache off, 30 search orders, frozen code", ""]
+    a1, a2 = wlt.answered(r1), wlt.answered(r2)
+    arms = [a for a in [WIN, "full", *BASES] if a in a1 and a in a2]
+    metrics = [m for m in wlt.DECIDING if m in r1[0] and m in r2[0]]
+    out = []
+    for a in arms:
+        shared = sorted(set(a1[a]) & set(a2[a]))
+        for m in metrics:
+            pairs = [(wlt.value(a1[a][c], m), wlt.value(a2[a][c], m)) for c in shared]
+            pairs = [(x, y) for x, y in pairs if x is not None and y is not None]
+            if len(pairs) < 2:
+                continue
+            d = [abs(x - y) for x, y in pairs]
+            out.append({"arm": a, "metric": m, "n": len(pairs), "mean_run1": st.mean(x for x, _ in pairs), "mean_run2": st.mean(y for _, y in pairs),
+                        "mean_abs_case_diff": st.mean(d), "mean_case_sd": st.mean(x / 2 ** 0.5 for x in d), "share_cases_changed": sum(x > 1e-9 for x in d) / len(d)})
+        flips = [c for c in shared if str(a1[a][c].get("passed")) in ("True", "False", "1", "0") and str(a1[a][c].get("passed")) != str(a2[a][c].get("passed"))]
+        out.append({"arm": a, "metric": "pass_flip_share", "n": len(shared), "share_cases_changed": len(flips) / len(shared) if shared else float("nan")})
+    with open(OUT / "variance_d12.csv", "w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=["arm", "metric", "n", "mean_run1", "mean_run2", "mean_abs_case_diff", "mean_case_sd", "share_cases_changed"])
+        w.writeheader()
+        w.writerows(out)
+    md += ["| arm | metric | n | run 1 | run 2 | mean abs. per-case diff | cases changed |", "|---|---|---|---|---|---|---|"]
+    for o in out:
+        if o["metric"] == "pass_flip_share":
+            md.append(f"| {name(o['arm'])} | pass flips (factor recall >= 0.5) | {o['n']} | | | | {o['share_cases_changed']:.0%} |")
+        elif o["metric"] in ("factor_recall", "unsupported_fact_rate", "objection_recall", "answerable_coverage", "citation_precision", "coverage"):
+            md.append(f"| {name(o['arm'])} | {wlt.DECIDING[o['metric']][0]} | {o['n']} | {o['mean_run1']:.3f} | {o['mean_run2']:.3f} | {o['mean_abs_case_diff']:.3f} | {o['share_cases_changed']:.0%} |")
+    md += ["", "(every metric: docs/results/search/final_report/variance_d12.csv)", ""]
+    for tag, rows in (("run 1", r1), ("run 2", r2)):
+        cells, _, comps = run_wlt(rows, [WIN, "full"], BASES, f"var_{tag.replace(' ', '')}")
+        for a in (WIN, "full"):
+            t = tally(cells, a)
+            md.append(f"- {tag}, {name(a)} against B0-B6: {t['win']}/{t['tie']}/{t['loss']} (+{t['too_few']}, {t['undefined']}); losses: " + ("; ".join(losses(cells, a)) or "none"))
+    # each arm against itself: run 2 relabelled as a comparator
+    both = r1 + [dict(r, system=r["system"] + "@2") for r in r2]
+    by = wlt.answered(both)
+    self_cells = []
+    for a in arms:
+        self_cells += wlt.compare(by, [a], [a + "@2"], metrics)
+    wlt.write_csv(OUT / "wlt_var_self.csv", self_cells)
+    alarms = [c for c in self_cells if c["outcome"] in ("win", "loss")]
+    md += ["", f"Each arm against its own rerun ({len(self_cells)} cells): {len(alarms)} decided as a win or loss "
+           + ("(" + "; ".join(f"{name(c['arm'])} {wlt.DECIDING[c['metric']][0]} {c['outcome']}" for c in alarms) + ")" if alarms else "(none)") + ".", ""]
     return md
 
 
