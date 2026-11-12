@@ -96,6 +96,10 @@ async def test_dependency_override_replaces_the_event_log(tmp_path, monkeypatch)
     monkeypatch.chdir(tmp_path)
     log = InMemoryEventLog()
     app = create_app()
-    app.dependency_overrides[deps.get_event_log] = lambda case_id=None: log
+    async def get_test_log(case_id: str | None = None) -> InMemoryEventLog:
+        """Keep the in-process ASGI test independent of AnyIO's sync-worker lifecycle."""
+        return log
+
+    app.dependency_overrides[deps.get_event_log] = get_test_log
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://testserver") as client:
         assert (await client.get("/api/cases/case-0007/dossier")).status_code == 404  # the overriding log is empty
