@@ -1,4 +1,4 @@
-# First Schedule (CrPC 1973, Part I) and NDPS sections: handoff, 13 Nov 2026
+# First Schedules (CrPC 1973 and BNSS 2023, Part I) and NDPS sections: handoff, 13 Nov 2026
 
 Shravani's "missing statutes" item (`docs/handoff/team-todo-2026-11-02.md`), done on the owner's behalf. Everything is produced by
 `scripts/extract_gap_statutes.py` from official PDFs. Nothing was typed by hand. No store was rebuilt.
@@ -41,6 +41,24 @@ Shravani's "missing statutes" item (`docs/handoff/team-todo-2026-11-02.md`), don
    - `bailable: false` goes only to 19, 24, 27A and 37. These are the sections s.37(1)(b) names, so it is not applied by quantity.
    - s.37 (the twin conditions) is extracted from the official text, 989 characters.
    - `StatuteStore.get` matches exactly, so callers must pass `22`, not `22(c)`. Stripping the clause is the lookup's job.
+4. **BNSS 2023 First Schedule, Part I (BNS offences):** `configs/first_schedule_bnss_bns.jsonl` (+ `.meta.json`) has the same fields as
+   the IPC table, with `code: "BNS"`. The source is the pinned Gazette PDF (`BNSS_URL`, `BNSS_SHA256`), PDF pages 158 to 189, read by
+   `parse_bnss_schedule`.
+   - It has 288 sections and 465 sub-rows.
+   - An entry printed "318(4)" is a sub-row of section `318` with `subsection: "(4)"`, because the store keys BNS rows by the bare
+     number. A lookup for BNS 318(4) should take the section-318 row and pick the sub-row by `subsection`. The section-level flag is
+     null when sub-sections differ: 318 is bailable for (2) and (3) and non-bailable for (4).
+   - Coverage: bailable 256/288 (88.9%), cognisable 259/288, max_punishment 256/288, triable_by 288/288.
+   - Spot check:
+     - 103 non-bailable (death);
+     - 115(2) bailable and non-cognizable (1 year);
+     - 318(2) and 318(3) bailable, 318(4) non-bailable and cognizable (7 years);
+     - 351 bailable;
+     - 85 non-bailable with cognisable null ("Cognizable if information ...");
+     - 74 non-bailable.
+   - Flags-only rows for the store go to `data/gaps/statutes/first_schedule_bns.jsonl`.
+   - The Gazette prints neighbouring cells as one PDF span ("Imprisonment for 7 years According as offence"), so this table is read
+     word by word in fixed columns.
 
 ## Coverage (398 IPC sections)
 
@@ -75,24 +93,25 @@ independently of the parser.
   - `https://indiacode.nic.in/bitstream/123456789/15381/1/ccp1973.pdf`
   - `https://www.indiacode.nic.in/bitstream/123456789/1791/5/a1985-61.pdf`
 - **BNSS Gazette:** `egazette.gov.in/WriteReadData/2023/250884.pdf` was reachable. Use `--cafile` with the Let's Encrypt YR1
-  intermediate from `http://yr1.i.lencr.org/`. The file matches the pinned `BNSS_SHA256`. Its First Schedule starts on PDF page 158.
-  See "Not done".
+  intermediate from `http://yr1.i.lencr.org/`, appended to the system bundle. The file matches the pinned `BNSS_SHA256`. Its First
+  Schedule starts on PDF page 158.
 
 ## For Satvik's store rebuild (one rebuild)
 
 1. Regenerate the gap files first. The copies in `data/gaps/statutes/` hold the old, wrong flags and only 5 NDPS rows:
 
    ```
-   PYTHONPATH=src .venv/bin/python scripts/extract_gap_statutes.py --only crpc,ndps --fetch
+   curl -s http://yr1.i.lencr.org/ | openssl x509 -inform der > /tmp/yr1.pem; cat /etc/ssl/certs/ca-certificates.crt /tmp/yr1.pem > /tmp/bundle.pem
+   PYTHONPATH=src .venv/bin/python scripts/extract_gap_statutes.py --only crpc,ndps,bnss --fetch --cafile /tmp/bundle.pem
    ```
 
-   PDFs land in `data/gaps/raw/` and are checked against the pinned SHA-256. This rewrites `crpc.jsonl`, `ndps.jsonl`,
-   `first_schedule_ipc.jsonl` and the committed `configs/first_schedule_crpc_ipc.*`. The configs copy must come out byte-identical
-   except for `generated`.
+   PDFs land in `data/gaps/raw/` and are checked against the pinned SHA-256. This rewrites `crpc.jsonl`, `ndps.jsonl`, `bnss.jsonl`,
+   `first_schedule_ipc.jsonl`, `first_schedule_bns.jsonl` and the committed `configs/first_schedule_*`. The configs copies must
+   come out byte-identical except for `generated`.
 2. Rebuild the store as usual (`StatuteStore().build('data/interim', 'data/stores/law')`).
 3. **How the fields reach the store:**
-   - `_merge_gap_rows` adds `bailable` and `cognisable` from the empty-text rows of `first_schedule_ipc.jsonl` to the IPC rows. It
-     only adds non-null flags.
+   - `_merge_gap_rows` adds `bailable` and `cognisable` from the empty-text rows of `first_schedule_ipc.jsonl` and
+     `first_schedule_bns.jsonl` to the IPC and BNS rows. It only adds non-null flags. Today no BNS row in the store has a flag.
    - NDPS gap rows replace or add whole rows, including `bailable`, `cognisable` and `max_punishment`.
    - IPC `max_punishment` in the store still comes from the IPC text (`oil_ingest.max_punishment`).
    - If you want the schedule's maximum instead, read `max_punishment` from `configs/first_schedule_crpc_ipc.jsonl` and map
@@ -100,11 +119,9 @@ independently of the parser.
 
 ## Not done (left open)
 
-- **BNSS 2023 First Schedule (BNS offences).** The Gazette PDF is reachable, but its table uses different column positions:
-  section 58, offence 94, punishment 193, cognisable 286, bailable 370, court 453. Some cells of neighbouring columns are fused into
-  one PDF line ("Imprisonment for 7 years According as offence"), so the parser needs span-level splitting first. Section numbers
-  carry sub-sections ("356(3)").
-- **Part II** of the CrPC First Schedule (offences against other laws).
+- **Part II** of the CrPC and BNSS First Schedules (offences against other laws).
+- **BNS cell text:** a very long conditional cognizable cell can still leave a stray word in the neighbouring cell's text. The flags
+  are not affected; they are read from the start of the cell.
 - **NDPS `bailable`:** set only where s.37 names the section. The commercial-quantity bar depends on the quantity, so it is not a
   section flag.
 - **NDPS s.29 and s.31A:** s.29 (abetment, conspiracy) gets no flag because its wording splits "shall ... be punishable". s.31A's
@@ -113,7 +130,7 @@ independently of the parser.
 ## How to check
 
 ```
-PYTHONPATH=src .venv/bin/pytest tests/unit/stores/test_extract_gap_statutes.py -q   # 37 passed, offline (synthetic PDFs)
+PYTHONPATH=src .venv/bin/pytest tests/unit/stores/test_extract_gap_statutes.py -q   # 39 passed, offline (synthetic PDFs)
 ```
 
 Run the tests with `PYTHONPATH=src` from a worktree: the venv's editable install points at the main checkout's `src`.

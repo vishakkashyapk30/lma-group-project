@@ -10,7 +10,8 @@
     "max_punishment": "heaviest punishment named in the punishment cell: 'death', 'life imprisonment', 'N years' / 'N months' / 'N days' / 'N hours', or 'fine'; with several sub-rows the heaviest of them; null when any sub-row's cell is relative ('Same as for offence abetted') or empty",
     "cognisable / bailable": "true/false only when every sub-row reads the same; null when sub-rows differ, a cell is conditional ('According as ...', 'Cognizable if ...') or a 'Ditto' cannot be resolved; the sub-rows keep the printed text",
     "offence / punishment / triable_by": "cell text; several sub-rows joined with ' | ', 'Ditto' replaced by the cell it repeats",
-    "ditto_from_amended_entry": "columns where a 'Ditto' repeats a cell of an entry an amending Act inserted or substituted"
+    "ditto_from_amended_entry": "columns where a 'Ditto' repeats a cell of an entry an amending Act inserted or substituted",
+    "subsection": "(BNS) the printed entry number after the section, e.g. '(4)' for the entry '318(4)'; the row's section is '318'"
   },
   "coverage": {
     "rows": 398,

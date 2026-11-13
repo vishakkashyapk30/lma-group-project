@@ -383,3 +383,53 @@ def test_ndps_rows_cover_the_penal_sections(tmp_path):
     assert missing == [] and list(by) == ["1", "2", "3", "4"]
     assert by["3"]["max_punishment"] == "20 years"  # the heavier of its two limbs
     assert "cognisable" not in by["2"] and "max_punishment" not in by["2"]
+
+
+def _bnss_schedule_pdf(tmp_path: Path) -> Path:
+    """A Gazette-style BNSS First Schedule page: fixed columns (58, 94, 193, 298, 385, 454), entries numbered '318(2)', and one PDF
+    line that holds the ends of two cells, as the Gazette prints them."""
+    fused = "Imprisonment for life"
+    while 193 + pymupdf.get_text_length(fused + " ", fontname="helv", fontsize=8) < 290:
+        fused += " "
+    fused += "Cognizable."
+    page = [
+        (174, 60, 10, "I.-OFFENCES UNDER THE BHARATIYA NYAYA SANHITA"),
+        (63, 80, 8, "Section"), (134, 80, 8, "Offence"), (217, 80, 8, "Punishment"),
+        (73, 95, 8, "1"), (145, 95, 8, "2"), (235, 95, 8, "3"), (319, 95, 8, "4"), (409, 95, 8, "5"), (490, 95, 8, "6"),
+        (58, 120, 8, "103(1)"), (94, 120, 8, "Murder."), (193, 120, 8, fused), (385, 120, 8, "Non-bailable."), (454, 120, 8, "Court of Session."),
+        (193, 130, 8, "and fine."),
+        (58, 150, 8, "318(2)"), (94, 150, 8, "Cheating."), (193, 150, 8, "Imprisonment for 3 years,"), (298, 150, 8, "Non-cognizable."),
+        (385, 150, 8, "Bailable."), (454, 150, 8, "Any Magistrate."),
+        (193, 160, 8, "or fine, or both."),
+        (58, 180, 8, "318(4)"), (94, 180, 8, "Cheating and dishonestly"), (193, 180, 8, "Imprisonment for 7 years"),
+        (298, 180, 8, "Cognizable."), (385, 180, 8, "Non-bailable."), (454, 180, 8, "Magistrate of the first"),
+        (94, 190, 8, "inducing delivery of property."), (193, 190, 8, "and fine."), (454, 190, 8, "class."),
+        (180, 230, 10, "II.-CLASSIFICATION OF OFFENCES AGAINST OTHER LAWS"),
+        (57, 250, 8, "If punishable with death"), (298, 250, 8, "Cognizable."), (385, 250, 8, "Non-bailable."),
+    ]  # fmt: skip
+    return _pdf(tmp_path / "bnss_sched.pdf", [page])
+
+
+def test_bnss_schedule_rows_keep_the_sub_section_and_split_fused_cells(tmp_path):
+    rows, _notes = gap.parse_bnss_schedule(_bnss_schedule_pdf(tmp_path))
+    by = {r["section"]: r for r in rows}
+    assert list(by) == ["103", "318"]  # Part II is not read
+    m = by["103"]
+    assert m["punishment"] == "Imprisonment for life and fine." and (m["cognisable"], m["bailable"]) == (True, False)
+    assert m["max_punishment"] == "life imprisonment" and m["subrows"][0]["subsection"] == "(1)"
+    c = by["318"]
+    assert [x["subsection"] for x in c["subrows"]] == ["(2)", "(4)"]
+    assert [x["bailable"] for x in c["subrows"]] == [True, False] and c["bailable"] is None and c["max_punishment"] == "7 years"
+    assert c["subrows"][1]["triable_by"] == "Magistrate of the first class"
+    table, meta = gap.schedule_table(rows, _notes, tmp_path / "bnss_sched.pdf", "2026-11-13", code="BNS")
+    assert {r["code"] for r in table} == {"BNS"} and table[0]["source"]["url"] == gap.BNSS_URL
+    assert meta["script"].endswith("--only bnss_schedule")
+
+
+def test_committed_bns_schedule_table_is_well_formed():
+    rows = [json.loads(x) for x in (_CONFIG.parent / "first_schedule_bnss_bns.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert len(rows) >= 280 and len({r["section"] for r in rows}) == len(rows)
+    assert all(r["code"] == "BNS" and r["source"]["sha256"] == gap.BNSS_SHA256 for r in rows)
+    by = {r["section"]: r for r in rows}  # cells as printed in the Gazette (BNSS 2023, First Schedule, Part I)
+    assert (by["103"]["bailable"], by["103"]["max_punishment"]) == (False, "death")
+    assert [(x["subsection"], x["bailable"]) for x in by["318"]["subrows"]] == [("(2)", True), ("(3)", True), ("(4)", False)]

@@ -44,6 +44,10 @@ with a blank offence cell are separate; "Ditto" counts only when the cell starts
 Part II table on the last page and the column headings are not read as rows. A "Ditto" under an amended entry whose own sub-rows differ
 (s.355 under the 2013 entries for ss.354A to 354D) is left unresolved.
 
+BNSS First Schedule (Part I, offences under the BNS), from the same pinned Gazette PDF (`parse_bnss_schedule`): read word by word in
+the Gazette's fixed columns, entries such as "318(4)" become sub-rows of section 318 with `subsection` "(4)"; flags go to
+`data/gaps/statutes/first_schedule_bns.jsonl` (empty-text BNS rows) and the table to `configs/first_schedule_bnss_bns.jsonl`.
+
 NDPS: every section of the Act is extracted (the store had only five, so `get('NDPS', '22')` failed); cognisable / bailable flags are read
 from the parsed s.37 text and given to the sections that say "shall be punishable" or "shall be punished", which also get
 `max_punishment` by the store's own rule (`oil_ingest.max_punishment`).
@@ -92,6 +96,8 @@ CRPC_SOURCE_NOTE = (
     "Government of India S3WaaS CDN; the indiacode.nic.in bitstreams answered HTTP 504 on 2026-11-13"
 )
 SCHEDULE_OUT = Path("configs/first_schedule_crpc_ipc.jsonl")
+BNSS_SCHEDULE_OUT = Path("configs/first_schedule_bnss_bns.jsonl")
+BNS_SPOT_CHECK = ["103", "115", "117", "118", "303", "309", "318", "351", "352", "85", "74"]
 SPOT_CHECK = ["302", "323", "324", "332", "341", "143", "353", "354", "376", "379", "406", "420", "498A", "506"]
 
 # Mechanical OCR repairs, used only with --ndps-pdf pointing at the OCR scan (rows then carry ocr: true).
@@ -356,6 +362,10 @@ _COLNUM = re.compile(r"[1-6]")
 
 
 _FUSED = re.compile(r"^\[?(\d{1,3}[A-Z]{0,2})(?:\([a-z]\))?\s+([A-Z].*)$")
+_SEC_ROW = re.compile(r"(\d{1,3}[A-Z]{0,2})((?:\(\w{1,4}\))*)")  # "302", "498A", "318(4)", "248(a)"
+# Left edges of columns 2 to 6 of the BNSS First Schedule in the Gazette (section 58, offence 94, punishment 193, cognizable 286-298,
+# bailable 370-385, court 453-454).
+BNSS_COL_EDGES = (90, 185, 280, 365, 445)
 _FLAG_START = re.compile(r"\s*\[?\s*(Ditto|Cognizable|Non-|Bailable|According)")
 _PART2 = re.compile(r"II\.\W*CLASSIFICATION OF OFFENCES AGAINST OTHER LAWS")
 
@@ -483,7 +493,12 @@ def parse_first_schedule(path: Path) -> tuple[list[dict], list[str]]:
         foot = [y for _, y, c, _x, t in page_items if y > 400 and c == 0 and re.match(r"\d{1,2}\.\s", t)]
         cut = min(foot) - 1 if foot else 10**6  # amendment footnotes at the foot of the page
         items.extend(it for it in page_items if it[1] < cut)
-    items.sort()
+    return _schedule_sections(_table_rows(items))
+
+
+def _table_rows(items: list[tuple[int, float, int, float, str]]) -> list[dict]:
+    """Cut the (page, y, column, x, text) pieces of a schedule table into rows of six cells (plus `closes`, see below)."""
+    items = sorted(items)
     # row starts: a section number; or an offence (column 2) line on a new page, or more than ROW_GAP pt below the previous offence
     # line, or (sub-rows printed closer together) level with the first line of a cell in column 4 or 5 ("Ditto", "Cognizable", ...)
     starts: list[tuple[int, float]] = []
@@ -509,7 +524,72 @@ def parse_first_schedule(path: Path) -> tuple[list[dict], list[str]]:
         row: dict = {c: _cell_text(v) for c, v in cells.items()}
         row["closes"] = any("]" in t for t in row.values())  # the row ends an entry inserted or substituted by an amending Act
         rows.append({k: (v.replace("[", "").replace("]", "") if isinstance(v, str) else v) for k, v in row.items()})
-    return _schedule_sections(rows)
+    return rows
+
+
+def bnss_schedule_pages(path: Path) -> tuple[int, int]:
+    """Page range (0-based) of Part I of the BNSS First Schedule (offences under the BNS) in the Gazette of India text."""
+    doc = pymupdf.open(path)
+    first = last = None
+    for p in range(len(doc)):
+        t = doc[p].get_text()
+        if first is None and re.search(r"I\.\W*OFFENCES UNDER THE BHARATIYA NYAYA SANHITA", t):
+            first = p
+        if first is not None and _PART2.search(t):
+            last = p
+            break
+    if first is None or last is None:
+        raise ValueError("BNSS First Schedule Part I not found")
+    return first, last
+
+
+def parse_bnss_schedule(path: Path) -> tuple[list[dict], list[str]]:
+    """Parse Part I (offences under the BNS) of the BNSS 2023 First Schedule from the Gazette of India PDF, like `parse_first_schedule`.
+
+    The Gazette sets the table in fixed columns (`BNSS_COL_EDGES`) but often prints neighbouring cells as one PDF line ("Imprisonment
+    for 7 years According as offence"), so the table is read span by span. An entry numbered "318(4)" or "248(a)" becomes a sub-row of
+    section 318 or 248 with `subsection` "(4)" or "(a)": the statute store keys BNS rows by the bare section number.
+    """
+    first, last = bnss_schedule_pages(path)
+    doc = pymupdf.open(path)
+    lines_of = {p: [ln for block in doc[p].get_text("dict")["blocks"] for ln in block.get("lines", [])] for p in (first, last)}
+    part2_y = next((ln["bbox"][1] for ln in lines_of[last] if _PART2.search("".join(s["text"] for s in ln["spans"]))), None)
+    first_row_y = next(
+        (ln["bbox"][1] for ln in lines_of[first]
+         if ln["bbox"][0] < BNSS_COL_EDGES[0] and re.match(r"\d{1,3}", "".join(s["text"] for s in ln["spans"]).strip())),
+        10**6,
+    )  # fmt: skip
+    items: list[tuple[int, float, int, float, str]] = []
+    for p in range(first, last + 1):
+        page_items: list[tuple[int, float, float, str]] = []
+        lines: dict[tuple[int, int], list[tuple[float, float, str]]] = {}
+        for x0, y0, x1, _y1, word, bno, lno, _wno in doc[p].get_text("words"):
+            lines.setdefault((bno, lno), []).append((x0, y0, word, x1))
+        for words in lines.values():  # words, not spans: one span can hold the ends of two cells ("assembly Imprisonment for 2 years,")
+            words.sort()
+            y = min(w[1] for w in words)
+            if y < 70 or y > 790 or (p == first and y < first_row_y - 4) or (p == last and part2_y is not None and y >= part2_y - 4):
+                continue
+            if words[0][2] == "CHAPTER":
+                continue
+            groups: dict[int, list] = {}
+            col, prev_x1 = -1, -100.0
+            for w in words:  # a long "Cognizable if ..." cell runs past the bailable edge: a lower-case word under 4.5 pt after it stays in it
+                c = _col(w[0], list(BNSS_COL_EDGES))
+                col = col if (col == 3 and c == 4 and w[2][:1].islower() and w[0] - prev_x1 < 4.5) else c
+                groups.setdefault(col, []).append(w)
+                prev_x1 = w[3]
+            for ws in groups.values():
+                page_items.append((p, y, ws[0][0], " ".join(w[2] for w in ws)))
+        by_y: dict[int, int] = {}
+        for _, y, _x, t in page_items:
+            if _COLNUM.fullmatch(t):
+                by_y[round(y / 4)] = by_y.get(round(y / 4), 0) + 1
+        header = {k for k, v in by_y.items() if v >= 3}  # the "1 2 3 4 5 6" line of column numbers
+        items.extend(
+            (pp, y, _col(x, list(BNSS_COL_EDGES)), x, t) for pp, y, x, t in page_items if not (_COLNUM.fullmatch(t) and round(y / 4) in header)
+        )
+    return _schedule_sections(_table_rows(items))
 
 
 def _merge_starts(starts: list[tuple[int, float]]) -> list[tuple[int, float]]:
@@ -543,6 +623,7 @@ def _schedule_sections(rows: list[dict[int, str]]) -> tuple[list[dict], list[str
     sections: dict[str, dict] = {}
     notes: list[str] = []
     cur: str | None = None
+    cur_sub = ""
     prev_cog: bool | None = None
     prev_bail: bool | None = None
     prev_pun = prev_cog_t = prev_bail_t = prev_tri = ""
@@ -556,8 +637,9 @@ def _schedule_sections(rows: list[dict[int, str]]) -> tuple[list[dict], list[str
     source: dict[str, tuple[str | None, bool, str]] = dict.fromkeys(("punishment", "cognisable", "bailable", "triable_by"), (None, False, ""))
     for r in rows:
         sec = re.sub(r"\s+", "", r[0])
-        if _SEC.fullmatch(sec):
-            cur = sec
+        m = _SEC_ROW.fullmatch(sec)
+        if m:
+            cur, cur_sub = m.group(1), m.group(2)
         has_cells = any(r[c].strip() for c in (2, 3, 4, 5))
         if cur is None or re.fullmatch(r"\d", r[1].strip()) or not (r[1].strip() or has_cells):
             continue  # nothing yet, a repeated column-number line, or an empty band
@@ -597,6 +679,8 @@ def _schedule_sections(rows: list[dict[int, str]]) -> tuple[list[dict], list[str
             "cognisable": cog, "bailable": bail, "triable_by": tri.rstrip(".") or None,
             "cognisable_text": cog_t.rstrip(".") or None, "bailable_text": bail_t.rstrip(".") or None,
         }  # fmt: skip
+        if cur_sub:
+            sub = {"subsection": cur_sub, **sub}
         if flagged:
             sub["ditto_from_amended_entry"] = flagged
         if ambiguous:
@@ -686,6 +770,26 @@ def punishment_rank(label: str) -> float:
 # ---------------------------------------------------------------- main
 
 
+SCHEDULE_SOURCES = {  # code -> (url, title, source note, page-range function, --only key)
+    "IPC": (
+        CRPC_URL,
+        "The Code of Criminal Procedure, 1973, First Schedule, Part I: classification of offences under the Indian Penal Code",
+        CRPC_SOURCE_NOTE,
+        schedule_pages,
+        "schedule",
+    ),
+    "BNS": (
+        BNSS_URL,
+        "The Bharatiya Nagarik Suraksha Sanhita, 2023 (46 of 2023), First Schedule, Part I: classification of offences under the "
+        "Bharatiya Nyaya Sanhita",
+        "Gazette of India, Extraordinary, Part II Section 1, 25 December 2023 (Legislative Department), as enacted; egazette.gov.in sends "
+        "its certificate without the Let's Encrypt YR1 intermediate (http://yr1.i.lencr.org/), so --cafile is needed with --fetch",
+        bnss_schedule_pages,
+        "bnss_schedule",
+    ),
+}
+
+
 def build_rows(code: str, pdf: Path, url: str, wanted: list[str] | None, today: str, ocr: bool = False) -> tuple[list[dict], list[str]]:
     """Extract the wanted sections (None: every section) of one Act into StatuteRow dicts; returns (rows, missing sections).
 
@@ -731,9 +835,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--ndps-pdf", type=Path, default=RAW / "ndps_dor_clean.pdf")
     ap.add_argument("--bnss-pdf", type=Path, default=RAW / "bnss_gazette.pdf")
     ap.add_argument("--companies-pdf", type=Path, default=RAW / "companies_act_2013.pdf")
-    ap.add_argument("--only", default="crpc,ndps,bnss,companies", help="comma list of crpc, ndps, bnss, companies, schedule (crpc includes the First Schedule)")
+    ap.add_argument(
+        "--only", default="crpc,ndps,bnss,companies",
+        help="comma list of crpc, ndps, bnss, companies, schedule, bnss_schedule (crpc includes the CrPC First Schedule, bnss the BNSS one)",
+    )  # fmt: skip
     ap.add_argument("--fetch", action="store_true", help="download the PDFs that are missing (verified TLS, checked against the pinned SHA-256)")
     ap.add_argument("--schedule-out", type=Path, default=SCHEDULE_OUT, help="the committed First Schedule table (a .meta.json sidecar is written next to it)")
+    ap.add_argument("--bnss-schedule-out", type=Path, default=BNSS_SCHEDULE_OUT, help="the committed BNSS First Schedule table (BNS offences)")
     ap.add_argument("--cafile", type=Path, default=None, help="CA bundle with the intermediates egazette.gov.in leaves out (with --fetch)")
     ap.add_argument("--out", type=Path, default=OUT)
     args = ap.parse_args(argv)
@@ -743,8 +851,10 @@ def main(argv: list[str] | None = None) -> int:
     failures = 0
     if "crpc" in only:
         only.add("schedule")
+    if "bnss" in only:
+        only.add("bnss_schedule")
     for key, pdf, url, pin in (
-        ("bnss", args.bnss_pdf, BNSS_URL, BNSS_SHA256),
+        ("bnss_schedule", args.bnss_pdf, BNSS_URL, BNSS_SHA256),
         ("companies", args.companies_pdf, COMPANIES_URL, COMPANIES_SHA256),
         ("schedule", args.crpc_pdf, CRPC_URL, CRPC_SHA256),
         ("ndps", args.ndps_pdf, NDPS_URL, NDPS_SHA256),
@@ -775,44 +885,50 @@ def main(argv: list[str] | None = None) -> int:
         for s in missing:
             print(f"MISSING {code} s.{s}", file=sys.stderr)
             failures += 1
-    if "schedule" not in only:
-        return 1 if failures else 0
-    sched, notes = parse_first_schedule(args.crpc_pdf)
-    ipc_rows = [
-        dict(code="IPC", section=r["section"], text="", bailable=r["bailable"], cognisable=r["cognisable"], source_url=CRPC_URL, retrieved=today)
-        for r in sched
-        if r["bailable"] is not None or r["cognisable"] is not None
-    ]
-    write_jsonl(args.out / "first_schedule_ipc.jsonl", ipc_rows)
-    table, meta = schedule_table(sched, notes, args.crpc_pdf, today)
-    write_jsonl(args.schedule_out, table)
-    args.schedule_out.with_suffix(".meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"First Schedule Part I: {len(sched)} IPC sections parsed, {len(ipc_rows)} rows with at least one flag")
-    print(f"wrote {args.schedule_out} ({len(table)} rows) and its .meta.json")
-    for k, v in meta["coverage"].items():
-        print(f"  {k}: {v}")
-    print("spot check (read from the table, not asserted):")
-    by = {r["section"]: r for r in table}
-    for sec in SPOT_CHECK:
-        r = by.get(sec)
-        if r is None:
-            print(f"  s.{sec}: not in the table")
+    for key, code, parse, pdf, out, spot in (
+        ("schedule", "IPC", parse_first_schedule, args.crpc_pdf, args.schedule_out, SPOT_CHECK),
+        ("bnss_schedule", "BNS", parse_bnss_schedule, args.bnss_pdf, args.bnss_schedule_out, BNS_SPOT_CHECK),
+    ):
+        if key not in only:
             continue
-        texts = " / ".join(x["bailable_text"] or "-" for x in r["subrows"])
-        print(f"  s.{sec}: cognisable={r['cognisable']} bailable={r['bailable']} max={r['max_punishment']!r} triable_by={r['triable_by']!r} [{texts}]")
-    for n in notes:
-        print("NOTE", n)
+        sched, notes = parse(pdf)
+        flag_rows = [
+            dict(code=code, section=r["section"], text="", bailable=r["bailable"], cognisable=r["cognisable"], source_url=SCHEDULE_SOURCES[code][0], retrieved=today)
+            for r in sched
+            if r["bailable"] is not None or r["cognisable"] is not None
+        ]
+        write_jsonl(args.out / f"first_schedule_{code.lower()}.jsonl", flag_rows)
+        table, meta = schedule_table(sched, notes, pdf, today, code)
+        write_jsonl(out, table)
+        out.with_suffix(".meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print(f"First Schedule Part I ({code}): {len(sched)} sections parsed, {len(flag_rows)} rows with at least one flag")
+        print(f"wrote {out} ({len(table)} rows) and its .meta.json")
+        for k, v in meta["coverage"].items():
+            print(f"  {k}: {v}")
+        print("spot check (read from the table, not asserted):")
+        by = {r["section"]: r for r in table}
+        for sec in spot:
+            r = by.get(sec)
+            if r is None:
+                print(f"  s.{sec}: not in the table")
+                continue
+            texts = " / ".join(x["bailable_text"] or "-" for x in r["subrows"])
+            print(f"  {code} {sec}: cognisable={r['cognisable']} bailable={r['bailable']} max={r['max_punishment']!r} [{texts}]")
+        for n in notes:
+            print("NOTE", n)
     return 1 if failures else 0
 
 
-def schedule_table(sched: list[dict], notes: list[str], pdf: Path, today: str) -> tuple[list[dict], dict]:
-    """Rows of `configs/first_schedule_crpc_ipc.jsonl` and its sidecar metadata (source, date, script, coverage, notes)."""
+def schedule_table(sched: list[dict], notes: list[str], pdf: Path, today: str, code: str = "IPC") -> tuple[list[dict], dict]:
+    """Rows of `configs/first_schedule_crpc_ipc.jsonl` (code IPC) or `configs/first_schedule_bnss_bns.jsonl` (code BNS) and the sidecar
+    metadata (source, date, script, coverage, notes)."""
+    url, title, note, pages, only = SCHEDULE_SOURCES[code]
     digest = sha256_of(pdf)
-    source = {"url": CRPC_URL, "sha256": digest}
+    source = {"url": url, "sha256": digest}
     keys = ("offence", "punishment", "max_punishment", "cognisable", "bailable", "triable_by")
     table = []
     for r in sched:
-        row = {"code": "IPC", "section": r["section"], **{k: r[k] for k in keys}}
+        row = {"code": code, "section": r["section"], **{k: r[k] for k in keys}}
         if "ditto_from_amended_entry" in r:
             row["ditto_from_amended_entry"] = r["ditto_from_amended_entry"]
         row["subrows"] = r["subrows"]
@@ -824,15 +940,15 @@ def schedule_table(sched: list[dict], notes: list[str], pdf: Path, today: str) -
         k = sum(r[field] is not None for r in table)
         return f"{k}/{n} ({k / n:.1%})" if n else "0/0"
 
-    first, last = schedule_pages(pdf)
+    first, last = pages(pdf)
     meta = {
-        "title": "The Code of Criminal Procedure, 1973, First Schedule, Part I: classification of offences under the Indian Penal Code",
-        "source_url": CRPC_URL,
+        "title": title,
+        "source_url": url,
         "source_sha256": digest,
-        "source_note": CRPC_SOURCE_NOTE,
+        "source_note": note,
         "pdf_pages": f"{first + 1}-{last + 1} (1-based PDF page numbers)",
         "generated": today,
-        "script": "scripts/extract_gap_statutes.py --only schedule",
+        "script": f"scripts/extract_gap_statutes.py --only {only}",
         "fields": {
             "max_punishment": "heaviest punishment named in the punishment cell: 'death', 'life imprisonment', 'N years' / 'N months' / "
             "'N days' / 'N hours', or 'fine'; with several sub-rows the heaviest of them; null when any sub-row's cell is relative "
@@ -841,6 +957,7 @@ def schedule_table(sched: list[dict], notes: list[str], pdf: Path, today: str) -
             "('According as ...', 'Cognizable if ...') or a 'Ditto' cannot be resolved; the sub-rows keep the printed text",
             "offence / punishment / triable_by": "cell text; several sub-rows joined with ' | ', 'Ditto' replaced by the cell it repeats",
             "ditto_from_amended_entry": "columns where a 'Ditto' repeats a cell of an entry an amending Act inserted or substituted",
+            "subsection": "(BNS) the printed entry number after the section, e.g. '(4)' for the entry '318(4)'; the row's section is '318'",
         },
         "coverage": {
             "rows": n,
