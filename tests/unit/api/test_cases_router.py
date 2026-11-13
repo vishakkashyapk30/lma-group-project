@@ -132,6 +132,12 @@ def test_prep_card_has_no_prediction_and_no_grant_rate(tmp_path, monkeypatch):
     assert "grant rate" not in text.lower()
 
 
+def test_prep_card_has_a_typed_openapi_contract(tmp_path, monkeypatch):
+    _, client = seeded(tmp_path, monkeypatch)
+    schema = client.get("/openapi.json").json()["components"]["schemas"]
+    assert {"case_id", "label", "bench_concerns", "lead_points", "conditions", "open_issues"} <= set(schema["HearingPrepCardOut"]["properties"])
+
+
 def test_budget_tab_shows_the_default_case_cap(tmp_path, monkeypatch):
     """GET budget: tokens_cap is the plan's 150K per case (plan §6.2); store calls are counted per factor."""
     _, client = seeded(tmp_path, monkeypatch)

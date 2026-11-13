@@ -63,6 +63,19 @@ class UploadResponse(BaseModel):
     questions: list[str] = Field(default_factory=list)
 
 
+class HearingPrepCardOut(BaseModel):
+    """Typed API contract for the counsel-facing hearing-preparation card."""
+
+    case_id: str
+    label: str
+    bench_concerns: list[dict[str, Any]] = Field(default_factory=list)
+    lead_with: list[str] = Field(default_factory=list)
+    lead_points: list[dict[str, Any]] = Field(default_factory=list)
+    conditions: list[str] = Field(default_factory=list)
+    condition_sources: list[dict[str, Any]] = Field(default_factory=list)
+    open_issues: list[str] = Field(default_factory=list)
+
+
 class DeskBoard(BaseModel):
     """Triage board."""
 

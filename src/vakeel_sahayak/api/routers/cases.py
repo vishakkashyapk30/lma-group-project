@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse
 
 from vakeel_sahayak.api import service
 from vakeel_sahayak.api.deps import get_event_log
-from vakeel_sahayak.api.models import BailBriefOut, FieldEditRequest, NewCaseRequest, RightsReportOut
+from vakeel_sahayak.api.models import BailBriefOut, FieldEditRequest, HearingPrepCardOut, NewCaseRequest, RightsReportOut
 from vakeel_sahayak.orchestration.gates import GateGuard
 from vakeel_sahayak.record.event_log import EventLog
 from vakeel_sahayak.schemas.case import BudgetState, CaseSummary
@@ -173,8 +173,8 @@ async def get_spar(case_id: str, log: Annotated[EventLog, Depends(get_event_log)
     return service.case_state(log, case_id).sparring()
 
 
-@router.get("/{case_id}/prep", response_model=dict[str, Any])
-async def get_prep(case_id: str, log: Annotated[EventLog, Depends(get_event_log)]) -> dict[str, Any]:
+@router.get("/{case_id}/prep", response_model=HearingPrepCardOut)
+async def get_prep(case_id: str, log: Annotated[EventLog, Depends(get_event_log)]) -> HearingPrepCardOut:
     """Hearing-prep card (404 before drafting); no prediction, no grant rate (plan §8.3)."""
     service.require_case(log, case_id)
     from vakeel_sahayak.record import views
@@ -182,7 +182,7 @@ async def get_prep(case_id: str, log: Annotated[EventLog, Depends(get_event_log)
     card = views._latest(service.case_state(log, case_id).events(), "hearing_card")
     if card is None:
         raise HTTPException(status_code=404, detail="no hearing-prep card yet")
-    return card
+    return HearingPrepCardOut.model_validate(card)
 
 
 @router.get("/{case_id}/budget", response_model=BudgetState)
