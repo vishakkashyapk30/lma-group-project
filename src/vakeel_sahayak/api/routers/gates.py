@@ -17,7 +17,7 @@ from vakeel_sahayak.api.models import ApproveRequest, CounselAnswerRequest, Dict
 from vakeel_sahayak.orchestration.gates import GateGuard
 from vakeel_sahayak.record.case_state import CaseState
 from vakeel_sahayak.record.event_log import EventLog
-from vakeel_sahayak.record.gates import ChecklistNotCleared
+from vakeel_sahayak.record.gates import ChecklistNotCleared, GateNotApproved
 from vakeel_sahayak.schemas.case import GateStatus
 from vakeel_sahayak.schemas.dossier import CaseDossier
 from vakeel_sahayak.schemas.enums import EventKind, GateId
@@ -59,7 +59,7 @@ async def approve_gate(case_id: str, gate: GateId, body: ApproveRequest, log: An
     guard = GateGuard(log)
     try:
         guard.approve(case_id, gate, acknowledged=fields)
-    except ChecklistNotCleared as exc:
+    except (ChecklistNotCleared, GateNotApproved) as exc:  # GateNotApproved: Gate 2 before Gate 1, or before a brief exists
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return guard.status(case_id, gate)
 
