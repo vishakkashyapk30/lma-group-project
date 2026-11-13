@@ -37,7 +37,7 @@ async def get_citation_graph(doc_id: str) -> dict[str, Any]:
     for nid in sorted(node_ids):
         gl = store.good_law(nid)
         nodes.append({"id": nid, "authority": store.authority_score(nid), "good_law": gl.status.value,
-                      "overruled_by": gl.overruled_by})
+                      "overruled_by": gl.overruled_by, "sc_root": gl.sc_root})
     graph_edges = [{"source": e.citing_doc_id, "target": e.cited_doc_id, "treatment": e.treatment.value} for e in edges]
     return {"root": store.sc_root(doc_id), "nodes": nodes, "edges": graph_edges}
 

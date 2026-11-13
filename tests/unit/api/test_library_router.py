@@ -73,6 +73,7 @@ def test_high_court_order_shows_its_sc_root(tmp_path, monkeypatch):
     """The graph leads from a High Court paragraph to the SC judgment it relies on (plan §5.3 'SC root')."""
     body = scenario(tmp_path, monkeypatch).client().get("/api/library/citations/DLHC-2022-1187").json()
     assert body["root"] == "SC-2014-0463"
+    assert next(n for n in body["nodes"] if n["id"] == "DLHC-2022-1187")["sc_root"] == "SC-2014-0463"
 
 
 def test_citation_graph_of_unknown_order_is_404(tmp_path, monkeypatch):
