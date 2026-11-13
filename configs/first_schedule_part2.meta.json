@@ -1,0 +1,34 @@
+{
+  "title": "First Schedule, Part II (classification of offences against other laws) of the Code of Criminal Procedure, 1973 and the Bharatiya Nagarik Suraksha Sanhita, 2023",
+  "sources": {
+    "CrPC 1973": {
+      "url": "https://cdnbbsr.s3waas.gov.in/s3ec044a11654ad1e1e48352252859ff30/uploads/2023/11/2023110156.pdf",
+      "sha256": "8ddde136bbdd3501b70d2e64607c96a762580784012d8decbeac7da7edd7c1e1",
+      "pdf_page": 222
+    },
+    "BNSS 2023": {
+      "url": "https://egazette.gov.in/WriteReadData/2023/250884.pdf",
+      "sha256": "5e60e2afe30d0fe7eca4f8126301146b76c86a444e690581f81eb564843517fe",
+      "pdf_page": 189
+    }
+  },
+  "generated": "2026-11-13",
+  "script": "scripts/extract_gap_statutes.py --only part2",
+  "fields": {
+    "offence": "the printed offence cell (whitespace collapsed)",
+    "band": "id of the punishment band, built by rule from the printed offence cell (part2_band)",
+    "death / life / fine_only": "whether the offence cell names death, imprisonment for life, or 'fine only'",
+    "min_years / min_inclusive": "lower bound in years: 'more than N years' (exclusive) or 'N years and upwards' (inclusive)",
+    "max_years / max_inclusive": "upper bound in years: 'not more than N years' (inclusive) or 'less than N years' (exclusive)",
+    "cognisable_text / bailable_text / triable_by_text": "the cells as printed ('Ditto' kept)",
+    "cognisable / bailable / triable_by": "the cells with 'Ditto' replaced by the cell above, read as flags"
+  },
+  "coverage": {
+    "rows": 6,
+    "per_schedule": {
+      "CrPC 1973": 3,
+      "BNSS 2023": 3
+    }
+  },
+  "notes": []
+}
