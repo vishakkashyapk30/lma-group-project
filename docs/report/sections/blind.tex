@@ -9,7 +9,9 @@
 
 \paragraph{What the numbers mean in absolute terms.} The win on the unsupported-fact rate is relative: 0.89 means that most argument sentences are still not entailed by the facts of the case alone. On development orders 55\% of such sentences state a legal principle taken from a cited authority, which the facts cannot entail by construction (Section~\ref{sec:arch}), so the rate overstates fabrication; on case-fact sentences alone the rate on the development search orders is 0.47 (Full: 0.84). Citation precision of 0.71 means about three in ten cited paragraphs do not support the sentence that cites them, although none is invented.
 
-% D11 (rule-only gold) and D12 (run-to-run spread) paragraphs go here once scored.
+\paragraph{Does the result depend on the gold labels?} The agreed gold keeps a label only when the rule labeler and the model labeler agree on a verbatim span. The pre-registration declares one sensitivity check against this choice: the same saved outputs scored against the rule labeler alone, with the same scoring code (deviation D11, run once after the primary scoring). On the rule-only gold c1457 has 45 wins, 70 ties and 5 losses against B0--B6 (agreed gold: 46, 69, 5) and Full has 29, 74 and 17 (29, 76, 15). Five of the 350 arm-by-baseline-by-metric cells change outcome (one c1457 win against B3 on court-discussed recall becomes a tie); no loss appears or disappears for c1457, and all five hypothesis verdicts are the same on both golds. The result does not hinge on the model labeler.
+
+% D12 (run-to-run spread) paragraph goes here once scored.
 
 \gentable{arch_tools}
 
