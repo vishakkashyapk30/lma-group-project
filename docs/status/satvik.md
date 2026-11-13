@@ -1,6 +1,9 @@
 # Status: Satvik
 
-## Current assignment (13 Nov 2026)
+## Current assignment (13 Nov 2026, afternoon)
+PRs #7 and #8 are merged. Left: (1) two golden tests fail on `main` since 2601744 (the verified Antil rule moves the Sutradhar `packs` digest as well as the `events` digest); confirm it is intended and re-capture with a RECONCILED note; (2) the one statute store rebuild with the corrected First Schedule flags (43 IPC flags were wrong in the 26 Oct extraction), after replacing the frozen worktree's `data/stores/law` symlink with a copy; then the bundle refresh. Details: `docs/handoff/team-todo-2026-11-02.md`, "Afternoon of 13 November", and `docs/handoff/first-schedule.md`.
+
+## Earlier assignment (13 Nov 2026, morning)
 Open the PR for `satvik-companies-act-212` (rebased on `main`); one statute store rebuild with the BNSS s.58 and s.212 fixes (with Shravani's CrPC/NDPS texts if ready) and a bundle refresh, never touching the frozen run worktree; rerun `win_loss_tie.py` on every family and confirm the M6a test runs.
 Full list: `docs/handoff/team-todo-2026-11-02.md`, section "What each person does next (13 November)".
 

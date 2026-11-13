@@ -98,6 +98,13 @@ independently of the parser.
 
 ## For Satvik's store rebuild (one rebuild)
 
+0. **Protect the frozen runs first.** The frozen run worktree's `data/stores/law` is a symlink to the main checkout's `data/stores/law`
+   (`ls -la .claude/worktrees/agent-a8400ab774cc73e44/data/stores/`). Replace the symlink with a copy of the current store
+   (`rm <frozen>/data/stores/law && cp -a data/stores/law <frozen>/data/stores/law`) before rebuilding, so the scored runs keep the
+   store they were made with. Rebuild only after the D12 scoring has finished (it has, if `var-pool/autoscore.log` ends in AUTOSCORE_DONE).
+   The product reads `configs/first_schedule_*.jsonl` before the store already (Peshkar, 7b3945a), so the rebuild fixes the store,
+   not the briefs.
+
 1. Regenerate the gap files first. The copies in `data/gaps/statutes/` hold the old, wrong flags and only 5 NDPS rows:
 
    ```
