@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -28,6 +28,22 @@ class ApproveRequest(BaseModel):
     """Gate approval."""
 
     acknowledged_fields: list[str] = Field(default_factory=list)
+
+
+class ConsentRequest(BaseModel):
+    """Counsel grants (or withdraws) a hosted model's access to this case's pseudonymised text (plan §16)."""
+
+    provider: Literal["sarvam", "openai"] = "sarvam"
+    granted: bool
+    note: str = ""
+
+
+class ConsentStatus(BaseModel):
+    """Whether counsel's latest decision lets each hosted provider read this case."""
+
+    case_id: str
+    sarvam: bool
+    openai: bool
 
 
 class CounselAnswerRequest(BaseModel):

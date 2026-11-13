@@ -19,6 +19,8 @@ from vakeel_sahayak.api import service
 from vakeel_sahayak.api.deps import get_event_log
 from vakeel_sahayak.api.models import (
     BailBriefOut,
+    ConsentRequest,
+    ConsentStatus,
     FieldEditRequest,
     HearingPrepCardOut,
     NewCaseRequest,
@@ -158,6 +160,33 @@ async def get_rights(case_id: str, log: Annotated[EventLog, Depends(get_event_lo
     if report is None:
         raise HTTPException(status_code=404, detail="no rights report yet")
     return RightsReportOut.from_report(report)
+
+
+@router.get("/{case_id}/consent", response_model=ConsentStatus)
+async def get_consent(case_id: str, log: Annotated[EventLog, Depends(get_event_log)]) -> ConsentStatus:
+    """Whether counsel's latest decision lets Sarvam or OpenAI read this case's pseudonymised text (plan §16)."""
+    service.require_case(log, case_id)
+    return _consent_status(log, case_id)
+
+
+@router.post("/{case_id}/consent", response_model=ConsentStatus)
+async def set_consent(case_id: str, body: ConsentRequest, log: Annotated[EventLog, Depends(get_event_log)]) -> ConsentStatus:
+    """Counsel grants or withdraws a hosted model's access to this case (plan §16): the event `record_consent` writes, by counsel.
+
+    Consent alone sends nothing: the provider must also be on (`VS_SARVAM` / `VS_EXTERNAL`), keyed and, if paid, unlocked, and every
+    payload still passes the pseudonymisation boundary. The latest decision wins, so counsel can withdraw it.
+    """
+    from vakeel_sahayak.models.sarvam.policy import record_consent
+
+    service.require_case(log, case_id)
+    record_consent(log, case_id, granted=body.granted, note=body.note, provider=body.provider)
+    return _consent_status(log, case_id)
+
+
+def _consent_status(log: EventLog, case_id: str) -> ConsentStatus:
+    from vakeel_sahayak.models.sarvam.policy import has_consent
+
+    return ConsentStatus(case_id=case_id, sarvam=has_consent(log, case_id, "sarvam"), openai=has_consent(log, case_id, "openai"))
 
 
 @router.post("/{case_id}/draft", response_model=dict[str, Any])

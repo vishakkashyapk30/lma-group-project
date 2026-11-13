@@ -286,3 +286,32 @@ def test_rights_chips_and_the_stored_report_are_unchanged(tmp_path, monkeypatch)
     _, client = seeded(tmp_path, monkeypatch, rights=rights)
     chips = client.get(f"/api/cases/{CASE}").json()["rights_chips"]
     assert chips and all(isinstance(c, str) for c in chips)
+
+
+# ---- consent for a hosted model (plan §16) -----------------------------------------------------------------------
+def test_no_case_starts_with_consent(tmp_path, monkeypatch):
+    _, client = seeded(tmp_path, monkeypatch)
+    assert client.get(f"/api/cases/{CASE}/consent").json() == {"case_id": CASE, "sarvam": False, "openai": False}
+
+
+def test_counsel_grants_and_withdraws_consent_and_the_latest_decision_wins(tmp_path, monkeypatch):
+    """POST consent records counsel's USER_ACTION (tool 'sarvam_consent'), the event the Sarvam policy reads; a later withdrawal wins."""
+    sc, client = seeded(tmp_path, monkeypatch)
+    res = client.post(f"/api/cases/{CASE}/consent", json={"provider": "sarvam", "granted": True, "note": "demo"})
+    assert res.status_code == 200 and res.json() == {"case_id": CASE, "sarvam": True, "openai": False}
+    consents = [e for e in sc.events(EventKind.USER_ACTION) if e.tool == "sarvam_consent"]
+    assert len(consents) == 1 and sh._actor(consents[0]) == "counsel" and consents[0].inputs["granted"] is True
+    assert client.post(f"/api/cases/{CASE}/consent", json={"provider": "sarvam", "granted": False}).json()["sarvam"] is False
+
+
+def test_consent_is_per_case_and_per_provider(tmp_path, monkeypatch):
+    _, client = seeded(tmp_path, monkeypatch)
+    client.post(f"/api/cases/{CASE}/consent", json={"provider": "openai", "granted": True})
+    assert client.get(f"/api/cases/{CASE}/consent").json() == {"case_id": CASE, "sarvam": False, "openai": True}
+
+
+def test_consent_for_an_unknown_case_or_provider_is_refused(tmp_path, monkeypatch):
+    _, client = seeded(tmp_path, monkeypatch)
+    assert client.post("/api/cases/case-9999/consent", json={"granted": True}).status_code == NOT_FOUND
+    assert client.post(f"/api/cases/{CASE}/consent", json={"provider": "gemini", "granted": True}).status_code == 422
+    assert client.post(f"/api/cases/{CASE}/consent", json={"provider": "sarvam"}).status_code == 422
