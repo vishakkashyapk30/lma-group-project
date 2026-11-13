@@ -47,6 +47,15 @@ def test_several_files_in_one_request(tmp_path, monkeypatch):
     assert res.json()["accepted"] == ["a.pdf", "b.pdf"]
 
 
+def test_duplicate_upload_is_not_refiled_or_reingested(tmp_path, monkeypatch):
+    sc = scenario(tmp_path, monkeypatch)
+    first = sc.client().post(f"/api/cases/{CASE}/upload", files=files_payload(("first.pdf", "application/pdf", PDF_BYTES)))
+    second = sc.client().post(f"/api/cases/{CASE}/upload", files=files_payload(("copy.pdf", "application/pdf", PDF_BYTES)))
+    assert first.json()["accepted"] == ["first.pdf"] and second.json()["accepted"] == []
+    uploads = [e for e in sc.events(EventKind.USER_ACTION) if e.inputs.get("action") == "upload"]
+    assert len(uploads) == 1 and not (sc.data_dir / "cases" / CASE / "copy.pdf").exists()
+
+
 def test_unsupported_file_type_is_refused_and_not_stored(tmp_path, monkeypatch):
     """An executable is not an input kind: 415, nothing written. ASSUMPTION for the code."""
     sc = scenario(tmp_path, monkeypatch)

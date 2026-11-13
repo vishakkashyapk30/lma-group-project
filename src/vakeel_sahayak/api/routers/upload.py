@@ -6,6 +6,7 @@ page text (plan §16). Audio is transcribed, read back for confirmation, and del
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from typing import Annotated
 
@@ -47,20 +48,32 @@ async def upload_files(case_id: str, files: list[UploadFile], log: Annotated[Eve
     accepted: list[str] = []
     questions: list[str] = []
     case_dir = _case_dir(case_id)
+    known_hashes = {
+        value
+        for event in log.read(case_id, kind=EventKind.USER_ACTION)
+        if event.inputs.get("action") == "upload"
+        for value in event.inputs.get("file_hashes", [])
+    }
     for upload in files:
         name = Path(upload.filename or "").name  # strips any directory part: a name cannot escape the case directory
         suffix = Path(name).suffix.lower()
         content = await upload.read()
         if suffix not in ACCEPTED_SUFFIXES:
             raise HTTPException(status_code=415, detail=f"unsupported file type {suffix or name!r}")
+        digest = hashlib.sha256(content).hexdigest()
+        if digest in known_hashes:
+            continue
         target = case_dir / name
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(content)
         accepted.append(name)
+        known_hashes.add(digest)
         if suffix == ".pdf" and _looks_corrupt(content):
             questions.append(f"{name} could not be opened. Please upload an unlocked or intact copy.")
-    log.append(Event(event_id="", case_id=case_id, ts="", kind=EventKind.USER_ACTION, actor=COUNSEL,
-                     inputs={"action": "upload", "files": accepted}))  # names only, never page text (plan §16)
+    if accepted:
+        log.append(Event(event_id="", case_id=case_id, ts="", kind=EventKind.USER_ACTION, actor=COUNSEL,
+                         inputs={"action": "upload", "files": accepted,
+                                 "file_hashes": [hashlib.sha256((case_dir / name).read_bytes()).hexdigest() for name in accepted]}))
     # The agents run in a worker thread: inside this async handler they would freeze every other request (and the event stream).
     questions += await run_in_threadpool(_run_intake, log, case_id, [str(case_dir / name) for name in accepted])
     return UploadResponse(case_id=case_id, accepted=accepted, questions=questions)
