@@ -15,10 +15,9 @@ from fastapi.responses import FileResponse
 
 from vakeel_sahayak.api import service
 from vakeel_sahayak.api.deps import get_event_log
-from vakeel_sahayak.api.models import FieldEditRequest, NewCaseRequest, RightsReportOut
+from vakeel_sahayak.api.models import BailBriefOut, FieldEditRequest, NewCaseRequest, RightsReportOut
 from vakeel_sahayak.orchestration.gates import GateGuard
 from vakeel_sahayak.record.event_log import EventLog
-from vakeel_sahayak.schemas.bail_brief import BailBrief
 from vakeel_sahayak.schemas.case import BudgetState, CaseSummary
 from vakeel_sahayak.schemas.dossier import CaseDossier, DossierFields
 from vakeel_sahayak.schemas.enums import EventKind, GateId
@@ -137,14 +136,15 @@ async def start_draft(case_id: str, log: Annotated[EventLog, Depends(get_event_l
     return {"status": "drafted", "grounds": grounds}
 
 
-@router.get("/{case_id}/brief", response_model=BailBrief)
-async def get_brief(case_id: str, log: Annotated[EventLog, Depends(get_event_log)]) -> BailBrief:
-    """Brief tab (404 before drafting)."""
+@router.get("/{case_id}/brief", response_model=BailBriefOut)
+async def get_brief(case_id: str, log: Annotated[EventLog, Depends(get_event_log)]) -> BailBriefOut:
+    """Brief tab (404 before drafting). `withheld`: per ground, the sentences strict abstention (X4, c1457) left out of the argument and why."""
     service.require_case(log, case_id)
-    brief = service.case_state(log, case_id).brief()
+    cs = service.case_state(log, case_id)
+    brief = cs.brief()
     if not brief.grounds and not brief.open_issues:
         raise HTTPException(status_code=404, detail="no brief yet")
-    return brief
+    return BailBriefOut(**brief.model_dump(), withheld=service.withheld_by_ground(cs.events()))
 
 
 @router.get("/{case_id}/spar", response_model=SparringRecord)

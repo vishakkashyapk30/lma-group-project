@@ -499,7 +499,7 @@
           "cases"
         ],
         "summary": "Get Brief",
-        "description": "Brief tab (404 before drafting).",
+        "description": "Brief tab (404 before drafting). `withheld`: per ground, the sentences strict abstention (X4, c1457) left out of the argument and why.",
         "operationId": "get_brief_api_cases__case_id__brief_get",
         "parameters": [
           {
@@ -525,7 +525,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BailBrief"
+                  "$ref": "#/components/schemas/BailBriefOut"
                 }
               }
             }
@@ -1709,7 +1709,7 @@
         "title": "Authority",
         "description": "A cited authority; citation text is rendered from corpus metadata, never model-written (plan \u00a78.1)."
       },
-      "BailBrief": {
+      "BailBriefOut": {
         "properties": {
           "case_id": {
             "type": "string",
@@ -1737,14 +1737,21 @@
             "type": "string",
             "title": "Label",
             "default": "AI-generated draft. Not legal advice."
+          },
+          "withheld": {
+            "items": {
+              "$ref": "#/components/schemas/WithheldGround"
+            },
+            "type": "array",
+            "title": "Withheld"
           }
         },
         "type": "object",
         "required": [
           "case_id"
         ],
-        "title": "BailBrief",
-        "description": "Vakeel's brief (plan \u00a78.1)."
+        "title": "BailBriefOut",
+        "description": "`GET /api/cases/{id}/brief`: the stored brief plus, additively, `withheld` (per ground, the sentences X4 left out and why).\n\nFolded from Vakeel's `abstain` events in the record; the stored brief, its export and the export hash are unchanged. Empty when the\nrun did not use strict abstention."
       },
       "Body_upload_audio_api_cases__case_id__audio_post": {
         "properties": {
@@ -3783,6 +3790,56 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WithheldGround": {
+        "properties": {
+          "ground": {
+            "type": "string",
+            "title": "Ground"
+          },
+          "factor": {
+            "type": "string",
+            "title": "Factor"
+          },
+          "sentences": {
+            "items": {
+              "$ref": "#/components/schemas/WithheldSentence"
+            },
+            "type": "array",
+            "title": "Sentences"
+          },
+          "dropped": {
+            "type": "boolean",
+            "title": "Dropped",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "ground",
+          "factor"
+        ],
+        "title": "WithheldGround",
+        "description": "What X4 left out of one ground (the latest `abstain` event of Vakeel's latest draft of that ground).\n\n`dropped` is True when nothing supportable was left: the ground is then not in the brief, and its factor is an open issue for counsel."
+      },
+      "WithheldSentence": {
+        "properties": {
+          "sentence": {
+            "type": "string",
+            "title": "Sentence"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sentence",
+          "reason"
+        ],
+        "title": "WithheldSentence",
+        "description": "One sentence X4 (`abstention='strict'`) took out of a ground's argument, with the checker's reason."
       }
     }
   }

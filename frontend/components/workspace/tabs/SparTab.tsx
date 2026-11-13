@@ -187,6 +187,15 @@ function ObjectionItem({ objection, focusedId }: { objection: Objection; focused
   );
 }
 
+/** "3 objections: 1 answered, 1 partly answered, 1 not answered yet", with "N not judged yet" when the judge has not ruled on some. */
+export function objectionSummary(objections: Objection[]): string {
+  const count = (v: Objection["verdict"]) => objections.filter((o) => (o.verdict ?? null) === v).length;
+  const parts = [`${count("ANSWERED")} answered`, `${count("PARTLY")} partly answered`, `${count("UNANSWERED")} not answered yet`];
+  const unjudged = count(null);
+  if (unjudged > 0) parts.push(`${unjudged} not judged yet`);
+  return `${plural(objections.length, "objection")}: ${parts.join(", ")}.`;
+}
+
 export function ObjectionsSection(): ReactElement | null {
   const data = useCaseData();
   const spar = data.spar;
@@ -205,8 +214,8 @@ export function ObjectionsSection(): ReactElement | null {
     </section>
   ) : null;
 
+  // Every objection Abhiyojak raised is listed, whatever its verdict (with X7 none of the grounded ones are discarded).
   const objections = spar.objections;
-  const count = (v: Objection["verdict"]) => objections.filter((o) => o.verdict === v).length;
 
   return (
     <section aria-labelledby="spar-list">
@@ -216,7 +225,7 @@ export function ObjectionsSection(): ReactElement | null {
       ) : (
         <>
           <p className="mt-1 text-ink-soft" aria-live="polite">
-            {plural(objections.length, "objection")}: {count("ANSWERED")} answered, {count("PARTLY")} partly answered, {count("UNANSWERED")} not answered yet.
+            {objectionSummary(objections)}
           </p>
           <ul className="mt-3 divide-y divide-line border-y border-line">
             {objections.map((o) => (
