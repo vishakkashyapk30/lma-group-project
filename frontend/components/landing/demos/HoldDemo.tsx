@@ -5,8 +5,10 @@
 // gate holds on the draft's four open items, and there is no export button anywhere until counsel approves.
 import { Check } from "lucide-react";
 import { useEffect, useRef, useState, type ReactElement } from "react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 import { HoldButton } from "@/components/common/HoldButton";
-import { AnimatePresence, m, MotionProvider, usePresenceTransition } from "@/components/motion/MotionProvider";
+import { MotionProvider, usePresenceTransition } from "@/components/motion/MotionProvider";
 import { Button } from "@/components/ui/button";
 import { sampleCaseHref } from "@/lib/sampleCase";
 import { cn } from "@/lib/utils";

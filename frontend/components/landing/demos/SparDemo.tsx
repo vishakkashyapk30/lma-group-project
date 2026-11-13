@@ -2,8 +2,10 @@
 // Spar: what the prosecution is likely to say against the sample draft, the unanswered objection first. Each reply
 // names what it relies on. Writing a reply here marks the objection as answered by you; nothing is answered for you.
 import { useCallback, useState, type ReactElement } from "react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { AnimatePresence, m, MotionProvider, usePresenceTransition } from "@/components/motion/MotionProvider";
+import { MotionProvider, usePresenceTransition } from "@/components/motion/MotionProvider";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
