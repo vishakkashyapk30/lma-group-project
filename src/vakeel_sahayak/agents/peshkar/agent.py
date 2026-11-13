@@ -605,6 +605,10 @@ class PeshkarAgent(BaseAgent):
             if punishment:
                 value["max_punishment"] = punishment
             break
+        if value.get("bailable") is None and value.get("max_punishment") and value.get("code") not in first_schedule.FILES:
+            other = first_schedule.classify_other_law(value["max_punishment"])  # Part II: offences against laws other than the IPC/BNS
+            if other is not None:
+                value["bailable"] = other
         return value
 
     def _custody(self, outcomes: dict[str, FieldOutcome], existing: CaseDossier, as_of: str) -> FieldOutcome:

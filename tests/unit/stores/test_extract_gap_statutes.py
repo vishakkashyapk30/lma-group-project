@@ -433,3 +433,85 @@ def test_committed_bns_schedule_table_is_well_formed():
     by = {r["section"]: r for r in rows}  # cells as printed in the Gazette (BNSS 2023, First Schedule, Part I)
     assert (by["103"]["bailable"], by["103"]["max_punishment"]) == (False, "death")
     assert [(x["subsection"], x["bailable"]) for x in by["318"]["subrows"]] == [("(2)", True), ("(3)", True), ("(4)", False)]
+
+
+# ---- First Schedule, Part II (offences against other laws)
+
+_P2_HEAD = [
+    (182, 530, 10, "II.-CLASSIFICATION OF OFFENCES AGAINST OTHER LAWS"),
+    (190, 560, 8, "Offence"), (349, 560, 8, "Cognizable"), (356, 569, 8, "or non-"), (350, 578, 8, "cognizable"),
+    (402, 560, 8, "Bailable or non-"), (402, 569, 8, "bailable"), (484, 560, 8, "By what court triable"),
+]  # fmt: skip
+_P2_ROWS_1_2 = [
+    (64, 592, 8, "If punishable with death, imprisonment for life, or"), (64, 601, 8, "imprisonment for more than 7 years"),
+    (349, 592, 8, "Cognizable"), (402, 592, 8, "Non-bailable"), (483, 592, 8, "Court of Session."),
+    (64, 620, 8, "If punishable with imprisonment for 3 years and upwards"), (64, 629, 8, "but not more than 7 years"),
+    (359, 617, 8, "Ditto"), (428, 617, 8, "Ditto"), (483, 620, 8, "Magistrate of the first"), (483, 629, 8, "class."),
+]  # fmt: skip
+_P2_ROW_3 = [
+    (64, 0, 8, "If punishable with imprisonment for less than 3 years or with fine only."),
+    (359, 0, 8, "Non-"), (350, 9, 8, "cognizable"), (423, 0, 8, "Bailable"), (483, 0, 8, "Any Magistrate."),
+]  # fmt: skip
+
+
+def _row3(y: float) -> list[tuple[float, float, float, str]]:
+    return [(x, y + dy, s, t) for x, dy, s, t in _P2_ROW_3]
+
+
+def test_part2_rows_resolve_ditto_and_stop_at_the_footnote_and_the_state_amendments(tmp_path):
+    page = _P2_HEAD + _P2_ROWS_1_2 + _row3(645) + [
+        (63, 727, 9, "1. Subs. by Act 13 of 2013, s. 24, for the words in column 3."), (289, 750, 11, "222"),
+    ]  # fmt: skip
+    after = [(235, 74, 12, "STATE AMENDMENTS"), (64, 150, 8, "If punishable with imprisonment for 1 year"), (349, 150, 8, "Cognizable")]
+    rows, notes = gap.parse_part2(_pdf(tmp_path / "p2.pdf", [page, after]), 0)
+    assert notes == []
+    assert [r["band"] for r in rows] == ["death_life_or_more_than_7", "3_to_7", "less_than_3_or_fine"]
+    assert [(r["cognisable"], r["bailable"]) for r in rows] == [(True, False), (True, False), (False, True)]
+    assert [r["triable_by"] for r in rows] == ["Court of Session", "Magistrate of the first class", "Any Magistrate"]
+    assert (rows[1]["cognisable_text"], rows[1]["bailable_text"]) == ("Ditto", "Ditto")  # printed; the flags read the cell above
+    assert rows[2]["cognisable_text"] == "Non-cognizable"  # "Non-" and "cognizable" on two lines
+    assert rows[0]["offence"] == "If punishable with death, imprisonment for life, or imprisonment for more than 7 years"
+    assert (rows[1]["min_years"], rows[1]["min_inclusive"], rows[1]["max_years"], rows[1]["max_inclusive"]) == (3, True, 7, True)
+    assert (rows[0]["death"], rows[0]["life"], rows[0]["min_years"], rows[0]["min_inclusive"], rows[0]["max_years"]) == (True, True, 7, False, None)
+    assert (rows[2]["fine_only"], rows[2]["max_years"], rows[2]["max_inclusive"], rows[2]["min_years"]) == (True, 3, False, None)
+
+
+def test_part2_table_continues_on_the_next_page_and_stops_at_the_second_schedule(tmp_path):
+    page = _P2_HEAD + _P2_ROWS_1_2
+    after = [(72, 44, 8, "THE GAZETTE OF INDIA EXTRAORDINARY"), *_row3(100), (243, 160, 10, "THE SECOND SCHEDULE"), (64, 200, 8, "Form No. 1")]
+    rows, notes = gap.parse_part2(_pdf(tmp_path / "p2b.pdf", [page, after]), 0)
+    assert notes == [] and len(rows) == 3
+    assert rows[2]["offence"].startswith("If punishable with imprisonment for less than 3 years") and rows[2]["bailable"] is True
+    assert "GAZETTE" not in " ".join(str(v) for r in rows for v in r.values())
+
+
+def test_part2_without_the_heading_or_the_columns_is_refused(tmp_path):
+    with pytest.raises(ValueError):
+        gap.parse_part2(_pdf(tmp_path / "none.pdf", [[(64, 100, 8, "No schedule here")]]), 0)
+    with pytest.raises(ValueError):
+        gap.parse_part2(_pdf(tmp_path / "nohead.pdf", [[_P2_HEAD[0], *_row3(600)]]), 0)
+
+
+@pytest.mark.parametrize(
+    ("text", "band"),
+    [
+        ("If punishable with death, imprisonment for life, or imprisonment for more than 7 years.", "death_life_or_more_than_7"),
+        ("If punishable with imprisonment for 3 years and upwards but not  more than 7 years", "3_to_7"),
+        ("If punishable with imprisonment for less than 3 years or with fine only.", "less_than_3_or_fine"),
+        ("If punishable with imprisonment for less than 3 years.", "less_than_3"),
+        ("Any other offence.", None),
+    ],
+)
+def test_part2_band_is_derived_from_the_printed_text(text, band):
+    assert gap.part2_band(text)["band"] == band
+
+
+def test_committed_part2_table_is_well_formed():
+    rows = [json.loads(x) for x in (_CONFIG.parent / "first_schedule_part2.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert [(r["schedule"], r["row"]) for r in rows] == [("CrPC 1973", n) for n in (1, 2, 3)] + [("BNSS 2023", n) for n in (1, 2, 3)]
+    pins = {"CrPC 1973": (gap.CRPC_URL, gap.CRPC_SHA256), "BNSS 2023": (gap.BNSS_URL, gap.BNSS_SHA256)}
+    assert all((r["source"]["url"], r["source"]["sha256"]) == pins[r["schedule"]] for r in rows)
+    for r in rows:  # the band of every row follows from its printed offence cell by the same rule
+        assert {k: r[k] for k in gap.part2_band(r["offence"])} == gap.part2_band(r["offence"])
+    meta = json.loads((_CONFIG.parent / "first_schedule_part2.meta.json").read_text(encoding="utf-8"))
+    assert meta["notes"] == [] and meta["coverage"]["rows"] == 6

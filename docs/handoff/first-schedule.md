@@ -159,7 +159,8 @@ independently of the parser.
 
 ## Not done (left open)
 
-- **Part II** of the CrPC and BNSS First Schedules (offences against other laws).
+- ~~**Part II** of the CrPC and BNSS First Schedules (offences against other laws).~~ Done on 13 Nov: see "Part II (offences against
+  other laws), 13 Nov" at the end of this note.
 - **BNS cell text:** a very long conditional cognizable cell can still leave a stray word in the neighbouring cell's text. The flags
   are not affected; they are read from the start of the cell.
 - **NDPS `bailable`:** set only where s.37 names the section. The commercial-quantity bar depends on the quantity, so it is not a
@@ -174,3 +175,65 @@ PYTHONPATH=src .venv/bin/pytest tests/unit/stores/test_extract_gap_statutes.py -
 ```
 
 Run the tests with `PYTHONPATH=src` from a worktree: the venv's editable install points at the main checkout's `src`.
+
+## Part II (offences against other laws), 13 Nov
+
+**What was extracted.** `parse_part2` in `scripts/extract_gap_statutes.py` reads "II.—CLASSIFICATION OF OFFENCES AGAINST OTHER LAWS"
+from the two pinned PDFs: the CrPC on PDF page 222 (after s.511) and the BNSS Gazette on PDF page 189 (just before "THE SECOND
+SCHEDULE"). It writes the committed `configs/first_schedule_part2.jsonl` (6 rows, one per schedule and band) and
+`configs/first_schedule_part2.meta.json` (both sources with URL, SHA-256 and page, the date, the field meanings, notes: none).
+
+- **Columns** are fixed by the four printed headings (Offence; Cognizable or non-cognizable; Bailable or non-bailable; By what court
+  triable): a line goes to the column whose heading centre is nearest its own centre.
+- **Rows** start at an offence line more than 12 pt below the previous one, or level with the first line of a flag cell. Cells
+  that wrap over lines are joined ("Non-" + "cognizable").
+- **"Ditto"** is replaced by the cell above. The printed cell is kept in `cognisable_text`, `bailable_text` and `triable_by_text`.
+- **End of the table:** the first line set larger than the 8 pt table (the CrPC's footnote "1. Subs. by Act 13 of 2013 ..." and its
+  page number), or a "STATE AMENDMENTS", "THE SECOND SCHEDULE" or "CHAPTER" line. Running heads of a following page are skipped.
+- **Band** (`part2_band`), derived from the printed offence cell by rule:
+  - "more than N years" gives an exclusive lower bound, "N years and upwards" an inclusive one;
+  - "not more than N years" gives an inclusive upper bound, "less than N years" an exclusive one;
+  - `death`, `life` and `fine_only` record whether the cell names them;
+  - the id `band` is built from these fields.
+- **`--only` key:** `part2`. It also runs when both `crpc` and `bnss` (or both `schedule` and `bnss_schedule`) are asked for, so the
+  default run writes it. It needs both PDFs. Re-running the full extraction left the two Part I configs byte-identical.
+
+**The three rows as parsed** (CrPC 1973 and BNSS 2023 agree on every field except the printed text: the CrPC writes "Ditto" in row 2,
+the BNSS spells the cells out and ends the offence cells with a full stop):
+
+| row | offence (printed) | band | cognisable | bailable | triable by |
+|---|---|---|---|---|---|
+| 1 | If punishable with death, imprisonment for life, or imprisonment for more than 7 years | `death_life_or_more_than_7` (min 7, exclusive) | true | false | Court of Session |
+| 2 | If punishable with imprisonment for 3 years and upwards but not more than 7 years | `3_to_7` (3 to 7, both inclusive) | true | false | Magistrate of the first class |
+| 3 | If punishable with imprisonment for less than 3 years or with fine only. | `less_than_3_or_fine` (max 3, exclusive; fine only) | false | true | Any Magistrate |
+
+**How Peshkar uses it.**
+- `first_schedule.classify_other_law(max_punishment)` maps a maximum punishment to the bail class of the one band that holds it. It
+  reads the BNSS rows. A test checks that the CrPC rows agree.
+  - Inputs it reads: 'death', 'life', 'life imprisonment', 'N years', 'N months', 'fine', and so on.
+  - Examples: 20, 7 and 3 years give non-bailable; 2 years, 6 months and fine give bailable; death and life give non-bailable.
+  - Missing or unreadable input gives None.
+- `PeshkarAgent._map_section` calls it last: after the statute store and Part I, and only when all three hold:
+  - the section still has no bail class;
+  - its code is not IPC or BNS (Part II covers offences against other laws only);
+  - it has a `max_punishment`.
+- A bail class found earlier is never replaced. For example, NDPS s.19, 24, 27A and 37 keep `bailable: false` from s.37(1)(b), even
+  where Part II would say otherwise.
+- IPC and BNS sections are never touched. The case-0007 golden digests did not move.
+- Legal caveat for readers of the brief: Part II is the general rule. A special Act can override it (NDPS s.37, for example), and the
+  NDPS `max_punishment` in the store is the section's heaviest term. A clause carrying a lighter term (small quantity) can therefore
+  get "non-bailable" from the heaviest term.
+
+**How to check.**
+
+```
+R=data/gaps/raw
+PYTHONPATH=src .venv/bin/python scripts/extract_gap_statutes.py --only part2 --crpc-pdf $R/crpc_s3waas.pdf --bnss-pdf $R/bnss_gazette.pdf --out <scratch dir>
+git diff --stat configs/                       # nothing but `generated` may change
+PYTHONPATH=src .venv/bin/pytest tests/unit/stores/test_extract_gap_statutes.py tests/unit/pipelines/test_first_schedule_lookup.py tests/unit/agents/peshkar/test_other_law_bail_class.py -q
+```
+
+The synthetic-PDF tests cover Ditto resolution, the footnote and STATE AMENDMENTS stops, and a table that continues onto the next page
+and stops at THE SECOND SCHEDULE. Other tests check the committed table (sources pinned; every band follows from its printed text), the
+`classify_other_law` bands, CrPC and BNSS agreement, and the Peshkar fallback (NDPS without a flag gets a class; a class already found
+is kept; IPC and BNS are not touched).

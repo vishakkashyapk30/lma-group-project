@@ -10,7 +10,7 @@ import json
 import pytest
 
 from vakeel_sahayak.config import resolve_config_dir
-from vakeel_sahayak.pipelines.first_schedule import _table, classify
+from vakeel_sahayak.pipelines.first_schedule import _table, classify, classify_other_law, part2_rows
 
 
 @pytest.mark.parametrize(
@@ -50,3 +50,48 @@ def test_every_row_names_its_official_source():
         assert all(r["source"] for r in rows.values())
     meta = json.loads((resolve_config_dir() / "first_schedule_crpc_ipc.meta.json").read_text())
     assert meta["source_sha256"]
+
+
+# ---- Part II (offences against other laws): `configs/first_schedule_part2.jsonl`, CrPC 1973 and BNSS 2023
+
+
+@pytest.mark.parametrize(
+    ("punishment", "want"),
+    [
+        ("20 years", False),  # more than 7 years
+        ("10 years", False),
+        ("7 years", False),  # 3 years and upwards but not more than 7
+        ("3 years", False),
+        ("2 years", True),  # less than 3 years
+        ("1 year", True),
+        ("6 months", True),
+        ("fine", True),  # fine only
+        ("death", False),
+        ("life", False),
+        ("life imprisonment", False),
+        ("imprisonment for life", False),
+        (None, None),
+        ("", None),
+        ("same as for the offence abetted", None),
+    ],
+)
+def test_classify_other_law_reads_the_part2_bands(punishment, want):
+    assert classify_other_law(punishment) is want
+
+
+def test_classify_other_law_without_the_table_gives_nothing(tmp_path):
+    assert classify_other_law("20 years", config_dir=str(tmp_path)) is None
+
+
+def test_part2_rows_of_the_crpc_and_the_bnss_agree():
+    """The code reads the BNSS rows; the CrPC 1973 prints the same bands and classes (it writes 'Ditto' where the BNSS spells them out)."""
+    keys = ("band", "death", "life", "fine_only", "min_years", "min_inclusive", "max_years", "max_inclusive", "cognisable", "bailable", "triable_by")
+    config = str(resolve_config_dir())
+    crpc, bnss = part2_rows(config, "CrPC 1973"), part2_rows(config, "BNSS 2023")
+    assert len(crpc) == len(bnss) == 3
+    assert [[r[k] for k in keys] for r in crpc] == [[r[k] for k in keys] for r in bnss]
+    assert [r["band"] for r in bnss] == ["death_life_or_more_than_7", "3_to_7", "less_than_3_or_fine"]
+    assert [r["bailable"] for r in bnss] == [False, False, True]
+    assert [r["cognisable"] for r in bnss] == [True, True, False]
+    assert [r["triable_by"] for r in bnss] == ["Court of Session", "Magistrate of the first class", "Any Magistrate"]
+    assert all(r["source"]["sha256"] for r in crpc + bnss)

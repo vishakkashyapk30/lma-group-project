@@ -7,6 +7,9 @@ beside it); a cell the script could not read safely is null. Peshkar reads them 
 value here wins: the statute store built on 26 Oct carries the bail flag the wrong way round for 43 IPC sections
 (`docs/handoff/first-schedule.md`), and until the store is rebuilt the schedule is the better source. A BNS entry such as
 "318(4)" is a sub-row of section 318, so a section with a sub-section is looked up in that row's `subrows`.
+
+`configs/first_schedule_part2.jsonl` holds Part II of both schedules (offences against other laws: three bands of maximum
+punishment), read by `classify_other_law`; Peshkar uses it last, only for a section of another law that still has no bail class.
 """
 
 from __future__ import annotations
@@ -66,3 +69,82 @@ def classify(code: str, section: str, config_dir: str | None = None) -> tuple[bo
             if s.get("subsection") and sub.startswith(str(s["subsection"]).replace(" ", "")):
                 return s.get("bailable"), _punishment(s.get("max_punishment"))
     return row.get("bailable"), _punishment(row.get("max_punishment"))
+
+
+# ---- Part II: offences against other laws
+
+PART2_FILE = "first_schedule_part2.jsonl"
+PART2_SCHEDULE = "BNSS 2023"  # the CrPC 1973 rows print the same three bands and classes (tests/unit/pipelines/test_first_schedule_lookup.py)
+_TERM = re.compile(r"(\d+(?:\.\d+)?)\s*(years?|months?|weeks?|days?|hours?)\b", re.I)
+_UNIT_YEARS = {"year": 1.0, "month": 1 / 12, "week": 7 / 365, "day": 1 / 365, "hour": 1 / (365 * 24)}
+
+
+@lru_cache(maxsize=8)
+def part2_rows(config_dir: str, schedule: str = PART2_SCHEDULE) -> tuple[dict, ...]:
+    """The rows of one schedule (`schedule` field) in `configs/first_schedule_part2.jsonl`; empty when the file is missing."""
+    path = Path(config_dir) / PART2_FILE
+    if not path.is_file():
+        return ()
+    with path.open(encoding="utf-8") as fh:
+        rows = [json.loads(line) for line in fh if line.strip()]
+    return tuple(r for r in rows if r.get("schedule") == schedule)
+
+
+def _parse_maximum(text: str | None) -> tuple[str, float | None] | None:
+    """('death' | 'life' | 'fine' | 'term', years) of a maximum-punishment string; None when it names none of them."""
+    if not text:
+        return None
+    low = text.strip().lower()
+    if re.search(r"\bdeath\b", low):
+        return "death", None
+    if re.search(r"\blife\b", low):  # 'life', 'life imprisonment', 'imprisonment for life'
+        return "life", None
+    best = None
+    for m in _TERM.finditer(low):
+        years = float(m.group(1)) * _UNIT_YEARS[m.group(2).rstrip("s")]
+        best = years if best is None else max(best, years)
+    if best is not None:
+        return "term", best
+    if re.fullmatch(r"(with\s+)?fine(\s+only)?\.?", low):
+        return "fine", None
+    return None
+
+
+def _in_band(row: dict, kind: str, years: float | None) -> bool:
+    if kind == "death":
+        return bool(row.get("death"))
+    if kind == "life":
+        return bool(row.get("life"))
+    if kind == "fine":
+        return bool(row.get("fine_only"))
+    lo, hi = row.get("min_years"), row.get("max_years")
+    if years is None or (lo is None and hi is None):
+        return False
+    above = lo is None or years > lo or (years == lo and bool(row.get("min_inclusive")))
+    below = hi is None or years < hi or (years == hi and bool(row.get("max_inclusive")))
+    return above and below
+
+
+def classify_other_law(max_punishment: str | None, config_dir: str | None = None) -> bool | None:
+    """Bail class of an offence against a law other than the IPC / BNS, from Part II of the First Schedule (BNSS 2023; CrPC 1973 the same).
+
+    Part II classes such an offence by its maximum punishment: death, life, or more than 7 years: non-bailable; 3 to 7 years:
+    non-bailable; less than 3 years or fine only: bailable. It is the fallback where neither the statute store nor the special law gives
+    a class (NDPS s.37, for example, names the sections it bars). The bands are read from `configs/first_schedule_part2.jsonl`
+    (extracted by `scripts/extract_gap_statutes.py` from the official PDFs), not written here.
+
+    Args:
+        max_punishment: 'death', 'life', 'life imprisonment', '20 years', '1 year', '6 months', 'fine', ...
+        config_dir: the configs directory (default: `resolve_config_dir()`)
+
+    Returns:
+        True (bailable) or False (non-bailable); None when the punishment is missing or not understood, or not exactly one band holds it.
+    """
+    parsed = _parse_maximum(max_punishment)
+    if parsed is None:
+        return None
+    kind, years = parsed
+    hits = [r for r in part2_rows(str(resolve_config_dir(config_dir))) if _in_band(r, kind, years)]
+    if len(hits) != 1:
+        return None
+    return hits[0].get("bailable")

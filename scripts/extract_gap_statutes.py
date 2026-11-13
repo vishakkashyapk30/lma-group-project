@@ -48,11 +48,16 @@ BNSS First Schedule (Part I, offences under the BNS), from the same pinned Gazet
 the Gazette's fixed columns, entries such as "318(4)" become sub-rows of section 318 with `subsection` "(4)"; flags go to
 `data/gaps/statutes/first_schedule_bns.jsonl` (empty-text BNS rows) and the table to `configs/first_schedule_bnss_bns.jsonl`.
 
+First Schedule Part II ("II.-CLASSIFICATION OF OFFENCES AGAINST OTHER LAWS") of both the CrPC and the BNSS (`parse_part2`, key `part2`,
+also run when both schedules are): the three rows of each, read from the heading down to the end of the table (a footnote, a page number,
+"STATE AMENDMENTS" or "THE SECOND SCHEDULE"), "Ditto" resolved to the cell above, and the punishment band of each row derived by rule from
+the printed offence cell (`part2_band`), go to the committed `configs/first_schedule_part2.jsonl` with a `.meta.json` sidecar.
+
 NDPS: every section of the Act is extracted (the store had only five, so `get('NDPS', '22')` failed); cognisable / bailable flags are read
 from the parsed s.37 text and given to the sections that say "shall be punishable" or "shall be punished", which also get
 `max_punishment` by the store's own rule (`oil_ingest.max_punishment`).
 
-Usage: python scripts/extract_gap_statutes.py [--crpc-pdf P] [--ndps-pdf P] [--bnss-pdf P] [--companies-pdf P] [--only crpc,ndps,bnss,companies,schedule] [--fetch [--cafile PEM]] [--out DIR] [--schedule-out JSONL]
+Usage: python scripts/extract_gap_statutes.py [--crpc-pdf P] [--ndps-pdf P] [--bnss-pdf P] [--companies-pdf P] [--only crpc,ndps,bnss,companies,schedule,bnss_schedule,part2] [--fetch [--cafile PEM]] [--out DIR] [--schedule-out JSONL]
 (The India Code bitstreams of the CrPC and the NDPS Act answered HTTP 504 on 13 Nov 2026, so the pinned copies named above are used.)
 (egazette.gov.in sends its certificate without the intermediates; if the download fails verification, pass `--cafile` with the
 intermediates named by the certificate's "CA Issuers" URLs, appended to the system bundle. Verification is never switched off.)
@@ -767,6 +772,198 @@ def punishment_rank(label: str) -> float:
     return int(n) * _UNIT_DAYS[unit.rstrip("s")]
 
 
+# ---------------------------------------------------------------- First Schedule, Part II (offences against other laws)
+
+PART2_OUT = Path("configs/first_schedule_part2.jsonl")
+PART2_SCHEDULES = {  # --only key of the PDF -> (schedule name, url, pinned sha256, page-range function of Part I)
+    "schedule": ("CrPC 1973", CRPC_URL, CRPC_SHA256, schedule_pages),
+    "bnss_schedule": ("BNSS 2023", BNSS_URL, BNSS_SHA256, bnss_schedule_pages),
+}
+_PART2_ANCHORS = (r"Offence\b", r"Cognizable\b", r"Bailable\b", r"By what court\b")  # the four column headings, in order
+_PART2_STOP = re.compile(r"^\s*(STATE AMENDMENTS?|THE\s+(SECOND|THIRD)\s+SCHEDULE|CHAPTER\b)", re.I)
+PART2_TABLE_SIZE = 8.5  # the table is set in 8 pt; the first larger line below it (a footnote in 9 pt, a page number, a heading) ends it
+
+
+def _part2_lines(doc, page: int) -> list[tuple[int, float, float, float, str]]:
+    """(page, y, x0, x1, text) of the lines below the Part II heading on `page` and of the pages after it, up to the end of the table:
+    a "STATE AMENDMENTS", "THE SECOND SCHEDULE" or "CHAPTER" line, or the first line set larger than the table (a footnote such as
+    "1. Subs. by Act 13 of 2013 ...", a page number, a heading). Running heads (above y 70) of a following page are skipped."""
+    out: list[tuple[int, float, float, float, str]] = []
+    heading_y = None
+    for p in range(page, len(doc)):
+        lines = []
+        for block in doc[p].get_text("dict")["blocks"]:
+            for ln in block.get("lines", []):
+                spans = [s for s in ln["spans"] if s["size"] > 6]  # footnote reference numerals are 5 pt
+                text = re.sub(r"\s+", " ", "".join(s["text"] for s in spans)).strip()
+                if text and not re.fullmatch(r"_+", text):
+                    lines.append((ln["bbox"][1], ln["bbox"][0], ln["bbox"][2], max(s["size"] for s in spans), text))
+        for y, x0, x1, size, text in sorted(lines):
+            if heading_y is None:
+                if p == page and _PART2.search(text):
+                    heading_y = y
+                continue
+            if p > page and y < 70:
+                continue
+            if _PART2_STOP.match(text) or size > PART2_TABLE_SIZE:
+                return out
+            out.append((p, y, x0, x1, text))
+    if heading_y is None:
+        raise ValueError(f"Part II heading not found on PDF page {page + 1}")
+    return out
+
+
+def part2_band(text: str) -> dict:
+    """The punishment band of a printed Part II offence cell, by rule: `death` / `life` (named in the cell), `fine_only` ("with fine
+    only"), a lower bound in years ("more than N years": exclusive; "N years and upwards": inclusive) and an upper bound ("not more than
+    N years": inclusive; "less than N years": exclusive), and a `band` id built from them ("death_life_or_more_than_7", "3_to_7",
+    "less_than_3_or_fine"; None when the bounds do not fit one of these shapes)."""
+    low = re.sub(r"\s+", " ", text.lower())
+    lower = upper = None
+    if m := re.search(r"(\d+) years? and upwards", low):
+        lower = (int(m.group(1)), True)
+    elif m := re.search(r"(?<!not )more than (\d+) years?", low):
+        lower = (int(m.group(1)), False)
+    if m := re.search(r"not more than (\d+) years?", low):
+        upper = (int(m.group(1)), True)
+    elif m := re.search(r"less than (\d+) years?", low):
+        upper = (int(m.group(1)), False)
+    death = re.search(r"\bdeath\b", low) is not None
+    life = re.search(r"imprisonment for life|life imprisonment", low) is not None
+    fine_only = re.search(r"fine only", low) is not None
+    band = None
+    if lower and upper and lower[1] and upper[1]:
+        band = f"{lower[0]}_to_{upper[0]}"
+    elif lower and not lower[1] and upper is None and (death or life):
+        band = f"{'death_' if death else ''}{'life_' if life else ''}or_more_than_{lower[0]}"
+    elif upper and not upper[1] and lower is None:
+        band = f"less_than_{upper[0]}{'_or_fine' if fine_only else ''}"
+    return {
+        "band": band,
+        "death": death,
+        "life": life,
+        "fine_only": fine_only,
+        "min_years": lower[0] if lower else None,
+        "min_inclusive": lower[1] if lower else None,
+        "max_years": upper[0] if upper else None,
+        "max_inclusive": upper[1] if upper else None,
+    }
+
+
+def parse_part2(path: Path, page: int | None = None) -> tuple[list[dict], list[str]]:
+    """Parse Part II ("II.-CLASSIFICATION OF OFFENCES AGAINST OTHER LAWS") of a First Schedule into its rows.
+
+    `page` (0-based) holds the heading; by default the last page of Part I (`schedule_pages` / `bnss_schedule_pages` stop there), else the
+    first page that prints it. The four column headings (Offence; Cognizable or non-cognizable; Bailable or non-bailable; By what court
+    triable) fix the columns: a line belongs to the column whose heading centre is nearest its own centre (the cells are separate PDF
+    lines in both pinned PDFs). A row starts at an offence line more than ROW_GAP pt below the previous one or level with the first line
+    of a flag cell; the lines above the first row (the headings, the "1 2 3 4" column numbers) are dropped. "Ditto" repeats the resolved
+    cell above. Returns (rows, notes): each row {row, offence, cognisable_text, bailable_text, triable_by_text, cognisable, bailable,
+    triable_by, **part2_band(offence)}.
+    """
+    doc = pymupdf.open(path)
+    if page is None:
+        page = next((p for p in range(len(doc)) if _PART2.search(doc[p].get_text())), None)
+        if page is None:
+            raise ValueError("Part II heading not found")
+    lines = _part2_lines(doc, page)
+    anchors: list[tuple[float, float]] = []  # (y, centre x) of the four column headings
+    for pat in _PART2_ANCHORS:
+        hit = next(((y, (x0 + x1) / 2) for _p, y, x0, x1, t in lines if re.match(pat, t, re.I)), None)
+        if hit is None:
+            raise ValueError(f"Part II column heading {pat!r} not found")
+        anchors.append(hit)
+    centres = [c for _y, c in anchors]
+    if centres != sorted(centres):
+        raise ValueError(f"Part II column headings out of order: {centres}")
+    head_y = max(y for y, _c in anchors)
+    edges = [(a + b) / 2 for a, b in zip(centres, centres[1:], strict=False)]
+    body = [(p, y, _col((x0 + x1) / 2, edges), t) for p, y, x0, x1, t in lines if (p, y) > (page, head_y)]
+    starts: list[tuple[int, float]] = []
+    prev: tuple[int, float] | None = None
+    for p, y, col, t in body:
+        if col == 0 and not re.fullmatch(r"\d", t):  # the "1" of the column numbers stands in the offence column
+            if prev is None or prev[0] != p or y - prev[1] > ROW_GAP:
+                starts.append((p, y))
+            prev = (p, y)
+        elif col == 1 and _FLAG_START.match(t) and starts:
+            starts.append((p, y))
+    starts = _merge_starts(starts)
+    if not starts:
+        raise ValueError("Part II has no rows")
+    first = starts[0]
+    cells: list[dict[int, list[str]]] = [{c: [] for c in range(4)} for _ in starts]
+    for p, y, col, t in body:
+        if (p, y) < (first[0], first[1] - 5):
+            continue  # headings and column numbers
+        i = max(k for k, s in enumerate(starts) if (s[0], s[1] - 5) <= (p, y))  # a "Ditto" sits up to 3 pt above its row's first line
+        cells[i][col].append(t)
+    rows: list[dict] = []
+    notes: list[str] = []
+    above: dict[int, str | None] = {1: None, 2: None, 3: None}
+    for n, c in enumerate(cells, 1):
+        text = {k: _clean_cell(" ".join(v)) for k, v in c.items()}
+        resolved: dict[int, str | None] = {}
+        for k in (1, 2, 3):
+            if _is_ditto(text[k]):
+                resolved[k] = above[k]
+                if above[k] is None:
+                    notes.append(f"row {n}: 'Ditto' in column {k + 1} with no cell above")
+            else:
+                resolved[k] = text[k] or None
+            above[k] = resolved[k]
+        cog, _ = _cell_flag(resolved[1] or "", "cog", None)
+        bail, _ = _cell_flag(resolved[2] or "", "bail", None)
+        band = part2_band(text[0])
+        for name, val in (("offence", text[0]), ("cognisable", cog), ("bailable", bail), ("band", band["band"])):
+            if val in (None, ""):
+                notes.append(f"row {n}: {name} not read from {text}")
+        rows.append({
+            "row": n,
+            "offence": text[0],
+            **band,
+            "cognisable_text": text[1] or None,
+            "bailable_text": text[2] or None,
+            "triable_by_text": text[3] or None,
+            "cognisable": cog,
+            "bailable": bail,
+            "triable_by": (resolved[3] or "").rstrip(".") or None,
+        })  # fmt: skip
+    return rows, notes
+
+
+def part2_table(parsed: dict[str, tuple[list[dict], list[str], Path, int]], today: str) -> tuple[list[dict], dict]:
+    """Rows of `configs/first_schedule_part2.jsonl` and its sidecar from {--only key: (rows, notes, pdf, heading page)}."""
+    table: list[dict] = []
+    sources: dict[str, dict] = {}
+    notes: list[str] = []
+    for key, (rows, row_notes, pdf, page) in parsed.items():
+        name, url, _pin, _pages = PART2_SCHEDULES[key]
+        source = {"url": url, "sha256": sha256_of(pdf)}
+        sources[name] = {**source, "pdf_page": page + 1}
+        table.extend({"schedule": name, "part": "II", **r, "source": source} for r in rows)
+        notes.extend(f"{name} {x}" for x in row_notes)
+    meta = {
+        "title": "First Schedule, Part II (classification of offences against other laws) of the Code of Criminal Procedure, 1973 and "
+        "the Bharatiya Nagarik Suraksha Sanhita, 2023",
+        "sources": sources,
+        "generated": today,
+        "script": "scripts/extract_gap_statutes.py --only part2",
+        "fields": {
+            "offence": "the printed offence cell (whitespace collapsed)",
+            "band": "id of the punishment band, built by rule from the printed offence cell (part2_band)",
+            "death / life / fine_only": "whether the offence cell names death, imprisonment for life, or 'fine only'",
+            "min_years / min_inclusive": "lower bound in years: 'more than N years' (exclusive) or 'N years and upwards' (inclusive)",
+            "max_years / max_inclusive": "upper bound in years: 'not more than N years' (inclusive) or 'less than N years' (exclusive)",
+            "cognisable_text / bailable_text / triable_by_text": "the cells as printed ('Ditto' kept)",
+            "cognisable / bailable / triable_by": "the cells with 'Ditto' replaced by the cell above, read as flags",
+        },
+        "coverage": {"rows": len(table), "per_schedule": {PART2_SCHEDULES[k][0]: len(v[0]) for k, v in parsed.items()}},
+        "notes": notes,
+    }
+    return table, meta
+
+
 # ---------------------------------------------------------------- main
 
 
@@ -837,12 +1034,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--companies-pdf", type=Path, default=RAW / "companies_act_2013.pdf")
     ap.add_argument(
         "--only", default="crpc,ndps,bnss,companies",
-        help="comma list of crpc, ndps, bnss, companies, schedule, bnss_schedule (crpc includes the CrPC First Schedule, bnss the BNSS one)",
+        help="comma list of crpc, ndps, bnss, companies, schedule, bnss_schedule, part2 (crpc includes the CrPC First Schedule, bnss the "
+        "BNSS one; crpc and bnss together, or schedule and bnss_schedule together, also run part2, which reads both PDFs)",
     )  # fmt: skip
     ap.add_argument("--fetch", action="store_true", help="download the PDFs that are missing (verified TLS, checked against the pinned SHA-256)")
     ap.add_argument("--schedule-out", type=Path, default=SCHEDULE_OUT, help="the committed First Schedule table (a .meta.json sidecar is written next to it)")
     ap.add_argument("--bnss-schedule-out", type=Path, default=BNSS_SCHEDULE_OUT, help="the committed BNSS First Schedule table (BNS offences)")
-    ap.add_argument("--cafile", type=Path, default=None, help="CA bundle with the intermediates egazette.gov.in leaves out (with --fetch)")
+    ap.add_argument("--part2-out", type=Path, default=PART2_OUT, help="the committed First Schedule Part II table (CrPC and BNSS rows)")
+    ap.add_argument("--cafile",type=Path, default=None, help="CA bundle with the intermediates egazette.gov.in leaves out (with --fetch)")
     ap.add_argument("--out", type=Path, default=OUT)
     args = ap.parse_args(argv)
     only = {x.strip() for x in args.only.split(",") if x.strip()}
@@ -853,13 +1052,15 @@ def main(argv: list[str] | None = None) -> int:
         only.add("schedule")
     if "bnss" in only:
         only.add("bnss_schedule")
+    if {"schedule", "bnss_schedule"} <= only:
+        only.add("part2")
     for key, pdf, url, pin in (
         ("bnss_schedule", args.bnss_pdf, BNSS_URL, BNSS_SHA256),
         ("companies", args.companies_pdf, COMPANIES_URL, COMPANIES_SHA256),
         ("schedule", args.crpc_pdf, CRPC_URL, CRPC_SHA256),
         ("ndps", args.ndps_pdf, NDPS_URL, NDPS_SHA256),
     ):
-        if key not in only or (key == "ndps" and ocr):
+        if (key not in only and not (key in PART2_SCHEDULES and "part2" in only)) or (key == "ndps" and ocr):
             continue
         if args.fetch:
             fetch_pinned(url, pdf, pin, args.cafile)
@@ -916,6 +1117,22 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  {code} {sec}: cognisable={r['cognisable']} bailable={r['bailable']} max={r['max_punishment']!r} [{texts}]")
         for n in notes:
             print("NOTE", n)
+    if "part2" in only:
+        parsed = {}
+        for key, pdf in (("schedule", args.crpc_pdf), ("bnss_schedule", args.bnss_pdf)):
+            page = PART2_SCHEDULES[key][3](pdf)[1]  # Part I ends on the page that prints the Part II heading
+            rows, notes = parse_part2(pdf, page)
+            parsed[key] = (rows, notes, pdf, page)
+        table, meta = part2_table(parsed, today)
+        write_jsonl(args.part2_out, table)
+        args.part2_out.with_suffix(".meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print(f"First Schedule Part II: wrote {args.part2_out} ({len(table)} rows) and its .meta.json")
+        for r in table:
+            print(f"  {r['schedule']} row {r['row']} [{r['band']}]: cognisable={r['cognisable']} bailable={r['bailable']} "
+                  f"triable_by={r['triable_by']!r} | {r['offence']}")  # fmt: skip
+        for n in meta["notes"]:
+            print("NOTE Part II", n, file=sys.stderr)
+            failures += 1
     return 1 if failures else 0
 
 
