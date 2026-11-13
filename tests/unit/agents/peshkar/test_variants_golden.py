@@ -11,6 +11,11 @@ RECONCILED 2026-11-09: the `events` digest only was re-captured. The sole differ
 (5bf4cd3 binds a rule's verification to a hash of the rule and clears it for unverified rules; the rules were re-verified on 2026-11-02). Same 180
 events in the same order, every status the same; the dossier, List of Dates and prompt digests did not move.
 
+RECONCILED 2026-11-13: the `events` digest only was re-captured after 2601744 (rules re-verified on 2026-11-07, the Antil rule verified
+for the first time). Run under the old and new `configs/rights_rules.yaml` and diffed: the only differences are the `last_verified` dates on
+the rights_check results (2026-11-02 to 2026-11-07, and null to 2026-11-07 for antil_category). Same 180 events, every status the same; the
+dossier, List of Dates and prompt digests did not move.
+
 `golden_default_run.json` holds one digest per part of the offline run over the three-chunk shelf with a planted instruction (dossier, List of Dates, the
 events in order with ids and times removed, every prompt the model saw). All three defence flags default to False (defences ON), which is the current behaviour.
 """

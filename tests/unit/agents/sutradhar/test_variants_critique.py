@@ -21,6 +21,9 @@ from vakeel_sahayak.schemas.enums import EventKind, Factor, SlotStatus
 # RECONCILED 2026-11-09: only the `events` digests of golden_default_run.json were re-captured. The sole difference is the `last_verified`
 # date on the rights_check results (5bf4cd3 binds verification to a rule hash and clears it for unverified rules; the rules were re-verified
 # on 2026-11-02). Same event count and order, every status the same; the packs, plans and budget digests did not move.
+# RECONCILED 2026-11-13: the `events` and `packs` digests were re-captured after 2601744 (rules re-verified on 2026-11-07, the Antil
+# rule verified for the first time). Run under the old and new rules and diffed: the only differences are the `last_verified` dates on the
+# rights_check results, which the packs carry as well; no passage, slot or status changed, and the plans and budget digests did not move.
 GOLDEN = json.loads((Path(__file__).parent / "golden_default_run.json").read_text())
 S1 = Switches.for_variant("S1")
 PARITY = Factor.PARITY_WITH_CO_ACCUSED

@@ -1,14 +1,14 @@
 {
   "case_0007": {
     "budget": "881fa3ced389d025",
-    "events": "06c1834538ef5fd5",
-    "packs": "1f658927ab32a112",
+    "events": "90055ca71bee9ebb",
+    "packs": "8d3b176c26e136d0",
     "plans": "9cd08552085dc7fa"
   },
   "case_0007_second_parity": {
     "budget": "c4eb9e891ef6f1bc",
-    "events": "a6fe81d66c964869",
-    "packs": "90a3ace4a4041189",
+    "events": "47c08b125cc1c465",
+    "packs": "9d35f5aaafe0a782",
     "plans": "b91fcf1371ed2a3e"
   }
 }
