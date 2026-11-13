@@ -715,8 +715,15 @@ export function WorkspaceProvider({ caseId, children, initialStage, initialTab }
     if (lines.length === 0) return null;
     const heard = lines.filter((l) => /\d/.test(l)).map((l) => l.replace(/^I heard:\s*/i, "").replace(/\.$/, ""));
     setReadback(null);
-    return sendChat(`I confirm: ${heard.join("; ")}.`);
-  }, [readback, sendChat]);
+    try {
+      await api.confirmDictationReadback(caseId, heard);
+      void refresh(["dossier", "gates"]);
+      return null;
+    } catch (e) {
+      setActionError(errorMessage(e));
+      return null;
+    }
+  }, [caseId, readback, refresh]);
 
   const upload = useCallback(
     async (files: File[]) => {

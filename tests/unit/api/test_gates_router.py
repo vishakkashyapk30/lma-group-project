@@ -131,6 +131,16 @@ def test_gate_of_an_unknown_case_is_404(tmp_path, monkeypatch):
     assert client.post(gate_url(G1, "case-9999") + "/approve", json={"acknowledged_fields": []}).status_code == NOT_FOUND
 
 
+def test_counsel_answer_and_dictation_confirmation_are_audited(tmp_path, monkeypatch):
+    sc = scenario(tmp_path, monkeypatch)
+    sc.seed_record()
+    base = f"/api/cases/{CASE}/gates"
+    assert sc.client().post(base + "/answers", json={"question": "When was the arrest?", "answer": "20 August"}).status_code == 200
+    assert sc.client().post(base + "/dictation/confirm", json={"readback": ["20.08.2024", "318(4) BNS"]}).status_code == 200
+    actions = [e.inputs for e in sc.events(EventKind.USER_ACTION)]
+    assert {a["action"] for a in actions} >= {"answer_question", "confirm_dictation"}
+
+
 @pytest.mark.parametrize("body", [None, {"acknowledged_fields": "antecedents"}])
 def test_approve_body_is_validated(tmp_path, monkeypatch, body):
     sc = scenario(tmp_path, monkeypatch)

@@ -13,15 +13,34 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from vakeel_sahayak.api import service
 from vakeel_sahayak.api.deps import get_event_log
-from vakeel_sahayak.api.models import ApproveRequest
+from vakeel_sahayak.api.models import ApproveRequest, CounselAnswerRequest, DictationConfirmRequest
+from vakeel_sahayak.record.case_state import CaseState
 from vakeel_sahayak.orchestration.gates import GateGuard
 from vakeel_sahayak.record.event_log import EventLog
 from vakeel_sahayak.record.gates import ChecklistNotCleared
-from vakeel_sahayak.schemas.case import GateStatus
+from vakeel_sahayak.schemas.case import CaseDossier, GateStatus
 from vakeel_sahayak.schemas.enums import EventKind, GateId
 from vakeel_sahayak.schemas.events import COUNSEL, Event
 
 router = APIRouter(prefix="/api/cases/{case_id}/gates", tags=["gates"])
+
+
+@router.post("/answers", response_model=CaseDossier)
+async def answer_question(case_id: str, body: CounselAnswerRequest, log: Annotated[EventLog, Depends(get_event_log)]) -> CaseDossier:
+    """Record counsel's answer to a Munshi question and clear that exact open question."""
+    service.require_case(log, case_id)
+    log.append(Event(event_id="", ts="", case_id=case_id, kind=EventKind.USER_ACTION, actor=COUNSEL,
+                     inputs={"action": "answer_question", "question": body.question, "answer": body.answer}))
+    return CaseState(case_id, log).dossier()
+
+
+@router.post("/dictation/confirm", response_model=CaseDossier)
+async def confirm_dictation(case_id: str, body: DictationConfirmRequest, log: Annotated[EventLog, Depends(get_event_log)]) -> CaseDossier:
+    """Audit counsel's confirmation of dictation read-back; dictated facts remain USER_STATED."""
+    service.require_case(log, case_id)
+    log.append(Event(event_id="", ts="", case_id=case_id, kind=EventKind.USER_ACTION, actor=COUNSEL,
+                     inputs={"action": "confirm_dictation", "readback": body.readback}))
+    return CaseState(case_id, log).dossier()
 
 
 @router.get("/{gate}", response_model=GateStatus)

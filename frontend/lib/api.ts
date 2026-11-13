@@ -362,6 +362,16 @@ export function uploadAudio(caseId: string, file: Blob, fileName = "dictation.we
   );
 }
 
+/** POST counsel's answer to a Munshi question. */
+export function answerCounselQuestion(caseId: string, question: string, answer: string): Promise<CaseDossier> {
+  return call(() => http("POST", `${c(caseId)}/gates/answers`, { json: { question, answer } }), () => demo.getDossier(caseId));
+}
+
+/** POST counsel's confirmation of a dictation read-back. */
+export function confirmDictationReadback(caseId: string, readback: string[]): Promise<CaseDossier> {
+  return call(() => http("POST", `${c(caseId)}/gates/dictation/confirm`, { json: { readback } }), () => demo.getDossier(caseId));
+}
+
 /* ── Chat (routers/chat.py) ─────────────────────────────────────────────────────────────────────────────────────── */
 
 /** POST /api/cases/{case_id}/chat: Sutradhar routes the question; a short cited answer (or a refusal). */

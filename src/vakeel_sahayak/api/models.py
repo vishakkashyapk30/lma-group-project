@@ -30,6 +30,19 @@ class ApproveRequest(BaseModel):
     acknowledged_fields: list[str] = Field(default_factory=list)
 
 
+class CounselAnswerRequest(BaseModel):
+    """Counsel's answer to one Munshi question."""
+
+    question: str
+    answer: str
+
+
+class DictationConfirmRequest(BaseModel):
+    """Counsel confirms the facts read back from a dictation."""
+
+    readback: list[str] = Field(default_factory=list)
+
+
 class FieldEditRequest(BaseModel):
     """Counsel edits a dossier field (status becomes USER_EDITED)."""
 
