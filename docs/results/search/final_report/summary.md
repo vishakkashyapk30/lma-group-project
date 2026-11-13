@@ -107,11 +107,11 @@ c1457 against Full, head to head on the blind slice: 8/13/3 (+0, 1); better on U
 
 | hypothesis | primary | errored records kept as scored (1.4) | D7: rerun cases dropped, 79 paired | rule-only gold (D11) | robust to the label source |
 |---|---|---|---|---|---|
-| H-A1 | falsified | falsified | falsified | not run | - |
-| H-A2 | supported | supported | supported | not run | - |
-| H-A3 | supported | supported | supported | not run | - |
-| H-A4 | supported | supported | supported | not run | - |
-| H-A5 | supported | supported | supported | not run | - |
+| H-A1 | falsified | falsified | falsified | falsified | yes |
+| H-A2 | supported | supported | supported | supported | yes |
+| H-A3 | supported | supported | supported | supported | yes |
+| H-A4 | supported | supported | supported | supported | yes |
+| H-A5 | supported | supported | supported | supported | yes |
 
 Errored records kept as scored:
 
@@ -129,7 +129,91 @@ D7, 79 paired cases:
 - **H-A4** (supported): M6 vs B0 win (diff -0.051, interval -0.100 to -0.001, n=38); M6 vs B1 win (diff -0.116, interval -0.241 to -0.022, n=23); M6 vs B2 win (diff -0.061, interval -0.120 to -0.010, n=38); M6 vs B3 win (diff -0.092, interval -0.167 to -0.019, n=18); M6 vs B4 win (diff -0.051, interval -0.096 to -0.008, n=78); M6 vs B5 win (diff -0.055, interval -0.102 to -0.010, n=78); M6 vs B6 win (diff -0.110, interval -0.162 to -0.066, n=78)
 - **H-A5** (supported): store calls vs B4 win (diff -77.582, interval -81.911 to -72.595, n=79) (means 110 against 188)
 
-Not run on the blind slice: the rule-only gold sensitivity (the gated opening is one scoring call, on the agreed gold).
+### Rule-only gold (D11: the declared label-source sensitivity, run once on the same saved outputs)
 
-## Run-to-run spread (D12): not scored yet
+| arm | B0 | B1 | B2 | B3 | B4 | B5 | B6 | total W/T/L (+too few, undefined) | losses |
+|---|---|---|---|---|---|---|---|---|---|
+| c1457 (winner) | 4/8/0 | 6/10/0 | 7/12/0 | 6/10/0 | 10/9/2 | 7/15/2 | 5/6/1 | 45/70/5 (+13, 42) | Unsupported facts, count vs b5; Coverage vs b6; Unfinished factors vs b4; Unfinished factors vs b5; Confident wrong vs b4 |
+| Full | 3/7/2 | 4/12/0 | 4/14/1 | 4/11/1 | 6/9/6 | 5/14/5 | 3/7/2 | 29/74/17 (+13, 42) | Factor recall vs b4; Factor F1 vs b4; Court-discussed recall vs b4; Unsupported facts (M6) vs b0; Unsupported facts (M6) vs b3; Unsupported facts (M6) vs b4; Unsupported facts (M6) vs b5; Unsupported facts, count vs b5; Coverage vs b6; Over-search vs b5; Unfinished factors vs b4; Unfinished factors vs b5; Confident wrong vs b0; Confident wrong vs b2; Confident wrong vs b4; Confident wrong vs b5; Confident wrong vs b6 |
+
+Cells whose outcome differs between the golds (5 of 350): c1457 (winner) vs B3 Court-discussed recall: agreed win, rule tie; Full vs B4 Factor recall: agreed tie, rule loss; Full vs B4 Factor F1: agreed tie, rule loss; Full vs B3 Court-discussed recall: agreed win, rule tie; Full vs B5 Objection precision: agreed tie, rule win.
+
+Hypotheses on the rule-only gold:
+
+- **H-A1** (falsified): losses outside the structural cells: Unsupported facts, count vs B5 loss (diff +1.875, interval +0.875 to +3.067, n=80). Structural cells as found: Coverage vs B6 loss; Unfinished factors vs B4 loss; Unfinished factors vs B5 loss; Confident wrong vs B4 loss.
+- **H-A2** (supported): Objection recall vs Full win (diff +0.216, interval +0.063 to +0.368, n=35); Answerable coverage vs Full win (diff +0.250, interval +0.109 to +0.406, n=32)
+- **H-A3** (supported): Citation precision vs B4 win (diff +0.691, interval +0.607 to +0.771, n=75); Citation precision vs B5 win (diff +0.724, interval +0.574 to +0.852, n=24); Fabricated citations vs B4 win (diff -0.953, interval -1.000 to -0.887, n=75); Fabricated citations vs B5 win (diff -0.639, interval -0.854 to -0.403, n=24)
+- **H-A4** (supported): M6 vs B0 win (diff -0.051, interval -0.100 to -0.001, n=38); M6 vs B1 win (diff -0.116, interval -0.241 to -0.022, n=23); M6 vs B2 win (diff -0.061, interval -0.120 to -0.010, n=38); M6 vs B3 win (diff -0.092, interval -0.167 to -0.019, n=18); M6 vs B4 win (diff -0.050, interval -0.096 to -0.009, n=79); M6 vs B5 win (diff -0.055, interval -0.101 to -0.010, n=79); M6 vs B6 win (diff -0.109, interval -0.160 to -0.066, n=79)
+- **H-A5** (supported): store calls vs B4 win (diff -77.713, interval -81.950 to -72.775, n=80) (means 110 against 188)
+
+## Run-to-run spread (D12, exploratory): two fresh runs, cache off, 30 search orders, frozen code
+
+| arm | metric | n | run 1 | run 2 | mean abs. per-case diff | cases changed |
+|---|---|---|---|---|---|---|
+| c1457 (winner) | Factor recall | 4 | 0.500 | 0.500 | 0.000 | 0% |
+| c1457 (winner) | Unsupported facts (M6) | 29 | 0.894 | 0.868 | 0.131 | 62% |
+| c1457 (winner) | Answerable coverage | 11 | 0.606 | 0.606 | 0.182 | 18% |
+| c1457 (winner) | Objection recall | 11 | 1.000 | 1.000 | 0.000 | 0% |
+| c1457 (winner) | Coverage | 30 | 0.961 | 0.972 | 0.056 | 7% |
+| c1457 (winner) | Citation precision | 29 | 0.739 | 0.715 | 0.215 | 93% |
+| c1457 (winner) | pass flips (factor recall >= 0.5) | 30 | | | | 0% |
+| Full | Factor recall | 4 | 0.500 | 0.500 | 0.000 | 0% |
+| Full | Unsupported facts (M6) | 30 | 0.970 | 0.978 | 0.026 | 23% |
+| Full | Answerable coverage | 11 | 0.303 | 0.212 | 0.273 | 27% |
+| Full | Objection recall | 11 | 0.364 | 0.273 | 0.455 | 45% |
+| Full | Coverage | 30 | 0.588 | 0.671 | 0.211 | 57% |
+| Full | Citation precision | 30 | 0.771 | 0.791 | 0.211 | 90% |
+| Full | pass flips (factor recall >= 0.5) | 30 | | | | 0% |
+| b0 | Factor recall | 3 | 0.000 | 0.333 | 0.333 | 33% |
+| b0 | Unsupported facts (M6) | 4 | 0.943 | 0.956 | 0.041 | 75% |
+| b0 | Answerable coverage | 9 | 0.000 | 0.000 | 0.000 | 0% |
+| b0 | Objection recall | 10 | 0.000 | 0.000 | 0.000 | 0% |
+| b0 | Coverage | 25 | 0.400 | 0.480 | 0.560 | 56% |
+| b0 | pass flips (factor recall >= 0.5) | 25 | | | | 4% |
+| b1 | Factor recall | 2 | 0.000 | 0.000 | 0.000 | 0% |
+| b1 | Answerable coverage | 7 | 0.000 | 0.000 | 0.000 | 0% |
+| b1 | Objection recall | 9 | 0.000 | 0.000 | 0.000 | 0% |
+| b1 | Coverage | 20 | 0.200 | 0.300 | 0.400 | 40% |
+| b1 | pass flips (factor recall >= 0.5) | 20 | | | | 0% |
+| b2 | Factor recall | 3 | 0.333 | 0.000 | 0.333 | 33% |
+| b2 | Unsupported facts (M6) | 4 | 0.964 | 1.000 | 0.036 | 50% |
+| b2 | Answerable coverage | 9 | 0.111 | 0.000 | 0.111 | 11% |
+| b2 | Objection recall | 10 | 0.000 | 0.000 | 0.000 | 0% |
+| b2 | Coverage | 25 | 0.360 | 0.640 | 0.680 | 68% |
+| b2 | pass flips (factor recall >= 0.5) | 25 | | | | 4% |
+| b3 | Factor recall | 2 | 0.000 | 0.500 | 0.500 | 50% |
+| b3 | Unsupported facts (M6) | 4 | 0.990 | 0.969 | 0.041 | 75% |
+| b3 | Answerable coverage | 7 | 0.000 | 0.000 | 0.000 | 0% |
+| b3 | Objection recall | 9 | 0.000 | 0.000 | 0.000 | 0% |
+| b3 | Coverage | 20 | 0.350 | 0.500 | 0.450 | 45% |
+| b3 | pass flips (factor recall >= 0.5) | 20 | | | | 5% |
+| b4 | Factor recall | 4 | 0.500 | 0.250 | 0.250 | 25% |
+| b4 | Unsupported facts (M6) | 30 | 0.947 | 0.946 | 0.034 | 40% |
+| b4 | Answerable coverage | 11 | 0.152 | 0.288 | 0.227 | 27% |
+| b4 | Objection recall | 11 | 0.545 | 0.364 | 0.364 | 36% |
+| b4 | Coverage | 30 | 0.069 | 0.056 | 0.036 | 37% |
+| b4 | Citation precision | 19 | 0.000 | 0.026 | 0.026 | 5% |
+| b4 | pass flips (factor recall >= 0.5) | 30 | | | | 3% |
+| b5 | Factor recall | 4 | 0.500 | 0.500 | 0.000 | 0% |
+| b5 | Unsupported facts (M6) | 30 | 0.952 | 0.961 | 0.067 | 30% |
+| b5 | Answerable coverage | 11 | 0.076 | 0.394 | 0.318 | 36% |
+| b5 | Objection recall | 11 | 0.273 | 0.273 | 0.182 | 18% |
+| b5 | Coverage | 30 | 0.140 | 0.147 | 0.134 | 40% |
+| b5 | Citation precision | 10 | 0.367 | 0.233 | 0.267 | 40% |
+| b5 | pass flips (factor recall >= 0.5) | 30 | | | | 0% |
+| b6 | Factor recall | 4 | 0.750 | 0.750 | 0.000 | 0% |
+| b6 | Unsupported facts (M6) | 30 | 0.981 | 0.981 | 0.000 | 0% |
+| b6 | Answerable coverage | 11 | 0.000 | 0.000 | 0.000 | 0% |
+| b6 | Objection recall | 11 | 0.000 | 0.000 | 0.000 | 0% |
+| b6 | Coverage | 30 | 1.000 | 1.000 | 0.000 | 0% |
+| b6 | pass flips (factor recall >= 0.5) | 30 | | | | 0% |
+
+(every metric: docs/results/search/final_report/variance_d12.csv)
+
+- run 1, c1457 (winner) against B0-B6: 30/31/3 (+47, 64); losses: Unfinished factors vs b4; Unfinished factors vs b5; Confident wrong vs b4
+- run 1, Full against B0-B6: 10/47/7 (+49, 62); losses: Unsupported facts, count vs b5; Objection precision vs b5; Coverage vs b6; Over-search vs b5; Unfinished factors vs b4; Unfinished factors vs b5; Confident wrong vs b4
+- run 2, c1457 (winner) against B0-B6: 35/28/3 (+48, 61); losses: Unfinished factors vs b4; Unfinished factors vs b5; Confident wrong vs b4
+- run 2, Full against B0-B6: 11/47/8 (+48, 61); losses: Unsupported facts (M6) vs b0; Unsupported facts (M6) vs b2; Unsupported facts, count vs b5; Coverage vs b6; Unfinished factors vs b4; Unfinished factors vs b5; Confident wrong vs b0; Confident wrong vs b4
+
+Each arm against its own rerun (225 cells): 2 decided as a win or loss (b5 Answerable coverage loss; b5 Confident wrong win).
 

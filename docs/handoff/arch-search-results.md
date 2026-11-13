@@ -191,3 +191,7 @@ The holdout block finished (9 arms x 20 cases). The ablation queue stopped mid-w
   `vs-w7..9`; `shard-finish.sh` moves the job to `done/`). `autoscore2.sh` (unit `vs-autoscore`) scores each finished job with the score-fix code,
   one call per arm into `sarvam_var<n>/scores/<arm>/`, at most two at once and only with 8 GB free. Then `VS_RUNS=<frozen>/data/eval/dev_runs
   python scripts/midsub/final_tables.py` writes the D12 block (`variance_d12.csv`, `wlt_var_*.csv`).
+  Result (all 18 jobs scored 13 Nov 13:50): c1457 against B0-B6 30/31/3 in run 1 and 35/28/3 in run 2 (original search run 30/37/3),
+  the same three losses each time; Full 10/47/7 and 11/47/8 (original 11/49/10), its losses move between runs. Each arm against its own rerun:
+  2 of 225 cells decided (both B5). Per order c1457's unsupported-fact rate changes on 62% of orders (mean abs. diff 0.13), citation precision
+  on 93%; factor recall, objection recall and the pass verdict change on none. In the report (sections/blind.tex, threats.tex, limitations.tex).
