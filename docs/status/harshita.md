@@ -1,7 +1,11 @@
 # Status — Harshita
 
 ## Current assignment (13 Nov 2026)
-Still open (no commits since 2 Nov): per-ground list of the sentences c1457 withholds and why (the `withheld` field of the X4 event) and every Abhiyojak objection in the workspace; the live end-to-end run on `main`; Hindi interface labels via Sarvam. The Gemini open-slice shard is dropped.
+- **Item 1 done by Vishak on 13 Nov (commit bc2709e):** what c1457 withholds, per ground, and every Abhiyojak objection in the workspace.
+  - Backend: `GET /api/cases/{id}/brief` adds `withheld: [{ground, factor, sentences: [{sentence, reason}], dropped}]`, folded from Vakeel's X4 `abstain` events (only the latest draft of each ground counts; replies are skipped). API-only: the stored brief, the export and the export hash are unchanged. `src/vakeel_sahayak/api/{models,service}.py`, `api/routers/cases.py`, `docs/api/openapi.json` regenerated.
+  - Frontend: under each ground a closed "Removed from the argument (n sentences)" list, each sentence with its reason in plain words (`frontend/lib/withheld.ts`: "not supported by the record", "the record is silent on trial delay", ...; scores dropped); a "Grounds left for you to draft" section for grounds that lost every sentence (`components/workspace/tabs/Withheld.tsx`). "Likely objections" lists every objection whatever its verdict and its summary now also counts "not judged yet". Demo case-0007 has sample withheld sentences (G1, G5, and G8 dropped).
+  - Tests: `tests/unit/api/test_brief_withheld.py` (4), `frontend/tests/unit/withheld.test.tsx` (11), `frontend/tests/unit/objections.test.tsx` (3), all passing.
+- **Still Harshita's:** item 2, the live end-to-end run (`frontend/e2e/live_flow.spec.ts` with `E2E_LIVE_API=1` against `docker compose up` on `main`, plus Vitest and Playwright; fix what breaks); item 3, Hindi interface labels translated with Sarvam (public interface text only) and wired with `lang="hi"`. The Gemini open-slice shard is dropped.
 Full list: `docs/handoff/team-todo-2026-11-02.md`, section "What each person does next (13 November)".
 
 ## Earlier assignment (2 Nov 2026, to the freeze on 10 Nov)
