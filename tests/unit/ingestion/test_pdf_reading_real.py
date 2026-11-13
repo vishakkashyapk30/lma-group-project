@@ -128,11 +128,14 @@ def test_image_only_pdf_asks_counsel_when_the_vision_model_cannot_load(require_p
     LocalVisionClient._load_failures.clear()
 
 
-def test_vision_client_missing_pillow_is_model_unavailable():
+def test_vision_client_missing_pillow_is_model_unavailable(monkeypatch):
     """A partly installed vision stack must still let the ladder ask counsel."""
     from vakeel_sahayak.models.base import ModelUnavailable
     from vakeel_sahayak.models.vlm import LocalVisionClient
 
+    # RECONCILED: the test assumed Pillow is absent and failed on every machine where it is installed; Pillow is now made unimportable
+    # for the test (a None entry in sys.modules makes `from PIL import Image` raise ImportError), so the same assertion holds everywhere.
+    monkeypatch.setitem(sys.modules, "PIL", None)
     client = LocalVisionClient("test/loaded", quant_4bit=False)
     client._loaded = (object(), object())
     with pytest.raises(ModelUnavailable, match="Pillow"):
