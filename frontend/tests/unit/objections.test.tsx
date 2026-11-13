@@ -41,8 +41,11 @@ describe("ObjectionsSection", () => {
   it("lists every objection raised, whatever its verdict", () => {
     render(<ObjectionsSection />);
     const items = screen.getAllByTestId("spar-objection");
-    expect(items.map((i) => i.getAttribute("data-objection"))).toEqual(["O1", "O2", "O3", "O4"]);
-    expect(items.map((i) => i.getAttribute("data-verdict"))).toEqual(["ANSWERED", "UNANSWERED", "PARTLY", null]);
+    // RECONCILED: objections are grouped under the ground they answer (lib: groupByGround), unanswered ones first within a group,
+    // so the order is by ground (O1 and O4 are in different groups from O2 and O3) rather than the order raised. Every one is still listed.
+    expect(items.map((i) => i.getAttribute("data-objection"))).toEqual(["O1", "O4", "O3", "O2"]);
+    expect(items.map((i) => i.getAttribute("data-verdict"))).toEqual(["ANSWERED", null, "PARTLY", "UNANSWERED"]);
+    expect([...items.map((i) => i.getAttribute("data-objection"))].sort()).toEqual(["O1", "O2", "O3", "O4"]);
     for (const o of record.objections) expect(screen.getByText(o.objection)).toBeTruthy();
     expect(screen.getByText("4 objections: 1 answered, 1 partly answered, 1 not answered yet, 1 not judged yet.")).toBeTruthy();
     expect(screen.getByText("Not judged yet")).toBeTruthy();
