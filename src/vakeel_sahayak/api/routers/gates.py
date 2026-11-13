@@ -14,11 +14,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from vakeel_sahayak.api import service
 from vakeel_sahayak.api.deps import get_event_log
 from vakeel_sahayak.api.models import ApproveRequest, CounselAnswerRequest, DictationConfirmRequest
-from vakeel_sahayak.record.case_state import CaseState
 from vakeel_sahayak.orchestration.gates import GateGuard
+from vakeel_sahayak.record.case_state import CaseState
 from vakeel_sahayak.record.event_log import EventLog
 from vakeel_sahayak.record.gates import ChecklistNotCleared
-from vakeel_sahayak.schemas.case import CaseDossier, GateStatus
+from vakeel_sahayak.schemas.case import GateStatus
+from vakeel_sahayak.schemas.dossier import CaseDossier
 from vakeel_sahayak.schemas.enums import EventKind, GateId
 from vakeel_sahayak.schemas.events import COUNSEL, Event
 

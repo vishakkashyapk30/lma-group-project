@@ -223,6 +223,28 @@ def test_page_image_is_served_from_the_laptop_data_directory(tmp_path, monkeypat
     assert res.status_code == 200 and res.content == png
 
 
+def test_page_image_is_rendered_from_the_indexed_original_pdf(tmp_path, monkeypatch):
+    """A source page remains viewable when ingestion did not retain a PNG cache."""
+    pytest.importorskip("fitz")
+    from tests.fixtures.pdfgen import make_text_pdf
+
+    sc, client = seeded(tmp_path, monkeypatch)
+    case_dir = sc.data_dir / "cases" / CASE
+    case_dir.mkdir(parents=True, exist_ok=True)
+    source = case_dir / "bundle.pdf"
+    make_text_pdf(source, ["First page", "Second page"])
+    (case_dir / "page_index.json").write_text(
+        '[{"file":"bundle.pdf","page":2,"doc_id":"d1","doc_type":"FIR","text":"Second page"}]',
+        encoding="utf-8",
+    )
+
+    res = client.get(f"/api/cases/{CASE}/files/d1/pages/2")
+    assert res.status_code == 200
+    assert res.headers["content-type"] == "image/png"
+    assert res.content.startswith(b"\x89PNG\r\n\x1a\n")
+    assert res.headers["cache-control"] == "private, no-store"
+
+
 @pytest.mark.parametrize("bad", ["../../etc/passwd", "..%2F..%2Fsecret"])
 def test_page_image_route_cannot_escape_the_case_directory(tmp_path, monkeypatch, bad):
     """A traversal in the document id never reads outside the case directory."""

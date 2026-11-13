@@ -8,15 +8,22 @@ see tests/unit/api/_helpers.py.
 from __future__ import annotations
 
 import shutil
+from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 
 from vakeel_sahayak.api import service
 from vakeel_sahayak.api.deps import get_event_log
-from vakeel_sahayak.api.models import BailBriefOut, FieldEditRequest, HearingPrepCardOut, NewCaseRequest, RightsReportOut
+from vakeel_sahayak.api.models import (
+    BailBriefOut,
+    FieldEditRequest,
+    HearingPrepCardOut,
+    NewCaseRequest,
+    RightsReportOut,
+)
 from vakeel_sahayak.orchestration.gates import GateGuard
 from vakeel_sahayak.record.event_log import EventLog
 from vakeel_sahayak.schemas.case import BudgetState, CaseSummary
@@ -28,6 +35,41 @@ from vakeel_sahayak.schemas.sparring import SparringRecord
 from vakeel_sahayak.schemas.store_rows import TimelineEvent
 
 router = APIRouter(prefix="/api/cases", tags=["cases"])
+
+
+def _indexed_source_pdf(case_dir: Path, doc_id: str, page: int) -> Path | None:
+    """Find the original PDF for one filed page, without trusting index paths.
+
+    Munshi's page index retains the uploaded filename and its physical page
+    number. Page PNGs are optional local caches, so the viewer can fall back
+    to this source when a case was ingested from the original PDF alone.
+    """
+    from vakeel_sahayak.ingestion.pageindex import PageIndex
+
+    try:
+        indexed = PageIndex.load(case_dir / "page_index.json")
+    except (OSError, ValueError):
+        return None
+    record = next((item for item in indexed.pages if item.doc_id == doc_id and item.page == page), None)
+    if record is None or Path(record.file).suffix.lower() != ".pdf":
+        return None
+    source = (case_dir / record.file).resolve()
+    return source if case_dir in source.parents and source.is_file() else None
+
+
+def _render_pdf_page(pdf_path: Path, page: int) -> bytes | None:
+    """Rasterise one physical PDF page for the private, on-device viewer."""
+    if page < 1:
+        return None
+    try:
+        import fitz  # PyMuPDF
+
+        with fitz.open(pdf_path) as pdf:
+            if page > pdf.page_count:
+                return None
+            return pdf.load_page(page - 1).get_pixmap(matrix=fitz.Matrix(1.5, 1.5), alpha=False).tobytes("png")
+    except (ImportError, OSError, RuntimeError, ValueError):
+        return None
 
 
 @router.get("", response_model=list[CaseSummary])
@@ -196,15 +238,25 @@ async def get_budget(case_id: str, log: Annotated[EventLog, Depends(get_event_lo
 
 
 @router.get("/{case_id}/files/{doc_id}/pages/{page}")
-async def get_page_image(case_id: str, doc_id: str, page: int, log: Annotated[EventLog, Depends(get_event_log)]) -> FileResponse:
-    """Page image for the PDF viewer, served from the case's laptop directory only (plan §13.5)."""
+def get_page_image(case_id: str, doc_id: str, page: int, log: Annotated[EventLog, Depends(get_event_log)]) -> Response:
+    """Page image for the PDF viewer, served and rendered on this laptop only (plan §13.5)."""
     service.require_case(log, case_id)
     if "/" in doc_id or "\\" in doc_id or ".." in doc_id:
         raise HTTPException(status_code=404, detail="unknown page")
     from vakeel_sahayak.api.deps import _data_dir
 
-    base = (_data_dir() / "cases" / case_id / "files").resolve()
-    target = (base / doc_id / "pages" / f"{page}.png").resolve()
-    if base not in target.parents or not target.is_file():
+    case_dir = (_data_dir() / "cases" / case_id).resolve()
+    image_root = (case_dir / "files").resolve()
+    target = (image_root / doc_id / "pages" / f"{page}.png").resolve()
+    headers = {"Cache-Control": "private, no-store"}
+    if image_root in target.parents and target.is_file():
+        return FileResponse(str(target), media_type="image/png", headers=headers)
+
+    # Ingestion does not have to materialise every page as a PNG. Render the
+    # matching uploaded PDF only when the browser requests it, so an otherwise
+    # complete local case never shows a broken source preview.
+    source = _indexed_source_pdf(case_dir, doc_id, page)
+    png = _render_pdf_page(source, page) if source is not None else None
+    if png is None:
         raise HTTPException(status_code=404, detail="unknown page")
-    return FileResponse(str(target), media_type="image/png")
+    return Response(content=png, media_type="image/png", headers=headers)

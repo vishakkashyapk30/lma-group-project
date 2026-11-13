@@ -163,6 +163,7 @@ function PageView({
           // Boxes are in PDF points: scale the image's aspect ratio onto an A4-wide page.
           if (img.naturalWidth) setImgSize({ w: A4.width, h: Math.round((A4.width * img.naturalHeight) / img.naturalWidth) });
         }}
+        onError={() => setFailure("The stored page image could not be loaded.")}
       />
       {selected && isBox(selected.box) ? (
         <HighlightBox box={selected.box} width={w} height={h} label={`Source: ${selected.quote ?? "highlighted region"}`} />
