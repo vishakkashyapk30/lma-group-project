@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from vakeel_sahayak.schemas.bail_brief import BailBrief
 from vakeel_sahayak.schemas.enums import ExportFormat
 from vakeel_sahayak.schemas.rights_report import RightsCheckResult, RightsReport
 from vakeel_sahayak.schemas.triage import TriageCard
@@ -78,3 +79,32 @@ class RightsReportOut(RightsReport):
         """Build the API view of a stored report (nothing is written back)."""
         checks = [RightsCheckOut(**c.model_dump(), verification=c.verification) for c in report.checks]
         return cls(case_id=report.case_id, as_of=report.as_of, checks=checks, unverified_checks=report.unverified_checks)
+
+
+class WithheldSentence(BaseModel):
+    """One sentence X4 (`abstention='strict'`) took out of a ground's argument, with the checker's reason."""
+
+    sentence: str
+    reason: str
+
+
+class WithheldGround(BaseModel):
+    """What X4 left out of one ground (the latest `abstain` event of Vakeel's latest draft of that ground).
+
+    `dropped` is True when nothing supportable was left: the ground is then not in the brief, and its factor is an open issue for counsel.
+    """
+
+    ground: str
+    factor: str
+    sentences: list[WithheldSentence] = Field(default_factory=list)
+    dropped: bool = False
+
+
+class BailBriefOut(BailBrief):
+    """`GET /api/cases/{id}/brief`: the stored brief plus, additively, `withheld` (per ground, the sentences X4 left out and why).
+
+    Folded from Vakeel's `abstain` events in the record; the stored brief, its export and the export hash are unchanged. Empty when the
+    run did not use strict abstention.
+    """
+
+    withheld: list[WithheldGround] = Field(default_factory=list)

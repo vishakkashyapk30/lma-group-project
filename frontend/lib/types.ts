@@ -494,6 +494,23 @@ export interface StatutoryPosition {
   rights?: string | null;
 }
 
+/** One sentence strict abstention (X4) took out of a ground's argument, with the checker's reason (api/models.py WithheldSentence). */
+export interface WithheldSentence {
+  sentence: string;
+  /** The checker's words, e.g. "not supported by the dossier quote (fact support 0.31)"; plainReason() in lib/withheld reads them out. */
+  reason: string;
+}
+
+/** What strict abstention left out of one ground (api/models.py WithheldGround). */
+export interface WithheldGround {
+  /** Ground id, e.g. "G2". */
+  ground: string;
+  factor: string;
+  sentences: WithheldSentence[];
+  /** True when nothing supportable was left: the ground is not in the brief and counsel drafts it. */
+  dropped: boolean;
+}
+
 export interface BailBrief {
   case_id: string;
   statutory_position: StatutoryPosition;
@@ -501,6 +518,8 @@ export interface BailBrief {
   open_issues: OpenIssue[];
   /** Always exactly DRAFT_LABEL. */
   label: string;
+  /** API-only (GET /brief): per ground, the sentences left out of the argument and why. Absent or empty without strict abstention. */
+  withheld?: WithheldGround[];
 }
 
 /* ═════════════════════════════════════════════════════════════════════════════════════════════════════════════════

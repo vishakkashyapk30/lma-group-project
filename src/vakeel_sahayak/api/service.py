@@ -9,11 +9,13 @@ import re
 
 from fastapi import HTTPException
 
+from vakeel_sahayak.api.models import WithheldGround, WithheldSentence
 from vakeel_sahayak.orchestration.gates import GateGuard
 from vakeel_sahayak.record.case_state import CaseState
 from vakeel_sahayak.record.event_log import EventLog
 from vakeel_sahayak.schemas.case import CaseSummary
 from vakeel_sahayak.schemas.enums import EventKind, GateId, RightsStatus, Stage
+from vakeel_sahayak.schemas.events import Event
 from vakeel_sahayak.schemas.rights_report import RightsReport
 
 _GATES = (GateId.GATE_1_DOSSIER, GateId.GATE_2_EXPORT)
@@ -160,3 +162,28 @@ def case_summary(log: EventLog, guard: GateGuard, case_id: str) -> CaseSummary:
         rights_chips=rights_chips(rights),
         needs_attention=needs_attention(guard, case_id),
     )
+
+
+def withheld_by_ground(events: list[Event]) -> list[WithheldGround]:
+    """Per ground, the sentences X4 (`abstention='strict'`) left out of the argument and why, from Vakeel's `abstain` events.
+
+    For each ground id the latest `abstain` event counts, and only when it follows Vakeel's latest `draft` of that ground (a redraft
+    without abstentions clears the list). Replies to objections (`reply:O1`) are not grounds and are skipped. Order: first drafted first.
+    """
+    drafted: dict[str, int] = {}
+    latest: dict[str, tuple[int, dict]] = {}
+    for i, ev in enumerate(events):
+        if ev.kind != EventKind.AGENT_MESSAGE or str(getattr(ev.actor, "value", ev.actor)) != "VAKEEL":
+            continue
+        out = ev.outputs
+        if out.get("type") == "draft" and out.get("ground"):
+            drafted[str(out["ground"])] = i
+        elif out.get("type") == "abstain" and out.get("withheld") and not str(out.get("claim", "")).startswith("reply:"):
+            latest[str(out.get("claim", ""))] = (i, out)
+    groups: list[tuple[int, WithheldGround]] = []
+    for claim, (i, out) in latest.items():
+        if not claim or i < drafted.get(claim, -1):
+            continue
+        sentences = [WithheldSentence(sentence=str(w.get("sentence", "")), reason=str(w.get("reason", ""))) for w in out["withheld"] if isinstance(w, dict)]
+        groups.append((drafted.get(claim, i), WithheldGround(ground=claim, factor=str(out.get("factor", "")), sentences=sentences, dropped=out.get("kept") == 0)))
+    return [g for _, g in sorted(groups, key=lambda t: t[0])]

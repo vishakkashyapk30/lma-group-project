@@ -163,3 +163,29 @@ def test_a_continuation_page_without_a_title_stays_with_its_order():
     texts = [HC_CALCUTTA, "The learned counsel for the petitioner submitted that the petitioner is innocent and has been in custody.", FIR]
     signals = [signals_from_text(t, 595.0 * 842.0, 1.0) for t in texts]
     assert split_into_documents(texts, signals, TH) == [(1, 2), (3, 3)]
+
+
+def test_signals_and_the_text_layer_rung_extract_each_page_once(require_pymupdf, pdfs, monkeypatch):
+    """Munshi's ladder computes the page signals (text layer, hints) and then reads the text layer: one extraction per page, not three or four."""
+    import fitz
+
+    from vakeel_sahayak.ingestion.source import clear_source_cache
+    from vakeel_sahayak.tools.intake.pages import inspect_page, read_text_layer
+
+    pdf = pdfs.text("once.pdf", [pdfgen.REMAND_PAGE, pdfgen.REMAND_PAGE])
+    clear_source_cache()
+    calls: list[int] = []
+    real = fitz.Page.get_text
+
+    def counting(self, option="text", *args, **kwargs):
+        if option == "text":
+            calls.append(self.number)
+        return real(self, option, *args, **kwargs)
+
+    monkeypatch.setattr(fitz.Page, "get_text", counting)
+    for page in (1, 2):
+        signals = inspect_page(str(pdf), page)
+        layer = read_text_layer(str(pdf), page)
+        assert signals.has_text_layer and layer.text.strip()
+    assert sorted(calls) == [0, 1]
+    clear_source_cache()

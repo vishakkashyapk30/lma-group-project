@@ -1,5 +1,7 @@
 # Product readiness: what is left to present Vakeel-Sahayak.ai as a finished product
 
+> **13 Nov 2026:** the pass over this file was done by Vishak for Shravani's sweep item: **section 9 at the end gives every task PR-01 to PR-86 its status** (22 done with a file, test or commit; 32 partly; 32 open, each with an owner and the next step). Sections 0 to 3 keep their 24 Oct wording (`docs/handoff/team-todo-2026-11-02.md`).
+
 Status date: 2026-10-24. Branch `ideation-v1`. This document is a planning note. It changes no code. Task IDs `PR-01` to `PR-86` are stable and are used by the team-plan document that follows.
 
 > **Checked by Vishak 2026-10-27: sections 0 and 2 below describe 2026-10-24 and are partly outdated.** Since then (verified in code and tests): `create_app()` builds the API (42 routes, Swagger) and the frontend has a live mode (`frontend/lib/api.ts`); the export modules (DOCX application, List of Dates, hearing card, PDF, gated export) are built (`tests/unit/export` passes, 119 passed together with the eval metrics and stats tests); `scripts/download_models.sh` and `make models` exist; the CrPC and NDPS statutes and First Schedule flags are in the store (`docs/handoff/data-and-models.md`). Still open: real OCR, vision and translation paths, the Windows/macOS install path, court-specific format, Rights rule verification (`last_verified`). For the current state read `split.md` section 1 and `progress.md` section 0f. The task list is kept as written.
@@ -527,3 +529,97 @@ PR-01, 03, 10, 12, 13, 14, 20, 26, 28, 37, 45, 46, 47, 58, 60, 61, 63, 68, 69, 7
 | D11 | Is the Preview release for lawyers or for the team and teaching staff only | lawyers, staff only | staff and a trusted lawyer under supervision; not for a real client's file until D6 and the manual QA pass | Week 3 |
 
 <!-- /SECTION:8 -->
+
+<!-- SECTION:9 -->
+## 9. Status of every task on 13 November 2026 (gap sweep)
+Done by Vishak on 13 Nov for Shravani's sweep item (`docs/handoff/team-todo-2026-11-02.md`). Rule: **Done** only where a file and a passing test or a commit shows it; everything else is **Partly** or **Open** with an owner and the next step. Tests named "passed on 13 Nov" were run on that day against this tree: `tests/unit/orchestration` 287, `tests/unit/api` 140, `tests/unit/export` 73, `tests/integration` 133, the system files `test_flow1_messy_bundle.py` 21, `test_flow3_brief_spar_export.py` 18, `test_t7_bulk_export.py` 15, `test_t7_prediction_lay_advice.py` 36, the ingestion, Munshi, intake-tool and statute tests 395 passed with 1 known failure (Pillow test, see PR-23). The frontend suites (Vitest, Playwright) were not run in this sweep. Sections 0 to 3 above keep their 24 Oct wording; this table is the current state. Counts: 22 Done, 32 Partly, 32 Open (86 tasks).
+
+| Task | Status | Evidence, or owner and next step |
+|---|---|---|
+| PR-01 | Done | `orchestration/graph.py` (nodes, gate router, `build_graph` with the SQLite checkpointer, change-set path); `tests/unit/orchestration` 287 passed on 13 Nov; resume: `tests/integration/test_event_log_resume_trace.py`; commits b3e34da, a4e0972, d787a31 |
+| PR-02 | Done | `orchestration/fallback_state_machine.py`, `tests/unit/orchestration/test_fallback_state_machine.py`; b3e34da. Not wired: nothing reads `VS_ORCHESTRATOR` (Shravani: wire it or drop the sentence) |
+| PR-03 | Done | `api/app.py` `create_app()`, `api/deps.py`; `tests/unit/api/test_app_and_deps.py` (in the 140 passed on 13 Nov); cases live in the `vs_data` volume, which `install.sh` keeps; b3e34da, de93b64 |
+| PR-04 | Partly | Read routes are built and the rights report is typed (`RightsReportOut`). Open (Shravani): `CaseSummary.last_activity` does not exist and the cause list is not sorted by it; `/{case_id}/prep` returns `dict[str, Any]`. Next: both, with a test in `tests/unit/api/test_cases_router.py` |
+| PR-05 | Partly | Upload and dictation routes (`api/routers/upload.py`, `/audio`), SSE (`api/sse.py`, `routers/events.py`); `tests/unit/api/test_upload_router.py`, `test_sse_follow.py` passed on 13 Nov. Open (Shravani): page-n-of-N progress events and a background runner for intake were not checked. Next: assert in a test that upload returns before intake ends and that SSE carries one event per page |
+| PR-06 | Done | `api/routers/chat.py`, `cases.py` (draft, brief, spar, prep); `tests/unit/api/test_chat_router.py`, `test_cases_router.py`; `tests/system/test_flow3_brief_spar_export.py` 18 passed on 13 Nov; 4408ef8 (c1457 and abstention events) |
+| PR-07 | Partly | Gate checklist and approval with refusal while items are open (`api/routers/gates.py`; `tests/unit/api/test_gates_router.py`, `tests/integration/test_gates_interrupts.py`). Open (Shravani): no route for counsel's answers to Munshi's questions or for the dictation read-back confirmation. Next: two POST routes on the gate router that log USER_ACTION events, one test each |
+| PR-08 | Done | `api/routers/desk.py` (upload, board, open); `tests/unit/api/test_desk_router.py`, `tests/integration/test_batch_queue_resume.py` passed on 13 Nov. The slow 120-file system test was not run |
+| PR-09 | Partly | `/api/library/citations/{doc_id}` returns `root` and `good_law`; search runs with `before=today` on the server. Open (Shravani): search takes no `before` from the case and its hits carry no `sc_root`/`good_law`. Next: a `before` query parameter defaulting to today and the two fields, test in `tests/unit/api/test_library_router.py` |
+| PR-10 | Partly | `request_approval(...).unresolved` settled (plain ids; `tests/unit/tools_drafting/test_export_and_approval_tools.py` passed on 13 Nov); Munshi's repeated page extraction fixed on 13 Nov (32d90ba, `ingestion/source.py`, `tests/unit/ingestion/test_pdf_reading_real.py::test_signals_and_the_text_layer_rung_extract_each_page_once`). Open (Shravani): the in-memory shelf starts empty each run (`agents/munshi/toolkit.py` `ToolFiler`), duplicate documents on re-ingest, optional `SourceRef` fields. Next: load the case shelf in `MunshiAgent._bind`; skip a file whose hash is already filed |
+| PR-11 | Open | No cancel route, no single-GPU job queue for the API. Owner: Shravani, after the deadline. Next: a per-case lock in `api/deps.py` so a second draft request gets 409 |
+| PR-12 | Done | `make smoke` (Makefile target; case-0007 through the agents offline); `eval/runners/driver.py` |
+| PR-13 | Done | `export/application.py`, `list_of_dates.py`, `docx_style.py`; `tests/unit/export` 73 passed on 13 Nov; 5dac4ed. Opening the file in Word and LibreOffice is part of the browser walk (PR-75) |
+| PR-14 | Done | `export/hearing_card.py`; `tests/unit/export/test_hearing_card.py` (in the 73); 0e5897b |
+| PR-15 | Partly | `export/pdf.py` with `tests/unit/export/test_exporter.py`. Open (Harshita): Devanagari rendering and page count against the DOCX not checked. Next: export case-0007 with a Hindi field and look at the PDF during the browser walk |
+| PR-16 | Done | `api/routers/export.py`, `export/exporter.py`; 403 before Gate 2 in `tests/unit/api/test_export_router.py` and `tests/system/test_t7_bulk_export.py` (15 passed on 13 Nov); the DOCX download is the last step of `frontend/e2e/live_flow.spec.ts` (c317615) |
+| PR-17 | Open | The brief is read-only; only dossier fields can be edited (`PATCH /{case_id}/dossier/{field}`). Owner: Shravani, after the deadline |
+| PR-18 | Open | Owner: Harshita, after PR-17 |
+| PR-19 | Done | `export/templates/README.md` (the generic format is built in code; what a court format would need) |
+| PR-20 | Partly | `VS_MODELS=offline/auto/real`, tier table `weights:` in `configs/models.yaml`, the run manifest records the backend. Open (Vishak): no hardware auto-detect of the tier and no tier statement in the UI. Next: report the tier in `/healthz` and on the Settings page |
+| PR-21 | Done | `scripts/download_models.sh` runs `scripts/_download_models.py` (tiers, `--dry-run`, disk check, resume, LFS SHA-256, `models/MANIFEST.json`); `make models`; 40b8b49. No unit test |
+| PR-22 | Open | The `real` profile has never been validated on the 4060. Owner: Vishak. Next: `./install.sh --real` on the laptop with a 4B model |
+| PR-23 | Partly | PyMuPDF is a core dependency (`pyproject.toml`), the real-PDF tests run (11 of 12 passed on 13 Nov); the production image uses local Tesseract (10e762c). Open (Shravani): vision, IndicTrans2 and Whisper paths on a real case. Also `test_vision_client_missing_pillow_is_model_unavailable` fails wherever Pillow is installed (also on HEAD); it should hide the `PIL` import |
+| PR-24 | Open | No CPU banner or estimate. Owner: Vishak, after the deadline |
+| PR-25 | Partly | The workspace streams events over SSE (`frontend/lib/useEventStream.ts`). Open (Harshita): time estimate, cancel and completion notice. Next: after the browser walk |
+| PR-26 | Done | Sarvam-105B ran the architecture search, holdout and blind slice (`docs/handoff/arch-search-results.md`; 7fc489a). Open (Vishak): set the dashboard retention to the shortest option and note the date |
+| PR-27 | Partly | Token and cost per arm are in the final tables (`scripts/midsub/final_tables.py`). Open (Vishak): seconds per page and per stage per tier. Next: report the measured run times of the blind run if the manifests have them |
+| PR-28 | Partly | CrPC 1973 (10 sections), NDPS (s.19, 24, 27A, 31A, 36A, 37) and the CrPC First Schedule Part I flags (382 IPC rows) by script from official PDFs (`scripts/extract_gap_statutes.py`; `tests/unit/stores/test_extract_gap_statutes.py`, `test_statutes_gap_rows.py` passed on 13 Nov; 5f6fb71, 8e3a276, 2601744). Open: BNSS/BNS First Schedule flags (another agent is scripting it on 13 Nov), Part II, 29 unresolved IPC flags, the `TODO` row in `configs/bail_sections.yaml` (owner Shravani); the one statute store rebuild and bundle refresh (owner Satvik) |
+| PR-29 | Partly | Full build done and shipped in the bundle; Supreme Court metadata in the citation index (8278ed0). Open (Satvik): `data/stores/MANIFEST.json` still lists the old statute count (`docs/handoff/data-and-models.md`); refresh it with the statute rebuild |
+| PR-30 | Done | `make data` / `make data-install SRC=hf:...` with checksums, retries and row counts (`scripts/data_ensure.sh`; `tests/unit/scripts/test_fresh_clone.py` passed on 13 Nov); `install.sh` seeds the Docker volume (5258d2c) |
+| PR-31 | Open | P2, no incremental update path. Owner: Vishak, after submission |
+| PR-32 | Partly | `GET /healthz` returns the model and privacy settings (`api/asgi.py`; `tests/unit/api/test_healthz_settings.py`). Open (Shravani): store manifest, rule dates, version; no `/api/settings` write path |
+| PR-33 | Partly | Locked and corrupt PDFs raise typed `SourceError`s and Munshi turns them into file errors (`ingestion/source.py`, `agents/munshi/agent.py`). Open (Shravani): page caps, timeouts and a 300-page file. Next: the browser walk's hostile-file cases (manual QA outline item 2) |
+| PR-34 | Done | An unreadable page ends at `ASK_COUNSEL` (`ingestion/ladder.py`, `agents/munshi/toolkit.py`); `tests/unit/ingestion/test_pdf_reading_real.py::test_image_only_pdf_asks_counsel_when_the_vision_model_cannot_load` passed on 13 Nov |
+| PR-35 | Partly | T2 messy bundles and the P1-P8 ingestion arms ran offline (`docs/handoff/testsets-t2-t9.md`). Open (Vishak): a failure table by input kind. Next: one table from the P-arm results in the report appendix |
+| PR-36 | Partly | `frontend/lib/errors.ts` (`ApiError`, 63461bf). Open (Harshita): a catalogue with "what happened, what to do" per code |
+| PR-37 | Partly | The DOCX header banner "AI-generated draft: check against your court's rules." (`export/docx_style.py`); `tests/system/test_t7_draft_label.py`. Open (Harshita): first-run terms accepted once |
+| PR-38 | Done | Approval refused while UNSUPPORTED / NEEDS_REVIEW / UNANSWERED items are open (`api/routers/gates.py`; `tests/unit/api/test_gates_router.py` passed on 13 Nov); the UI side is `frontend/e2e/gate2.spec.ts` (not re-run) |
+| PR-39 | Partly | Decline in `privacy/sensitive_matters.py` (`tests/system/test_t7_sensitive_matters.py`); NALSA 15100 shown in the chat pane and footer. Open (Shravani): proof that the uploaded files are purged. Next: a test that lists the case folder after a declined upload |
+| PR-40 | Done | `tests/system/test_t7_prediction_lay_advice.py` 36 passed on 13 Nov; `test_t7_pressure.py`; refusal wording in `agents/sutradhar/chat_router.py` |
+| PR-41 | Open | No alias-map view. Owner: Harshita, after the deadline |
+| PR-42 | Open | Privacy indicator and per-case consent screen not checked in this sweep. Owner: Harshita. Next: check `frontend/components/shell/TopBar.tsx` during the browser walk |
+| PR-43 | Open | No audit-trail export. Owner: Shravani, after the deadline |
+| PR-44 | Open | No delete route (`@router.delete` has no hit in `src/vakeel_sahayak/api`). Owner: Shravani. Next: `DELETE /api/cases/{case_id}` that removes the case folder, with a test that lists the volume |
+| PR-45 | Done | Live mode by default in production builds (`frontend/lib/api.ts`, `NEXT_PUBLIC_API_MODE`); `frontend/tests/unit/apiMode.test.ts`; 63461bf (SA-02) |
+| PR-46 | Done | All seven rules `last_verified: "2026-11-07"` by `scripts/check_rights_rules.py` against the statute store; `tests/unit/scripts/test_check_rights_rules.py` passed on 13 Nov; 8e3a276, 2601744 |
+| PR-47 | Partly | *Kapil Wadhawan*, *M. Ravindran* and *Rakesh Kumar Paul* checked (`docs/qa/rights-verification.md`). Open (Harshita): every other case name in fixtures, UI text and mock data (`frontend/lib/mock/case0007.ts`) |
+| PR-48 | Open | No decision log for the ten open readings (section 3.7). Owner: Harshita (Rights rule texts). Next: one line per reading in `docs/qa/rights-verification.md` |
+| PR-49 | Open | No "what counsel must verify" list found in the Gate 2 components. Owner: Harshita |
+| PR-50 | Partly | Each Rights chip shows its verification (`frontend/tests/unit/rightsVerification.test.ts`, 2601744). Open (Harshita): the store data-cut date in the library |
+| PR-51 | Open | Owner: Harshita, after the deadline |
+| PR-52 | Open | The sample case exists only as the demo build (`NEXT_PUBLIC_API_MODE=demo`); no API route imports it. Owner: Shravani, after the deadline |
+| PR-53 | Partly | `frontend/app/settings/page.tsx` shows the server's model and privacy settings read-only (63461bf). Open (Harshita): versions, disk use, confirmed Sarvam mode change |
+| PR-54 | Open | Not checked. Owner: Harshita, during the browser walk |
+| PR-55 | Partly | `frontend/e2e/a11y.spec.ts` (axe) runs on mock data. Open (Harshita): axe on live data and a keyboard-only walk |
+| PR-56 | Open | No deadline banner found. Owner: Harshita, after the deadline |
+| PR-57 | Partly | Desk UI with `frontend/e2e/flow6_desk.spec.ts` on mock data. Open (Harshita): flow 6 against the real routes |
+| PR-58 | Open | Hindi UI strings. Owner: Harshita (her 13 Nov item 3) |
+| PR-59 | Open | P2. Owner: Harshita, after the deadline |
+| PR-60 | Open | Not checked. Owner: Harshita, during the browser walk (390 px and 768 px) |
+| PR-61 | Partly | `frontend/app/help/page.tsx` (how to start, shortcuts). Open (Harshita): a glossary of stages, chips and gates |
+| PR-62 | Partly | `install.sh` (5258d2c) and `install.ps1` (32d90ba; checked only statically by `tests/unit/scripts/test_fresh_clone.py::test_windows_installer_mirrors_install_sh_statically`). Open (Shravani): a run on a clean machine (AC-0); `install.ps1` has never run on Windows |
+| PR-63 | Open | No published images. Owner: Vishak, after submission |
+| PR-64 | Partly | Windows notes in `DOCKER.md` and `install.ps1` (data and models through WSL). Open (Shravani): one real Windows run |
+| PR-65 | Open | No backup, restore or migration script. Owner: Vishak, after submission |
+| PR-66 | Open | Owner: Shravani, after submission |
+| PR-67 | Open | No egress capture. Owner: Vishak, after submission |
+| PR-68 | Open | No `CHANGELOG`. Owner: Vishak; next: tag the submitted commit with notes |
+| PR-69 | Partly | `NOTICE` lists datasets and models (40b8b49). Open (Vishak): IPC2BNS-Verify licence still unconfirmed (NOTICE item 2); no in-app Licences page |
+| PR-70 | Partly | Ports on 127.0.0.1, optional API token (`api/auth.py`), CORS tests (075c1cc). Open (Shravani): written threat model, upload hardening tests |
+| PR-71 | Done | `VS_API_TOKEN` refuses writes without the token (`api/auth.py`; `tests/unit/api/test_auth.py` in the 140 passed on 13 Nov); ec8d518 |
+| PR-72 | Done | `tests/integration` 133 passed on 13 Nov; a4e0972 |
+| PR-73 | Done | `tests/system` 284 passed on ba3482c (`progress.md` 0g-b); four system files rerun and passed on 13 Nov |
+| PR-74 | Partly | `@playwright/test` pinned to 1.64.0, matching the e2e image (5258d2c). Open (Harshita): `playwright.config.ts` still serves `next dev` with no worker limit; the e2e container has not run |
+| PR-75 | Open | Owner: Shravani with Harshita. Next: `./install.sh`, walk AC-0 to AC-7 once, write a handoff note of what broke |
+| PR-76 | Partly | `frontend/e2e/live_flow.spec.ts` covers flows 1 and 3 against the real API (c317615; passed on 13 Nov per the team to-do, not re-run here). Open (Harshita): flows 2 and 7 live |
+| PR-77 | Open | `docs/qa/manual-test.md` does not exist. Owner: Shravani. Next: write the outline of section 3.10 as the checklist used in the browser walk |
+| PR-78 | Partly | `frontend/e2e/timing-budget.spec.ts`. Open (Harshita): API p95 and per-step times |
+| PR-79 | Open | Owner: Vishak (demo video) |
+| PR-80 | Open | Owner: Shravani, from the browser walk |
+| PR-81 | Done | README quick start names `./install.sh` (5258d2c) and `install.ps1` (32d90ba) |
+| PR-82 | Open | Owner: Harshita, after the browser walk |
+| PR-83 | Partly | `DOCKER.md` covers install, profiles and volumes. Open (Shravani): tiers, backup, troubleshooting by error code |
+| PR-84 | Open | `docs/architecture/skeleton.md` exists but is not condensed. Owner: Vishak, P2 |
+| PR-85 | Open | The About page still says "The evaluation has not been run yet" (`frontend/components/about/AboutPage.tsx`), which is now wrong. Owner: Harshita. Next: replace it with the blind result and a link to `docs/results/search/final_report/summary.md` |
+| PR-86 | Open | No FAQ page. Owner: Harshita, after the deadline |
+<!-- /SECTION:9 -->

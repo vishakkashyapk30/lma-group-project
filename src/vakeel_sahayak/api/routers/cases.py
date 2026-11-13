@@ -15,10 +15,9 @@ from fastapi.responses import FileResponse
 
 from vakeel_sahayak.api import service
 from vakeel_sahayak.api.deps import get_event_log
-from vakeel_sahayak.api.models import FieldEditRequest, NewCaseRequest, RightsReportOut
+from vakeel_sahayak.api.models import BailBriefOut, FieldEditRequest, NewCaseRequest, RightsReportOut
 from vakeel_sahayak.orchestration.gates import GateGuard
 from vakeel_sahayak.record.event_log import EventLog
-from vakeel_sahayak.schemas.bail_brief import BailBrief
 from vakeel_sahayak.schemas.case import BudgetState, CaseSummary
 from vakeel_sahayak.schemas.dossier import CaseDossier, DossierFields
 from vakeel_sahayak.schemas.enums import EventKind, GateId
@@ -127,18 +126,25 @@ async def start_draft(case_id: str, log: Annotated[EventLog, Depends(get_event_l
 
     # A worker thread, so the API (and the event stream that shows the drafting live) keeps answering meanwhile.
     state = await run_in_threadpool(draft)
+    # The product graph asks Vakeel to open Gate 2, but its tool runtime can be
+    # detached from this request's injected log.  The API owns the browser
+    # workflow, so make the persisted brief and its approval gate atomic from
+    # counsel's point of view: a successful draft must always be approvable.
+    if state.brief and not guard.is_approved(case_id, GateId.GATE_2_EXPORT) and not guard.is_open(case_id, GateId.GATE_2_EXPORT):
+        guard.open(case_id, GateId.GATE_2_EXPORT)
     grounds = len(state.brief.grounds) if state.brief else 0
     return {"status": "drafted", "grounds": grounds}
 
 
-@router.get("/{case_id}/brief", response_model=BailBrief)
-async def get_brief(case_id: str, log: Annotated[EventLog, Depends(get_event_log)]) -> BailBrief:
-    """Brief tab (404 before drafting)."""
+@router.get("/{case_id}/brief", response_model=BailBriefOut)
+async def get_brief(case_id: str, log: Annotated[EventLog, Depends(get_event_log)]) -> BailBriefOut:
+    """Brief tab (404 before drafting). `withheld`: per ground, the sentences strict abstention (X4, c1457) left out of the argument and why."""
     service.require_case(log, case_id)
-    brief = service.case_state(log, case_id).brief()
+    cs = service.case_state(log, case_id)
+    brief = cs.brief()
     if not brief.grounds and not brief.open_issues:
         raise HTTPException(status_code=404, detail="no brief yet")
-    return brief
+    return BailBriefOut(**brief.model_dump(), withheld=service.withheld_by_ground(cs.events()))
 
 
 @router.get("/{case_id}/spar", response_model=SparringRecord)

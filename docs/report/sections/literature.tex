@@ -97,7 +97,7 @@ The tests answer four different questions, and a variant is not called done unti
 
 \paragraph{4. Is the claim tied to the right comparison?} A variant is compared only with Full on the same backend and cases; the scorer refuses mixed code stamps and scores one model family per backend, applies a Holm correction inside each family of claims, and decides the headline claim by an intersection-union rule (every comparator must lose). A comparator that was not run makes the claim ``incomplete'', not ``supported''.
 
-\subsection{What has been measured so far}
+\subsection{What has been measured}
 
 Mechanism tests and the 61-id audit are complete and green (5,082 passed on 29 October). Quality measurements are fewer, and we state them as they stand.
 
@@ -105,4 +105,4 @@ Mechanism tests and the 61-id audit are complete and green (5,082 passed on 29 O
 
 \paragraph{Caching, scheduling and chunking.} Plan caching on case-0007 (offline): the second case with the same signature skips all 8 planning calls, tokens fall from 30,633 to 12,836 and the evidence packs are byte-identical to the no-cache run. The scheduling and chunking studies run as simulations or on self-supervised targets and say so in their output; they are reported as such, not as serving measurements.
 
-\paragraph{Measured on a model, and not yet.} S1 to S6, S8 to S12, S15 and S18 and the ablations A1 to A3 and A6 to A9 have run against Full on the same OpenAI backend at small sample sizes (10 to 30 dev cases), and their scores are in Section~\ref{sec:results}; at these sizes most differences are inside the intervals, so we read them as a first look and not as a ranking. Not yet run on a model: S7, S11b and c, S12b, S13, S15b, S17, P5 to P8 and A4, A5 and A10; they are in the timeline to 10 November (Section~\ref{sec:status}). A null or negative result on any variant will be reported as such.
+\paragraph{Measured on a model, and not yet.} S1 to S6, S8 to S12, S15 and S18 and the ablations A1 to A3 and A6 to A9 have run against Full on the same OpenAI backend at small sample sizes (10 to 30 dev cases), and their scores are in Section~\ref{sec:results}; at these sizes most differences are inside the intervals, so we read them as a first look and not as a ranking. S11b and c, S12b, S15b, A4 and A10 ran later on Gemini or offline (Section~\ref{sec:results}), S13 became the switch grid of the architecture search (Section~\ref{sec:arch}), and S7, S17 and P5 to P8 ran only with offline stand-ins and were not scored; A5 ran only in its untuned setting, since no tuned extractor was trained (Section~\ref{sec:limitations}).

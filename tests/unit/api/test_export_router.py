@@ -97,3 +97,11 @@ def test_download_is_refused_before_gate_2_and_outside_the_export_folder(tmp_pat
     sc.approve(G2)
     assert client.get(f"/api/cases/{CASE}/export/files/..%2F..%2Frecord.sqlite").status_code == 404
     assert client.get(f"/api/cases/{CASE}/export/files/nothing.docx").status_code == 404
+
+
+def test_docx_download_states_its_media_type(tmp_path, monkeypatch, spy):
+    """The type is set in code, not guessed from the file name: a slim container served .docx as application/octet-stream."""
+    _, client = clean_case(tmp_path, monkeypatch, approve_gate2=True)
+    paths = client.post(f"/api/cases/{CASE}/export", json={"format": "DOCX"}).json()
+    res = client.get(f"/api/cases/{CASE}/export/files/{Path(paths[0]).name}")
+    assert res.headers["content-type"].startswith("application/vnd.openxmlformats-officedocument.wordprocessingml.document")

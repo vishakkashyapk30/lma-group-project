@@ -19,5 +19,12 @@
   "H-A3": "supported",
   "H-A4": "supported",
   "H-A5": "supported"
+ },
+ "rule_gold_d11": {
+  "H-A1": "falsified",
+  "H-A2": "supported",
+  "H-A3": "supported",
+  "H-A4": "supported",
+  "H-A5": "supported"
  }
 }

@@ -24,6 +24,12 @@ from vakeel_sahayak.schemas.enums import ExportFormat
 
 router = APIRouter(prefix="/api/cases/{case_id}/export", tags=["export"])
 
+# Stated, not guessed from the file name: a slim container has no system MIME table, so `.docx` would be served as octet-stream.
+_MEDIA_TYPES = {
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".pdf": "application/pdf",
+}
+
 
 @router.post("", response_model=list[str])
 async def export_case(case_id: str, body: ExportRequest, log: Annotated[EventLog, Depends(get_event_log)]) -> list[str]:
@@ -77,4 +83,4 @@ async def download_file(case_id: str, name: str, log: Annotated[EventLog, Depend
     target = (folder / Path(name).name).resolve()
     if target.parent != folder or not target.is_file():
         raise HTTPException(status_code=404, detail=f"no exported file {name!r} for case {case_id}")
-    return FileResponse(target, filename=target.name)
+    return FileResponse(target, filename=target.name, media_type=_MEDIA_TYPES.get(target.suffix.lower()))

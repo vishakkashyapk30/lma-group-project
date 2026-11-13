@@ -29,6 +29,11 @@ a1,b0l,unsupported_fact_rate,False,8,0.707292,0.943376,-0.236084,-0.403926,-0.09
 a1,b1,unsupported_fact_rate,False,6,0.702315,1,-0.297685,-0.413889,-0.188889,0.00019998,0.0125,5,win
 a1,b2,unsupported_fact_rate,False,8,0.707292,0.939103,-0.231811,-0.411912,-0.0435383,0.00339966,0.0166667,5,win
 a1,b3,unsupported_fact_rate,False,4,0.714583,1,-0.285417,,,1,0.05,5,too_few
+a1,b0,unsupported_case_fact_rate,False,0,,,,,,,,,undefined
+a1,b0l,unsupported_case_fact_rate,False,0,,,,,,,,,undefined
+a1,b1,unsupported_case_fact_rate,False,0,,,,,,,,,undefined
+a1,b2,unsupported_case_fact_rate,False,0,,,,,,,,,undefined
+a1,b3,unsupported_case_fact_rate,False,0,,,,,,,,,undefined
 a1,b0,unsupported_fact_count,False,8,5.625,8.625,-3,-6.875,2.625,0.175982,0.0166667,5,tie
 a1,b0l,unsupported_fact_count,False,8,5.625,11.375,-5.75,-7.5,-3.625,0.00019998,0.01,5,win
 a1,b1,unsupported_fact_count,False,6,5.83333,8.83333,-3,-7.83333,3.33333,0.273773,0.025,5,tie
@@ -149,6 +154,11 @@ full,b0l,unsupported_fact_rate,False,20,0.866764,0.904502,-0.0377384,-0.129466,0
 full,b1,unsupported_fact_rate,False,17,0.860364,0.946456,-0.0860914,-0.21237,0.0308535,0.0683932,0.01,5,tie
 full,b2,unsupported_fact_rate,False,20,0.866764,0.928462,-0.0616975,-0.171369,0.0369376,0.144586,0.0125,5,tie
 full,b3,unsupported_fact_rate,False,14,0.85085,0.938095,-0.0872449,-0.24408,0.0596699,0.156184,0.0166667,5,tie
+full,b0,unsupported_case_fact_rate,False,0,,,,,,,,,undefined
+full,b0l,unsupported_case_fact_rate,False,0,,,,,,,,,undefined
+full,b1,unsupported_case_fact_rate,False,0,,,,,,,,,undefined
+full,b2,unsupported_case_fact_rate,False,0,,,,,,,,,undefined
+full,b3,unsupported_case_fact_rate,False,0,,,,,,,,,undefined
 full,b0,unsupported_fact_count,False,20,7.15,9.15,-2,-4.9,1.25,0.114989,0.0125,5,tie
 full,b0l,unsupported_fact_count,False,20,7.15,10.4,-3.25,-5.15,-1.3,0.00019998,0.01,5,win
 full,b1,unsupported_fact_count,False,17,7.11765,7.70588,-0.588235,-3.17647,2.06029,0.70453,0.05,5,tie

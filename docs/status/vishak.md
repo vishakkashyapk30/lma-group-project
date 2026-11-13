@@ -1,6 +1,10 @@
 # Status: Vishak
 
-## Current assignment (2 Nov 2026, to the freeze on 10 Nov)
+## Current assignment (13 Nov 2026)
+Blind slice scored (D10). Running: D11 (rule-only gold sensitivity on the blind slice) and D12 (run-to-run spread, two no-cache reruns on the 30 dev search orders). Then: tables, report paragraphs, `main.pdf`, PR reviews, final read and submission.
+Full list: `docs/handoff/team-todo-2026-11-02.md`, section "What each person does next (13 November)".
+
+## Earlier assignment (2 Nov 2026, to the freeze on 10 Nov)
 Architecture search to beat every baseline on every metric (until it does), ablations of the winner, merges, report rebuild, owner decisions before the freeze, tags, the single blind run.
 Full list, dates and rules: `docs/handoff/team-todo-2026-11-02.md`. The tables below are the earlier state.
 

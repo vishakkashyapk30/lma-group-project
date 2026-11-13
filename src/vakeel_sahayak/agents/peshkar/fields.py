@@ -203,6 +203,10 @@ def coerce_value(name: str, value: Any) -> Any:
                 _date(v.date)
             return v.model_dump(mode="json")
         if name == "sections":
+            if isinstance(value, dict) and value.get("code") and value.get("section") is not None:  # a number, or no as_written
+                value = {**value, "section": str(value["section"]).strip()}
+                value.setdefault("as_written", f"{value['code']} {value['section']}")
+                value["as_written"] = value["as_written"] or f"{value['code']} {value['section']}"
             return SectionValue.model_validate(value).model_dump(mode="json")
         if name == "previous_bail":
             v = PreviousBail.model_validate(value)
@@ -218,6 +222,41 @@ def coerce_value(name: str, value: Any) -> Any:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{name}: expected a non-empty string")
     return value.strip()
+
+
+def expand_section_items(items: list[ExtractedItem]) -> list[ExtractedItem]:
+    """Section items as one item per charged section.
+
+    A hosted model often answers the sections field with the phrase of the order ("Sections 294, 323 and 34 of the IPC")
+    instead of one object per section. Every such value used to fail `coerce_value` as malformed, so the dossier had no
+    sections and the brief no statutory position. A string value is read with the same rule parser the offline reader uses
+    (`charged_sections(extract_sections(...))`, procedural provisions such as CrPC 438 left out); each section becomes its own
+    item with the model's quote, which still has to be found in the file and support the section. Object values pass as they are.
+    """
+    from vakeel_sahayak.ingestion.filing import _PROCEDURAL_EXTRA
+    from vakeel_sahayak.pipelines.concordance.refs import split_ref
+    from vakeel_sahayak.pipelines.section_extract import charged_sections, extract_sections
+
+    out: list[ExtractedItem] = []
+    seen: set[str] = set()
+    for item in items:
+        if not isinstance(item.value, str):
+            out.append(item)
+            continue
+        refs = [r for r in charged_sections(extract_sections(item.value)) if r.split("(")[0] not in _PROCEDURAL_EXTRA]
+        if not refs:
+            out.append(item)  # left as it is: coerce_value reports it as malformed
+            continue
+        for ref in refs:
+            if ref in seen:
+                continue
+            seen.add(ref)
+            try:
+                code, section = split_ref(ref)
+            except ValueError:
+                continue
+            out.append(item.model_copy(update={"value": {"as_written": ref, "code": code, "section": section}}))
+    return out
 
 
 def claim_text(name: str, value: Any, quote: str = "") -> str:

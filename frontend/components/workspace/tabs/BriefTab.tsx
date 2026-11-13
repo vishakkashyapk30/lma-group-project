@@ -1,7 +1,8 @@
 "use client";
 // Draft grounds (plan §8.1, §9, §10): the draft reads like a document. Each ground is a headed paragraph with small numbered
 // sources; a number opens the source in the side panel. Something that needs the lawyer shows as one small "Needs check" mark and
-// in the list at the top; the full detail of a ground is under "Details". The likely objections follow the grounds.
+// in the list at the top; the full detail of a ground is under "Details". Sentences the check took out of a ground are under
+// "Removed from the argument"; grounds that lost every sentence are listed for counsel to draft. The likely objections follow.
 import { CheckCircle2, Pencil, Undo2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import { StatusBadge } from "@/components/common/StatusBadge";
@@ -13,7 +14,8 @@ import { diffWords } from "@/lib/diff";
 import { fieldLabel } from "@/lib/fields";
 import { formatCourtDate, plural } from "@/lib/format";
 import { FACTOR_LABELS } from "@/lib/labels";
-import { DRAFT_LABEL, type DossierFieldName, type Ground, type GroundRevision, type Objection, type OpenIssue } from "@/lib/types";
+import { DRAFT_LABEL, type DossierFieldName, type Ground, type GroundRevision, type Objection, type OpenIssue, type WithheldGround } from "@/lib/types";
+import { droppedGrounds, withheldFor } from "@/lib/withheld";
 import { cn } from "@/lib/utils";
 import { checklistKey, useCaseData, useEdits, useGates, useNeedsYou, useStageNav, useWorkspace } from "@/lib/workspace";
 import { NeedsYou } from "../NeedsYou";
@@ -22,6 +24,7 @@ import { Cited } from "./citations";
 import { SentenceList, sentenceSummary } from "./SentenceList";
 import { ChangedTag, focusClass, focusDomId, InlineNote, SectionTitle, stepState, useFocusItem } from "./shared";
 import { ObjectionsSection } from "./SparTab";
+import { DroppedGrounds, RemovedSentences } from "./Withheld";
 
 const STANCE: Record<Ground["stance"], string> = { favourable: "Favourable", adverse: "Adverse", not_applicable: "Not applicable" };
 
@@ -230,7 +233,7 @@ function GroundDetails({ ground }: { ground: Ground }): ReactElement {
   );
 }
 
-function GroundBlock({ ground, revision, focusedId, bySentence }: { ground: Ground; revision: GroundRevision | null; focusedId: string | null; bySentence: boolean }): ReactElement {
+function GroundBlock({ ground, revision, withheld, focusedId, bySentence }: { ground: Ground; revision: GroundRevision | null; withheld: WithheldGround | null; focusedId: string | null; bySentence: boolean }): ReactElement {
   const { resolutions } = useGates();
   const { dossier, spar } = useCaseData();
   const { changes } = useEdits();
@@ -310,6 +313,7 @@ function GroundBlock({ ground, revision, focusedId, bySentence }: { ground: Grou
       ) : null}
 
       {bySentence ? <SentenceList argument={ground.argument} authorities={ground.authorities} /> : <Cited text={ground.argument} authorities={ground.authorities} className="mt-3" />}
+      <RemovedSentences group={withheld} />
       <ObjectionsLink groundId={ground.id} objections={spar?.objections ?? []} onGo={(id) => focusItem("spar", id)} />
 
       {ground.check === "NEEDS_REVIEW" ? (
@@ -455,9 +459,11 @@ export function BriefTab({ caseId }: { caseId: string }): ReactElement {
           {bySentence ? <p data-testid="sentence-summary" className="text-sm text-ink-soft">{sentenceSummary(brief)}</p> : null}
         </div>
         {brief.grounds.map((g) => (
-          <GroundBlock key={g.id} ground={g} revision={latestRevision(revisions, g.id)} focusedId={focused?.id ?? null} bySentence={bySentence} />
+          <GroundBlock key={g.id} ground={g} revision={latestRevision(revisions, g.id)} withheld={withheldFor(brief, g.id)} focusedId={focused?.id ?? null} bySentence={bySentence} />
         ))}
       </section>
+
+      <DroppedGrounds groups={droppedGrounds(brief)} />
 
       {brief.open_issues.length > 0 ? (
         <section aria-labelledby="brief-issues">

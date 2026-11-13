@@ -268,8 +268,8 @@ export const MOCK_TIMELINE: TimelineEvent[] = [
 
 /* ── RightsReport (plan §7.3, Appendix C) ───────────────────────────────────────────────────────────────────────── */
 
-// Mirrors configs/rights_rules.yaml after scripts/check_rights_rules.py: six rules match the statute store, antil_category does not.
-const RULES_VERIFIED = "2026-11-02";
+// Mirrors configs/rights_rules.yaml after scripts/check_rights_rules.py: all seven rules match the statute store.
+const RULES_VERIFIED = "2026-11-07";
 
 export const MOCK_RIGHTS: RightsReport = {
   case_id: MOCK_CASE_ID,
@@ -345,7 +345,7 @@ export const MOCK_RIGHTS: RightsReport = {
         "A: punishable up to 7 years (not B or D). B: death, life, or more than 7 years. C: special acts with strict bail conditions. D: economic offences not under special acts.",
       sources: ["Satender Kumar Antil v. CBI (2022)"],
       dates: {},
-      last_verified: null,
+      last_verified: RULES_VERIFIED,
     },
     {
       check: "statutory_bar",
@@ -554,8 +554,39 @@ export const MOCK_BRIEF: BailBrief = {
     { type: "NEEDS_REVIEW", item: "Antecedents unknown: confirm no other pending cases." },
     { type: "CHANGED_PROVISION", item: "DLHC-2021-0388 interprets IPC 406; BNS 316(2) raises the maximum from three to five years: qualify." },
     { type: "MISSING_EVIDENCE", item: "No trial-delay authority in the same section family; widened to all cheating offences." },
+    { type: "MISSING_EVIDENCE", item: "No supported argument could be drafted for weak prima facie (G8): counsel to draft it." },
   ],
   label: DRAFT_LABEL,
+  // Strict abstention (X4 of the chosen architecture, c1457): sentences the check took out, per ground, with the checker's reason.
+  // G8 lost every sentence, so it is not among the grounds and counsel drafts it.
+  withheld: [
+    {
+      ground: "G1",
+      factor: "parity_with_co_accused",
+      dropped: false,
+      sentences: [
+        { sentence: "Co-accused-1 has complied with every condition of his bail since December.", reason: "not supported by the dossier quote (fact support 0.18)" },
+      ],
+    },
+    {
+      ground: "G5",
+      factor: "trial_delay",
+      dropped: false,
+      sentences: [
+        { sentence: "The record does not show why the prosecution has not sought the framing of charges.", reason: "only says the record is silent" },
+        { sentence: "Delay of this kind has repeatedly been held to entitle the accused to bail.", reason: "not supported by the cited paragraph (PHHC-2023-1120#17 entailment 0.22)" },
+      ],
+    },
+    {
+      ground: "G8",
+      factor: "weak_prima_facie",
+      dropped: true,
+      sentences: [
+        { sentence: "No document on record shows that the applicant received any part of the money.", reason: "not supported by the dossier quote (fact support 0.09)" },
+        { sentence: "The record is silent on any recovery from the applicant.", reason: "only says the record is silent" },
+      ],
+    },
+  ],
 };
 
 /** Change highlights for the Brief tab (plan §10): the clock change set redrafted G3 only. */

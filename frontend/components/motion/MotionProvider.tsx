@@ -2,8 +2,7 @@
 // The motion library, used where it is the cheapest correct tool: enter and exit of elements that come and go
 // (AnimatePresence), with short time-based transitions. `m` components render at once and animate once the features
 // arrive. Follows the app's reduced-motion switch (system or in-app), not only the system setting.
-import { AnimatePresence, LazyMotion, MotionConfig } from "motion/react";
-import * as m from "motion/react-m";
+import { LazyMotion, MotionConfig } from "motion/react";
 import type { ReactElement, ReactNode } from "react";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 
@@ -29,5 +28,3 @@ export function usePresenceTransition(): (delay?: number) => { duration: number;
   const reduced = useReducedMotion();
   return (delay = 0) => (reduced ? { duration: 0 } : { ...PRESENCE, delay });
 }
-
-export { AnimatePresence, m };

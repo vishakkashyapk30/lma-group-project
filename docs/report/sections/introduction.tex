@@ -17,4 +17,44 @@ The problem is one of data engineering and decisions before it is one of text ge
 \item \textbf{Evaluation without manual annotation.} Seven kinds of gold label and nine test sets built from court text, official tables and construction; a sealed blind slice and a pre-registration; baselines B0 to B6; 18 single-switch variants from the recent agent and RAG literature, each with a switch, a paper and a test (Section~\ref{sec:eval}).
 \end{enumerate}
 
-\paragraph{Where the project stands, and how this report is organised.} This is a mid-project status report on work in progress, and there is a lot in it that already works. The system, the test sets, the scoring pipeline, a literature sweep of 18 single-switch variants and the pre-registered evaluation are built and tested. The 50-case baseline run and the Gemini-family runs are scored, and the retrieval, chunking and scheduling studies are measured. The results are small and are presented as a first look; the larger runs, the remaining variants and the blind slice belong to the next phase, which ends on 10 November. The report follows the order of the work. Section~\ref{sec:related} (related work) and Section~\ref{sec:literature} (the literature sweep) explain what we read, what ideas we took and why. Section~\ref{sec:system} describes the system and where each model runs, and Section~\ref{sec:data} the datasets. Section~\ref{sec:eval} sets out the baselines, ablations, metrics and statistics. Section~\ref{sec:results} gives the results so far, Sections~\ref{sec:challenges} to~\ref{sec:threats} the challenges, mitigations, limitations and threats to validity, and Section~\ref{sec:status} the progress, the work left and the timeline. The appendix holds the glossary, the arms, the metrics and the generated tables. The code is at \url{https://github.com/vishakkashyapk30/lma-group-project} (branch \texttt{midsub-report}, tag \texttt{dev-sweep-v3}).
+\paragraph{Research question.} \textbf{RQ1:} for bail preparation over a heterogeneous legal corpus, does an agent harness that plans retrieval per bail factor from evidence contracts, checks every claim against its sources and spars with a simulated prosecutor produce better-grounded bail briefs than simpler systems on the same model (a single prompt, plain retrieval, querying every store, a learned store router, an expert template), at no higher retrieval cost? A second question (RQ2), on agentic ingestion of degraded and Hindi pages and on a fine-tuned small extractor, was planned; its ingestion runs were not scored and the extractor was not trained, so this report answers RQ1 and says what is missing for RQ2 (Sections~\ref{sec:limitations} and~\ref{sec:conclusion}).
+
+\paragraph{Hypotheses.} The first full system (``Full'') did not beat every baseline on the development orders (Section~\ref{sec:results}). An architecture search on the development orders produced c1457, Full with four fixes (Section~\ref{sec:arch}). Before the sealed blind slice of 80 test orders was opened, five hypotheses for c1457 were registered with their metrics and decision rule (a win only when the Holm-adjusted 95\% paired-bootstrap interval excludes zero). Table~\ref{tab:hyp} states them and their outcome; Section~\ref{sec:blind} gives the details.
+
+\begin{table*}[!t]
+\centering\small
+\setlength\tabcolsep{4pt}\begin{tabular}{@{}L{1.0cm}L{6.2cm}L{3.3cm}L{4.6cm}@{}}
+\toprule
+& Hypothesis (registered before the blind slice was opened) & Metric & Blind slice, 80 orders \\
+\midrule
+H-A1 & c1457 has no loss against B0--B6 on any quality metric, except four cells declared structural in advance & every quality metric & \textbf{Falsified}: one further loss, unsupported-sentence count vs B5 (6.0 vs 4.2 per order) \\
+H-A2 & c1457 beats Full on objection recall and answerable coverage & objection recall; answerable coverage & \textbf{Holds}: 0.52$\to$0.73; 0.36$\to$0.61 \\
+H-A3 & c1457 beats B4 and B5 on citation precision and fabricated citations & citation precision; fabricated-citation rate & \textbf{Holds}: 0.71 vs 0.02 and 0.10; 0.00 vs 0.95 and 0.64 \\
+H-A4 & c1457's unsupported-fact rate is not worse than any baseline's & unsupported-fact rate (MiniCheck) & \textbf{Holds}: 0.89 vs 0.94--1.00, a win against all seven \\
+H-A5 & c1457 uses fewer store calls than B4 (query every store) & store calls per order & \textbf{Holds}: 110 vs 188 \\
+\bottomrule
+\end{tabular}
+\caption{The registered hypotheses and their outcome on the blind slice (Sarvam-105B, one run per system). The four structural cells of H-A1 are unfinished-factor share against B4 and B5, confident-wrong rate against B4 and coverage against the template B6.}
+\label{tab:hyp}
+\end{table*}
+
+\paragraph{The five capabilities.} Table~\ref{tab:capabilities} gives, for each capability of the course brief, why bail preparation needs it, how we measure it, which ablation removes it and what we found.
+
+\begin{table*}[!t]
+\centering\small
+\setlength\tabcolsep{4pt}\begin{tabular}{@{}L{1.5cm}L{4.0cm}L{2.9cm}L{2.5cm}L{3.9cm}@{}}
+\toprule
+Capability & Why the task needs it & Metric & Ablation & Result \\
+\midrule
+RAG & A brief needs exact statute text, the old-to-new section map, court reasoning per factor and the citation history of each authority; no single index serves all of these & citation precision; fabricated-citation rate; answerable coverage & A4 plain retrieval; A10 store knock-outs; B2, B3 & Blind: no fabricated citation (B4 0.95, B5 0.64); precision 0.71 vs 0.02--0.10 (Table~\ref{tab:arch_wlt}) \\
+Reasoning & Each factor needs evidence from different places, and each claim must be verified before counsel sees it & unsupported-fact rate; objection recall & A2 no check and repair; A8 no sparring; S8 self-critique only & Dev, on Full: removing check and repair lowers answerable coverage by 0.38, removing sparring lowers objection recall by 0.45; blind unsupported-fact rate lower than every baseline's \\
+Agentic & Which store to ask next, whether the evidence suffices, and what to hand back to counsel depend on what was just found & store calls; unfinished-factor share; objections kept & A6 fixed router; A7 free planner; B4, B5 & Blind: 41\% fewer store calls than B4 at no loss of grounding; the free planner's dev gains were measurement artefacts (Section~\ref{sec:arch}) \\
+Tool calling & Typed tools (store search, statute lookup, date arithmetic, claim check, export; c1457 used 17) with typed arguments and budgets & bad-argument share; recovery; unapproved actions & A3 no tools & Blind: 1.0\% of calls refused for a bad argument, every order finished, 0 exports without Gate~2 (Table~\ref{tab:tools}) \\
+Fine-tuning & A small local extractor would keep client documents on the lawyer's machine & dossier field accuracy & A5 (tuned 4B) & \textbf{Not done}: QLoRA pipeline built and unit-tested, no model trained; A5 ran only in its untuned setting on 2 Gemini orders, with nothing tuned to compare \\
+\bottomrule
+\end{tabular}
+\caption{The five capabilities: need, measurement, ablation and outcome. Dev results are from the Sarvam-105B search runs (30 orders); blind results from the 80 sealed orders.}
+\label{tab:capabilities}
+\end{table*}
+
+\paragraph{Organisation.} Section~\ref{sec:related} and Section~\ref{sec:literature} cover related work and the literature sweep that supplied the variants; Section~\ref{sec:system} the system; Section~\ref{sec:data} the data; Section~\ref{sec:eval} the evaluation design. Section~\ref{sec:blind} gives the main result on the blind slice, with tool-calling and safety counts, a worked case and failure examples. Section~\ref{sec:results} gives the development runs that motivated the architecture search of Section~\ref{sec:arch}. Sections~\ref{sec:challenges} to~\ref{sec:threats} cover challenges, limitations and threats to validity, and Section~\ref{sec:conclusion} concludes with future work. The code is at \url{https://github.com/vishakkashyapk30/lma-group-project} (branch \texttt{main}; the blind runs use tag \texttt{eval-freeze-v1}).

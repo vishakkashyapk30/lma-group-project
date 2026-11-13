@@ -1,7 +1,6 @@
 "use client";
 // About: how it works, the safety rules, the limits and evaluation
 // results as clearly marked placeholders (no invented numbers).
-import { Hourglass } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
 import { AgentGlyph } from "@/components/common/AgentGlyph";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -37,13 +36,18 @@ const LIMITS = [
   "Sexual-offence, POCSO and juvenile matters are declined.",
 ];
 
-const EVAL_ROWS: { rq: string; what: string; metric: string }[] = [
-  { rq: "RQ1", what: "Orchestrated retrieval against five baselines", metric: "Factor recall and precision; unsupported-fact rate; tokens and store calls per case" },
-  { rq: "H1c", what: "Section-family expansion on BNS-era cases", metric: "Recall@10 of court-cited precedents" },
-  { rq: "RQ2", what: "Agentic ingestion on scanned, photographed, Hindi and bundled files", metric: "Downstream field accuracy; cost per page" },
-  { rq: "Rights Radar", what: "Seven procedural checks", metric: "Accuracy; false-ELIGIBLE rate" },
-  { rq: "Safety", what: "Unapproved-export attempts, planted instructions, prediction requests", metric: "Success and refusal rates; leak rate of planted names" },
-  { rq: "Frontend", what: "Accessibility, performance, reduced motion, user flows", metric: "Lighthouse; axe-core violations; flow completion" },
+const EVAL_ROWS: { rq: string; what: string; metric: string; result: string }[] = [
+  {
+    rq: "RQ1",
+    what: "The agent harness (c1457) against seven simpler systems on the same hosted model (Sarvam-105B)",
+    metric: "Factor recall and precision; unsupported-fact rate; citation precision and fabrication; objections answered; store calls per order",
+    result: "On 80 sealed test orders, opened once: 46 wins, 69 ties, 5 losses. No fabricated citations (the comparable retrieval systems: 0.64 and 0.95). 41% fewer store calls than querying every store. Four of five registered hypotheses hold; the same verdicts on rule-only gold labels.",
+  },
+  { rq: "H1c", what: "Section-family expansion on BNS-era cases", metric: "Recall@10 of court-cited precedents", result: "Not measured on its own; the citation-graph expansion raises recall@10 from 0.04 to 0.54 on 150 queries." },
+  { rq: "RQ2", what: "Agentic ingestion on scanned, photographed, Hindi and bundled files", metric: "Downstream field accuracy; cost per page", result: "Not answered: the ingestion arms were not scored with the real models." },
+  { rq: "Rights Radar", what: "Seven procedural checks", metric: "Accuracy; false-ELIGIBLE rate", result: "627 of 627 constructed scenarios correct, no false ELIGIBLE; all seven rules match the statute text." },
+  { rq: "Safety", what: "Unapproved-export attempts, planted instructions, prediction requests", metric: "Success and refusal rates; leak rate of planted names", result: "0 of 320 export attempts before counsel's approval went through. The planted-instruction set was not run on the hosted model." },
+  { rq: "Frontend", what: "Accessibility, performance, reduced motion, user flows", metric: "Lighthouse; axe-core violations; flow completion", result: "Not reported." },
 ];
 
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }): ReactElement {
@@ -132,14 +136,13 @@ export function AboutPage({ className }: AboutPageProps): ReactElement {
       </Section>
 
       <Section id="eval" title="Evaluation results">
-        <p role="note" className="mb-3 flex items-start gap-2 text-sm text-haldi">
-          <Hourglass aria-hidden className="mt-0.5 size-4 shrink-0" />
-          <span>The evaluation has not been run yet. The result cells are empty on purpose; they will be filled in from the test runs, and no figure here is an estimate.</span>
+        <p role="note" className="mb-3 max-w-prose text-sm text-ink-soft">
+          Results from the project report. A win counts only when the paired interval excludes zero; the comparisons are relative, and most argument sentences still need counsel&apos;s check.
         </p>
         {/* The table scrolls sideways on a phone; the region is focusable so keyboard users can scroll it too (WCAG 2.1.1). */}
-        <div role="region" aria-label="Planned evaluations, scrolls sideways" tabIndex={0} className="overflow-x-auto border-y border-line focus-visible:outline focus-visible:outline-2 focus-visible:outline-maroon">
+        <div role="region" aria-label="Evaluations, scrolls sideways" tabIndex={0} className="overflow-x-auto border-y border-line focus-visible:outline focus-visible:outline-2 focus-visible:outline-maroon">
           <table className="w-full min-w-[40rem] text-left text-sm">
-            <caption className="sr-only">Planned evaluations and their results</caption>
+            <caption className="sr-only">Evaluations and their results</caption>
             <thead>
               <tr className="border-b border-line text-xs text-ink-muted">
                 <th scope="col" className="py-2 pr-3 font-medium">Question</th><th scope="col" className="px-3 py-2 font-medium">What is tested</th><th scope="col" className="px-3 py-2 font-medium">Metrics</th><th scope="col" className="px-3 py-2 font-medium">Result</th>
@@ -151,7 +154,7 @@ export function AboutPage({ className }: AboutPageProps): ReactElement {
                   <th scope="row" className="py-2 pr-3 font-semibold">{r.rq}</th>
                   <td className="px-3 py-2">{r.what}</td>
                   <td className="px-3 py-2 text-ink-soft">{r.metric}</td>
-                  <td className="px-3 py-2 text-haldi">Pending</td>
+                  <td className="px-3 py-2">{r.result}</td>
                 </tr>
               ))}
             </tbody>

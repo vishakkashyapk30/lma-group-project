@@ -1,7 +1,14 @@
 # Status: Satvik
 
-## Current assignment (2 Nov 2026, to the freeze on 10 Nov)
-Metrics, statistics and Rights: DONE 2 Nov (PR #6). Next: Companies Act s.212 from the official text by script; rerun the win/loss/tie table and the M6a test once the architecture search is merged; statute store rebuild after the search. Details in `docs/handoff/team-todo-2026-11-02.md`.
+## Current assignment (13 Nov 2026, afternoon)
+PRs #7 and #8 are merged. Left: (1) two golden tests fail on `main` since 2601744 (the verified Antil rule moves the Sutradhar `packs` digest as well as the `events` digest); confirm it is intended and re-capture with a RECONCILED note; (2) the one statute store rebuild with the corrected First Schedule flags (43 IPC flags were wrong in the 26 Oct extraction), after replacing the frozen worktree's `data/stores/law` symlink with a copy; then the bundle refresh. Details: `docs/handoff/team-todo-2026-11-02.md`, "Afternoon of 13 November", and `docs/handoff/first-schedule.md`.
+
+## Earlier assignment (13 Nov 2026, morning)
+Open the PR for `satvik-companies-act-212` (rebased on `main`); one statute store rebuild with the BNSS s.58 and s.212 fixes (with Shravani's CrPC/NDPS texts if ready) and a bundle refresh, never touching the frozen run worktree; rerun `win_loss_tie.py` on every family and confirm the M6a test runs.
+Full list: `docs/handoff/team-todo-2026-11-02.md`, section "What each person does next (13 November)".
+
+## Earlier assignment (2 Nov 2026, to the freeze on 10 Nov)
+Metrics, statistics and Rights: DONE 2 Nov (PR #6). Companies Act s.212 DONE 7 Nov: all 7 Rights rules match the statute store (`docs/handoff/metrics-rights-2026-11-02.md`, section "7 November").
 Full list, dates and rules: `docs/handoff/team-todo-2026-11-02.md`. The tables below are the earlier state.
 
 **2 Nov, branch `satvik-metrics-rights`: all five done** (details, results and the steps left for others in `docs/handoff/metrics-rights-2026-11-02.md`). Rights: 6 of 7 rules match the statute store (`antil_category` cites the Companies Act s.212(6), not in the store); BNSS s.58 from the Gazette; no arm beats every baseline on every metric yet; consistency checks find two numbers in the pre-registration that disagree with `dev_stats.json`.
@@ -21,7 +28,7 @@ My tasks (split.md stream B): SA-01 to SA-08. Updated 2026-10-26. All finished w
 | SA-03 workspace visual QA, DESIGN.md "Workspace principles" | done |
 | SA-07 onboarding, empty states, Hindi strings, axe audit | done, except a Hindi translation of the interface (see below) |
 | Frontend merge: `frontend-endeavours` into `main` (2026-11-01) | merged on local branch `frontend-merge` (clean, no conflicts; SA-06 was already on `main`); waits for the owner's go-ahead before it goes to `main` |
-| Rights rule verification in the UI (`docs/handoff/code-final.md` §6) | done on `frontend-merge`: every check's "Why" shows "Verified against the bare act on <date>" or "Rule text not yet verified against the bare act" beside the rule text; one line at the top of Check rights names the unverified checks; reads `verification` / `unverified_checks`, falls back to `last_verified` on an older backend. The sample case mirrors `configs/rights_rules.yaml` after the automatic Rights check (6 of 7 verified 2026-11-02, PR #6; was all 7 on a made-up date) |
+| Rights rule verification in the UI (`docs/handoff/code-final.md` §6) | done on `frontend-merge`: every check's "Why" shows "Verified against the bare act on <date>" or "Rule text not yet verified against the bare act" beside the rule text; one line at the top of Check rights names the unverified checks; reads `verification` / `unverified_checks`, falls back to `last_verified` on an older backend. The sample case mirrors `configs/rights_rules.yaml` after the automatic Rights check (7 of 7 verified 2026-11-07; was all 7 on a made-up date) |
 
 ## Test results (Python 3.10 venv, offline models)
 _Checked by Vishak 2026-10-27: Python 3.11 is now the minimum (`docs/handoff/python-and-defaults.md`), and `make setup` (the "still a stub" line below) is real (`docs/handoff/fresh-clone-fixes.md`)._
