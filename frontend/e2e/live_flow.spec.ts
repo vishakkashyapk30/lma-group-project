@@ -6,6 +6,7 @@
  *   VS_DATA_DIR=<scratch> VS_MODELS=offline VS_LLM_BACKEND=offline .venv/bin/python -m uvicorn vakeel_sahayak.api.asgi:app --port 8000
  *   NEXT_PUBLIC_API_BASE=http://localhost:8000 npm run build && npx next start -p 3000
  *   E2E_LIVE_API=1 npx playwright test e2e/live_flow.spec.ts --project=chromium
+ * E2E_LIVE_API_BASE (default http://localhost:8000) is the API the frontend was built against; E2E_PORT picks the frontend's port.
  * The bundle defaults to a born-digital T2 bundle from `make data` (E2E_LIVE_PDF overrides it); without it the test is skipped. The
  * numbers of facts, grounds and objections depend on the models, so the test checks the flow and its gates, not the counts.
  */
@@ -14,6 +15,7 @@ import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { TID } from "./testids";
 
+const API_BASE = (process.env.E2E_LIVE_API_BASE ?? "http://localhost:8000").replace(/\/+$/, "");
 const PDF = process.env.E2E_LIVE_PDF ?? path.resolve(__dirname, "../../data/testsets/t2/bundles/t1-003_K1.pdf");
 
 test.skip(process.env.E2E_LIVE_API !== "1", "set E2E_LIVE_API=1 with the API and a frontend built against it running");
@@ -65,6 +67,25 @@ test("live API: upload -> facts -> Gate 1 -> rights -> draft -> resolve -> heari
   await page.getByTestId(TID.draftBriefButton).click();
   expect((await drafted).status()).toBe(200);
   await expect(page.getByTestId(TID.briefGround).first()).toBeVisible();
+
+  // What the draft left out: every sentence the API reports as withheld is listed under its ground (closed until opened), and a
+  // ground that lost every sentence is listed under "Grounds left for you to draft". The offline models usually withhold some
+  // sentences, but how many depends on the models, so only agreement between the API and the screen is checked.
+  const caseId = new URL(page.url()).pathname.split("/").pop();
+  const brief = await (await page.request.get(`${API_BASE}/api/cases/${caseId}/brief`)).json();
+  const withheld: Array<{ ground: string; sentences: unknown[]; dropped?: boolean }> = (brief.withheld ?? []).filter((w: { sentences: unknown[] }) => w.sentences.length > 0);
+  const present = new Set((brief.grounds ?? []).map((g: { id: string }) => g.id));
+  const inBrief = withheld.filter((w) => present.has(w.ground) && !w.dropped);
+  const left = withheld.filter((w) => !present.has(w.ground) || w.dropped);
+  await expect(page.getByTestId("withheld-list")).toHaveCount(inBrief.length);
+  await expect(page.getByTestId("dropped-ground")).toHaveCount(left.length);
+  if (inBrief.length > 0) {
+    const first = page.getByTestId("withheld-list").first();
+    await expect(first.getByTestId("withheld-sentence").first()).toBeHidden(); // closed until counsel opens it
+    await first.locator("summary").click();
+    await expect(first.getByTestId("withheld-sentence")).toHaveCount(inBrief[0]!.sentences.length);
+    await expect(first.getByTestId("withheld-sentence").first()).toBeVisible();
+  }
   await clickAll(page, /^Accept .* with a note$/, "Mark as reviewed");
   await clickAll(page, /^Resolve unanswered objection/, "Mark as resolved");
 
