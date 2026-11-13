@@ -52,6 +52,7 @@ from vakeel_sahayak.agents.peshkar.fields import (
     claim_text,
     coerce_value,
     describe_value,
+    expand_section_items,
     flat,
     merge_subsumed,
     norm_key,
@@ -396,7 +397,8 @@ class PeshkarAgent(BaseAgent):
     ) -> tuple[list[_Checked], list[str]]:
         ok: list[_Checked] = []
         bad: list[str] = []
-        for item in extraction.items:
+        items = expand_section_items(extraction.items) if name == "sections" else extraction.items
+        for item in items:
             checked, why = self._check_item(name, item, passages, timeline)
             if checked is not None:
                 ok.append(checked)
