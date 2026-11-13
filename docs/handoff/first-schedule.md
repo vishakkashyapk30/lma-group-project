@@ -237,3 +237,5 @@ The synthetic-PDF tests cover Ditto resolution, the footnote and STATE AMENDMENT
 and stops at THE SECOND SCHEDULE. Other tests check the committed table (sources pinned; every band follows from its printed text), the
 `classify_other_law` bands, CrPC and BNSS agreement, and the Peshkar fallback (NDPS without a flag gets a class; a class already found
 is kept; IPC and BNS are not touched).
+
+**Decision, 13 Nov (Vishak): NDPS is excluded from the Part II fallback in Peshkar** (`_map_section`). The store's NDPS `max_punishment` is the section's heaviest term, so s.20 to s.22 would read "20 years" and Part II "non-bailable", although a small-quantity charge is bailable. The table and `classify_other_law` stay; Peshkar leaves NDPS unclassed, as before, and counsel sees no bail class rather than a wrong one. Test: `test_ndps_is_not_classed_by_part2_because_its_punishment_depends_on_the_quantity`.

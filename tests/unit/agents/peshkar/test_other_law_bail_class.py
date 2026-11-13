@@ -39,8 +39,16 @@ def _map(agent: PeshkarAgent, code: str, section: str) -> dict:
     [("22", "20 years", False), ("21", "10 years", False), ("27", "1 year", True), ("26", "3 years", False), ("31A", "death", False)],
 )
 def test_a_special_act_section_without_a_bail_flag_gets_the_part2_class(section, punishment, want):
-    value = _map(_agent({("NDPS", section): (None, punishment)}), "NDPS", section)
+    # RECONCILED 13 Nov: the sections here were NDPS ones; NDPS is now left out of Part II (see the test below), so another special act stands in
+    value = _map(_agent({("UAPA", section): (None, punishment)}), "UAPA", section)
     assert value["bailable"] is want and value["max_punishment"] == punishment
+
+
+@pytest.mark.parametrize("section", ["20", "21", "22", "27"])
+def test_ndps_is_not_classed_by_part2_because_its_punishment_depends_on_the_quantity(section):
+    """A small-quantity charge under s.20 to s.22 is bailable, but the store holds the section's heaviest term (20 years)."""
+    value = _map(_agent({("NDPS", section): (None, "20 years")}), "NDPS", section)
+    assert "bailable" not in value
 
 
 def test_a_class_already_found_is_kept():
