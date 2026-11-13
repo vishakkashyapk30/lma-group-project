@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { CornerDownLeft, FileText, Home, Plus, Search, SidebarClose, Zap, type LucideIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactElement } from "react";
 import { useToast } from "@/components/ui/toast";
+import { useT } from "@/lib/i18n";
 import { listCases } from "@/lib/api";
 import { toggleReducedMotion } from "@/lib/useReducedMotion";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ function matches(entry: Entry, tokens: string[]): number {
 export function CommandPalette(): ReactElement {
   const router = useRouter();
   const toast = useToast();
+  const t = useT();
   const { paletteOpen, setPaletteOpen, setNewCaseOpen, toggleCollapsed } = useShell();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -59,17 +61,17 @@ export function CommandPalette(): ReactElement {
       router.push(href);
     };
     return [
-      { id: "new-case", group: "Actions", label: "New case", hint: "Start a matter and upload the file", icon: Plus, keywords: "create add start", run: () => setNewCaseOpen(true) },
+      { id: "new-case", group: "Actions", label: t("New case"), hint: t("Start a matter and upload the file"), icon: Plus, keywords: "create add start", run: () => setNewCaseOpen(true) },
       {
-        id: "motion", group: "Actions", label: "Reduce motion", hint: "Switch animations off or on", icon: Zap, keywords: "animation accessibility",
-        run: () => toast(toggleReducedMotion() ? "Motion reduced" : "Motion restored"),
+        id: "motion", group: "Actions", label: t("Reduce motion"), hint: t("Switch animations off or on"), icon: Zap, keywords: "animation accessibility",
+        run: () => toast(toggleReducedMotion() ? t("Motion reduced") : t("Motion restored")),
       },
-      { id: "sidebar", group: "Actions", label: "Collapse or expand the sidebar", icon: SidebarClose, keywords: "navigation menu", run: toggleCollapsed },
-      ...NAV_ITEMS.map<Entry>((n) => ({ id: `page-${n.href}`, group: "Pages", label: n.label, hint: n.hint, icon: n.icon, keywords: "go open", run: go(n.href) })),
-      { id: "page-home", group: "Pages", label: "Product overview", hint: "The landing page", icon: Home, keywords: "go open home about", run: go("/") },
+      { id: "sidebar", group: "Actions", label: t("Collapse or expand the sidebar"), icon: SidebarClose, keywords: "navigation menu", run: toggleCollapsed },
+      ...NAV_ITEMS.map<Entry>((n) => ({ id: `page-${n.href}`, group: "Pages", label: t(n.label), hint: t(n.hint), icon: n.icon, keywords: "go open", run: go(n.href) })),
+      { id: "page-home", group: "Pages", label: t("Product overview"), hint: t("The landing page"), icon: Home, keywords: "go open home about", run: go("/") },
       ...cases.map<Entry>((c) => ({ id: `case-${c.id}`, group: "Cases", label: c.title, hint: c.id, icon: FileText, keywords: c.id, run: go(`/case/${c.id}`) })),
     ];
-  }, [cases, router, setNewCaseOpen, toast, toggleCollapsed]);
+  }, [cases, router, setNewCaseOpen, toast, toggleCollapsed, t]);
 
   const results = useMemo(() => {
     const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -109,7 +111,7 @@ export function CommandPalette(): ReactElement {
           aria-describedby={undefined}
           className="fixed left-1/2 top-[12vh] z-modal w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden rounded-lg border border-line bg-cream shadow-lg data-[state=open]:animate-scale-in data-[state=closed]:animate-fade-out"
         >
-          <DialogPrimitive.Title className="sr-only">Search cases, pages and actions</DialogPrimitive.Title>
+          <DialogPrimitive.Title className="sr-only">{t("Search cases, pages and actions")}</DialogPrimitive.Title>
           <div className="flex items-center gap-2 border-b border-line px-3">
             <Search aria-hidden className="size-4 shrink-0 text-ink-muted" />
             <input
@@ -118,22 +120,22 @@ export function CommandPalette(): ReactElement {
               aria-expanded="true"
               aria-controls="palette-list"
               aria-activedescendant={results[active] ? `palette-${results[active]!.id}` : undefined}
-              aria-label="Search cases, pages and actions"
-              placeholder="Search cases, pages and actions"
+              aria-label={t("Search cases, pages and actions")}
+              placeholder={t("Search cases, pages and actions")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={onKeyDown}
               className="h-12 w-full bg-transparent text-base text-ink outline-none placeholder:text-ink-muted"
             />
           </div>
-          <ul ref={listRef} id="palette-list" role="listbox" aria-label="Results" className="max-h-[min(24rem,60vh)] overflow-y-auto p-1.5">
-            {results.length === 0 ? <li role="presentation" className="px-3 py-6 text-center text-sm text-ink-soft">Nothing matches &ldquo;{query}&rdquo;.</li> : null}
+          <ul ref={listRef} id="palette-list" role="listbox" aria-label={t("Results")} className="max-h-[min(24rem,60vh)] overflow-y-auto p-1.5">
+            {results.length === 0 ? <li role="presentation" className="px-3 py-6 text-center text-sm text-ink-soft">{t("Nothing matches")} &ldquo;{query}&rdquo;.</li> : null}
             {results.map((r, i) => {
               const Icon = r.icon;
               const showGroup = i === 0 || results[i - 1]!.group !== r.group;
               return (
                 <li key={r.id} role="presentation">
-                  {showGroup ? <p role="presentation" className="px-2.5 pb-1 pt-2 text-xs font-semibold text-ink-muted">{r.group}</p> : null}
+                  {showGroup ? <p role="presentation" className="px-2.5 pb-1 pt-2 text-xs font-semibold text-ink-muted">{t(r.group)}</p> : null}
                   <div
                     id={`palette-${r.id}`}
                     role="option"
@@ -151,7 +153,7 @@ export function CommandPalette(): ReactElement {
               );
             })}
           </ul>
-          <p className="border-t border-line px-3 py-2 text-xs text-ink-muted">Arrow keys to move, Enter to open, Esc to close.</p>
+          <p className="border-t border-line px-3 py-2 text-xs text-ink-muted">{t("Arrow keys to move, Enter to open, Esc to close.")}</p>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
