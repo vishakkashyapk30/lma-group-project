@@ -225,44 +225,12 @@ def test_product_installer_has_safe_help_and_shell_syntax():
     assert help_text.returncode == 0 and "--skip-data" in help_text.stdout and "--real" in help_text.stdout
 
 
-def test_windows_installer_mirrors_install_sh_statically():
-    """install.ps1 cannot run here (no PowerShell on Linux CI), so check its text: the same preflight and start as install.sh,
-    Windows PowerShell 5.1 syntax only, ASCII only (5.1 reads a file without a BOM as ANSI), and no key ever printed."""
-    installer = ROOT / "install.ps1"
-    raw = installer.read_bytes()
-    text = raw.decode("ascii")  # raises on any non-ASCII byte
-    assert text.startswith("#Requires -Version 5.1")
-    for needed in (
-        ".env.example",
-        "docker compose up -d --build --wait",
-        "docker compose version",
-        "docker info",
-        "FRONTEND_PORT",
-        "BACKEND_PORT",
-        "'3000'",
-        "'8000'",
-        "nvidia-smi",
-        "AvailableFreeSpace",
-        "VS_INSTALL_MIN_FREE_GB",
-        "stores\\law\\statutes.sqlite",
-        "make data",
-        "make models",
-        "WSL",
-        "What is missing:",
-        "is ready at http://127.0.0.1:",
-        "[switch]$SkipData",
-        "[switch]$Real",
-        "[switch]$NoStart",
-    ):
-        assert needed in text, needed
-    # PowerShell 7-only operators would be parse errors in Windows PowerShell 5.1.
-    for pwsh7_only in ("&&", "||", "??", "?.", "-Parallel"):
-        assert pwsh7_only not in text, pwsh7_only
-    # Secrets stay in .env: the script reads only port values from it and never names a key variable.
-    for secret in ("HF_TOKEN=", "$env:HF_TOKEN", "SARVAM_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY"):
-        assert secret not in text, secret
+def test_the_installer_is_linux_only():
+    """RECONCILED: owner decision 13 Nov 2026: the product is installed on Linux only, so the Windows twin `install.ps1` (32d90ba) was
+    removed and its static check replaced by this one: no PowerShell installer is shipped and no install document points to one."""
+    assert not (ROOT / "install.ps1").exists()
     for doc in ("README.md", "DOCKER.md"):
-        assert "install.ps1" in (ROOT / doc).read_text(encoding="utf-8"), doc
+        assert "install.ps1" not in (ROOT / doc).read_text(encoding="utf-8"), doc
 
 
 def test_make_targets_without_a_venv_say_make_setup(tmp_path):

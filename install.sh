@@ -47,7 +47,7 @@ need() {
 
 need docker
 docker compose version >/dev/null 2>&1 || {
-  echo "Docker Compose v2 is required. Install Docker Desktop (Windows/macOS) or the Docker Engine Compose plugin (Linux)." >&2
+  echo "Docker Compose v2 is required. Install the Docker Engine Compose plugin (docker-compose-plugin)." >&2
   exit 1
 }
 

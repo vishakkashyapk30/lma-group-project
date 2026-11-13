@@ -38,7 +38,7 @@ Each criterion is written so that a teammate who did not write the code can pass
 
 | ID | Flow | The product passes when | Main tasks |
 |---|---|---|---|
-| AC-0 | Install and start | On a clean Windows (Docker Desktop), macOS or Linux machine with Docker, one command (`./install.sh`, or `docker compose up` after `install`) ends with a working URL on `127.0.0.1`. The script checks Docker, free disk, GPU and ports, fetches the models for the detected tier and the stores, and says in plain words what is missing. No terminal is needed afterwards. Restart keeps all cases. | PR-62, PR-21, PR-30, PR-20, PR-03, PR-81 |
+| AC-0 | Install and start | On a clean Linux machine with Docker (Linux only: owner decision 13 Nov 2026), one command (`./install.sh`, or `docker compose up` after `install`) ends with a working URL on `127.0.0.1`. The script checks Docker, free disk, GPU and ports, fetches the models for the detected tier and the stores, and says in plain words what is missing. No terminal is needed afterwards. Restart keeps all cases. | PR-62, PR-21, PR-30, PR-20, PR-03, PR-81 |
 | AC-1 | Flow 1: messy bundle | A lawyer drops one 14-page PDF (scanned Hindi FIR, two remand orders, a Sessions Court rejection). Within the time budget of PR-78 they see documents split and labelled with route badges, one question about an unreadable page, the dossier with a source link on every field, the List of Dates, and the Rights Radar chips. Red fields can be fixed. Gate 1 cannot be passed while a field is `UNSUPPORTED` and unacknowledged. An encrypted, corrupt or huge file gives a plain message, never a crash. | PR-05, PR-33, PR-34, PR-07, PR-38, PR-36 |
 | AC-2 | Flow 2: quick question | In the chat, "Days in custody?" returns a one-line cited answer with store and tool chips. A request for an outcome prediction, a grant rate or lay advice is refused in fixed wording. An unanswerable question says what is missing. | PR-06, PR-40 |
 | AC-3 | Flow 3: brief, spar, export | *Draft bail brief* shows the live plan and progress. Every ground carries `[F:]` facts and `[A:]` authorities rendered from corpus metadata, each clickable to its source paragraph. Abhiyojak's objections are listed and answered. `NEEDS_REVIEW` and `UNANSWERED` items must be resolved or acknowledged before Gate 2. Export before Gate 2 returns 403 and the button is disabled. After Gate 2 the lawyer downloads the application DOCX and the hearing-prep card. Both carry the "AI-generated draft. Not legal advice." banner. The DOCX opens in Word and LibreOffice with synopsis, List of Dates, grounds, prayer and annexure index. | PR-06, PR-07, PR-13, PR-14, PR-16, PR-38, PR-37 |
@@ -229,9 +229,9 @@ What the lawyer must always verify, and the product must say so: every date agai
 
 | Gap | Why a lawyer cares | Files | Dep | Effort | Pri | Task |
 |---|---|---|---|---|---|---|
-| One-command install: `docker compose up` works today only for the demo stack. A real install must check Docker, free disk, GPU and ports, create `.env`, fetch models and stores, and explain failures in plain words. | A lawyer will not edit YAML. | `scripts/`, `Makefile`, new `install.sh`, `install.ps1` | PR-21, PR-30 | M | P0 | PR-62 |
+| One-command install: `docker compose up` works today only for the demo stack. A real install must check Docker, free disk, GPU and ports, create `.env`, fetch models and stores, and explain failures in plain words. | A lawyer will not edit YAML. | `scripts/`, `Makefile`, new `install.sh` (Linux only) | PR-21, PR-30 | M | P0 | PR-62 |
 | Images: cold build is about 16 minutes. Publish images to GHCR (amd64 and arm64) and ship a release compose file that pulls pinned tags | A 16-minute build on a lawyer's laptop is not a product. | `compose.yaml`, `docker/*`, CI | none | M | P1 | PR-63 |
-| Windows and macOS: Docker Desktop and WSL2 notes; GPU passthrough on WSL2; Apple Silicon has no NVIDIA GPU, so it is the CPU tier; one real test on one such machine | Many lawyers use Windows laptops. | `DOCKER.md`, docs | PR-62 | M | P1 | PR-64 |
+| Windows and macOS: dropped (owner decision 13 Nov 2026: Linux only) | Out of scope for this release. | `DOCKER.md`, docs | PR-62 | M | P1 | PR-64 |
 | Backups and upgrades: backup and restore of the `vs_data` volume, versioned data schema, migration of event logs between releases | An upgrade must not orphan cases. | `record/*`, `scripts/` | PR-03 | M | P1 | PR-65 |
 | Logs and diagnostics: structured logs with pseudonymised text only, rotation, a "download diagnostics" bundle for support | Support without seeing client text. | `api/`, `compose.yaml` | PR-32 | S | P1 | PR-66 |
 | Resource limits and offline operation: the backend is limited to 2 GB and 2 CPUs, too small for real models; set limits per tier; verify with a network capture that nothing goes out with Sarvam off | The privacy promise needs a test, not a sentence. | `compose.yaml` | PR-22 | M | P1 | PR-67 |
@@ -396,7 +396,7 @@ IDs are stable. "Owner" is a skill, not a person: backend-agents, backend-api, f
 | PR-59 | In-case search (documents, dossier, chat history) and library search polish | UX | P2 | M | PR-04 | frontend | a search finds text in any page of any uploaded document |
 | PR-60 | Tablet and mobile layout pass | UX | P2 | M | none | frontend | workspace usable at 768 px width |
 | PR-61 | Help page and glossary | UX | P2 | S | none | docs-qa | every stage has a help link |
-| PR-62 | One-command install: preflight script (Docker, disk, GPU, ports), `.env` generation, `install.sh` and `install.ps1` | Packaging | P0 | M | PR-21, PR-30 | devops | on a clean machine `./install.sh` ends with a working URL and a message on what is missing |
+| PR-62 | One-command install: preflight script (Docker, disk, GPU, ports), `.env` generation, `install.sh` (Linux only) | Packaging | P0 | M | PR-21, PR-30 | devops | on a clean machine `./install.sh` ends with a working URL and a message on what is missing |
 | PR-63 | Publish images to GHCR for amd64 and arm64, a release compose file that pulls pinned tags | Packaging | P1 | M | none | devops | `docker compose pull && up` needs no local build; first start under 10 minutes on a fast link |
 | PR-64 | Windows (Docker Desktop and WSL2) and macOS notes and one real test; CPU-only tier on Apple Silicon | Packaging | P1 | M | PR-62 | devops | one Windows or macOS machine runs the sample case |
 | PR-65 | Backup and restore of `vs_data`, upgrade path and data-schema migration | Packaging | P1 | M | PR-03 | devops | restore on a clean volume reproduces cases; v1 to v1.1 upgrade keeps cases |
@@ -491,7 +491,7 @@ PR-01, 03, 10, 12, 13, 14, 20, 26, 28, 37, 45, 46, 47, 58, 60, 61, 63, 68, 69, 7
 | R7 | Real scans, Hindi handwriting and phone photos break the ladder (never tried on real files) | High, high | Ingestion hardening, low-confidence prompts, a file sweep, ask counsel instead of guessing | PR-23, 33, 34, 35 |
 | R8 | Privacy regression: a log line or a Sarvam call carries client text | Low, very high | Pseudonymisation before any call, leak check, a logs test with a planted name, an egress capture, consent as an event | PR-42, 66, 67, 40 |
 | R9 | Product patches after the evaluation freeze change the pipeline whose numbers are reported | Medium, high | Land PR-13 and PR-14 before the freeze; tag later agent changes as post-freeze and re-run a smoke subset | section 4.2 |
-| R10 | Installing on Windows or macOS fails, or the 2 GB index download is interrupted | Medium, high | Resumable downloads, preflight checks, published images, a tested Windows path, the starter index as fallback | PR-21, 30, 62, 63, 64 |
+| R10 | Installing on Linux fails, or the 2 GB index download is interrupted (Windows and macOS are not supported: owner decision 13 Nov 2026) | Medium, high | Resumable downloads, preflight checks, published images, a tested Windows path, the starter index as fallback | PR-21, 30, 62, 63, 64 |
 | R11 | Licence trouble: IPC2BNS-Verify has no LICENSE file; HLDC is non-commercial; model licences | Medium, medium | Ask the authors, derive our own table or exclude it, do not ship HLDC, list every licence | PR-69 |
 | R12 | Tests written against stubs expose mismatches (the `SKELETON-GAP` and about 270 `ASSUMPTION` markers) and many tests fail at once when the modules land | High, medium | Land modules one route at a time and fix its tests the same day; reconcile as in earlier phases, marking each test change | PR-72, 73 |
 | R13 | GPU memory contention: one 8 GB GPU cannot hold the language model, the vision model, the embedder and OCR together | High, medium | Load and unload in turn, single-job queue | PR-23, 11 |
@@ -524,7 +524,7 @@ PR-01, 03, 10, 12, 13, 14, 20, 26, 28, 37, 45, 46, 47, 58, 60, 61, 63, 68, 69, 7
 | D6 | Who verifies the Rights Radar rules, given no legal collaborator | the team from the bare acts, or ask a teaching assistant, tutor or practising lawyer for a one-hour read | the team verifies from the bare acts, and asks any available lawyer for a read; the guide states that no lawyer reviewed the rules unless one did | Week 1 |
 | D7 | Publish images to a public registry | GHCR public, private, build locally | GHCR public (no client data and no weights in images) | Week 3 |
 | D8 | Keep or drop the Sarvam consent UI in v1 | ship it (P1), or remove Sarvam from the product and keep it for evaluation only | ship the off-by-default switch with the banner and consent event; if capacity is short, hide the setting and keep `VS_SARVAM=off` fixed in the release | Week 3 |
-| D9 | Level of Windows and macOS support | tested, documented, unsupported | one tested Windows machine; macOS documented as CPU-only | Week 3 |
+| D9 | Level of Windows and macOS support | tested, documented, unsupported | unsupported: Linux only (owner decision 13 Nov 2026) | 13 Nov |
 | D10 | Default retention for cases | keep until deleted, auto-delete after N days | keep until deleted, with a visible delete button and the delete-all setting | Week 2 |
 | D11 | Is the Preview release for lawyers or for the team and teaching staff only | lawyers, staff only | staff and a trusted lawyer under supervision; not for a real client's file until D6 and the manual QA pass | Week 3 |
 
@@ -597,9 +597,9 @@ Done by Vishak on 13 Nov for Shravani's sweep item (`docs/handoff/team-todo-2026
 | PR-59 | Open | P2. Owner: Harshita, after the deadline |
 | PR-60 | Open | Not checked. Owner: Harshita, during the browser walk (390 px and 768 px) |
 | PR-61 | Partly | `frontend/app/help/page.tsx` (how to start, shortcuts). Open (Harshita): a glossary of stages, chips and gates |
-| PR-62 | Partly | `install.sh` (5258d2c) and `install.ps1` (32d90ba; checked only statically by `tests/unit/scripts/test_fresh_clone.py::test_windows_installer_mirrors_install_sh_statically`). Open (Shravani): a run on a clean machine (AC-0); `install.ps1` has never run on Windows |
+| PR-62 | Partly | `install.sh` (5258d2c), Linux only; `install.ps1` removed on 13 Nov (owner decision; `test_the_installer_is_linux_only`). Open (Shravani): a run on a clean Linux machine (AC-0) |
 | PR-63 | Open | No published images. Owner: Vishak, after submission |
-| PR-64 | Partly | Windows notes in `DOCKER.md` and `install.ps1` (data and models through WSL). Open (Shravani): one real Windows run |
+| PR-64 | Dropped | Owner decision 13 Nov 2026: the product is supported on Linux only; `install.ps1` and the Windows notes in `DOCKER.md` were removed |
 | PR-65 | Open | No backup, restore or migration script. Owner: Vishak, after submission |
 | PR-66 | Open | Owner: Shravani, after submission |
 | PR-67 | Open | No egress capture. Owner: Vishak, after submission |
@@ -616,7 +616,7 @@ Done by Vishak on 13 Nov for Shravani's sweep item (`docs/handoff/team-todo-2026
 | PR-78 | Partly | `frontend/e2e/timing-budget.spec.ts`. Open (Harshita): API p95 and per-step times |
 | PR-79 | Open | Owner: Vishak (demo video) |
 | PR-80 | Open | Owner: Shravani, from the browser walk |
-| PR-81 | Done | README quick start names `./install.sh` (5258d2c) and `install.ps1` (32d90ba) |
+| PR-81 | Done | README quick start names `./install.sh` (5258d2c), Linux only |
 | PR-82 | Open | Owner: Harshita, after the browser walk |
 | PR-83 | Partly | `DOCKER.md` covers install, profiles and volumes. Open (Shravani): tiers, backup, troubleshooting by error code |
 | PR-84 | Open | `docs/architecture/skeleton.md` exists but is not condensed. Owner: Vishak, P2 |
