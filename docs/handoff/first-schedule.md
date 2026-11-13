@@ -117,8 +117,9 @@ independently of the parser.
   14 years is what Peshkar shows, because it reads the schedule first).
 - `scripts/check_rights_rules.py --check` against the new store: all seven rules match. Tests: `tests/unit/stores`, the First Schedule
   lookup and the Peshkar section tests, 247 passed.
-- **Not done:** the team bundle on Hugging Face still has the 26 Oct store (see `docs/status/satvik.md`). To get the corrected store on
-  another machine, after `make data`:
+- **Team bundle: refreshed on 14 Nov** with this store (Satvik; details in `docs/status/satvik.md`), so `FORCE=1 RAW=0 make data` now installs it.
+  Before that refresh the bundle had the 26 Oct store. To rebuild the store by hand on another machine instead, after
+  `make data`:
 
   ```
   # the CA bundle for egazette.gov.in, as in step 1 below; then
