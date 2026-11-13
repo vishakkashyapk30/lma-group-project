@@ -4,6 +4,7 @@ Read the note for an area before editing it; update or add one when you stop. Ne
 
 | Area | Notes |
 |---|---|
+| Run the stack, use it, run the live end-to-end test | `run-and-live-test.md` |
 | Where the project stands now (phase 2, to 10 Nov) | `team-todo-2026-11-02.md` (who does what), `phase2-2026-11-01.md`, `status-2026-10-30.md`, `midsub-split-2026-10-30.md` |
 | Sessions | `session-2026-10-29.md`, `session-2026-10-29-b.md` |
 | Models, providers, privacy boundary, budgets | `pilot-hosted-model.md`, `gemini-free-tier.md`, `adding-an-llm-provider.md`, `privacy-hardening-2026-10-27.md`, `ada-qwen32b.md` |
