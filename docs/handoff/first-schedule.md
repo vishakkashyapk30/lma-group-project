@@ -96,7 +96,40 @@ independently of the parser.
   intermediate from `http://yr1.i.lencr.org/`, appended to the system bundle. The file matches the pinned `BNSS_SHA256`. Its First
   Schedule starts on PDF page 158.
 
-## For Satvik's store rebuild (one rebuild)
+## Store rebuild, 13 Nov (done by Vishak on the owner's laptop)
+
+- Step 0 below was done first: the frozen run worktree's `data/stores/law` is now a real copy of the 26 Oct store (checksums equal).
+  The old store and gap files are kept in `data/backup-law-2026-11-13/`.
+- Gap files regenerated from the pinned PDFs (the CrPC PDF is the same file as `crpc_candidate.pdf`; BNSS Gazette and Companies Act fetched
+  and checked against their SHA-256); the committed `configs/first_schedule_crpc_ipc.jsonl` and `first_schedule_bnss_bns.jsonl` came out
+  byte-identical.
+- New `data/stores/law/statutes.sqlite` (sha256 `fb170a7ad7f7d6ea...`; `concordance.sqlite` unchanged):
+
+  | code | rows | bailable set | cognisable set | max punishment set | before (26 Oct) |
+  |---|---|---|---|---|---|
+  | IPC | 533 | 351 | 354 | 357 | 352 / 350 / 357 (43 flags wrong) |
+  | BNS | 351 | 250 | 253 | 269 | no flags |
+  | NDPS | 126 | 4 | 26 | 19 | 5 rows |
+  | Companies Act | 1 (s.212) | | | | absent |
+
+  Spot check: IPC 364 and 457 now non-bailable (were bailable), IPC 302, 143 and 332 unchanged, BNS 103 non-bailable and cognisable, NDPS 22
+  cognisable with 20 years. The store's IPC `max_punishment` still comes from the IPC text (IPC 457 reads "5 years" there; the schedule's
+  14 years is what Peshkar shows, because it reads the schedule first).
+- `scripts/check_rights_rules.py --check` against the new store: all seven rules match. Tests: `tests/unit/stores`, the First Schedule
+  lookup and the Peshkar section tests, 247 passed.
+- **Not done:** the team bundle on Hugging Face still has the 26 Oct store (see `docs/status/satvik.md`). To get the corrected store on
+  another machine, after `make data`:
+
+  ```
+  # the CA bundle for egazette.gov.in, as in step 1 below; then
+  PYTHONPATH=src .venv/bin/python scripts/extract_gap_statutes.py --only crpc,ndps,bnss,companies --fetch --cafile /tmp/bundle.pem \
+      --crpc-pdf data/gaps/raw/crpc_s3waas.pdf --bnss-pdf data/gaps/raw/bnss_gazette.pdf --companies-pdf data/gaps/raw/companies_act_2013.pdf
+  PYTHONPATH=src .venv/bin/python -c "from vakeel_sahayak.stores.law_statutes import StatuteStore; StatuteStore().build('data/interim', 'data/stores/law')"
+  ```
+
+  Never run it in a worktree whose `data/stores/law` is a symlink to a store that scored runs depend on.
+
+## The original rebuild instructions (kept for the record)
 
 0. **Protect the frozen runs first.** The frozen run worktree's `data/stores/law` is a symlink to the main checkout's `data/stores/law`
    (`ls -la .claude/worktrees/agent-a8400ab774cc73e44/data/stores/`). Replace the symlink with a copy of the current store

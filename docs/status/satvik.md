@@ -1,7 +1,22 @@
 # Status: Satvik
 
-## Current assignment (13 Nov 2026, afternoon)
-PRs #7 and #8 are merged. Left: (1) two golden tests fail on `main` since 2601744 (the verified Antil rule moves the Sutradhar `packs` digest as well as the `events` digest); confirm it is intended and re-capture with a RECONCILED note; (2) the one statute store rebuild with the corrected First Schedule flags (43 IPC flags were wrong in the 26 Oct extraction), after replacing the frozen worktree's `data/stores/law` symlink with a copy; then the bundle refresh. Details: `docs/handoff/team-todo-2026-11-02.md`, "Afternoon of 13 November", and `docs/handoff/first-schedule.md`.
+## Current assignment (13 Nov 2026, evening): items 1 to 3 done for you by Vishak
+1. **Golden tests: done** (2953422). Run under the old and the new `configs/rights_rules.yaml` and diffed: the only differences are the
+   `last_verified` dates on the rights_check results (2026-11-02 to 2026-11-07, and null to 2026-11-07 for antil_category). The Sutradhar
+   `packs` digest moves only because the packs carry that dated rights result; no passage, slot or status changed. The `events` (Peshkar) and
+   `events` + `packs` (Sutradhar) digests are re-captured with RECONCILED notes; Peshkar and Sutradhar unit tests: 301 passed.
+2. **Statute store rebuilt: done** (13 Nov, on the owner's laptop). The frozen run worktree's `data/stores/law` symlink was replaced by a
+   copy first (checksums equal). The gap files were regenerated from the pinned official PDFs (`--only crpc,ndps,bnss,companies`); the
+   committed `configs/first_schedule_*` came out byte-identical. New `data/stores/law/statutes.sqlite` (sha256 `fb170a7a...`): IPC 364 and 457
+   now non-bailable, BNS rows carry flags (250 of 351), NDPS 126 sections (was 5), Companies Act s.212 present. `scripts/check_rights_rules.py
+   --check` against it: all seven rules match. Store, lookup and Peshkar section tests: 247 passed. The old store and gap files are kept in
+   `data/backup-law-2026-11-13/` on that laptop.
+3. **Win/loss/tie and M6a: done.** `docs/report/tools/regen.sh` on every family leaves every generated table unchanged;
+   `tests/unit/eval/test_m6a_beside_m6.py` runs (no skip) and fails only on the two declared cells (`shravani/gemini_31`, `shravani/offline_a10`, D5).
+
+Left for you (optional): **the team bundle on Hugging Face was not refreshed.** `make data-bundle` packs the whole `data/eval`, which on
+the owner's laptop has grown from 177 MB (27 Oct bundle) to 3 GB, so a refresh needs a decision on what goes in. Until then a teammate gets
+the corrected store in about a minute: `make data`, then the two commands in `docs/handoff/first-schedule.md`, "Store rebuild, 13 Nov".
 
 ## Earlier assignment (13 Nov 2026, morning)
 Open the PR for `satvik-companies-act-212` (rebased on `main`); one statute store rebuild with the BNSS s.58 and s.212 fixes (with Shravani's CrPC/NDPS texts if ready) and a bundle refresh, never touching the frozen run worktree; rerun `win_loss_tie.py` on every family and confirm the M6a test runs.
