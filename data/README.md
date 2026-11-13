@@ -115,6 +115,9 @@ finds and 4.8% an offence date, so the same-FIR leakage rule and the BNS-era tes
   6,889 orders, 62 MB (Allahabad 6,881, Rajasthan 4, "High Court of Allahabad" 4; mostly 2023 and 2025), report in `hindi_native.report.json`. T2 draws 200 by seed into
   `data/testsets/t2_hindi_native/` (`python -m vakeel_sahayak.testsets.t2_messy_bundles --hindi-native data/interim/hindi_native.jsonl --native-only --out data/testsets/t2_hindi_native`,
   origin `native_hc`). **Caveat:** High Court Hindi, not Uttar Pradesh district-court Hindi like HLDC, so make no "district-court Hindi" claim; HLDC still replaces it when access arrives.
+* **HA-04 outcome (2026-11-03):** the HLDC / IL-TUR access request was sent and has had no reply. Decision: do not wait for it. The evaluation uses the native Hindi
+  High Court set above (the HLDC fallback in plan §2) and makes no "district-court Hindi" claim. The e-SCR permission request and the IPC2BNS-Verify licence email are
+  not pursued before the 10 Nov freeze; the IPC2BNS-Verify repo is used as downloaded (MIT badge, no LICENSE file) and is not redistributed outside the private team bundle.
 * **Models:** `scripts/download_models.sh` (tiers in `configs/models.yaml`, `make models-dry-run`); T1 helpers go to `models/hf`, listed in `models/MANIFEST.json`.
 * **Stores:** full build log and result in `docs/handoff/data-and-models.md`; `data/stores/MANIFEST.json` is written when it finishes.
 * Supreme Court metadata is wired into the citation index (VI-05, 2026-10-25). `interim/oil_metadata.jsonl` (152,413 records: the 37,014 Supreme Court judgments of `raw/open_india_law/sc_metadata.jsonl` plus the orders' own fields) is built by `python -m vakeel_sahayak.pipelines.citation_graph.oil_metadata`; its schema is in that module's docstring and in `docs/handoff/citation-sc-metadata.md`. Candidate stores built with it live in `stores_candidate/` (see `stores_candidate/SWAP.md`); `stores/` is unchanged until someone swaps.
