@@ -166,6 +166,47 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Delete Case",
+        "description": "Permanently remove one case's record, files, caches and retained audio from this laptop.",
+        "operationId": "delete_case_api_cases__case_id__delete",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/cases/{case_id}/ingestion": {
@@ -441,6 +482,114 @@
         }
       }
     },
+    "/api/cases/{case_id}/consent": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Get Consent",
+        "description": "Whether counsel's latest decision lets Sarvam or OpenAI read this case's pseudonymised text (plan \u00a716).",
+        "operationId": "get_consent_api_cases__case_id__consent_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Set Consent",
+        "description": "Counsel grants or withdraws a hosted model's access to this case (plan \u00a716): the event `record_consent` writes, by counsel.\n\nConsent alone sends nothing: the provider must also be on (`VS_SARVAM` / `VS_EXTERNAL`), keyed and, if paid, unlocked, and every\npayload still passes the pseudonymisation boundary. The latest decision wins, so counsel can withdraw it.",
+        "operationId": "set_consent_api_cases__case_id__consent_post",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentStatus"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/cases/{case_id}/draft": {
       "post": {
         "tags": [
@@ -625,9 +774,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Prep Api Cases  Case Id  Prep Get"
+                  "$ref": "#/components/schemas/HearingPrepCardOut"
                 }
               }
             }
@@ -701,7 +848,7 @@
           "cases"
         ],
         "summary": "Get Page Image",
-        "description": "Page image for the PDF viewer, served from the case's laptop directory only (plan \u00a713.5).",
+        "description": "Page image for the PDF viewer, served and rendered on this laptop only (plan \u00a713.5).",
         "operationId": "get_page_image_api_cases__case_id__files__doc_id__pages__page__get",
         "parameters": [
           {
@@ -1051,6 +1198,126 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/gates/answers": {
+      "post": {
+        "tags": [
+          "gates"
+        ],
+        "summary": "Answer Question",
+        "description": "Record counsel's answer to a Munshi question and clear that exact open question.",
+        "operationId": "answer_question_api_cases__case_id__gates_answers_post",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CounselAnswerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDossier"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/cases/{case_id}/gates/dictation/confirm": {
+      "post": {
+        "tags": [
+          "gates"
+        ],
+        "summary": "Confirm Dictation",
+        "description": "Audit counsel's confirmation of dictation read-back; dictated facts remain USER_STATED.",
+        "operationId": "confirm_dictation_api_cases__case_id__gates_dictation_confirm_post",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DictationConfirmRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDossier"
+                }
               }
             }
           },
@@ -1494,6 +1761,16 @@
             "schema": {
               "type": "string",
               "title": "Q"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Before"
             }
           }
         ],
@@ -2044,6 +2321,77 @@
         "title": "CoAccusedBail",
         "description": "A co-accused's bail outcome."
       },
+      "ConsentRequest": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "sarvam",
+              "openai"
+            ],
+            "title": "Provider",
+            "default": "sarvam"
+          },
+          "granted": {
+            "type": "boolean",
+            "title": "Granted"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "granted"
+        ],
+        "title": "ConsentRequest",
+        "description": "Counsel grants (or withdraws) a hosted model's access to this case's pseudonymised text (plan \u00a716)."
+      },
+      "ConsentStatus": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "title": "Case Id"
+          },
+          "sarvam": {
+            "type": "boolean",
+            "title": "Sarvam"
+          },
+          "openai": {
+            "type": "boolean",
+            "title": "Openai"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id",
+          "sarvam",
+          "openai"
+        ],
+        "title": "ConsentStatus",
+        "description": "Whether counsel's latest decision lets each hosted provider read this case."
+      },
+      "CounselAnswerRequest": {
+        "properties": {
+          "question": {
+            "type": "string",
+            "title": "Question"
+          },
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question",
+          "answer"
+        ],
+        "title": "CounselAnswerRequest",
+        "description": "Counsel's answer to one Munshi question."
+      },
       "DependsOn": {
         "properties": {
           "facts": {
@@ -2099,6 +2447,20 @@
         "type": "object",
         "title": "DeskBoard",
         "description": "Triage board."
+      },
+      "DictationConfirmRequest": {
+        "properties": {
+          "readback": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Readback"
+          }
+        },
+        "type": "object",
+        "title": "DictationConfirmRequest",
+        "description": "Counsel confirms the facts read back from a dictation."
       },
       "DocumentEntry": {
         "properties": {
@@ -2489,6 +2851,70 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HearingPrepCardOut": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "title": "Case Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "bench_concerns": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Bench Concerns"
+          },
+          "lead_with": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Lead With"
+          },
+          "lead_points": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Lead Points"
+          },
+          "conditions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Conditions"
+          },
+          "condition_sources": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Condition Sources"
+          },
+          "open_issues": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Open Issues"
+          }
+        },
+        "type": "object",
+        "required": [
+          "case_id",
+          "label"
+        ],
+        "title": "HearingPrepCardOut",
+        "description": "Typed API contract for the counsel-facing hearing-preparation card."
       },
       "IngestionReport": {
         "properties": {

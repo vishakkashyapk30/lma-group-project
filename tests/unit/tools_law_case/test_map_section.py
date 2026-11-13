@@ -117,6 +117,13 @@ def test_unknown_section_is_never_guessed(concordance_store):
     assert res.equivalent is None and res.ambiguous is True
 
 
+@pytest.mark.parametrize(("code", "section"), [("NDPS", "8(C)"), ("UAPA", "43D"), ("PMLA", "45")])
+def test_a_special_act_section_governs_as_written_and_raises_no_mapping_question(concordance_store, code, section):
+    """The 2023 codes replaced only the IPC and the CrPC: a special-act section has no new-code equivalent to ask counsel about."""
+    res = concordance_store.map_section(code, section, BNS_ERA_OFFENCE)
+    assert res.ambiguous is False and res.equivalent is None and res.governing == f"{code} {section}"
+
+
 @pytest.mark.parametrize("offence_date", ["2024-06-30", "2024-07-01", "2024-08-10"])
 def test_equivalent_is_the_same_across_the_era_boundary(concordance_store, offence_date):
     """The concordance equivalent of IPC 420 does not depend on the date (the date decides which law governs, not the map)."""

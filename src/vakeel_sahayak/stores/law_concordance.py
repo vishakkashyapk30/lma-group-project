@@ -6,7 +6,7 @@ import json
 import sqlite3
 from pathlib import Path
 
-from vakeel_sahayak.pipelines.concordance.refs import OLD_TO_NEW, make_ref, split_ref
+from vakeel_sahayak.pipelines.concordance.refs import NEW_TO_OLD, OLD_TO_NEW, make_ref, split_ref
 from vakeel_sahayak.schemas.enums import ConcordanceEdgeType, Shelf, StoreName, TransferFlag
 from vakeel_sahayak.schemas.store_rows import ConcordanceEdge
 from vakeel_sahayak.stores.base import SharedStore
@@ -127,6 +127,9 @@ class ConcordanceStore(SharedStore):
         from vakeel_sahayak.rights.day_count import parse_date
 
         ref = make_ref(code, section)
+        if ref.split(" ", 1)[0] not in OLD_TO_NEW and ref.split(" ", 1)[0] not in NEW_TO_OLD:
+            # NDPS, UAPA, PMLA, POCSO, Companies Act: special acts the 2023 codes did not replace, so the section governs as written
+            return MapSectionResult(equivalent=None, edge_type=ConcordanceEdgeType.SAME, governing=ref)
         era_start = parse_date(str(load_config().splits.get("bns_era_offence_on_or_after", "2024-07-01")))
         new_era = parse_date(offence_date) >= era_start
         edges = self.edges_for(ref)
