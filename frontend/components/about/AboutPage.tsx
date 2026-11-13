@@ -137,7 +137,7 @@ export function AboutPage({ className }: AboutPageProps): ReactElement {
 
       <Section id="eval" title="Evaluation results">
         <p role="note" className="mb-3 max-w-prose text-sm text-ink-soft">
-          Results from the project report. A win counts only when the paired interval excludes zero; the comparisons are relative, and most argument sentences still need counsel's check.
+          Results from the project report. A win counts only when the paired interval excludes zero; the comparisons are relative, and most argument sentences still need counsel&apos;s check.
         </p>
         {/* The table scrolls sideways on a phone; the region is focusable so keyboard users can scroll it too (WCAG 2.1.1). */}
         <div role="region" aria-label="Evaluations, scrolls sideways" tabIndex={0} className="overflow-x-auto border-y border-line focus-visible:outline focus-visible:outline-2 focus-visible:outline-maroon">
