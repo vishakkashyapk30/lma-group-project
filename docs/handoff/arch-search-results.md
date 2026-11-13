@@ -175,3 +175,19 @@ The holdout block finished (9 arms x 20 cases). The ablation queue stopped mid-w
   57 of 59 orders) driven by the sentence mix; M6a is a tie. Not taken further. c1457 stays.
 - Still running after this note: nothing of the search. The worktree `.claude/worktrees/score-fix` (branch `eval-freeze-v1-scorefix`) is the scoring code
   of record for the blind slice; keep it until the submission.
+
+## D11 rule-only gold and D12 run-to-run spread (12-13 Nov)
+
+- D11 (declared label-source sensitivity, once): unit `vs-blind-rule`, script `sarvam_blind/logs/rescore-d11-rule-attempt2.sh` in the frozen run
+  worktree (checks the output hashes, moves `blind.lock`, scores with the score-fix code, `--gold-source rule`). 00:26 to 11:03 on 13 Nov, exit 0,
+  9 systems x 80 orders, `sarvam_blind/scores_rule/per_case_rule.csv`. c1457 45/70/5 against B0-B6 (agreed 46/69/5), Full 29/74/17 (29/76/15);
+  5 of 350 cells change (one c1457 win vs B3 on court-discussed recall becomes a tie); all five hypothesis verdicts identical. In the report
+  (sections/blind.tex), `final_report/{summary.md, hypotheses_blind.json, wlt_blind_rule.csv, means_blind_rule.csv}`.
+- D12 (exploratory): c1457, Full and B0-B6 run twice more on the 30 search orders from the frozen code with the Sarvam cache off
+  (`VS_SARVAM_NO_CACHE=1`), outputs `sarvam_var{1,2}/outputs/<arm>`. Job pool in `dev_runs/var-pool/`: `todo/ doing/ done/ failed/` hold one file
+  per (run, arm), `worker.sh` claims a job by `mv` (units `vs-w<k>`, each MemoryMax 4G), `guard.sh` (unit `vs-wguard`) pauses all workers when
+  free memory drops under 4.6 GB and stops the newest one (its job goes back to `todo/`) if it stays low; v3 also stops one when memory sits
+  between the pause and resume levels, which had stalled the pool from 05:26 to 07:22. B4 of run 1 was split three ways (`shard.sh`, units
+  `vs-w7..9`; `shard-finish.sh` moves the job to `done/`). `autoscore2.sh` (unit `vs-autoscore`) scores each finished job with the score-fix code,
+  one call per arm into `sarvam_var<n>/scores/<arm>/`, at most two at once and only with 8 GB free. Then `VS_RUNS=<frozen>/data/eval/dev_runs
+  python scripts/midsub/final_tables.py` writes the D12 block (`variance_d12.csv`, `wlt_var_*.csv`).
