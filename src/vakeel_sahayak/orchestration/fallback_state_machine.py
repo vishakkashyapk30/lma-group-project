@@ -3,7 +3,7 @@
 Same event log, same gates: `PlainStateMachine` advances a case to the next gate or the end and can never reach export
 without counsel's approval at Gate 1 and Gate 2. It shares the node bodies of `orchestration.graph` and calls
 `gates.await_gate` with `interrupt=False`, so a run simply stops at an unapproved gate (no LangGraph interrupt). It is
-selected when langgraph is missing or `VS_ORCHESTRATOR=plain`.
+selected by callers that need the non-LangGraph fallback.
 """
 
 from __future__ import annotations
