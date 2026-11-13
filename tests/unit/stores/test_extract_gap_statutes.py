@@ -220,3 +220,166 @@ def test_store_build_keeps_a_companies_act_gap_row(tmp_path):
 
 def test_companies_act_pdf_is_pinned_to_a_sha256():
     assert re.fullmatch(r"[0-9a-f]{64}", gap.COMPANIES_SHA256) and gap.COMPANIES_URL.startswith("https://")
+
+
+# ---------------------------------------------------------------- First Schedule table (offence, punishment, triable by)
+
+
+@pytest.mark.parametrize(
+    ("cell", "want"),
+    [
+        ("Death, or imprisonment for life, and fine.", "death"),
+        ("Imprisonment for life, or imprisonment for 10 years and fine.", "life imprisonment"),
+        ("Rigorous imprisonment for not less than 20 years which may extend to the remainder of that person's natural life", "life imprisonment"),
+        ("Imprisonment for 7 years and fine.", "7 years"),
+        ("Imprisonment for three years and fine.", "3 years"),
+        ("Imprisonment of 1 year which may extend to 5 years, and with fine.", "5 years"),
+        ("Simple imprisonment for 1 month, or fine of 500 rupees, or both.", "1 month"),
+        ("Simple imprisonment for 24 hours, or fine of 10 rupees, or both.", "24 hours"),
+        ("Fine of 200 rupees.", "fine"),
+        ("Same as for offence abetted.", None),
+        ("Imprisonment extending to a quarter part of the longest term provided for the offence, or fine, or both.", None),
+        ("", None),
+    ],
+)
+def test_schedule_max_punishment_is_normalised_or_none(cell, want):
+    assert gap.schedule_max_punishment(cell) == want
+
+
+def test_punishment_rank_orders_the_normalised_labels():
+    labels = ["life imprisonment", "fine", "7 years", "24 hours", "death", "6 months", "1 year"]
+    assert sorted(labels, key=gap.punishment_rank) == ["fine", "24 hours", "6 months", "1 year", "7 years", "life imprisonment", "death"]
+
+
+def test_a_conditional_flag_cell_is_none():
+    assert gap._cell_flag("Cognizable if information relating to the offence is given by the person aggrieved", "cog", None) == (None, "cond")
+    assert gap._cell_flag("Non-cognizable Ditto", "cog", True) == (False, "ok")  # a Ditto after a value is not read as a Ditto
+
+
+def test_columns_follow_the_punishment_and_bail_edges_of_the_page():
+    xs = [64, 91, 231, 231, 231, 357, 420, 510]
+    texts = ["465", "Forgery", "Imprisonment", "or both.", "Imprisonment", "Non-cognizable", "Bailable", "Any Magistrate."]
+    assert gap._columns(xs, texts) == [0, 1, 2, 2, 2, 3, 4, 5]
+    assert gap._columns([97, 240, 258, 365, 422, 440], ["Hurt", "word", "Imprisonment", "Cognizable", "if", "Non-bailable"]) == [1, 1, 2, 3, 3, 4]
+
+
+def _schedule_pdf(tmp_path: Path) -> Path:
+    """One page of a First Schedule with the hard cases met in the CrPC text (all coordinates in points, 8 pt type)."""
+    head = [
+        (240, 60, 11, "THE FIRST SCHEDULE"),
+        (186, 90, 10, "I.–OFFENCES UNDER THE INDIAN PENAL CODE"),
+        (258, 110, 8, "Punishment"),
+        (330, 110, 8, "Cognizable or non-"),
+        (70, 125, 8, "1"), (170, 125, 8, "2"), (318, 125, 8, "3"), (390, 125, 8, "4"), (466, 125, 8, "5"), (529, 125, 8, "6"),
+    ]  # fmt: skip
+    body = [
+        # s.354C: two sub-rows (first / second conviction), the second with a blank offence cell; the entry was inserted by an amending Act
+        (60, 160, 8, "354C"), (97, 160, 8, "Voyeurism."), (258, 160, 8, "Imprisonment for 3 years and fine."),
+        (365, 160, 8, "Cognizable"), (440, 160, 8, "Bailable"), (510, 160, 8, "Any Magistrate."),
+        (258, 178, 8, "Imprisonment for 7 years for second conviction."), (365, 178, 8, "Cognizable"), (440, 178, 8, "Non-bailable"),
+        (510, 178, 8, "Any Magistrate.]"),
+        # s.355: Ditto under the amended entry whose sub-rows differ: unresolved; s.356 repeats it
+        (60, 200, 8, "355"), (97, 200, 8, "Assault with intent to dishonour."), (294, 200, 8, "Ditto"), (365, 200, 8, "Non-cognizable"),
+        (460, 200, 8, "Ditto"), (520, 200, 8, "Ditto."),
+        (60, 220, 8, "356"), (97, 220, 8, "Assault in attempt to commit theft."), (258, 220, 8, "Imprisonment for 2 years, or fine, or both."),
+        (365, 220, 8, "Cognizable"), (460, 220, 8, "Ditto"), (520, 220, 8, "Ditto."),
+        # s.225A: a heading line with no other cell, then sub-rows (a) and (b) only 12 pt apart
+        (60, 250, 8, "225A"), (97, 250, 8, "Omission to apprehend, in cases not otherwise provided for:-"),
+        (97, 262, 8, "(a) intentional omission;"), (258, 262, 8, "Imprisonment for 3 years, or fine, or both."),
+        (365, 262, 8, "Non-cognizable"), (440, 262, 8, "Bailable"), (480, 262, 8, "Magistrate of the first class."),
+        (97, 274, 8, "(b) negligent omission."), (258, 274, 8, "Simple imprisonment for 2 years, or fine, or both."),
+        (384, 274, 8, "Ditto"), (460, 274, 8, "Ditto"), (510, 274, 8, "Any Magistrate."),
+        # s.501: the section number and the offence printed as one PDF line
+        (63, 300, 8, "501(a) Printing defamatory matter."), (258, 300, 8, "Simple imprisonment for 2 years, or fine, or both."),
+        (365, 300, 8, "Non-cognizable"), (440, 300, 8, "Bailable"), (510, 300, 8, "Court of Session."),
+        # s.498A: a conditional cognizable cell
+        (60, 330, 8, "498A"), (97, 330, 8, "Cruelty by husband."), (258, 330, 8, "Imprisonment for three years and fine."),
+        (365, 330, 8, "Cognizable if information"), (365, 340, 8, "is given by the person aggrieved."),
+        (440, 330, 8, "Non-bailable"), (480, 330, 8, "Magistrate of the first class."),
+    ]  # fmt: skip
+    part2 = [
+        (186, 400, 10, "II.–CLASSIFICATION OF OFFENCES AGAINST OTHER LAWS"),
+        (64, 430, 8, "If punishable with death"), (349, 430, 8, "Cognizable"), (402, 430, 8, "Non-bailable"), (483, 430, 8, "Court of Session."),
+    ]  # fmt: skip
+    return _pdf(tmp_path / "sched2.pdf", [head + body + part2])
+
+
+def test_first_schedule_hard_cases(tmp_path):
+    rows, notes = gap.parse_first_schedule(_schedule_pdf(tmp_path))
+    by = {r["section"]: r for r in rows}
+    assert list(by) == ["354C", "355", "356", "225A", "501", "498A"]  # Part II on the same page is not read
+    c = by["354C"]
+    assert len(c["subrows"]) == 2 and c["subrows"][1]["offence"] is None
+    assert (c["cognisable"], c["bailable"], c["max_punishment"]) == (True, None, "7 years")  # bailable differs by sub-row
+    s355 = by["355"]
+    assert (s355["cognisable"], s355["bailable"], s355["punishment"], s355["max_punishment"]) == (False, None, None, None)
+    assert s355["triable_by"] == "Any Magistrate"  # both sub-rows above agree, so that Ditto is read
+    assert set(s355["subrows"][0]["ditto_ambiguous"]) == {"punishment", "bailable"}
+    assert "bailable" in s355["ditto_from_amended_entry"]
+    assert by["356"]["bailable"] is None and by["356"]["max_punishment"] == "2 years"
+    a = by["225A"]
+    assert a["offence"].startswith("Omission to apprehend") and "(b) negligent omission." in a["offence"]
+    assert len(a["subrows"]) == 2 and (a["cognisable"], a["bailable"], a["max_punishment"]) == (False, True, "3 years")
+    assert a["triable_by"] == "Magistrate of the first class | Any Magistrate"
+    assert by["501"]["offence"] == "Printing defamatory matter." and by["501"]["triable_by"] == "Court of Session"
+    assert by["498A"]["cognisable"] is None and by["498A"]["bailable"] is False
+    assert by["498A"]["subrows"][0]["cognisable_text"].startswith("Cognizable if information")
+    assert any(n.startswith("s.355") for n in notes)
+
+
+def test_schedule_table_and_meta_name_the_source(tmp_path):
+    pdf = _schedule_pdf(tmp_path)
+    rows, notes = gap.parse_first_schedule(pdf)
+    table, meta = gap.schedule_table(rows, notes, pdf, "2026-11-13")
+    assert all(r["code"] == "IPC" and r["source"] == {"url": gap.CRPC_URL, "sha256": gap.sha256_of(pdf)} for r in table)
+    assert set(table[0]) >= {"section", "offence", "punishment", "max_punishment", "cognisable", "bailable", "triable_by", "subrows"}
+    assert meta["coverage"]["rows"] == 6 and meta["coverage"]["bailable_non_null"].startswith("3/6")
+    assert meta["generated"] == "2026-11-13" and meta["source_sha256"] == gap.sha256_of(pdf)
+
+
+def test_main_writes_the_schedule_table_offline(tmp_path, capsys):
+    pdf = _schedule_pdf(tmp_path)
+    out = tmp_path / "configs" / "fs.jsonl"
+    assert gap.main(["--only", "schedule", "--crpc-pdf", str(pdf), "--out", str(tmp_path / "gaps"), "--schedule-out", str(out)]) == 0
+    rows = [json.loads(x) for x in out.read_text(encoding="utf-8").splitlines()]
+    assert [r["section"] for r in rows] == ["354C", "355", "356", "225A", "501", "498A"]
+    assert json.loads(out.with_suffix(".meta.json").read_text(encoding="utf-8"))["coverage"]["rows"] == 6
+    flags = [json.loads(x) for x in (tmp_path / "gaps" / "first_schedule_ipc.jsonl").read_text(encoding="utf-8").splitlines()]
+    assert all(r["text"] == "" for r in flags) and {r["section"] for r in flags} <= {r["section"] for r in rows}
+    assert "not the pinned PDF" in capsys.readouterr().err  # the synthetic PDF is not the pinned CrPC file: warned, not refused
+
+
+_CONFIG = Path(__file__).resolve().parents[3] / "configs" / "first_schedule_crpc_ipc.jsonl"
+
+
+def test_committed_schedule_table_is_well_formed():
+    rows = [json.loads(x) for x in _CONFIG.read_text(encoding="utf-8").splitlines()]
+    assert len(rows) >= 390 and len({r["section"] for r in rows}) == len(rows)
+    for r in rows:
+        assert r["code"] == "IPC" and r["source"]["sha256"] == gap.CRPC_SHA256
+        assert r["bailable"] in (True, False, None) and r["cognisable"] in (True, False, None)
+        assert r["max_punishment"] is None or r["max_punishment"] in ("death", "life imprisonment", "fine") or re.fullmatch(
+            r"\d+ (years?|months?|weeks?|days?|hours?)", r["max_punishment"]
+        )
+    by = {r["section"]: r for r in rows}  # cells as printed in the official text (pages 195 to 222 of the pinned PDF)
+    assert (by["302"]["bailable"], by["302"]["max_punishment"]) == (False, "death")
+    assert (by["323"]["bailable"], by["323"]["cognisable"]) == (True, False)
+    assert (by["420"]["bailable"], by["420"]["max_punishment"]) == (False, "7 years")
+    assert by["143"]["bailable"] is True and by["341"]["bailable"] is True
+
+
+def test_ndps_rows_cover_the_penal_sections(tmp_path):
+    page = [
+        (72, 80, 10, "1. Short title.-This Act may be called the Act."),
+        (72, 100, 10, "2. Definitions.-In this Act, small quantity means a quantity."),
+        (72, 120, 10, "3. Punishment for contravention.-Whoever contravenes shall be punishable,-"),
+        (72, 134, 10, "(a) with rigorous imprisonment for a term which may extend to one year;"),
+        (72, 148, 10, "(b) with rigorous imprisonment for a term which may extend to twenty years."),
+        (72, 170, 10, "4. Offences to be cognizable and non-bailable.-(1) Notwithstanding anything,-"),
+        (72, 184, 10, "(a) every offence punishable under this Act shall be cognizable;"),
+    ]
+    rows, missing = gap.build_rows("NDPS", _pdf(tmp_path / "ndps.pdf", [page]), gap.NDPS_URL, None, "2026-11-13")
+    by = {r["section"]: r for r in rows}
+    assert missing == [] and list(by) == ["1", "2", "3", "4"]
+    assert by["3"]["max_punishment"] == "20 years"  # the heavier of its two limbs
+    assert "cognisable" not in by["2"] and "max_punishment" not in by["2"]
