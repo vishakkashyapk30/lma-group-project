@@ -1,0 +1,8 @@
+{
+  "model": "gemma-4-31b-it",
+  "provider": "gemini (free tier, public interface text)",
+  "date": "2026-11-13",
+  "strings": 300,
+  "translated": 300,
+  "reviewed_by_hand": false
+}

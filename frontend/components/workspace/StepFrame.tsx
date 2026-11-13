@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useT, useTx } from "@/lib/i18n";
 import { ProgressLine } from "./ProgressLine";
 
 export interface StepFrameProps {
@@ -20,14 +21,16 @@ export interface StepFrameProps {
 }
 
 export function StepFrame({ title, intro, actions, children, footer, className }: StepFrameProps): ReactElement {
+  const t = useT();
+  const tx = useTx();
   return (
     <section aria-labelledby="step-title" className={cn("mx-auto w-full max-w-[48rem] px-5 pt-8 sm:px-8", !footer && "pb-16", className)}>
       <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
           <h2 id="step-title" tabIndex={-1} className="font-display text-3xl font-semibold leading-tight text-ink outline-none">
-            {title}
+            {t(title)}
           </h2>
-          {intro ? <p className="mt-1.5 max-w-prose text-ink-soft">{intro}</p> : null}
+          {intro ? <p className="mt-1.5 max-w-prose text-ink-soft">{tx(intro)}</p> : null}
         </div>
         {actions ? <div data-print-hide className="flex shrink-0 gap-2">{actions}</div> : null}
       </header>
@@ -59,15 +62,17 @@ export interface StepFooterProps {
 }
 
 export function StepFooter({ label, onClick, disabled, busy, hint, testId, secondary, next = true, control, above }: StepFooterProps): ReactElement {
+  const t = useT();
+  const tx = useTx();
   return (
     <div data-print-hide data-step-footer className="sticky bottom-0 z-raised -mx-5 mt-12 border-t border-line-strong/50 bg-parchment px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:-mx-8 sm:px-8">
       {above}
       <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
-        {hint ? <p id="step-hint" className="mr-auto min-w-0 text-sm text-ink-soft">{hint}</p> : null}
+        {hint ? <p id="step-hint" className="mr-auto min-w-0 text-sm text-ink-soft">{tx(hint)}</p> : null}
         {secondary}
         {control ?? (
           <Button data-testid={testId} size="lg" onClick={onClick} disabled={disabled || busy} aria-describedby={hint && disabled ? "step-hint" : undefined}>
-            {label}
+            {t(label)}
             {next ? <ArrowRight aria-hidden /> : null}
           </Button>
         )}

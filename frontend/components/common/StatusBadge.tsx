@@ -1,5 +1,6 @@
 // Status: an icon and a short word in the status colour, never colour alone. Plain type, no pill, no fill.
 import type { ReactElement } from "react";
+import { useT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { getStatusMeta, TONE_CLASSES, type StatusKind } from "@/lib/status";
 
@@ -35,12 +36,13 @@ export interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, kind, label, detail, size = "md", solid = false, testId = "status-badge", className }: StatusBadgeProps): ReactElement {
+  const t = useT();
   const meta = getStatusMeta(status, kind);
   const tone = TONE_CLASSES[meta.tone];
   return (
     <span
       data-testid={testId}
-      title={meta.description}
+      title={t(meta.description)}
       data-status={status}
       className={cn(
         "inline-flex items-center gap-1 font-sans font-medium leading-none whitespace-nowrap",
@@ -51,7 +53,7 @@ export function StatusBadge({ status, kind, label, detail, size = "md", solid = 
     >
       <StatusIcon icon={meta.icon} />
       {" "}
-      <span>{label ?? meta.label}</span>
+      <span>{t(label ?? meta.label)}</span>
       {detail ? <span className="font-normal">{detail}</span> : null}
     </span>
   );

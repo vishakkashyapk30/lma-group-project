@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import type { ReactElement, ReactNode } from "react";
 import { NewCaseDialog } from "@/components/cases/NewCaseDialog";
 import { ToastProvider } from "@/components/ui/toast";
+import { I18nProvider } from "@/lib/i18n";
 import { CommandPalette } from "./CommandPalette";
 import { MobileDrawer } from "./MobileDrawer";
 import { useRouteFocus } from "./routeFocus";
@@ -16,6 +17,7 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
   const isLanding = path === "/";
   useRouteFocus();
   return (
+    <I18nProvider>
     <ToastProvider>
       {isLanding ? (
         <main id="main" tabIndex={-1} className="outline-none">{children}</main>
@@ -34,5 +36,6 @@ export function AppShell({ children }: { children: ReactNode }): ReactElement {
         </ShellProvider>
       )}
     </ToastProvider>
+    </I18nProvider>
   );
 }

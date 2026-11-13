@@ -4,6 +4,7 @@
 // gates are not separate buttons: confirming the facts and approving the draft happen inside their steps.
 import { Fragment, useEffect, useRef, useState, type ReactElement } from "react";
 import { Stepper, Step } from "@/components/ui/stepper";
+import { useT } from "@/lib/i18n";
 import { isStageUnlocked, lockReason, stageState, stepOf, STEPPER_STAGES } from "@/lib/stages";
 import type { StageContext } from "@/lib/stages";
 import type { Stage } from "@/lib/types";
@@ -20,6 +21,7 @@ export interface StageRailProps {
 }
 
 export function StageRail({ current, onSelect, gate1Approved, className }: StageRailProps): ReactElement {
+  const t = useT();
   const ws = useOptionalWorkspace();
   const baseContext: StageContext = ws?.stageContext ?? { gate1Approved: false, gate2Approved: false };
   const stageContext: StageContext = gate1Approved === undefined ? baseContext : { ...baseContext, gate1Approved };
@@ -36,7 +38,7 @@ export function StageRail({ current, onSelect, gate1Approved, className }: Stage
 
   const go = (stage: Stage) => {
     if (!isStageUnlocked(stage, stageContext)) {
-      setNotice(lockReason(stage, stageContext) ?? "That step is locked.");
+      setNotice(t(lockReason(stage, stageContext) ?? "That step is locked."));
       return;
     }
     setNotice("");
@@ -46,8 +48,8 @@ export function StageRail({ current, onSelect, gate1Approved, className }: Stage
 
   return (
     <div ref={railRef} className={className}>
-      <nav aria-label="Case steps" data-testid="stage-rail">
-        <Stepper label="Steps" className="min-h-[var(--rail-h)] py-2">
+      <nav aria-label={t("Case steps")} data-testid="stage-rail">
+        <Stepper label={t("Steps")} className="min-h-[var(--rail-h)] py-2">
           {STEPPER_STAGES.map((stage) => {
             const state = stageState(stage.id, progressStage, stageContext);
             const locked = state === "locked";
@@ -55,16 +57,16 @@ export function StageRail({ current, onSelect, gate1Approved, className }: Stage
             return (
               <Fragment key={stage.id}>
                 <Step
-                  label={stage.label}
+                  label={t(stage.label)}
                   state={state}
                   viewed={stage.id === viewed}
                   testId={`stage-${stage.key}`}
                   describedBy={locked ? `lock-${stage.id}` : undefined}
                   onClick={() => go(stage.id)}
-                  title={locked ? (reason ?? undefined) : stage.description}
-                  srPrefix="Step"
+                  title={locked ? (reason ? t(reason) : undefined) : t(stage.description)}
+                  srPrefix={t("Step")}
                 />
-                {locked ? <li className="sr-only" id={`lock-${stage.id}`}>{reason}</li> : null}
+                {locked ? <li className="sr-only" id={`lock-${stage.id}`}>{reason ? t(reason) : null}</li> : null}
               </Fragment>
             );
           })}
