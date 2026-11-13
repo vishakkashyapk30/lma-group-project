@@ -217,6 +217,14 @@ def test_setup_explains_a_missing_or_old_python(tmp_path):
     assert bare.returncode == 1 and "no Python 3.11 or newer found" in bare.stderr
 
 
+def test_product_installer_has_safe_help_and_shell_syntax():
+    installer = ROOT / "install.sh"
+    syntax = subprocess.run(["bash", "-n", str(installer)], cwd=ROOT, capture_output=True, text=True, check=False)
+    help_text = subprocess.run(["bash", str(installer), "--help"], cwd=ROOT, capture_output=True, text=True, check=False)
+    assert syntax.returncode == 0, syntax.stderr
+    assert help_text.returncode == 0 and "--skip-data" in help_text.stdout and "--real" in help_text.stdout
+
+
 def test_make_targets_without_a_venv_say_make_setup(tmp_path):
     for target in ("smoke", "test-collect", "data-check", "models-dry-run"):
         p = subprocess.run(
