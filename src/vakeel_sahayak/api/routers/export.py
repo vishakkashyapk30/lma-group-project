@@ -63,7 +63,10 @@ def _write_files(log: EventLog, case_id: str, fmt: ExportFormat) -> list[str]:
         hearing_card.write_hearing_card_docx(hearing_card.build_hearing_card(brief, sparring, case_id), case_id, str(out_dir / "hearing_card.docx")),
     ]
     if fmt == ExportFormat.PDF:
-        paths += [pdf.docx_to_pdf(p) for p in paths]
+        try:
+            paths += [pdf.docx_to_pdf(p) for p in paths]
+        except RuntimeError as exc:  # no LibreOffice on this machine: say so (503) instead of a 500; the DOCX files are written
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
     return paths
 
 

@@ -61,6 +61,22 @@ def test_draft_over_http_after_gate_1(tmp_path, monkeypatch):
     assert client.get(f"/api/cases/{CASE}/brief").json()["grounds"]
 
 
+def test_drafting_over_http_opens_gate_2_for_counsel(tmp_path, monkeypatch):
+    """The draft route opens Gate 2 (Vakeel's request, as the graph's gate-2 node does), so counsel can approve it over HTTP."""
+    sc = sh.Scenario(tmp_path, monkeypatch, pages=sh.messy_bundle_pages())
+    sc.through_gate1()
+    client = sc.client()
+    assert client.post(f"/api/cases/{CASE}/draft").status_code == 200
+    opened = [e for e in sc.events(EventKind.GATE_OPENED) if e.inputs.get("gate") == G2.value]
+    assert len(opened) == 1 and sh._actor(opened[0]) == "VAKEEL"
+    status = client.get(f"/api/cases/{CASE}/gates/{G2.value}").json()
+    items = (status["unresolved_unsupported"] + [f"NEEDS_REVIEW:{i}" for i in status["unresolved_needs_review"]]
+             + [f"UNANSWERED:{i}" for i in status["unresolved_unanswered"]])
+    res = client.post(f"/api/cases/{CASE}/gates/{G2.value}/approve", json={"acknowledged_fields": items})
+    assert res.status_code == 200 and res.json()["open"] is False
+    assert [e.inputs["gate"] for e in sc.events(EventKind.GATE_APPROVED)][-1] == G2.value
+
+
 def test_trace_is_visible_and_the_brief_is_drafted_and_sparred(tmp_path, monkeypatch):
     """Sutradhar's tool calls are in the log for the 'Show the plan' trace; Vakeel drafts G1 and G2; Abhiyojak spars two rounds."""
     sc = drafted(tmp_path, monkeypatch)

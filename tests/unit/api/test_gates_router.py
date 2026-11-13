@@ -102,6 +102,14 @@ def test_a_partial_set_of_resolutions_still_leaves_the_gate_closed(tmp_path, mon
     assert client.get(gate_url(G2)).json()["unresolved_unanswered"] == ["O2"]
 
 
+def test_gate_2_before_gate_1_is_a_409_not_a_server_error(tmp_path, monkeypatch):
+    """Approving Gate 2 while Gate 1 is open is refused like any uncleared checklist (409), never a 500."""
+    sc = scenario(tmp_path, monkeypatch)
+    sc.seed_record(approve_gate1=False)
+    res = sc.client().post(gate_url(G2) + "/approve", json={"acknowledged_fields": []})
+    assert res.status_code == CHECKLIST_OPEN and "Gate 1" in res.json()["detail"]
+
+
 def test_approving_gate_2_of_one_case_does_not_approve_another(tmp_path, monkeypatch):
     """No bulk approval (plan §16): the approval is recorded for the case in the URL only."""
     sc = scenario(tmp_path, monkeypatch)

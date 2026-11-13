@@ -54,6 +54,18 @@ def test_export_after_gate_2_lists_the_files(tmp_path, monkeypatch, spy):
     assert len(paths) >= 4 and all(Path(p).exists() for p in paths)
 
 
+def test_pdf_export_without_libreoffice_is_a_503_that_names_it(tmp_path, monkeypatch, spy):
+    """A machine without LibreOffice cannot convert to PDF: the answer says so (503), never a bare 500; the DOCX files stay."""
+    def no_soffice(path):
+        raise RuntimeError("PDF export needs LibreOffice (soffice) on PATH; the DOCX export works without it")
+
+    patch_everywhere(monkeypatch, "vakeel_sahayak.export.pdf", "docx_to_pdf", no_soffice)
+    sc, client = clean_case(tmp_path, monkeypatch, approve_gate2=True)
+    res = client.post(f"/api/cases/{CASE}/export", json={"format": "PDF"})
+    assert res.status_code == 503 and "LibreOffice" in res.json()["detail"]
+    assert list((sc.data_dir / "cases" / CASE).rglob("application.docx"))
+
+
 def test_exported_files_live_under_the_case_directory(tmp_path, monkeypatch, spy):
     sc, client = clean_case(tmp_path, monkeypatch, approve_gate2=True)
     paths = client.post(f"/api/cases/{CASE}/export", json={"format": "DOCX"}).json()
