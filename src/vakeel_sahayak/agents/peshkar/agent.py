@@ -74,6 +74,7 @@ from vakeel_sahayak.orchestration.budgets import BudgetExhausted
 from vakeel_sahayak.orchestration.state import CaseGraphState
 from vakeel_sahayak.orchestration.structured_output import StructuredOutputError
 from vakeel_sahayak.orchestration.switches import Switches
+from vakeel_sahayak.pipelines import first_schedule
 from vakeel_sahayak.pipelines.concordance.refs import make_ref, split_ref
 from vakeel_sahayak.pipelines.order_facts import extract_dates
 from vakeel_sahayak.pipelines.section_extract import extract_sections
@@ -594,6 +595,15 @@ class PeshkarAgent(BaseAgent):
                 value["bailable"] = statute.bailable
             if statute.max_punishment:
                 value["max_punishment"] = statute.max_punishment
+            break
+        for code, section in refs:  # the official First Schedule wins where it states a value (pipelines/first_schedule.py)
+            bailable, punishment = first_schedule.classify(code, section)
+            if bailable is None and not punishment:
+                continue
+            if bailable is not None:
+                value["bailable"] = bailable
+            if punishment:
+                value["max_punishment"] = punishment
             break
         return value
 
