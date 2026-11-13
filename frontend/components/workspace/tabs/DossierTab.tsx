@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import { errorMessage } from "@/lib/errors";
 import { factorGaps } from "@/lib/factorGaps";
-import { DATE_FIELDS, dossierEntries, fieldLabel, parseEditText, STRING_LIST_FIELDS, valueToEditText } from "@/lib/fields";
+import { DATE_FIELDS, dossierEntries, fieldEditHint, fieldLabel, parseEditText, STRING_LIST_FIELDS, valueToEditText } from "@/lib/fields";
 import { formatCourtDate, toSelectedSource } from "@/lib/format";
 import type { CaseDossier, DossierFieldName, SourceRef, TrackedField } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -57,15 +57,7 @@ function FactRow({ name, field, changed, focused }: FactRowProps): ReactElement 
   const ackKey = checklistKey("UNSUPPORTED", name);
   const markedUnknown = field.status === "UNSUPPORTED" && (resolutions.acknowledged.includes(ackKey) || resolutions.acknowledged.includes(name));
   const isInput = DATE_FIELDS.has(name) || name === "custody_days" || name === "trial_stage";
-  const hint = STRING_LIST_FIELDS.has(name)
-    ? "One item per line."
-    : DATE_FIELDS.has(name)
-      ? "Use the date picker."
-      : name === "custody_days"
-        ? "A whole number of days."
-        : name === "trial_stage"
-          ? "A short phrase, for example: charges not framed."
-          : "Structured value: edit as JSON.";
+  const hint = fieldEditHint(name);
 
   useEffect(() => {
     if (editing) inputRef.current?.focus();
@@ -166,7 +158,6 @@ function FactRow({ name, field, changed, focused }: FactRowProps): ReactElement 
               onChange={(e) => setText(e.target.value)}
               aria-describedby={cn(hintId, error && errId)}
               aria-invalid={Boolean(error) || undefined}
-              className={cn(!STRING_LIST_FIELDS.has(name) && "font-mono text-xs")}
               onKeyDown={(e) => {
                 if (e.key === "Escape") setEditing(false);
               }}
