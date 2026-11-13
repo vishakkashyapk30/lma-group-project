@@ -127,6 +127,12 @@ async def start_draft(case_id: str, log: Annotated[EventLog, Depends(get_event_l
 
     # A worker thread, so the API (and the event stream that shows the drafting live) keeps answering meanwhile.
     state = await run_in_threadpool(draft)
+    # The product graph asks Vakeel to open Gate 2, but its tool runtime can be
+    # detached from this request's injected log.  The API owns the browser
+    # workflow, so make the persisted brief and its approval gate atomic from
+    # counsel's point of view: a successful draft must always be approvable.
+    if state.brief and not guard.is_approved(case_id, GateId.GATE_2_EXPORT) and not guard.is_open(case_id, GateId.GATE_2_EXPORT):
+        guard.open(case_id, GateId.GATE_2_EXPORT)
     grounds = len(state.brief.grounds) if state.brief else 0
     return {"status": "drafted", "grounds": grounds}
 

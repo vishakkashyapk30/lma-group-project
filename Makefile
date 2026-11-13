@@ -1,10 +1,13 @@
 # `make help` lists the targets. Targets that run Python need .venv: `make setup` creates it (needs-venv says so instead of a stack trace).
 PY ?= .venv/bin/python
 
-.PHONY: help needs-venv setup-full data data-check data-bundle data-install data-publish models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all eval-score eval-report frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend gemini-usage gemini-models gemini-plan hooks check-commits live-smoke sweep-plan sweep-smoke dev-score report-pdf
+.PHONY: help install needs-venv setup-full data data-check data-bundle data-install data-publish models models-dry-run datasets interim docker-up docker-down docker-build docker-test docker-logs setup stores testsets eval-rq1 eval-rq2 eval-ablations eval-features eval-safety eval-all eval-score eval-report frontend api lint test test-unit test-integration test-system test-frontend test-e2e test-models test-collect openai-spend gemini-usage gemini-models gemini-plan hooks check-commits live-smoke sweep-plan sweep-smoke dev-score report-pdf
 
 help:             ## list the targets
 	@grep -hE '^[a-zA-Z0-9_-]+:.*## ' $(MAKEFILE_LIST) | sed -E 's/:[^#]*## /\t/' | sort | awk -F'\t' '{printf "  %-20s %s\n", $$1, $$2}'
+
+install:           ## check Docker/data, seed the persistent volume and start the local offline product (./install.sh --help)
+	@./install.sh
 
 needs-venv:
 	@test -x "$(PY)" || { echo "no $(PY): run 'make setup' first (it creates .venv and installs the package)" >&2; exit 1; }

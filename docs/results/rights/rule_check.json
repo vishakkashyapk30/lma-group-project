@@ -1,5 +1,5 @@
 {
-  "checked_on": "2026-11-02",
+  "checked_on": "2026-11-07",
   "store": "data/stores/law/statutes.sqlite",
   "rules": {
     "default_bail": {
@@ -134,17 +134,15 @@
       ]
     },
     "antil_category": {
-      "matched": false,
+      "matched": true,
       "sections": [
         {
           "section": "Companies Act s.212",
           "subs": [
             "(6)"
           ],
-          "in_store": false,
-          "problems": [
-            "Companies Act s.212: not in the statute store"
-          ]
+          "in_store": true,
+          "problems": []
         },
         {
           "section": "NDPS s.37",
@@ -167,9 +165,7 @@
           "problems": []
         }
       ],
-      "problems": [
-        "Companies Act s.212: not in the statute store"
-      ],
+      "problems": [],
       "outside_store": [
         "Satender Kumar Antil v. CBI (2022)"
       ]

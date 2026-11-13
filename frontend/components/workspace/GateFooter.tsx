@@ -3,8 +3,10 @@
 // counsel presses it with items open, the list of those items with one action each (go to it, or mark an unknown fact as
 // unknown), the same actions as the confirm dialog. The list takes focus; Escape closes it and returns focus.
 import { useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 import { HoldButton } from "@/components/common/HoldButton";
-import { AnimatePresence, m, MotionProvider, usePresenceTransition } from "@/components/motion/MotionProvider";
+import { MotionProvider, usePresenceTransition } from "@/components/motion/MotionProvider";
 import { Button } from "@/components/ui/button";
 import { plural } from "@/lib/format";
 import type { GateId } from "@/lib/types";

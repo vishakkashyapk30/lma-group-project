@@ -23,6 +23,10 @@ full,b0,unsupported_fact_rate,False,43,0.84186,0.833911,0.00794924,-0.0638338,0.
 full,b1,unsupported_fact_rate,False,45,0.841481,0.754634,0.0868472,-0.000393929,0.173876,0.0181982,0.0166667,4,tie
 full,b4,unsupported_fact_rate,False,50,0.857333,0.81228,0.0450531,-0.0217478,0.115751,0.126987,0.025,4,tie
 full,b6,unsupported_fact_rate,False,50,0.857333,0.984444,-0.127111,-0.198,-0.0662222,0.00019998,0.0125,4,win
+full,b0,unsupported_case_fact_rate,False,0,,,,,,,,,undefined
+full,b1,unsupported_case_fact_rate,False,0,,,,,,,,,undefined
+full,b4,unsupported_case_fact_rate,False,36,0.650463,0.696886,-0.0464226,-0.167516,0.0666707,0.430957,0.05,1,tie
+full,b6,unsupported_case_fact_rate,False,0,,,,,,,,,undefined
 full,b0,unsupported_fact_count,False,50,4,9.32,-5.32,-6.85013,-3.62,0.00019998,0.0125,4,win
 full,b1,unsupported_fact_count,False,50,4,7.12,-3.12,-4.92,-1.34,0.00019998,0.0166667,4,win
 full,b4,unsupported_fact_count,False,50,4,9.96,-5.96,-6.78,-5.14,0.00019998,0.025,4,win

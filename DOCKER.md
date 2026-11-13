@@ -1,6 +1,14 @@
 # Running Vakeel-Sahayak.ai with Docker
 
-One command from the repo root starts everything needed:
+One command from the repo root checks Docker, disk and ports, installs the team data bundle when it is absent, seeds Docker's persistent data volume, and starts the offline stack:
+
+```bash
+./install.sh
+```
+
+It needs `HF_TOKEN` in the untracked `.env` (or an authenticated `hf` login) only when the local team bundle is absent. `./install.sh --skip-data` starts an empty diagnostics stack; `./install.sh --help` lists the NVIDIA and no-start options. Re-running the installer reuses the existing Compose stack and its case volume.
+
+The lower-level command remains available when data is already seeded:
 
 ```bash
 docker compose up            # or: make docker-up (detached, waits until healthy)

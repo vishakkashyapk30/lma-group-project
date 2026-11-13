@@ -5,8 +5,10 @@
 // strip and the facts appear: what the FIR gives with its page, and what it does not give, said plainly.
 import { FileText, GripVertical } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
+import { AnimatePresence } from "motion/react";
+import * as m from "motion/react-m";
 import { StatusBadge } from "@/components/common/StatusBadge";
-import { AnimatePresence, m, MotionProvider, usePresenceTransition } from "@/components/motion/MotionProvider";
+import { MotionProvider, usePresenceTransition } from "@/components/motion/MotionProvider";
 import { Button } from "@/components/ui/button";
 import { ALLOWANCE, SPRINGS, SpringValue, prefersReducedMotion, project, rubberClamp, useDrag2D } from "@/lib/motion";
 import { cn } from "@/lib/utils";
