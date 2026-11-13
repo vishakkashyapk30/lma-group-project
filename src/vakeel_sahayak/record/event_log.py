@@ -196,6 +196,13 @@ class EventLog:
             ).fetchall()
         return [r["case_id"] for r in rows]
 
+    def purge_case(self, case_id: str) -> None:
+        """Permanently remove one counsel-requested case from this shared log."""
+        with self._lock, self._conn:
+            self._conn.execute("DROP TRIGGER IF EXISTS events_no_delete")
+            self._conn.execute("DELETE FROM events WHERE case_id = ?", (case_id,))
+            self._conn.execute("CREATE TRIGGER events_no_delete BEFORE DELETE ON events BEGIN SELECT RAISE(ABORT, 'event log is append-only'); END;")
+
     def children(self, event_id: str) -> list[Event]:
         """Events causally downstream of one event (used by truth maintenance, plan §10).
 

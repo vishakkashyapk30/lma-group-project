@@ -189,6 +189,16 @@ def test_page_image_of_an_unknown_document_is_404(tmp_path, monkeypatch):
     assert client.get(f"/api/cases/{CASE}/files/d9/pages/1").status_code == NOT_FOUND
 
 
+def test_delete_case_purges_its_record_and_local_files(tmp_path, monkeypatch):
+    sc, client = seeded(tmp_path, monkeypatch)
+    path = sc.data_dir / "cases" / CASE / "audio.wav"
+    path.parent.mkdir(parents=True)
+    path.write_bytes(b"private")
+    assert client.delete(f"/api/cases/{CASE}").status_code == 204
+    assert client.get(f"/api/cases/{CASE}").status_code == NOT_FOUND
+    assert not path.parent.exists()
+
+
 def test_page_number_must_be_an_integer(tmp_path, monkeypatch):
     _, client = seeded(tmp_path, monkeypatch)
     assert client.get(f"/api/cases/{CASE}/files/d1/pages/first").status_code == 422

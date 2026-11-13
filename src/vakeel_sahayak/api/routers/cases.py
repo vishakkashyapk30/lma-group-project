@@ -7,6 +7,7 @@ see tests/unit/api/_helpers.py.
 
 from __future__ import annotations
 
+import shutil
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -56,6 +57,20 @@ async def get_case(case_id: str, log: Annotated[EventLog, Depends(get_event_log)
     """One case (plan §13.5)."""
     service.require_case(log, case_id)
     return service.case_summary(log, GateGuard(log), case_id)
+
+
+@router.delete("/{case_id}", status_code=204)
+async def delete_case(case_id: str, log: Annotated[EventLog, Depends(get_event_log)]) -> None:
+    """Permanently remove one case's record, files, caches and retained audio from this laptop."""
+    service.require_case(log, case_id)
+    from vakeel_sahayak.api.deps import _data_dir
+
+    case_dir = (_data_dir() / "cases" / case_id).resolve()
+    cases_dir = (_data_dir() / "cases").resolve()
+    if cases_dir not in case_dir.parents:
+        raise HTTPException(status_code=404, detail="unknown case")
+    shutil.rmtree(case_dir, ignore_errors=True)
+    log.purge_case(case_id)
 
 
 @router.get("/{case_id}/ingestion", response_model=IngestionReport)
