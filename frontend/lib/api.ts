@@ -441,9 +441,9 @@ export function openDeskCase(caseId: string): Promise<CaseSummary> {
 
 /* ── Library (routers/library.py) ───────────────────────────────────────────────────────────────────────────────── */
 
-/** GET /api/library/search?q=: precedent search over caselaw.reasoning. */
-export function searchLibrary(q: string): Promise<LibrarySearchHit[]> {
-  return call(() => http("GET", `/api/library/search?q=${enc(q)}`), () => demo.searchLibrary(q));
+/** GET /api/library/search: the server enforces an as-of date to prevent future-law leakage. */
+export function searchLibrary(q: string, before = new Date().toISOString().slice(0, 10)): Promise<LibrarySearchHit[]> {
+  return call(() => http("GET", `/api/library/search?q=${enc(q)}&before=${enc(before)}`), () => demo.searchLibrary(q));
 }
 
 /** GET /api/library/citations/{doc_id}: citation graph with good-law badges. */

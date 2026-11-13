@@ -19,10 +19,10 @@ router = APIRouter(prefix="/api/library", tags=["library"])
 
 
 @router.get("/search", response_model=list[ParagraphRecord])
-async def search_precedents(q: str) -> list[ParagraphRecord]:
+async def search_precedents(q: str, before: date) -> list[ParagraphRecord]:
     """Precedent explorer search over caselaw.reasoning; every query carries a before date (plan §2, §13.5)."""
     store = registry.open_store(StoreName.CASELAW_REASONING)
-    return list(store.search(q, before=date.today().isoformat(), k=20))
+    return list(store.search(q, before=before.isoformat(), k=20))
 
 
 @router.get("/citations/{doc_id}", response_model=dict[str, Any])

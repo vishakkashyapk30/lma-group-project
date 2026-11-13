@@ -13,41 +13,50 @@ from tests.unit.api._helpers import INVALID, NOT_FOUND, scenario
 from vakeel_sahayak.schemas.enums import StoreName
 
 FORBIDDEN = {"TESTORD-2024-0001", "SAMEFIR-2024-0002"}
+BEFORE = "2025-02-03"
+
+
+def search(client, q: str):
+    return client.get("/api/library/search", params={"q": q, "before": BEFORE})
 
 
 def test_search_returns_reasoning_paragraphs_only(tmp_path, monkeypatch):
     """Search over `caselaw.reasoning`: every hit is a court's reasoning paragraph (plan §5.2: authorities from reasoning only)."""
-    rows = scenario(tmp_path, monkeypatch).client().get("/api/library/search", params={"q": "parity co-accused bail"}).json()
+    rows = search(scenario(tmp_path, monkeypatch).client(), "parity co-accused bail").json()
     assert rows and all(r["part"] == "reasoning" for r in rows)
     assert {"doc_id", "para", "court", "date", "text"} <= set(rows[0])
 
 
 def test_search_never_returns_test_or_same_fir_orders(tmp_path, monkeypatch):
     """Leakage (plan §2): the excluded orders are in no result."""
-    rows = scenario(tmp_path, monkeypatch).client().get("/api/library/search", params={"q": "bail"}).json()
+    rows = search(scenario(tmp_path, monkeypatch).client(), "bail").json()
     assert not {r["doc_id"] for r in rows} & FORBIDDEN
 
 
 def test_search_always_passes_a_before_date_to_the_store(tmp_path, monkeypatch):
     """Every shared-store query carries a before date, also from the library (plan §2)."""
     sc = scenario(tmp_path, monkeypatch)
-    sc.client().get("/api/library/search", params={"q": "parity"})
+    search(sc.client(), "parity")
     calls = sc.world.stores[StoreName.CASELAW_REASONING].calls
     assert calls and all(kw["before"] for _, kw in calls)
 
 
 def test_search_ranks_the_matching_paragraph_first(tmp_path, monkeypatch):
-    rows = scenario(tmp_path, monkeypatch).client().get("/api/library/search", params={"q": "co-accused granted bail parity"}).json()
+    rows = search(scenario(tmp_path, monkeypatch).client(), "co-accused granted bail parity").json()
     assert rows[0]["doc_id"] == "DLHC-2022-1187" and rows[0]["para"] == 14
 
 
 def test_search_needs_a_query(tmp_path, monkeypatch):
-    assert scenario(tmp_path, monkeypatch).client().get("/api/library/search").status_code == INVALID
+    assert scenario(tmp_path, monkeypatch).client().get("/api/library/search", params={"before": BEFORE}).status_code == INVALID
+
+
+def test_search_requires_a_before_date(tmp_path, monkeypatch):
+    assert scenario(tmp_path, monkeypatch).client().get("/api/library/search", params={"q": "bail"}).status_code == INVALID
 
 
 def test_search_results_carry_no_grant_rates(tmp_path, monkeypatch):
     """The explorer shows reasoning, never rates (plan §1.3, §16)."""
-    text = scenario(tmp_path, monkeypatch).client().get("/api/library/search", params={"q": "bail"}).text.lower()
+    text = search(scenario(tmp_path, monkeypatch).client(), "bail").text.lower()
     assert "grant_rate" not in text and "grant rate" not in text
 
 
