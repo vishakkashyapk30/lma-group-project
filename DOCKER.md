@@ -8,6 +8,14 @@ One command from the repo root checks Docker, disk and ports, installs the team 
 
 It needs `HF_TOKEN` in the untracked `.env` (or an authenticated `hf` login) only when the local team bundle is absent. `./install.sh --skip-data` starts an empty diagnostics stack; `./install.sh --help` lists the NVIDIA and no-start options. Re-running the installer reuses the existing Compose stack and its case volume.
 
+On Windows with Docker Desktop (WSL 2 backend), the twin is `install.ps1` (Windows PowerShell 5.1 or later):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1            # -SkipData, -Real, -NoStart, -UseWsl, -Help
+```
+
+It runs the same preflight (Docker Desktop installed and running, free disk on the checkout's drive and the system drive, ports `FRONTEND_PORT`/`BACKEND_PORT` free, an NVIDIA GPU if present), creates `.env` from `.env.example` when it is missing (it never prints a key), seeds the persistent volume from `data\` (or `VS_DATA_DIR`), runs `docker compose up -d --build --wait`, and ends with the URL and a plain list of what is missing. `make data` and `make models` are bash targets, so on Windows they run in WSL on the same checkout (`cd /mnt/c/...; make setup; make data`); `-UseWsl` runs them for you. Clone with `git config --global core.autocrlf false`, or WSL cannot run the bash scripts. It was written on 13 Nov and checked only statically on Linux (`tests/unit/scripts/test_fresh_clone.py`); it has not been run on Windows yet, so record what fails in a handoff note.
+
 The lower-level command remains available when data is already seeded:
 
 ```bash

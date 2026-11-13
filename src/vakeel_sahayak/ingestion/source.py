@@ -241,6 +241,7 @@ class PdfSource(PageSource):
             doc.close()
             raise SourceError("broken", "the PDF has no pages")
         self._doc = doc
+        self._text: dict[int, str | None] = {}  # page -> text layer; the ladder's signals and its text-layer rung read it once
 
     @property
     def page_count(self) -> int:
@@ -252,9 +253,11 @@ class PdfSource(PageSource):
         return self._doc[page - 1]
 
     def text_layer(self, page: int) -> str | None:
-        """Embedded text, or None when the page has none."""
-        text = self._page(page).get_text("text")
-        return text if text.strip() else None
+        """Embedded text, or None when the page has none (extracted once per page: the source is cached per file version)."""
+        if page not in self._text:
+            text = self._page(page).get_text("text")
+            self._text[page] = text if text.strip() else None
+        return self._text[page]
 
     def _blocks(self, page: int) -> list[tuple]:
         return [b for b in self._page(page).get_text("blocks") if b[6] == 0 and str(b[4]).strip()]
@@ -304,8 +307,9 @@ class PdfSource(PageSource):
         ink = any(getattr(a, "type", (None,))[0] == 15 for a in (pg.annots() or []))  # 15 = PDF_ANNOT_INK
         ratio = pg.rect.width / pg.rect.height if pg.rect.height else 1.0
         odd_shape = not any(abs(ratio - r) < 0.03 for r in (0.707, 0.773, 0.607, 1 / 0.707, 1 / 0.773))
-        photo = len(pg.get_images()) == 1 and not (pg.get_text("text").strip()) and odd_shape
-        return PageHints(handwriting=ink, skew=photo, layout_complex=looks_tabular(pg.get_text("text")))
+        text = self.text_layer(page)  # the cached extraction, not a second and third read of the page
+        photo = len(pg.get_images()) == 1 and text is None and odd_shape
+        return PageHints(handwriting=ink, skew=photo, layout_complex=looks_tabular(text or ""))
 
     def close(self) -> None:
         """Close the document."""
