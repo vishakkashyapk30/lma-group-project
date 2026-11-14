@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { getApiMode, getConnection, onApiModeChange, onConnectionChange, unreachableMessage, type ApiMode, type Connection } from "@/lib/api";
+import { useTourMode } from "@/lib/tourMode";
 import { toggleReducedMotion } from "@/lib/useReducedMotion";
 import { useCaseMeta } from "./meta";
 import { useLang, useT } from "@/lib/i18n";
@@ -90,6 +91,8 @@ function HelpMenu(): ReactElement {
 export function TopBar(): ReactElement {
   const { setPaletteOpen, setNewCaseOpen, setDrawerOpen } = useShell();
   const { crumbs, stage } = useCrumbs();
+  // During a guided demo the tour's Next is the one primary button on screen.
+  const tour = useTourMode();
   const t = useT();
   const { lang, setLang } = useLang();
   const [mac, setMac] = useState(false);
@@ -125,7 +128,7 @@ export function TopBar(): ReactElement {
       >
         {lang === "hi" ? "English" : "हिन्दी"}
       </Button>
-      <Button data-testid="new-case-button" onClick={() => setNewCaseOpen(true)}><Plus aria-hidden /><span className="hidden sm:inline">{t("New case")}</span><span className="sr-only sm:hidden">{t("New case")}</span></Button>
+      <Button data-testid="new-case-button" variant={tour ? "secondary" : "primary"} onClick={() => setNewCaseOpen(true)}><Plus aria-hidden /><span className="hidden sm:inline">{t("New case")}</span><span className="sr-only sm:hidden">{t("New case")}</span></Button>
       <HelpMenu />
     </header>
   );
