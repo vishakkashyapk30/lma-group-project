@@ -32,9 +32,18 @@
 \setlength{\textfloatsep}{10pt plus 2pt minus 2pt}\setlength{\dbltextfloatsep}{10pt plus 2pt minus 2pt}
 \pagestyle{plain}
 \newcommand{\vs}{VS-Final}
-\newcommand{\para}[1]{\paragraph{#1}\addcontentsline{toc}{subsection}{#1}}
+% Run-in headings also go to the contents, without their closing period.
+\def\vsstrip#1.\vsend{#1}
+\newcommand{\para}[1]{\paragraph{#1}\addcontentsline{toc}{subsection}{\vsstrip#1\vsend}}
 \setcounter{tocdepth}{2}
-\makeatletter\renewcommand*\l@subsection{\@dottedtocline{2}{1.5em}{0pt}}\makeatother
+% Contents: sections bold with a dotted leader; their sub-headings run in below, small and grey.
+\usepackage{titletoc}
+\definecolor{vsblue}{HTML}{1F3A5F}
+\titlecontents{section}[2.4em]{\addvspace{9pt}\normalsize\bfseries}%
+  {\contentslabel[{\color{vsblue}\thecontentslabel}]{2.4em}}{}%
+  {\hfill\contentspage}
+\titlecontents*{subsection}[2.4em]{\addvspace{2pt}\small\color{black!68}\rightskip=3em plus 1fil\parfillskip=0pt plus 1fil\relax}{}{}%
+  {\enspace{\color{vsblue}\thecontentspage}}[;\quad][]
 
 \begin{document}
 
@@ -42,7 +51,6 @@
 \onecolumn
 \pagenumbering{roman}
 \thispagestyle{empty}
-\definecolor{vsblue}{HTML}{1F3A5F}
 \begin{center}
 \vspace*{3.8cm}
 {\color{vsblue}\rule{\textwidth}{2.2pt}}\par
@@ -79,11 +87,15 @@
 \end{center}
 \vfill
 \clearpage
-{\small\setlength{\parskip}{0pt}\renewcommand{\baselinestretch}{0.95}
-\begin{multicols}{2}
-\makeatletter\renewcommand*\l@section{\@dottedtocline{1}{0em}{1.5em}}\renewcommand*\l@subsection{\@dottedtocline{2}{1.5em}{0pt}}\makeatother
-\tableofcontents
-\end{multicols}}
+\thispagestyle{plain}
+\vspace*{1.2cm}
+\begin{minipage}{\textwidth}
+{\color{vsblue}{\fontsize{22}{26}\selectfont\bfseries Contents}\par\vspace{6pt}\rule{\textwidth}{2.2pt}\par}
+\vspace{4pt}
+\setlength{\parskip}{0pt}
+\makeatletter\@starttoc{toc}\makeatother
+\vspace{8pt}{\color{vsblue}\rule{\textwidth}{0.6pt}}
+\end{minipage}
 \clearpage
 
 % ------------------------------------------------------------------ body (eight pages)
@@ -104,14 +116,14 @@ Existing work covers parts of this task. Commercial legal research tools retriev
 However, these parts have not been tested together on legal drafting against simple baselines that use the same model, and with gold labels that need no annotators. Our own experience shows why the test is needed. Our first full system (``Full'': planning, checking and adversarial review all switched on) did not beat every baseline on development orders on any of three hosted model families. A system with more parts is not a better system until each part is measured.
 
 In this paper, we describe the system, the search that repaired it, and one sealed test. Our contributions are:
-\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\begin{enumerate}[label=(\arabic*),leftmargin=*,itemsep=1pt,topsep=3pt]
 \item \textbf{A system with approvals enforced in code.} Six agents work over ten typed stores, and counsel approves twice. On the sealed slice every one of 320 export attempts made before the second approval was refused (Sections~\ref{sec:system} and~\ref{sec:results}).
 \item \textbf{An architecture search with a holdout.} Among about ten configurations on 30 development orders, \vs{} has 30 wins, 37 ties and 3 losses against seven baselines where Full has 11, 49 and 10, and it repeats on 20 held-out orders (22, 26, 3). Two candidates with more wins were rejected because they win by writing fewer or copied sentences (Sections~\ref{sec:arch} and~\ref{sec:method}).
 \item \textbf{A sealed test with registered hypotheses.} On 80 orders opened once, \vs{} has 46 wins, 69 ties and 5 losses; four of five hypotheses hold and one is falsified on one cell (Section~\ref{sec:results}).
 \item \textbf{Two robustness checks.} With gold labels from rules alone the count is 45, 70 and 5 and no verdict changes; two fresh reruns on development orders keep the same three losses (Section~\ref{sec:results}).
 \item \textbf{Ablations.} Removing strict abstention costs \vs{} four wins, and the four cells that a free planner wins against \vs{} are measurement artefacts (Section~\ref{sec:ablations}).
 \item \textbf{An evaluation without manual annotation.} Gold labels come from court text through two independent labelers that must agree on a verbatim span (Section~\ref{sec:eval}).
-\end{itemize}
+\end{enumerate}
 
 The system is a drafting aid for panel lawyers, junior advocates and supervised legal-aid clinics. It does not predict outcomes, show grant rates, or advise accused persons or the public. Every label used below is defined at first use and again in the Glossary after the references.
 
