@@ -12,7 +12,7 @@
    --check` against it: all seven rules match. Store, lookup and Peshkar section tests: 247 passed. The old store and gap files are kept in
    `data/backup-law-2026-11-13/` on that laptop.
 3. **Win/loss/tie and M6a: done.** `docs/report/tools/regen.sh` on every family leaves every generated table unchanged;
-   `tests/unit/eval/test_m6a_beside_m6.py` runs (no skip) and fails only on the two declared cells (`shravani/gemini_31`, `shravani/offline_a10`, D5).
+   `tests/unit/eval/test_m6a_beside_m6.py` runs (no skip) and fails only on `shravani/gemini_31` (D5; `offline_a10` repaired 15 Nov, D13).
 
 Left for you (optional): **the team bundle on Hugging Face was not refreshed.** `make data-bundle` packs the whole `data/eval`, which on
 the owner's laptop has grown from 177 MB (27 Oct bundle) to 3 GB, so a refresh needs a decision on what goes in. Until then a teammate gets
