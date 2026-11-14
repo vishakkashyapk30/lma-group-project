@@ -1,0 +1,15 @@
+{
+ "names": {},
+ "counts": {},
+ "quasi": {
+  "PLACE|हेरोइन": "[PLACE-1]",
+  "FIR|151/2026": "[FIR-1]",
+  "AGE|22": "[AGE-1 18-25]"
+ },
+ "quasi_values": {
+  "[PLACE-1]": "हेरोइन",
+  "[FIR-1]": "151",
+  "[AGE-1 18-25]": "22"
+ },
+ "date_shift_days": -63
+}

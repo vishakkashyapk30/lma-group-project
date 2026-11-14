@@ -23,9 +23,10 @@ All product endpoints live under `/api`. The schema is the source of truth for r
 | `/api/cases/{case_id}/gates`, `/export` | Gate checklist/approval and counsel-gated document export. Export remains unavailable before Gate 2. |
 | `/api/desk` | Batch intake and the triage board. |
 | `/api/library` | Precedent search, citation graph and IPC-to-BNS bridge. |
+| `/api/demo` | The evaluator demo: the tours of the six recorded synthetic cases (`GET /tours`, `GET /tours/{slug}`, `POST /tours/{slug}/reset`); see `docs/handoff/evaluator-demo.md`. |
 
 If `VS_API_TOKEN` is set, send `Authorization: Bearer <token>` on `/api` requests. The OpenAPI export contains no keys or case data. Regenerate it after an API-schema change with:
 
 ```bash
-.venv/bin/python -c 'import json; from vakeel_sahayak.api.asgi import app; open("docs/api/openapi.json", "w").write(json.dumps(app.openapi(), indent=2) + "\\n")'
+VS_DEMO_CASES=off .venv/bin/python -c 'import json; from vakeel_sahayak.api.asgi import app; open("docs/api/openapi.json", "w").write(json.dumps(app.openapi(), indent=2) + "\\n")'
 ```

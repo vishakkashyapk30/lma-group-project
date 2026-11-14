@@ -1,0 +1,112 @@
+[
+ {
+  "file": "01_fir.pdf",
+  "page": 1,
+  "doc_id": "d1",
+  "doc_type": "FIR",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "FIRST INFORMATION REPORT (under Section 173 BNSS)\n1. District: Amritsar Rural P.S.: PS-5 FIR No. 77/2026 Date: 15.01.2026\n2. Acts and Sections: NDPS 21(c), NDPS 29.\n3. Date of occurrence of offence: 15.01.2026, about 18:45 hrs\n4. Date on which information was received at the P.S.: 15.01.2026\n5. Type of information: recorded on the statement of IO-1\n6. Place of occurrence: a police check point on the GT Road near a village in District Amritsar Rural\n7. Name of the informant: IO-1, Sub-Inspector, P.S. PS-5\n8. Name of the accused: Accused-1 (driver) and Co-accused-2 (passenger)\n9. Brief facts: A car driven by Accused-1, with Co-accused-2 in the front seat, was stopped at the check\npoint. On search, a bag\nunder the driver's seat was found to contain 1 kg 200 grams of heroin. Both were arrested on the spot.\nInvestigating officer: IO-1\n"
+ },
+ {
+  "file": "02_arrest_memo.pdf",
+  "page": 1,
+  "doc_id": "d2",
+  "doc_type": "ARREST_MEMO",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "ARREST MEMO\nFIR No. 77/2026, P.S. PS-5. Sections: NDPS 21(c), NDPS 29.\nAccused-1 was arrested on 15.01.2026 at 19:30 hrs at the check point on the GT Road, District Amritsar\nRural.\nThe grounds of arrest were communicated to Accused-1 in writing on 15.01.2026 and his brother was\ninformed the same day.\nArresting officer: IO-1\n"
+ },
+ {
+  "file": "03_seizure_memo_scanned.pdf",
+  "page": 1,
+  "doc_id": "d3",
+  "doc_type": "OTHER",
+  "status": "OK",
+  "route": "vision",
+  "ocr_conf": null,
+  "text": "SYNTHETIC DEMONSTRATION DOCUMENT - NOT A COURT RECORD OR LEGAL EVIDENCE\n\nSEIZURE MEMO (RECOVERY MEMO)\nFIR No. 77/2026, P.S. PS-5. Sections: NDPS 21(c), NDPS 29.\nDate and time: 15.01.2026, 19:05 hrs. Place: police check point, GT Road.\nBefore the search Accused-1 and Co-accused-2 were told of their right under Section 50 of the NDPS Act to be searched before a gazetted officer or a magistrate; both declined in writing.\nFrom a bag under the driver's seat of the car, 1 kg 200 grams of heroin was recovered.\nTwo samples of 5 grams each were drawn and sealed with the seal AB; the remainder was sealed separately.\nSeizing officer: IO-1\n\nSYNTHETIC DEMONSTRATION DOCUMENT - NOT A COURT RECORD OR LEGAL EVIDENCE"
+ },
+ {
+  "file": "04_remand_order.pdf",
+  "page": 1,
+  "doc_id": "d4",
+  "doc_type": "REMAND_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "IN THE COURT OF THE JUDICIAL MAGISTRATE FIRST CLASS, AMRITSAR\nRemand order dated 16.01.2026\nFIR No. 77/2026, P.S. PS-5. Sections: NDPS 21(c), NDPS 29.\nThe accused Accused-1 was arrested on 15.01.2026 and produced before this Court on 16.01.2026 at\n12:00 hrs.\nThe accused is remanded to judicial custody until 30.01.2026. This is the first remand order, dated\n16.01.2026.\n"
+ },
+ {
+  "file": "05_charge_sheet.pdf",
+  "page": 1,
+  "doc_id": "d5",
+  "doc_type": "CHARGE_SHEET_COVER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "FINAL REPORT (CHARGE SHEET) under Section 193 BNSS\nFIR No. 77/2026, P.S. PS-5. Sections: NDPS 21(c), NDPS 29.\nThe charge sheet was filed on 01.07.2026. Investigation is complete.\nThe forensic report confirms diacetylmorphine (heroin) in both samples. The recovered quantity is a\ncommercial quantity.\n14 prosecution witnesses are cited.\nInvestigating officer: IO-1\n"
+ },
+ {
+  "file": "06_previous_bail_order.pdf",
+  "page": 1,
+  "doc_id": "d6",
+  "doc_type": "BAIL_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "IN THE COURT OF THE SPECIAL JUDGE (NDPS ACT), AMRITSAR\nBail Application No. 1104/2026, State v. Accused-1, FIR No. 77/2026, P.S. PS-5.\nOrder dated 20.08.2026.\nThe recovery is of a commercial quantity and the twin conditions of Section 37 of the NDPS Act are not\nsatisfied.\nThe applicant is also involved in another case under the NDPS Act.\nThe regular bail application of Accused-1 was rejected on 20.08.2026.\n"
+ },
+ {
+  "file": "07_order_sheet.pdf",
+  "page": 1,
+  "doc_id": "d7",
+  "doc_type": "ORDER_SHEET",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "IN THE COURT OF THE SPECIAL JUDGE (NDPS ACT), AMRITSAR\nOrder sheet, State v. Accused-1 and another, FIR No. 77/2026, P.S. PS-5.\n20.08.2026: The bail applications of Accused-1 and of Co-accused-2 are rejected by separate orders.\n10.09.2026: Charges have been framed against both accused. Trial has commenced.\nWitnesses examined so far: PW-1 and PW-2. 2 of the 14 prosecution witnesses have been examined.\nNext date of hearing: 25.11.2026.\n"
+ },
+ {
+  "file": "08_custody_certificate.pdf",
+  "page": 1,
+  "doc_id": "d8",
+  "doc_type": "CUSTODY_CERTIFICATE",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "CUSTODY CERTIFICATE\nIssued by the Superintendent, Central Jail, Amritsar, on 10.11.2026.\nIt is certified that Accused-1 has been in custody in FIR No. 77/2026 since 15.01.2026.\nThe period of custody as on 10.11.2026 is 299 days. His conduct in jail has been satisfactory.\nSuperintendent: Central Jail\n"
+ },
+ {
+  "file": "09_police_verification.pdf",
+  "page": 1,
+  "doc_id": "d9",
+  "doc_type": "OTHER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "POLICE VERIFICATION REPORT (antecedents)\nFIR No. 77/2026, P.S. PS-5. Subject: Accused-1.\nAccused-1 is involved in one other case: FIR No. 12/2022 under NDPS 21(b), P.S. PS-8, Amritsar, in which\nthe trial is pending\nand Accused-1 is on bail. No other involvement was found.\nVerified by: IO-1\n"
+ },
+ {
+  "file": "10_personal_circumstances.pdf",
+  "page": 1,
+  "doc_id": "d10",
+  "doc_type": "AFFIDAVIT",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "AFFIDAVIT OF PERSONAL CIRCUMSTANCES\nIn FIR No. 77/2026, P.S. PS-5, on behalf of Accused-1.\nAccused-1 is 38 years old, a driver by profession, and lives in his own house in a village of District Amritsar\nRural.\nHe supports his wife and three children aged 14, 11 and 7. His brother is willing to stand surety.\n"
+ },
+ {
+  "file": "11_vakalatnama.pdf",
+  "page": 1,
+  "doc_id": "d11",
+  "doc_type": "BAIL_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "VAKALATNAMA\nBEFORE THE HIGH COURT OF PUNJAB AND HARYANA AT CHANDIGARH\nCriminal Miscellaneous (Main) bail application under Section 483 BNSS on behalf of Accused-1.\nIn FIR No. 77/2026, P.S. PS-5, District Amritsar Rural.\nCounsel appointed for Accused-1 to apply for regular bail and to appear at every hearing of the application.\n"
+ }
+]

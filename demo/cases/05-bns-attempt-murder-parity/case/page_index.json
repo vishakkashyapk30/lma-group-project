@@ -1,0 +1,112 @@
+[
+ {
+  "file": "01_fir.pdf",
+  "page": 1,
+  "doc_id": "d1",
+  "doc_type": "FIR",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "FIRST INFORMATION REPORT (under Section 173 BNSS)\n1. District: Rohini P.S.: PS-14 FIR No. 302/2025 Date: 14.03.2025\n2. Acts and Sections: BNS 109, BNS 3(5).\n3. Date of occurrence of offence: 13.03.2025, about 22:30 hrs\n4. Date on which information was received at the P.S.: 14.03.2025, 00:15 hrs\n5. Type of information: statement of the injured recorded at the hospital\n6. Place of occurrence: a residential lane in Sector 7, Rohini, Delhi\n7. Name of the complainant/informant: Complainant-1 (the injured)\n8. Name of the accused: Accused-1 and Co-accused-2\n9. Brief facts: Complainant-1 states that a quarrel arose over the parking of a motorcycle. Co-accused-2\nheld him by the arms and\nAccused-1 struck him once on the left side of his abdomen with a knife. Neighbours took him to the\nhospital.\nInvestigating officer: IO-1\n"
+ },
+ {
+  "file": "02_arrest_memo.pdf",
+  "page": 1,
+  "doc_id": "d2",
+  "doc_type": "ARREST_MEMO",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "ARREST MEMO\nFIR No. 302/2025, P.S. PS-14. Sections: BNS 109, BNS 3(5).\nAccused-1 was arrested on 16.03.2025 at 08:00 hrs at his residence in Rohini, Delhi.\nThe grounds of arrest were communicated to Accused-1 in writing on 16.03.2025 and his father was\ninformed the same day.\nArresting officer: IO-1\n"
+ },
+ {
+  "file": "03_remand_order.pdf",
+  "page": 1,
+  "doc_id": "d3",
+  "doc_type": "REMAND_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "IN THE COURT OF THE DUTY METROPOLITAN MAGISTRATE, ROHINI COURTS, DELHI\nRemand order dated 17.03.2025\nFIR No. 302/2025, P.S. PS-14. Sections: BNS 109, BNS 3(5).\nThe accused Accused-1 was arrested on 16.03.2025 and produced before this Court on 17.03.2025 at\n10:30 hrs.\nThe accused is remanded to judicial custody until 31.03.2025. This is the first remand order, dated\n17.03.2025.\n"
+ },
+ {
+  "file": "04_medico_legal_report.pdf",
+  "page": 1,
+  "doc_id": "d4",
+  "doc_type": "MEDICAL_RECORD",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "MEDICO-LEGAL REPORT\nPatient: Complainant-1. Brought to the casualty on 13.03.2025 at 23:05 hrs.\nInjury: one incised wound, 4 cm x 1 cm, on the left flank of the abdomen; no injury to internal organs.\nNature of injury: simple. Weapon: sharp-edged.\nThe patient was discharged on 19.03.2025 in a stable condition.\n"
+ },
+ {
+  "file": "05_charge_sheet.pdf",
+  "page": 1,
+  "doc_id": "d5",
+  "doc_type": "CHARGE_SHEET_COVER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "FINAL REPORT (CHARGE SHEET) under Section 193 BNSS\nFIR No. 302/2025, P.S. PS-14. Sections: BNS 109, BNS 3(5).\nThe charge sheet was filed on 05.06.2025. Investigation is complete.\nThe knife was recovered at the instance of Accused-1. 18 prosecution witnesses are cited.\nInvestigating officer: IO-1\n"
+ },
+ {
+  "file": "06_previous_bail_order.pdf",
+  "page": 1,
+  "doc_id": "d6",
+  "doc_type": "BAIL_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "IN THE COURT OF THE ADDITIONAL SESSIONS JUDGE, ROHINI COURTS, DELHI\nBail Application No. 640/2025, State v. Accused-1, FIR No. 302/2025, P.S. PS-14.\nOrder dated 22.07.2025.\nA knife blow to the abdomen is attributed to the applicant and the material witnesses are yet to be\nexamined.\nThe regular bail application of Accused-1 was rejected on 22.07.2025.\n"
+ },
+ {
+  "file": "07_co_accused_bail_order.pdf",
+  "page": 1,
+  "doc_id": "d7",
+  "doc_type": "BAIL_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "IN THE HIGH COURT OF DELHI AT NEW DELHI\nBail Application No. 1932/2025, Co-accused-2 v. State, FIR No. 302/2025, P.S. PS-14.\nOrder dated 10.03.2026.\nCo-accused-2 is alleged to have held the injured; no weapon is attributed to him. The injury is opined to be\nsimple.\nCo-accused-2 was granted bail on 10.03.2026 with one surety.\n"
+ },
+ {
+  "file": "08_order_sheet.pdf",
+  "page": 1,
+  "doc_id": "d8",
+  "doc_type": "ORDER_SHEET",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "IN THE COURT OF THE ADDITIONAL SESSIONS JUDGE, ROHINI COURTS, DELHI\nOrder sheet, State v. Accused-1 and another, FIR No. 302/2025, P.S. PS-14.\n15.10.2025: Charges have been framed against both accused. Trial has commenced.\n12.08.2026: The injured, PW-1 (Complainant-1), has been examined and cross-examined.\nWitnesses examined so far: 6 of the 18 prosecution witnesses have been examined.\nNo complaint of threat to any witness has been made. Next date of hearing: 03.12.2026.\n"
+ },
+ {
+  "file": "09_custody_certificate.pdf",
+  "page": 1,
+  "doc_id": "d9",
+  "doc_type": "CUSTODY_CERTIFICATE",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "CUSTODY CERTIFICATE\nIssued by the Superintendent, Central Jail, Tihar, on 10.11.2026.\nIt is certified that Accused-1 has been in custody in FIR No. 302/2025 since 16.03.2025.\nThe period of custody as on 10.11.2026 is 604 days. His conduct in jail has been satisfactory.\nSuperintendent: Central Jail\n"
+ },
+ {
+  "file": "10_police_verification.pdf",
+  "page": 1,
+  "doc_id": "d10",
+  "doc_type": "OTHER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "POLICE VERIFICATION REPORT (antecedents)\nFIR No. 302/2025, P.S. PS-14. Subject: Accused-1.\nOn verification of the records, Accused-1 has no previous involvement in any criminal case.\nNo other criminal case is pending against Accused-1 and he has no criminal antecedents. He is a first-time\noffender.\nVerified by: IO-1\n"
+ },
+ {
+  "file": "11_personal_circumstances.pdf",
+  "page": 1,
+  "doc_id": "d11",
+  "doc_type": "AFFIDAVIT",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "AFFIDAVIT OF PERSONAL CIRCUMSTANCES\nIn FIR No. 302/2025, P.S. PS-14, on behalf of Accused-1.\nAccused-1 is 29 years old, an electrician, and has lived in Rohini, Delhi since birth.\nHe supports his wife, an infant daughter and his parents. His father is willing to stand surety.\nAccused-1 does not hold a passport.\n"
+ }
+]

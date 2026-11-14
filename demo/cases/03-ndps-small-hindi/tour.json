@@ -1,0 +1,354 @@
+{
+ "slug": "03-ndps-small-hindi",
+ "case_id": "demo-03",
+ "title": "Demo · NDPS small quantity, Hindi FIR, grounds of arrest only oral",
+ "story": "Accused-1, a 22-year-old student, is charged under NDPS 21(a) for 4 grams of heroin, a small quantity, so the s.37 bar does not apply; the FIR is in Hindi. He was arrested on 02.07.2026 and told the grounds of arrest only orally; the charge sheet was filed in time, and as a first-time offender he has passed one-third of the one-year maximum.",
+ "variant": {
+  "offence": "NDPS 21(a) small quantity (maximum 1 year); the s.37 twin conditions do not apply",
+  "custody": "default bail closed (charge sheet on day 54 of 60); grounds of arrest given only orally; past one-third of the maximum (BNSS s.479)",
+  "record": "Hindi FIR (Devanagari text layer) with eight English documents",
+  "parity": "no co-accused; first-time offender; no earlier bail application"
+ },
+ "recorded": {
+  "date": "2026-11-14",
+  "backend": "sarvam",
+  "model": "sarvam-105b",
+  "cost_inr": 3.51
+ },
+ "steps": [
+  {
+   "stage": "INTAKE",
+   "tab": "dossier",
+   "title": "Munshi reads the papers",
+   "agent": "MUNSHI",
+   "action": null,
+   "caption": "Counsel uploaded 9 PDFs at once. Munshi read every page (text layer for 9 pages), named 9 documents (FIR, affidavit, arrest memo, bail order, charge sheet, custody certificate, other and remand order) in English and Hindi, and filed 7 dated events and 3 charged sections. Intake put 1 question to counsel.",
+   "filled": [
+    {
+     "label": "01_fir_hindi.pdf",
+     "value": "Hindi FIR with a Devanagari text layer"
+    },
+    {
+     "label": "02_arrest_memo.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "03_seizure_memo.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "04_remand_order.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "05_charge_sheet.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "06_custody_certificate.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "07_police_verification.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "08_personal_circumstances.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "09_vakalatnama.pdf",
+     "value": "born-digital PDF"
+    }
+   ]
+  },
+  {
+   "stage": "DOSSIER",
+   "tab": "dossier",
+   "title": "Peshkar builds the dossier",
+   "agent": "PESHKAR",
+   "action": null,
+   "caption": "Peshkar filled the 13 fields of the dossier: 11 from the papers, each with the quoted sentence and page, 1 from counsel and 1 left open. Counsel answered 1 question from instructions; those fields are marked as counsel's, never as verified. The List of Dates has 7 entries, each tied to its page.",
+   "filled": [
+    {
+     "label": "Were any co-accused granted or refused bail? If so, please upload their orders.",
+     "value": "There is no co-accused who has applied for bail."
+    },
+    {
+     "label": "FIR",
+     "value": "number: 151/2026, police_station: PS-3, date: 2026-07-02 (verified from the papers)"
+    },
+    {
+     "label": "Sections",
+     "value": "NDPS 21(a) (verified from the papers)"
+    },
+    {
+     "label": "Date of arrest",
+     "value": "2026-07-02 (verified from the papers)"
+    },
+    {
+     "label": "First remand",
+     "value": "2026-07-03 (verified from the papers)"
+    },
+    {
+     "label": "Days in custody",
+     "value": "135 (computed)"
+    },
+    {
+     "label": "Charge sheet",
+     "value": "filed: True, date: 2026-08-25 (verified from the papers)"
+    },
+    {
+     "label": "Earlier bail orders",
+     "value": "none (verified from the papers)"
+    },
+    {
+     "label": "Co-accused bail",
+     "value": "none (set by counsel)"
+    },
+    {
+     "label": "Antecedents",
+     "value": "none (verified from the papers)"
+    }
+   ]
+  },
+  {
+   "stage": "GATE_1",
+   "tab": "dossier",
+   "title": "Gate 1: counsel approves the facts",
+   "agent": null,
+   "action": null,
+   "caption": "Nothing is drafted until counsel approves the dossier, and the code accepts that approval from counsel only. Counsel acknowledged 1 field the papers do not support (Trial stage) and approved.",
+   "filled": [
+    {
+     "label": "Gate 1 note",
+     "value": "approved by counsel for the recorded evaluator demo"
+    },
+    {
+     "label": "Acknowledged: Trial stage",
+     "value": "not supported by the papers; acknowledged by counsel"
+    }
+   ]
+  },
+  {
+   "stage": "RIGHTS",
+   "tab": "rights",
+   "title": "Rights Radar",
+   "agent": "PESHKAR",
+   "action": null,
+   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-14: date arithmetic and statute tables, not the language model. Default bail: CHECK, Undertrial limit (BNSS s.479): CHECK, Production within 24 hours: CHECK and Antil category: C. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified.",
+   "filled": [
+    {
+     "label": "Default bail",
+     "value": "CHECK: Maximum punishment is not on record, so the 60 or 90 day limit is unknown."
+    },
+    {
+     "label": "Undertrial limit (BNSS s.479)",
+     "value": "CHECK: Maximum punishment not on record, so the threshold cannot be compared."
+    },
+    {
+     "label": "Notice of appearance",
+     "value": "UNKNOWN: Maximum punishment is not on record."
+    },
+    {
+     "label": "Grounds of arrest",
+     "value": "UNKNOWN: No record that the grounds of arrest were communicated."
+    },
+    {
+     "label": "Production within 24 hours",
+     "value": "CHECK: Produced the next day; times not on record."
+    },
+    {
+     "label": "Antil category",
+     "value": "C: Charged under a special act with stringent bail provisions (NDPS s.37): category C. Antil's categories decide how an accused who was not arrested during investigation and cooperated is treated after the charge sheet; for a client in custody this is context, not a bail entitlement."
+    },
+    {
+     "label": "Statutory bar",
+     "value": "NOT_APPLICABLE: The NDPS section charged is a small-quantity clause, which NDPS s.37(1)(b) does not reach."
+    }
+   ]
+  },
+  {
+   "stage": "BRIEF",
+   "tab": "brief",
+   "title": "Sutradhar plans, Vakeel drafts",
+   "agent": "VAKEEL",
+   "action": null,
+   "caption": "Sutradhar planned the brief factor by factor (8 factors) and fetched the evidence each needs: 57 store calls. Vakeel drafted 3 grounds (1 repaired and 2 supported). Every sentence was checked against its source; 13 sentences the checker could not support were withheld, leaving 4 grounds for counsel to draft. 18 open issues are listed for counsel.",
+   "filled": [
+    {
+     "label": "G3 · charge sheet filed",
+     "value": "SUPPORTED: The charge sheet in FIR No. 151/2026, P.S. PS-3, Lucknow, was filed on 25.08.2026, thereby completing the investigation [F:facts_text].The charge sheet was filed on 25.08.2026. 2.5 gram of brown sugar (Heroin) which is said to have been recovered from the joi…"
+    },
+    {
+     "label": "G6 · weak prima facie",
+     "value": "SUPPORTED: The forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity [F:facts_text] [A:TRHC010014022021#11]. The quantity recovered is a small quantity [F:facts_text]."
+    },
+    {
+     "label": "G7 · statutory bar",
+     "value": "REPAIRED: The forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity [F:facts_text].The quantity of narcotic substance recovered in this case is small quantity, not commercial quantity [F:facts_text].Since the seized contraband artic…"
+    },
+    {
+     "label": "Withheld from G1",
+     "value": "1 sentence; reason: not supported by the cited paragraph (authority support 0.23 < 0.50)"
+    },
+    {
+     "label": "Withheld from G2",
+     "value": "1 sentence; reason: not supported by the dossier quote, not supported by the cited paragraph (fact support 0.00 < 0.50; authority support 0…"
+    },
+    {
+     "label": "Withheld from G3",
+     "value": "2 sentences; reason: has a malformed [F:...] or [A:...] reference, cites no fact or authority (malformed [F:facts_text, A:CGHC010221772025#6…"
+    },
+    {
+     "label": "Withheld from G4",
+     "value": "5 sentences; reason: not supported by the dossier quote (support 0.11)"
+    },
+    {
+     "label": "Withheld from G5",
+     "value": "3 sentences; reason: not supported by the dossier quote (support 0.00)"
+    },
+    {
+     "label": "Withheld from G6",
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.01)"
+    }
+   ]
+  },
+  {
+   "stage": "SPAR",
+   "tab": "spar",
+   "title": "Abhiyojak argues the other side",
+   "agent": "ABHIYOJAK",
+   "action": null,
+   "caption": "Abhiyojak, the prosecution sparring partner, raised 6 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case; 2 ungrounded objections were discarded. After Vakeel's replies: 6 unanswered.",
+   "filled": [
+    {
+     "label": "O1 against G7 (statutory bar)",
+     "value": "UNANSWERED: The quantity of 4.0 grams of diacetylmorphine is not a commercial quantity, but the prosecution must still contend that the accused faces a statutory bar under Section 37(1)(b) of the NDPS Act given the nature of the offence and the recovery, and the defence'…"
+    },
+    {
+     "label": "O2 against general (gravity and punishment)",
+     "value": "UNANSWERED: The offence involves a commercial quantity of narcotic substance under NDPS Section 21(a), which carries a stringent punishment and is of grave nature, warranting continued custody."
+    },
+    {
+     "label": "O3 against general (statutory bar)",
+     "value": "UNANSWERED: Section 37(1) of the NDPS Act imposes a statutory bar to grant bail, as the prosecution has not yet recorded satisfaction that there are reasonable grounds for believing that the accused is not guilty."
+    },
+    {
+     "label": "O4 against general (flight risk)",
+     "value": "UNANSWERED: The applicant has been in custody for 135 days without any bail application being granted, and there is a reasonable apprehension that he may abscond if released."
+    },
+    {
+     "label": "O5 against general (witness tampering)",
+     "value": "UNANSWERED: The charge sheet has been filed and the trial is at an advanced stage; releasing the accused may lead to tampering with prosecution witnesses and influencing their testimony."
+    },
+    {
+     "label": "O6 against general (antecedents)",
+     "value": "UNANSWERED: Although no criminal antecedents are formally recorded, the nature of the offence and the applicant's prior conduct during investigation raise concerns about his character and potential for reoffending."
+    }
+   ]
+  },
+  {
+   "stage": "HEARING_PREP",
+   "tab": "prep",
+   "title": "Hearing card",
+   "agent": "VAKEEL",
+   "action": null,
+   "caption": "Vakeel turned the brief and the sparring into a card for the hearing: 3 likely questions from the bench with answers, 3 grounds to lead with and 1 bail condition counsel can offer. It predicts nothing and gives no grant rate.",
+   "filled": [
+    {
+     "label": "Lead with G3 (charge sheet filed)",
+     "value": "The charge sheet in FIR No. 151/2026, P.S. PS-3, Lucknow, was filed on 25.08.2026, thereby completing the investigation.The charge sheet was filed on 25.08.2026."
+    },
+    {
+     "label": "Lead with G6 (weak prima facie)",
+     "value": "The forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity."
+    },
+    {
+     "label": "Lead with G7 (statutory bar)",
+     "value": "The forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity.The quantity of narcotic substance recovered in this case is small quantity, not commercial quantity.Since the seized contraband article is not of commercial quanti…"
+    },
+    {
+     "label": "Bench may raise: statutory bar",
+     "value": "The forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity.The quantity of narcotic substance recovered in this case is small quantity, not commercial quantity.Since the seized contraband article is not of commercial quanti…"
+    },
+    {
+     "label": "Bench may raise: charge sheet filed",
+     "value": "The charge sheet in FIR No. 151/2026, P.S. PS-3, Lucknow, was filed on 25.08.2026, thereby completing the investigation.The charge sheet was filed on 25.08.2026."
+    },
+    {
+     "label": "Bench may raise: weak prima facie",
+     "value": "The forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity."
+    },
+    {
+     "label": "Condition counsel can offer",
+     "value": "Not to influence witnesses or tamper with evidence"
+    }
+   ]
+  },
+  {
+   "stage": "GATE_2",
+   "tab": "brief",
+   "title": "Gate 2: your approval",
+   "agent": null,
+   "action": "approve_gate_2",
+   "caption": "Export is impossible until counsel approves Gate 2: in this run the export call before approval was refused (403). The checklist has 7 items for counsel (1 unsupported field and 6 unanswered objections); approving records that counsel has read them. Next approves Gate 2 as counsel.",
+   "filled": [
+    {
+     "label": "trial_stage",
+     "value": "Trial stage: not supported by the papers; counsel acknowledges"
+    },
+    {
+     "label": "UNANSWERED:O1",
+     "value": "objection O1: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O2",
+     "value": "objection O2: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O3",
+     "value": "objection O3: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O4",
+     "value": "objection O4: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O5",
+     "value": "objection O5: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O6",
+     "value": "objection O6: no supported reply; counsel has read it"
+    }
+   ]
+  },
+  {
+   "stage": "FILE",
+   "tab": "brief",
+   "title": "File: download the application",
+   "agent": null,
+   "action": null,
+   "caption": "With Gate 2 approved, export writes four Word files: the bail application, the List of Dates, the objections sheet and the hearing card. Each is labelled a draft; counsel settles and signs the final text.",
+   "filled": [
+    {
+     "label": "application.docx",
+     "value": "the bail application"
+    },
+    {
+     "label": "list_of_dates.docx",
+     "value": "the List of Dates and Events"
+    },
+    {
+     "label": "objections_sheet.docx",
+     "value": "the objections and replies"
+    },
+    {
+     "label": "hearing_card.docx",
+     "value": "the hearing card"
+    }
+   ]
+  }
+ ]
+}

@@ -28,6 +28,7 @@ x-backend-env: &backend-env
   VS_OPENAI_CAP_USD: ${VS_OPENAI_CAP_USD:-4.50}
   VS_OPENAI_RUN_CAP_USD: ${VS_OPENAI_RUN_CAP_USD:-}
   HF_TOKEN: ${HF_TOKEN:-}
+  VS_DEMO_CASES: ${VS_DEMO_CASES:-on}   # the six recorded evaluator demo cases (demo/) are copied into the data volume at start-up; off skips them
 
 x-hardening: &hardening
   restart: unless-stopped

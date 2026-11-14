@@ -1,0 +1,386 @@
+{
+ "slug": "04-ndps-commercial-scanned",
+ "case_id": "demo-04",
+ "title": "Demo · NDPS commercial quantity, s.37 bar, one scanned page",
+ "story": "Accused-1 is charged under NDPS 21(c) and 29 for 1.2 kg of heroin found in the car he was driving, a commercial quantity, so bail needs the twin conditions of s.37. The charge sheet came within the 180 days of the NDPS Act, his earlier bail application was rejected, he has one other NDPS case pending and the seizure memo is only a scanned image.",
+ "variant": {
+  "offence": "NDPS 21(c)/29 commercial quantity (maximum 20 years); the s.37 twin conditions apply",
+  "custody": "default bail closed (charge sheet on day 167 of the NDPS Act's 180)",
+  "record": "ten born-digital documents and one image-only scanned page (the seizure memo)",
+  "parity": "Co-accused-2 refused bail; antecedents (one other NDPS case pending); earlier bail application rejected"
+ },
+ "recorded": {
+  "date": "2026-11-14",
+  "backend": "sarvam",
+  "model": "sarvam-105b",
+  "cost_inr": 3.57
+ },
+ "steps": [
+  {
+   "stage": "INTAKE",
+   "tab": "dossier",
+   "title": "Munshi reads the papers",
+   "agent": "MUNSHI",
+   "action": null,
+   "caption": "Counsel uploaded 11 PDFs at once. Munshi read every page (OCR for 1 page and text layer for 10 pages), named 11 documents (FIR, affidavit, arrest memo, bail order, charge sheet, custody certificate, order sheet, other and remand order) in English, and filed 8 dated events and 5 charged sections. Intake put 1 question to counsel.",
+   "filled": [
+    {
+     "label": "01_fir.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "02_arrest_memo.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "03_seizure_memo_scanned.pdf",
+     "value": "scanned page: an image with no text layer"
+    },
+    {
+     "label": "04_remand_order.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "05_charge_sheet.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "06_previous_bail_order.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "07_order_sheet.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "08_custody_certificate.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "09_police_verification.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "10_personal_circumstances.pdf",
+     "value": "born-digital PDF"
+    },
+    {
+     "label": "11_vakalatnama.pdf",
+     "value": "born-digital PDF"
+    }
+   ]
+  },
+  {
+   "stage": "DOSSIER",
+   "tab": "dossier",
+   "title": "Peshkar builds the dossier",
+   "agent": "PESHKAR",
+   "action": null,
+   "caption": "Peshkar filled the 13 fields of the dossier: 12 from the papers, each with the quoted sentence and page, 1 from counsel and 0 left open. Counsel answered 1 question from instructions; those fields are marked as counsel's, never as verified. The List of Dates has 8 entries, each tied to its page.",
+   "filled": [
+    {
+     "label": "Were any co-accused granted or refused bail? If so, please upload their orders.",
+     "value": "Co-accused-2 was refused bail on 20.08.2026."
+    },
+    {
+     "label": "FIR",
+     "value": "number: 77/2026, police_station: PS-5, date: 2026-01-15 (verified from the papers)"
+    },
+    {
+     "label": "Sections",
+     "value": "NDPS 21(c); NDPS 29 (verified from the papers)"
+    },
+    {
+     "label": "Date of arrest",
+     "value": "2026-01-15 (verified from the papers)"
+    },
+    {
+     "label": "First remand",
+     "value": "2026-01-16 (verified from the papers)"
+    },
+    {
+     "label": "Days in custody",
+     "value": "303 (computed)"
+    },
+    {
+     "label": "Charge sheet",
+     "value": "filed: True, date: 2026-07-01 (verified from the papers)"
+    },
+    {
+     "label": "Earlier bail orders",
+     "value": "court: court not stated, date: 2026-08-20, outcome: rejected (verified from the papers)"
+    },
+    {
+     "label": "Co-accused bail",
+     "value": "id: Co-accused-2, outcome: refused, date: 2026-08-20 (set by counsel)"
+    },
+    {
+     "label": "Antecedents",
+     "value": "FIR No. 12/2022 under NDPS 21(b), P.S. PS-8, Amritsar, in which the trial is pending and Accused-1 is on bail (verified from the papers)"
+    }
+   ]
+  },
+  {
+   "stage": "GATE_1",
+   "tab": "dossier",
+   "title": "Gate 1: counsel approves the facts",
+   "agent": null,
+   "action": null,
+   "caption": "Nothing is drafted until counsel approves the dossier, and the code accepts that approval from counsel only. Every field had a source or counsel's answer, so counsel approved without acknowledging any gap.",
+   "filled": [
+    {
+     "label": "Gate 1 note",
+     "value": "approved by counsel for the recorded evaluator demo"
+    }
+   ]
+  },
+  {
+   "stage": "RIGHTS",
+   "tab": "rights",
+   "title": "Rights Radar",
+   "agent": "PESHKAR",
+   "action": null,
+   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-14: date arithmetic and statute tables, not the language model. Default bail: WINDOW_CLOSED, Undertrial limit (BNSS s.479): CHECK, Production within 24 hours: CHECK, Antil category: C and Statutory bar: BAR_APPLIES. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified.",
+   "filled": [
+    {
+     "label": "Default bail",
+     "value": "WINDOW_CLOSED: 180-day NDPS s.36A(4) limit. Day 1 is the first remand, 16.01.2026. The special-act limit replaces 60/90 days and the Court may extend it to 365 days. The charge sheet was filed on day 167 (01.07.2026). It came within the limit, so the right to default bail never arose."
+    },
+    {
+     "label": "Undertrial limit (BNSS s.479)",
+     "value": "CHECK: Maximum punishment not on record, so the threshold cannot be compared."
+    },
+    {
+     "label": "Notice of appearance",
+     "value": "UNKNOWN: Maximum punishment is not on record."
+    },
+    {
+     "label": "Grounds of arrest",
+     "value": "UNKNOWN: No record that the grounds of arrest were communicated."
+    },
+    {
+     "label": "Production within 24 hours",
+     "value": "CHECK: Produced the next day; times not on record."
+    },
+    {
+     "label": "Antil category",
+     "value": "C: Charged under a special act with stringent bail provisions (NDPS s.37): category C. Antil's categories decide how an accused who was not arrested during investigation and cooperated is treated after the charge sheet; for a client in custody this is context, not a bail entitlement."
+    },
+    {
+     "label": "Statutory bar",
+     "value": "BAR_APPLIES: NDPS 21(c): NDPS s.37(1)(b) twin conditions apply (s.19, s.24, s.27A, or commercial quantity): the Public Prosecutor must be heard and the court must find reasonable grounds to believe the accused is not guilty and not likely to offend on bail. If the arrest breached Art. 22(1), see the grounds_of_arrest check (Vihaan Kumar). Also to check: NDPS 29: NDPS s.37(1)(b) reaches only s.19, s.24, s.27A and commercial quantity; the quantity involved is not on record, so check it."
+    }
+   ]
+  },
+  {
+   "stage": "BRIEF",
+   "tab": "brief",
+   "title": "Sutradhar plans, Vakeel drafts",
+   "agent": "VAKEEL",
+   "action": null,
+   "caption": "Sutradhar planned the brief factor by factor (9 factors) and fetched the evidence each needs: 67 store calls. Vakeel drafted 8 grounds (8 supported). Every sentence was checked against its source; 10 sentences the checker could not support were withheld, leaving 1 ground for counsel to draft. 12 open issues are listed for counsel.",
+   "filled": [
+    {
+     "label": "G1 · gravity and punishment",
+     "value": "SUPPORTED: The recovery is of a commercial quantity and the twin conditions of Section 37 of the NDPS Act are not satisfied [F:facts_text].The recovery is of a commercial quantity and the twin conditions of Section 37 of the NDPS Act are not satisfied [A:HPHC01045349202…"
+    },
+    {
+     "label": "G2 · custody period",
+     "value": "SUPPORTED: The plea of delay in trial and prolonged incarceration, though being recognized by the Supreme Court as an inalienable right under Article 21 of the Constitution of India, cannot have a formulaic application [A:DLHC010387402024#63]. Whether 2 or 3 years or mo…"
+    },
+    {
+     "label": "G3 · charge sheet filed",
+     "value": "SUPPORTED: The investigation has concluded and the charge sheet was filed on 01.07.2026, so custodial interrogation is no longer required [F:facts_text].The forensic report confirms diacetylmorphine (heroin) in both samples, and the recovered quantity is a commercial qu…"
+    },
+    {
+     "label": "G5 · flight risk",
+     "value": "SUPPORTED: Accused-1 is a driver by profession, lives in his own house in a village of District Amritsar Rural, and supports his wife and three children [F:facts_text] [A:HPHC010059262025#11]. The applicant has deep roots in society and is permanently residing in his vi…"
+    },
+    {
+     "label": "G6 · witness tampering",
+     "value": "SUPPORTED: The possibility of the accused influencing the course of the investigation, tampering with evidence, intimidating witnesses, and the likelihood of fleeing justice can be taken care of by imposing elaborate conditions and stringent conditions [A:HPHC0104846320…"
+    },
+    {
+     "label": "G7 · weak prima facie",
+     "value": "SUPPORTED: The recovery is of a commercial quantity and the twin conditions of Section 37 of the NDPS Act are not satisfied [A:DLHC010029812025#21].The applicant has made out a prima facie case for grant of bail [A:JKHC010069062018#16].If there is no prima facie case th…"
+    },
+    {
+     "label": "G8 · health age family",
+     "value": "SUPPORTED: Accused-1 is 38 years old, a driver by profession, and lives in his own house in a village of District Amritsar Rural, supporting his wife and three children aged 14, 11 and 7, and his brother is willing to stand surety [F:facts_text].Section 437 Cr.P.C. cont…"
+    },
+    {
+     "label": "G9 · statutory bar",
+     "value": "SUPPORTED: Section 37 of the NDPS Act mandates a twin-layered threshold to be satisfied before bail can be granted, namely (i) that there are reasonable grounds for believing that the accused is not guilty of such offence; and (ii) that he is not likely to commit any of…"
+    },
+    {
+     "label": "Withheld from G2",
+     "value": "2 sentences; reason: not supported by the dossier quote (fact support 0.05 < 0.50)"
+    },
+    {
+     "label": "Withheld from G4",
+     "value": "2 sentences; reason: not supported by the dossier quote (support 0.05)"
+    },
+    {
+     "label": "Withheld from G5",
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.16)"
+    },
+    {
+     "label": "Withheld from G6",
+     "value": "2 sentences; reason: not supported by the dossier quote (support 0.10)"
+    },
+    {
+     "label": "Withheld from G7",
+     "value": "2 sentences; reason: not supported by the dossier quote (support 0.46)"
+    },
+    {
+     "label": "Withheld from G9",
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.39)"
+    }
+   ]
+  },
+  {
+   "stage": "SPAR",
+   "tab": "spar",
+   "title": "Abhiyojak argues the other side",
+   "agent": "ABHIYOJAK",
+   "action": null,
+   "caption": "Abhiyojak, the prosecution sparring partner, raised 6 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case; 2 ungrounded objections were discarded. After Vakeel's replies: 6 unanswered.",
+   "filled": [
+    {
+     "label": "O1 against G1 (gravity and punishment)",
+     "value": "UNANSWERED: The recovery is of a commercial quantity, and for commercial quantity offences, the minimum sentence that can be imposed is ten years, indicating the gravity of the offence is high."
+    },
+    {
+     "label": "O2 against G1 (gravity and punishment)",
+     "value": "UNANSWERED: The applicant has failed to satisfy the twin conditions of Section 37 of the NDPS Act, as required for commercial quantity offences, and the offence involves a substantial quantity of contraband."
+    },
+    {
+     "label": "O3 against G2 (custody period)",
+     "value": "UNANSWERED: The defence's argument that the delay in trial and prolonged incarceration cannot have a formulaic application is directly contradicted by the Supreme Court's observation in Ankur Chaudhary v. State of Madhya Pradesh, which held that conditional liberty may o…"
+    },
+    {
+     "label": "O4 against G2 (custody period)",
+     "value": "UNANSWERED: The defence's reliance on the absence of a formulaic threshold for 'prolonged' incarceration is misplaced, as the Supreme Court has recognized that failure to conclude the trial within a reasonable time, resulting in prolonged incarceration, militates against…"
+    },
+    {
+     "label": "O5 against G3 (charge sheet filed)",
+     "value": "UNANSWERED: The applicant has prior antecedents in another pending case under NDPS 21(b) at PS-8, Amritsar, indicating a history of involvement in narcotic offences."
+    },
+    {
+     "label": "O6 against G8 (health age family)",
+     "value": "UNANSWERED: The accused has been in custody for 303 days and the charge sheet has already been filed, yet the trial has merely commenced; the delay in proceedings is not attributable to the prosecution, and the accused has not shown any exceptional circumstances justifyi…"
+    }
+   ]
+  },
+  {
+   "stage": "HEARING_PREP",
+   "tab": "prep",
+   "title": "Hearing card",
+   "agent": "VAKEEL",
+   "action": null,
+   "caption": "Vakeel turned the brief and the sparring into a card for the hearing: 5 likely questions from the bench with answers, 3 grounds to lead with and 2 bail conditions counsel can offer. It predicts nothing and gives no grant rate.",
+   "filled": [
+    {
+     "label": "Lead with G2 (custody period)",
+     "value": "The plea of delay in trial and prolonged incarceration, though being recognized by the Supreme Court as an inalienable right under Article 21 of the Constitution of India, cannot have a formulaic application."
+    },
+    {
+     "label": "Lead with G3 (charge sheet filed)",
+     "value": "The investigation has concluded and the charge sheet was filed on 01.07.2026, so custodial interrogation is no longer required.The forensic report confirms diacetylmorphine (heroin) in both samples, and the recovered quantity is a commercial quantity.The char…"
+    },
+    {
+     "label": "Lead with G5 (flight risk)",
+     "value": "Accused-1 is a driver by profession, lives in his own house in a village of District Amritsar Rural, and supports his wife and three children."
+    },
+    {
+     "label": "Bench may raise: custody period",
+     "value": "The plea of delay in trial and prolonged incarceration, though being recognized by the Supreme Court as an inalienable right under Article 21 of the Constitution of India, cannot have a formulaic application."
+    },
+    {
+     "label": "Bench may raise: statutory bar",
+     "value": "Section 37 of the NDPS Act mandates a twin-layered threshold to be satisfied before bail can be granted, namely (i) that there are reasonable grounds for believing that the accused is not guilty of such offence; and (ii) that he is not likely to commit any of…"
+    },
+    {
+     "label": "Bench may raise: flight risk",
+     "value": "Accused-1 is a driver by profession, lives in his own house in a village of District Amritsar Rural, and supports his wife and three children."
+    },
+    {
+     "label": "Bench may raise: gravity and punishment",
+     "value": "The recovery is of a commercial quantity and the twin conditions of Section 37 of the NDPS Act are not satisfied.The recovery is of a commercial quantity and the twin conditions of Section 37 of the NDPS Act are not satisfied."
+    },
+    {
+     "label": "Bench may raise: charge sheet filed",
+     "value": "The investigation has concluded and the charge sheet was filed on 01.07.2026, so custodial interrogation is no longer required.The forensic report confirms diacetylmorphine (heroin) in both samples, and the recovered quantity is a commercial quantity.The char…"
+    },
+    {
+     "label": "Condition counsel can offer",
+     "value": "Personal bond of Rs 25,000"
+    },
+    {
+     "label": "Condition counsel can offer",
+     "value": "Not to influence witnesses or tamper with evidence"
+    }
+   ]
+  },
+  {
+   "stage": "GATE_2",
+   "tab": "brief",
+   "title": "Gate 2: your approval",
+   "agent": null,
+   "action": "approve_gate_2",
+   "caption": "Export is impossible until counsel approves Gate 2: in this run the export call before approval was refused (403). The checklist has 6 items for counsel (6 unanswered objections); approving records that counsel has read them. Next approves Gate 2 as counsel.",
+   "filled": [
+    {
+     "label": "UNANSWERED:O1",
+     "value": "objection O1: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O2",
+     "value": "objection O2: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O3",
+     "value": "objection O3: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O4",
+     "value": "objection O4: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O5",
+     "value": "objection O5: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O6",
+     "value": "objection O6: no supported reply; counsel has read it"
+    }
+   ]
+  },
+  {
+   "stage": "FILE",
+   "tab": "brief",
+   "title": "File: download the application",
+   "agent": null,
+   "action": null,
+   "caption": "With Gate 2 approved, export writes four Word files: the bail application, the List of Dates, the objections sheet and the hearing card. Each is labelled a draft; counsel settles and signs the final text.",
+   "filled": [
+    {
+     "label": "application.docx",
+     "value": "the bail application"
+    },
+    {
+     "label": "list_of_dates.docx",
+     "value": "the List of Dates and Events"
+    },
+    {
+     "label": "objections_sheet.docx",
+     "value": "the objections and replies"
+    },
+    {
+     "label": "hearing_card.docx",
+     "value": "the hearing card"
+    }
+   ]
+  }
+ ]
+}

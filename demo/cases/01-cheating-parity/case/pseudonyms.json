@@ -1,0 +1,23 @@
+{
+ "names": {},
+ "counts": {},
+ "quasi": {
+  "FIR|63/2024": "[FIR-1]",
+  "CASE|512/2024": "[CASE-1]",
+  "PLACE|PATIALA": "[PLACE-1]",
+  "CASE|981/2024": "[CASE-2]",
+  "ADDRESS|Karol Bagh": "[ADDRESS-1]",
+  "AGE|68": "[AGE-1 65-plus]",
+  "AGE|34": "[AGE-2 26-35]"
+ },
+ "quasi_values": {
+  "[FIR-1]": "63",
+  "[CASE-1]": "512",
+  "[PLACE-1]": "PATIALA",
+  "[CASE-2]": "981",
+  "[ADDRESS-1]": "Karol Bagh",
+  "[AGE-1 65-plus]": "68",
+  "[AGE-2 26-35]": "34"
+ },
+ "date_shift_days": -49
+}

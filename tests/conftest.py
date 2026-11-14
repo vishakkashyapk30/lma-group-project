@@ -69,6 +69,7 @@ def _isolated_data_dir(tmp_path_factory, monkeypatch):
     monkeypatch.setenv("VS_HEAVY_CLIENTS", "offline")  # vision, OCR, ASR and translation stay on the stand-ins when torch and transformers are installed
     monkeypatch.setenv("VS_NLI", "offline")  # unit tests use the lexical checker even where torch and the DeBERTa weights are installed
     monkeypatch.delenv("VS_ALLOW_PAID", raising=False)  # paid providers locked by default (models/paid_lock.py); tests that exercise them use `paid_unlocked`
+    monkeypatch.setenv("VS_DEMO_CASES", "off")  # create_app() would copy the recorded demo cases into every test's data dir; tests/unit/demo turns it on
     for var in ("GEMINI_API_KEY", "GEMINI_API_KEYS"):  # no real Gemini key ever reaches a test (nothing may call the network)
         monkeypatch.delenv(var, raising=False)
     set_runtime(None)

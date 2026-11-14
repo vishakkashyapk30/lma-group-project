@@ -1,0 +1,19 @@
+{
+ "names": {},
+ "counts": {},
+ "quasi": {
+  "FIR|77/2026": "[FIR-1]",
+  "CASE|1104/2026": "[CASE-1]",
+  "FIR|12/2022": "[FIR-2]",
+  "AGE|14": "[AGE-1 under-18]",
+  "AGE|38": "[AGE-2 36-50]"
+ },
+ "quasi_values": {
+  "[FIR-1]": "77",
+  "[CASE-1]": "1104",
+  "[FIR-2]": "12",
+  "[AGE-1 under-18]": "14",
+  "[AGE-2 36-50]": "38"
+ },
+ "date_shift_days": -140
+}
