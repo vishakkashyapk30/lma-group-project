@@ -9,6 +9,7 @@
 //   error or a 5xx. Demo mode is sticky so that the event stream, the gates and the data stay consistent.
 // NEXT_PUBLIC_DEMO_FALLBACK=strict, the older switch, means "live".
 import { ApiError } from "./errors";
+import { isTourMode, tourAllows, TOUR_REFUSED_MESSAGE } from "./tourMode";
 export { ApiError };
 import * as demo from "./mock/server";
 import { parseTour, parseTourList, type Tour, type TourSummary } from "./tour";
@@ -124,7 +125,13 @@ class FallBack extends Error {}
 
 type Body = { json: unknown } | { form: FormData } | undefined;
 
+/** 423 while a guided demo runs: the recorded case is shared, so every write but the tour's own two is refused, never silently. */
+export function refuseInTour(method: string, path: string): void {
+  if (isTourMode() && !tourAllows(method, path)) throw new ApiError(423, TOUR_REFUSED_MESSAGE, { tour: true, method, path });
+}
+
 async function http<T>(method: string, path: string, body?: Body, signal?: AbortSignal): Promise<T> {
+  refuseInTour(method, path);
   const url = apiUrl(path);
   if (!url) throw new FallBack("demo");
   let res: Response;
@@ -170,7 +177,8 @@ async function http<T>(method: string, path: string, body?: Body, signal?: Abort
 }
 
 /** Call the backend; in demo mode, or after a network failure, answer from the demo backend instead. */
-async function call<T>(live: () => Promise<T>, offline: () => Promise<T>): Promise<T> {
+async function call<T>(live: () => Promise<T>, offline: () => Promise<T>, write?: { method: string; path: string }): Promise<T> {
+  if (write) refuseInTour(write.method, write.path);
   if (mode === "demo") return offline();
   try {
     return await live();
@@ -206,7 +214,7 @@ export function listCases(): Promise<CaseSummary[]> {
 /** POST /api/cases: create a case. */
 export function createCase(title?: string | null): Promise<CaseSummary> {
   const body = { title: title ?? null };
-  return call(() => http("POST", "/api/cases", { json: body }), () => demo.createCase(body));
+  return call(() => http("POST", "/api/cases", { json: body }), () => demo.createCase(body), { method: "POST", path: "/api/cases" });
 }
 
 /** GET /api/cases/{case_id}. */
@@ -227,7 +235,7 @@ export function getDossier(caseId: string): Promise<CaseDossier> {
 /** PATCH /api/cases/{case_id}/dossier/{field}: counsel edits a field; its status becomes USER_EDITED. */
 export function editField(caseId: string, field: string, value: unknown): Promise<CaseDossier> {
   const body = { value };
-  return call(() => http("PATCH", `${c(caseId)}/dossier/${enc(field)}`, { json: body }), () => demo.editField(caseId, field, body));
+  return call(() => http("PATCH", `${c(caseId)}/dossier/${enc(field)}`, { json: body }), () => demo.editField(caseId, field, body), { method: "PATCH", path: `${c(caseId)}/dossier/${enc(field)}` });
 }
 
 /** GET /api/cases/{case_id}/dates: the List of Dates and Events. */
@@ -251,7 +259,7 @@ export function getRights(caseId: string): Promise<RightsReport> {
 
 /** POST /api/cases/{case_id}/draft: Sutradhar plans, Vakeel drafts, Abhiyojak spars (needs Gate 1). */
 export function startDraft(caseId: string): Promise<DraftStartResponse> {
-  return call(() => http("POST", `${c(caseId)}/draft`), () => demo.startDraft(caseId) as Promise<DraftStartResponse>);
+  return call(() => http("POST", `${c(caseId)}/draft`), () => demo.startDraft(caseId) as Promise<DraftStartResponse>, { method: "POST", path: `${c(caseId)}/draft` });
 }
 
 /** GET /api/cases/{case_id}/brief: the BailBrief. */
@@ -348,6 +356,7 @@ export function uploadFiles(caseId: string, files: File[]): Promise<UploadRespon
       return http("POST", `${c(caseId)}/upload`, { form });
     },
     () => demo.uploadFiles(caseId, files.map((f) => f.name)),
+    { method: "POST", path: `${c(caseId)}/upload` },
   );
 }
 
@@ -360,17 +369,18 @@ export function uploadAudio(caseId: string, file: Blob, fileName = "dictation.we
       return http("POST", `${c(caseId)}/audio`, { form });
     },
     () => demo.uploadAudio(caseId, fileName),
+    { method: "POST", path: `${c(caseId)}/audio` },
   );
 }
 
 /** POST counsel's answer to a Munshi question. */
 export function answerCounselQuestion(caseId: string, question: string, answer: string): Promise<CaseDossier> {
-  return call(() => http("POST", `${c(caseId)}/gates/answers`, { json: { question, answer } }), () => demo.getDossier(caseId));
+  return call(() => http("POST", `${c(caseId)}/gates/answers`, { json: { question, answer } }), () => demo.getDossier(caseId), { method: "POST", path: `${c(caseId)}/gates/answers` });
 }
 
 /** POST counsel's confirmation of a dictation read-back. */
 export function confirmDictationReadback(caseId: string, readback: string[]): Promise<CaseDossier> {
-  return call(() => http("POST", `${c(caseId)}/gates/dictation/confirm`, { json: { readback } }), () => demo.getDossier(caseId));
+  return call(() => http("POST", `${c(caseId)}/gates/dictation/confirm`, { json: { readback } }), () => demo.getDossier(caseId), { method: "POST", path: `${c(caseId)}/gates/dictation/confirm` });
 }
 
 /* ── Chat (routers/chat.py) ─────────────────────────────────────────────────────────────────────────────────────── */
@@ -378,7 +388,7 @@ export function confirmDictationReadback(caseId: string, readback: string[]): Pr
 /** POST /api/cases/{case_id}/chat: Sutradhar routes the question; a short cited answer (or a refusal). */
 export function postChat(caseId: string, text: string): Promise<ChatMessage> {
   const body = { text };
-  return call(() => http("POST", `${c(caseId)}/chat`, { json: body }), () => demo.postChat(caseId, body));
+  return call(() => http("POST", `${c(caseId)}/chat`, { json: body }), () => demo.postChat(caseId, body), { method: "POST", path: `${c(caseId)}/chat` });
 }
 
 /** GET /api/cases/{case_id}/chat: chat history. */
@@ -396,7 +406,7 @@ export function getGate(caseId: string, gate: GateId): Promise<GateStatus> {
 /** POST /api/cases/{case_id}/gates/{gate}/approve: 409 while the checklist has unresolved items. */
 export function approveGate(caseId: string, gate: GateId, acknowledged: string[] = []): Promise<GateStatus> {
   const body: ApproveRequest = { acknowledged_fields: acknowledged };
-  return call(() => http("POST", `${c(caseId)}/gates/${gate}/approve`, { json: body }), () => demo.approveGate(caseId, gate, body));
+  return call(() => http("POST", `${c(caseId)}/gates/${gate}/approve`, { json: body }), () => demo.approveGate(caseId, gate, body), { method: "POST", path: `${c(caseId)}/gates/${gate}/approve` });
 }
 
 /* ── Export (routers/export.py) ─────────────────────────────────────────────────────────────────────────────────── */
@@ -413,6 +423,7 @@ export function exportCase(caseId: string, format: ExportFormat = "DOCX"): Promi
   return call(
     async () => (await http<string[]>("POST", `${c(caseId)}/export`, { json: body })).map((p) => exportFileUrl(caseId, p)),
     () => demo.exportCase(caseId, body),
+    { method: "POST", path: `${c(caseId)}/export` },
   );
 }
 
@@ -427,6 +438,7 @@ export function deskUpload(file: File): Promise<string[]> {
       return http("POST", "/api/desk/upload", { form });
     },
     () => demo.deskUpload(file.name),
+    { method: "POST", path: "/api/desk/upload" },
   );
 }
 
@@ -437,7 +449,7 @@ export function getDeskBoard(): Promise<DeskBoard> {
 
 /** POST /api/desk/{case_id}/open: open a case from the board (it still needs its own approvals). */
 export function openDeskCase(caseId: string): Promise<CaseSummary> {
-  return call(() => http("POST", `/api/desk/${enc(caseId)}/open`), () => demo.openDeskCase(caseId));
+  return call(() => http("POST", `/api/desk/${enc(caseId)}/open`), () => demo.openDeskCase(caseId), { method: "POST", path: `/api/desk/${enc(caseId)}/open` });
 }
 
 /* ── Library (routers/library.py) ───────────────────────────────────────────────────────────────────────────────── */

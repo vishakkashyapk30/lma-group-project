@@ -1,0 +1,21 @@
+# Sparring reserve on the development orders: stopped after the first look (15 Nov 2026)
+
+Status: exploratory, post-freeze. The planned two-arm run (R0, R1 on t1dev-000..029) was STOPPED after 7 R1 orders because the
+reserve did not do what it was built for. No R0 run, no scoring, no tables.
+
+## What was run
+- Switch string carries the field, no parser change: `S13:signal_source=merge,abstention=strict,draft_source=facts_text,objection_grounding=by_id` (R0) and the same plus `,sparring_reserve_tokens=60000` (R1). Checked: R0 `model_dump(exclude_defaults=True) == C1457_SWITCHES`; R1 `== production_switches()`.
+- Driver as in D12 (`var-pool/shard.sh` of the frozen worktree), my worktree `src` on PYTHONPATH, `VS_DATA_DIR` = a scratch dir with symlinks to the main checkout's interim, stores, testsets, gaps, raw, hosted, sarvam, batch; `VS_MODELS=auto VS_LLM_BACKEND=sarvam VS_ALLOW_PAID=sarvam VS_EXTERNAL=pseudonymised VS_SARVAM=pseudonymised VS_SARVAM_NO_CACHE=1 VS_SARVAM_CAP_INR=5000 VS_SARVAM_RUN_CAP_INR=300`, run ids `reserve-dev-r1` (and `reserve-dev-r1smoke`), cases = the frozen `sarvam_var1/cases/t1_30.jsonl`, 2 shards, `--run-index 1`.
+- Spend (ledger, INR): smoke 2.39 (97 calls), R1 partial 13.84 (488 calls, 7 orders).
+- Analysis script written and committed, not yet run on complete data: `scripts/midsub/reserve_dev.py` (objection verdict table with reason classes, paired R1-R0 bootstrap via `win_loss_tie.boot_p`, tokens, INR, W/T/L against the frozen `sarvam_final` B0-B6).
+
+## A bug found on the way (fixed, committed)
+Post-freeze commit 533e4ac dropped `or []` in `RightsEngine.build_inputs` (`sections = _value(f.sections) or []`), so the Rights Radar crashed with `TypeError: 'NoneType' object is not iterable` on every dossier with no sections on record (event `rights_check_failed`; the frozen code has the `or []`). Restored, with a regression test in `tests/unit/rights/test_max_punishment_lookup.py`. The smoke run (before the fix) had it; the R1 partial run had the fix.
+
+## Finding: 60,000 is too small, the judged share stays low
+R1, first 7 orders (one, t1dev-000, had no claims left to spar on): 41 objections raised, only 7 judged (2 ANSWERED, 1 PARTLY, 4 UNANSWERED), 34 not judged (judge call refused: 33 BudgetExhausted, 1 privacy boundary; reply never drafted for 7: 6 budget, 1 privacy). Frozen D12 run 1, all 30 orders, for context: 216 objections, 158 (73%) not judged, 19 ANSWERED, 7 PARTLY, 32 UNANSWERED. The reserve was spent in 6 of 7 orders (about 60,000 to 62,000), the sparring BUDGET_HIT fired.
+Where the reserve goes (orders 1 to 6): Abhiyojak 17.9K to 25.4K (3 to 7 calls: raising objections per factor, round 1 and 2) plus Vakeel 36K to 42K in 14 to 18 reply and reply-repair calls for 7 to 10 objections (about 4 to 5K per objection with repair), so about 60K is gone before the judge calls (about 0.8K each, made after all replies) start. The two orders with few objections (2 and 6) were judged (0 and 1 not judged). The smoke case (7 objections, all judged) used 48K of 60K, which is why the smoke looked fine.
+The 3.9K-per-objection sizing in `objections-unanswered-2026-11-15.md` leaves out the repair loop and the objection-raising calls (about 6 to 8K per objection in total on Sarvam-105B). A reserve of about 100K to 120K would be needed for 7 to 10 objections, or the judge calls would have to be made before further repair.
+
+## Not done / next
+R0 and the full R1 on 30 orders; scoring; reserve_dev.md/csv. Next step if wanted: R1 with a larger reserve (for example `sparring_reserve_tokens=120000`) on the 30 orders, then R0, using the script above. Partial outputs are in the session scratch dir only (not kept in the repo).

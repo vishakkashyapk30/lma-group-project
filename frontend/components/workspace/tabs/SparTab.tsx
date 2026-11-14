@@ -6,6 +6,7 @@ import { CheckCircle2, ChevronDown, Undo2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { TOUR_READ_ONLY_NOTE, useTourMode } from "@/lib/tourMode";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { fieldLabel } from "@/lib/fields";
@@ -55,6 +56,7 @@ function ResolveControls({ objection }: { objection: Objection }): ReactElement 
   const { resolutions, resolveItem, unresolveItem } = useGates();
   const key = checklistKey("UNANSWERED", objection.id);
   const resolution = resolutions.resolved[key];
+  const tour = useTourMode();
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState("");
   const noteRef = useRef<HTMLInputElement | null>(null);
@@ -74,7 +76,7 @@ function ResolveControls({ objection }: { objection: Objection }): ReactElement 
           <CheckCircle2 aria-hidden className="size-4" /> Resolved by you
           {resolution.note && resolution.note !== "Accepted by counsel" ? <span className="font-normal text-ink-soft">: {resolution.note}</span> : null}
         </span>
-        <Button size="sm" variant="ghost" onClick={() => unresolveItem(key)} aria-label={`Undo resolving ${objection.id}`}>
+        <Button size="sm" variant="ghost" onClick={() => unresolveItem(key)} aria-label={`Undo resolving ${objection.id}`} disabled={tour} title={tour ? TOUR_READ_ONLY_NOTE : undefined}>
           <Undo2 aria-hidden /> Undo
         </Button>
       </div>
@@ -104,7 +106,7 @@ function ResolveControls({ objection }: { objection: Objection }): ReactElement 
   }
   return (
     <div data-print-hide>
-      <Button ref={openerRef} size="sm" variant="secondary" onClick={() => setOpen(true)} aria-label={`Resolve unanswered objection ${objection.id}`}>
+      <Button ref={openerRef} size="sm" variant="secondary" onClick={() => setOpen(true)} aria-label={`Resolve unanswered objection ${objection.id}`} disabled={tour} title={tour ? TOUR_READ_ONLY_NOTE : undefined}>
         <CheckCircle2 aria-hidden /> Resolve with a note
       </Button>
     </div>

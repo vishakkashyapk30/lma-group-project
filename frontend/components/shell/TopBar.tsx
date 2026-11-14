@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Tooltip } from "@/components/ui/tooltip";
 import { useToast } from "@/components/ui/toast";
 import { getApiMode, getConnection, onApiModeChange, onConnectionChange, unreachableMessage, type ApiMode, type Connection } from "@/lib/api";
+import { useTourMode } from "@/lib/tourMode";
 import { toggleReducedMotion } from "@/lib/useReducedMotion";
 import { useCaseMeta } from "./meta";
 import { useLang, useT } from "@/lib/i18n";
@@ -90,6 +91,8 @@ function HelpMenu(): ReactElement {
 export function TopBar(): ReactElement {
   const { setPaletteOpen, setNewCaseOpen, setDrawerOpen } = useShell();
   const { crumbs, stage } = useCrumbs();
+  // During a guided demo the tour's Next is the one primary button on screen.
+  const tour = useTourMode();
   const t = useT();
   const { lang, setLang } = useLang();
   const [mac, setMac] = useState(false);
@@ -97,9 +100,9 @@ export function TopBar(): ReactElement {
   return (
     <header data-print-hide className="sticky top-0 z-nav flex h-[var(--nav-h)] shrink-0 items-center gap-3 border-b border-line bg-parchment px-3 sm:px-4">
       <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t("Open menu")} onClick={() => setDrawerOpen(true)}><Menu aria-hidden /></Button>
-      <div className="flex min-w-0 flex-1 items-center gap-3">
+      <div data-testid="topbar-crumbs" className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
         <Breadcrumb items={crumbs} />
-        {stage ? <span data-testid="topbar-stage" className="hidden shrink-0 text-sm text-ink-soft sm:inline">{t("Stage")}: <span className="font-medium text-ink">{stage}</span></span> : null}
+        {stage ? <span data-testid="topbar-stage" className="hidden shrink-0 text-sm text-ink-soft xl:inline">{t("Stage")}: <span className="font-medium text-ink">{stage}</span></span> : null}
       </div>
       <button
         type="button"
@@ -107,13 +110,13 @@ export function TopBar(): ReactElement {
         aria-label={t("Search cases, pages and actions")}
         aria-keyshortcuts="Control+K Meta+K"
         data-testid="search-trigger"
-        className="hidden h-9 w-64 items-center gap-2 rounded-md border border-line-strong/60 bg-cream px-2.5 text-sm text-ink-muted transition-colors duration-fast hover:border-line-strong md:flex xl:w-80"
+        className="hidden h-9 w-56 shrink-0 items-center gap-2 rounded-md border border-line-strong/60 bg-cream px-2.5 text-sm text-ink-muted transition-colors duration-fast hover:border-line-strong lg:flex xl:w-80"
       >
         <Search aria-hidden className="size-4" />
         <span className="flex-1 text-left">{t("Search")}</span>
         <kbd className="rounded-sm border border-line bg-parchment px-1.5 py-0.5 font-sans text-xs text-ink-muted">{mac ? "⌘K" : "Ctrl K"}</kbd>
       </button>
-      <Button variant="ghost" size="icon" className="md:hidden" aria-label={t("Search cases, pages and actions")} onClick={() => setPaletteOpen(true)}><Search aria-hidden /></Button>
+      <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t("Search cases, pages and actions")} data-testid="search-icon" onClick={() => setPaletteOpen(true)}><Search aria-hidden /></Button>
       <ModeChip />
       <Button
         variant="ghost"
@@ -125,7 +128,7 @@ export function TopBar(): ReactElement {
       >
         {lang === "hi" ? "English" : "हिन्दी"}
       </Button>
-      <Button data-testid="new-case-button" onClick={() => setNewCaseOpen(true)}><Plus aria-hidden /><span className="hidden sm:inline">{t("New case")}</span><span className="sr-only sm:hidden">{t("New case")}</span></Button>
+      <Button data-testid="new-case-button" variant={tour ? "secondary" : "primary"} onClick={() => setNewCaseOpen(true)}><Plus aria-hidden /><span className="hidden sm:inline">{t("New case")}</span><span className="sr-only sm:hidden">{t("New case")}</span></Button>
       <HelpMenu />
     </header>
   );

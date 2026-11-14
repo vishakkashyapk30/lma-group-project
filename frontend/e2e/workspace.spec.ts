@@ -10,7 +10,7 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 import { MockBackend } from "./mockBackend";
-import { renderedStageIds, seriousAxeViolations, expectNoUnmatched } from "./helpers";
+import { chooseStep, renderedStageIds, seriousAxeViolations, expectNoUnmatched } from "./helpers";
 import { STEPS, TID } from "./testids";
 import { fx } from "./fixtures";
 
@@ -22,7 +22,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 const field = (page: Page, key: string) => page.locator(`[data-testid=dossier-field][data-field="${key}"]`);
-const step = (page: Page, key: string) => page.getByTestId(TID.stage(key)).click();
+const step = (page: Page, key: string) => chooseStep(page, key);
 
 test("shows one step, the stepper and the case controls; the case file and chat open on demand", async ({ page }) => {
   await expect(page.getByTestId(TID.paneMain)).toBeVisible();

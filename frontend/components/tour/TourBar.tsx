@@ -18,6 +18,7 @@ import { GATE_LABELS } from "@/lib/stages";
 import {
   createTourMachine, gateOfStep, localizedStep, workspaceStageFor, workspaceTabFor, type Tour, type TourMachine, type TourState, type TourStep,
 } from "@/lib/tour";
+import { TOUR_READ_ONLY_NOTE } from "@/lib/tourMode";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/lib/workspace";
 import { tourHref } from "./GuidedDemos";
@@ -264,6 +265,7 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
           {folded ? t("Read") : t("Hide")}
         </button>
         </div>
+        <p data-testid="tour-readonly" className={cn("text-sm text-ink-soft", folded && "max-lg:hidden")}>{t(TOUR_READ_ONLY_NOTE)}</p>
         <div aria-live="polite" aria-atomic="true">
           <h2 id="tour-step-title" className="mt-1 font-display text-xl font-semibold leading-snug text-ink">
             {text.title}
