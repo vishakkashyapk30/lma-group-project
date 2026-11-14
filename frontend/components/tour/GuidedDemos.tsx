@@ -64,7 +64,7 @@ export function GuidedDemos({ className }: { className?: string }): ReactElement
               href={tourHref(tour)}
               data-testid="guided-demo-start"
               aria-label={`${t("Start the guided demo")}: ${tour.title}`}
-              className={cn(buttonVariants({ variant: "secondary", size: "md" }), "shrink-0 self-start no-underline")}
+              className={cn(buttonVariants({ variant: "secondary", size: "md" }), "shrink-0 self-start no-underline max-lg:h-11")}
             >
               {t("Start the guided demo")} <ArrowRight aria-hidden />
             </Link>

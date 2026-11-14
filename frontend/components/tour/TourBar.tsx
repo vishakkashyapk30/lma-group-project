@@ -6,7 +6,7 @@
 // the demo (only while focus is on the page or in the bar, never while typing or with a dialog open).
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactElement } from "react";
 import { Button } from "@/components/ui/button";
 import { AGENTS } from "@/lib/agents";
@@ -67,6 +67,8 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
   const [tour, setTour] = useState<Tour | null | undefined>(undefined);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [blocked, setBlocked] = useState(false);
+  // Below lg the bar can be folded to its title and buttons, so a phone keeps more of the workspace in view.
+  const [folded, setFolded] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -127,11 +129,13 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
     if (!el) return;
     const set = () => root.style.setProperty("--tour-bar-h", `${el.offsetHeight}px`);
     set();
+    root.dataset.tour = "1";
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(set) : null;
     ro?.observe(el);
     return () => {
       ro?.disconnect();
       root.style.removeProperty("--tour-bar-h");
+      delete root.dataset.tour;
     };
   }, [tour]);
 
@@ -234,6 +238,7 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
   return frame(
     <div className="flex max-h-[42dvh] flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-end lg:gap-8">
       <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain lg:max-h-[calc(42dvh-1.5rem)]" data-testid="tour-step" data-stage={step.stage} data-index={state.index}>
+        <div className="flex items-start justify-between gap-2">
         <p className="text-sm text-ink-soft">
           <span className="font-medium text-ink">{t("Guided demo")}</span>
           {" · "}
@@ -245,16 +250,28 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
             </>
           ) : null}
         </p>
+        <button
+          type="button"
+          onClick={() => setFolded((v) => !v)}
+          aria-expanded={!folded}
+          aria-controls="tour-details"
+          data-testid="tour-fold"
+          className="-mr-2 -mt-2 inline-flex min-h-11 shrink-0 items-center gap-1 rounded-md px-2 text-sm font-medium text-maroon hover:bg-ink/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 lg:hidden"
+        >
+          {folded ? <ChevronUp aria-hidden className="size-4" /> : <ChevronDown aria-hidden className="size-4" />}
+          {folded ? t("Show the step") : t("Hide the step")}
+        </button>
+        </div>
         <div aria-live="polite" aria-atomic="true">
           <h2 id="tour-step-title" className="mt-1 font-display text-xl font-semibold leading-snug text-ink">
             {step.title}
           </h2>
-          <p data-testid="tour-caption" className="mt-1 max-w-prose text-ink">
+          <p id="tour-details" data-testid="tour-caption" className={cn("mt-1 max-w-prose text-ink", folded && "max-lg:hidden")}>
             {step.caption}
           </p>
         </div>
         {gate ? (
-          <p data-testid="tour-gate" data-approved={gateApproved} className="mt-2 flex max-w-prose items-start gap-1.5 text-sm">
+          <p data-testid="tour-gate" data-approved={gateApproved} className={cn("mt-2 flex max-w-prose items-start gap-1.5 text-sm", folded && "max-lg:hidden")}>
             {gateApproved ? <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-neem" /> : null}
             <span className={gateApproved ? "text-neem-deep" : "text-ink-soft"}>
               <span className="font-medium">
@@ -267,7 +284,7 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
           </p>
         ) : null}
         {step.filled.length > 0 ? (
-          <div className="mt-3">
+          <div className={cn("mt-3", folded && "max-lg:hidden")}>
             <h3 className="font-sans text-sm font-semibold text-ink">{t("Filled in at this step")}</h3>
             <dl data-testid="tour-filled" className="mt-1.5 grid gap-x-4 gap-y-2 sm:grid-cols-2">
               {step.filled.map((f, i) => (
@@ -292,12 +309,12 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
           </p>
         ) : null}
         {rec && state.index === 0 ? (
-          <p className="mt-2 text-sm text-ink-soft">
+          <p className={cn("mt-2 text-sm text-ink-soft", folded && "max-lg:hidden")}>
             {fill(t("Recorded on {date} with {backend} ({model})."), { date: formatDateLong(rec.date), backend: rec.backend, model: rec.model })}
           </p>
         ) : null}
       </div>
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 [&_button]:max-lg:h-11 [&_button]:max-lg:min-w-11">
         <Button variant="ghost" size="md" onClick={exit} data-testid="tour-exit" aria-keyshortcuts="Escape">
           {t("Exit the demo")}
         </Button>
