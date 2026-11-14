@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import copy
+import logging
 import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from vakeel_sahayak.api.auth import BearerTokenMiddleware
-from vakeel_sahayak.api.routers import cases, chat, desk, events, export, gates, library, upload
+from vakeel_sahayak.api.routers import cases, chat, demo, desk, events, export, gates, library, upload
 
-ROUTERS = (cases, upload, chat, events, gates, export, desk, library)
+ROUTERS = (cases, upload, chat, events, gates, export, desk, library, demo)
 
 
 def _origins() -> list[str]:
@@ -45,4 +46,21 @@ def create_app(config_dir: str | None = None) -> FastAPI:
     app.add_middleware(
         CORSMiddleware, allow_origins=_origins(), allow_methods=["*"], allow_headers=["*"], allow_credentials=False
     )
+    _preload_demo_cases()
     return app
+
+
+def _preload_demo_cases() -> None:
+    """Copy the recorded evaluator demo cases into the data directory unless `VS_DEMO_CASES=off` (demo/preload.py; never overwrites)."""
+    from vakeel_sahayak.demo import preload
+
+    if not preload.enabled():
+        return
+    try:
+        from vakeel_sahayak.api.deps import _data_dir, get_event_log
+
+        imported = preload.import_demo_cases(_data_dir(), get_event_log())
+        if imported:
+            logging.getLogger(__name__).info("demo cases loaded: %s", ", ".join(imported))
+    except Exception as exc:  # noqa: BLE001 - the demo must never keep the API from starting
+        logging.getLogger(__name__).warning("demo cases were not loaded: %s", exc)

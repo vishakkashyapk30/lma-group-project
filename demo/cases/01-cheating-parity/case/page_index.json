@@ -1,0 +1,112 @@
+[
+ {
+  "file": "01_fir.pdf",
+  "page": 1,
+  "doc_id": "d1",
+  "doc_type": "FIR",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "FIRST INFORMATION REPORT (under Section 154 CrPC)\nIntegrated Investigation Form-1 (IIF-1)\n1. District: New Delhi P.S.: PS-12 FIR No. 63/2024 Date: 10.03.2024\n2. Acts and Sections: IPC 420, IPC 406.\n3. Date of occurrence of offence: 05.03.2024\n4. Date on which information was received at the P.S.: 10.03.2024\n5. Type of information: written\n6. Place of occurrence: Connaught Place, District New Delhi\n7. Name of the complainant/informant: Complainant-1\n8. Name of the accused: Accused-1 and Co-accused-2\n9. Date of arrest of the accused: 12.03.2024\n10. Brief facts: Complainant-1 states that on 05.03.2024 Accused-1 took Rs. 6,50,000 as an advance for\nthe supply of\ntextile machinery and did not deliver it. The case was registered on the written complaint and investigation\nwas taken up.\nInvestigating officer: IO-1\n"
+ },
+ {
+  "file": "02_arrest_memo.pdf",
+  "page": 1,
+  "doc_id": "d2",
+  "doc_type": "ARREST_MEMO",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "ARREST MEMO\nFIR No. 63/2024, P.S. PS-12.\nSections: IPC 420, IPC 406.\nAccused-1 was arrested on 12.03.2024 at 18:30 hrs at his residence in Karol Bagh, New Delhi.\nThe grounds of arrest were communicated to Accused-1 in writing on 12.03.2024 and a relative was\ninformed the same day.\nArresting officer: IO-1\n"
+ },
+ {
+  "file": "03_remand_order.pdf",
+  "page": 1,
+  "doc_id": "d3",
+  "doc_type": "REMAND_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "IN THE COURT OF THE JUDICIAL MAGISTRATE\nRemand order dated 13.03.2024\nFIR No. 63/2024, P.S. PS-12.\nSections: IPC 420, IPC 406.\nThe accused Accused-1 was arrested on 12.03.2024 and produced before this Court on 13.03.2024 at\n11:00 hrs.\nThe accused is remanded to judicial custody until 27.03.2024. This is the first remand order, dated\n13.03.2024.\n"
+ },
+ {
+  "file": "04_previous_bail_order.pdf",
+  "page": 1,
+  "doc_id": "d4",
+  "doc_type": "BAIL_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "IN THE COURT OF THE SESSIONS JUDGE, PATIALA HOUSE COURTS, NEW DELHI\nBail Application No. 512/2024, State v. Accused-1, FIR No. 63/2024, P.S. PS-12.\nOrder dated 10.04.2024.\nThe investigation is at an initial stage and the money trail is yet to be traced.\nThe earlier regular bail application of Accused-1 was rejected on 10.04.2024 by the Sessions Court.\n"
+ },
+ {
+  "file": "05_charge_sheet.pdf",
+  "page": 1,
+  "doc_id": "d5",
+  "doc_type": "CHARGE_SHEET_COVER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "FINAL REPORT (CHARGE SHEET) under Section 173 CrPC\nFIR No. 63/2024, P.S. PS-12.\nSections: IPC 420, IPC 406.\nThe charge sheet was filed on 06.05.2024. Investigation is complete.\nRs. 2,00,000 was recovered at the instance of Accused-1. The documents relied on have been seized and\nare in the custody of\nthe investigating agency, and the evidence is documentary. 22 prosecution witnesses are cited.\nInvestigating officer: IO-1\n"
+ },
+ {
+  "file": "06_co_accused_bail_order.pdf",
+  "page": 1,
+  "doc_id": "d6",
+  "doc_type": "BAIL_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "IN THE COURT OF THE SESSIONS JUDGE, PATIALA HOUSE COURTS, NEW DELHI\nBail Application No. 981/2024, State v. Co-accused-2, FIR No. 63/2024, P.S. PS-12.\nOrder dated 18.07.2024.\nCo-accused-2, whose role is comparable to that of Accused-1, was granted bail on 18.07.2024 with one\nsurety.\n"
+ },
+ {
+  "file": "07_order_sheet.pdf",
+  "page": 1,
+  "doc_id": "d7",
+  "doc_type": "ORDER_SHEET",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "IN THE COURT OF THE CHIEF JUDICIAL MAGISTRATE, PATIALA HOUSE COURTS, NEW DELHI\nOrder sheet, State v. Accused-1 and another, FIR No. 63/2024, P.S. PS-12.\n01.06.2024: Cognizance taken on the charge sheet.\n15.11.2024: Charges have been framed against both accused. Trial has commenced.\nWitnesses examined so far: PW-1 (Complainant-1), PW-2 and PW-3. 3 of the 22 prosecution witnesses\nhave been examined.\nNo complaint of threat or of tampering with any witness has been made by the prosecution.\nNext date of hearing: 16.12.2026.\n"
+ },
+ {
+  "file": "08_custody_certificate.pdf",
+  "page": 1,
+  "doc_id": "d8",
+  "doc_type": "CUSTODY_CERTIFICATE",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "CUSTODY CERTIFICATE\nIssued by the Superintendent, Central Jail, Tihar, on 10.11.2026.\nIt is certified that Accused-1 has been in custody in FIR No. 63/2024 since 12.03.2024.\nThe period of custody as on 10.11.2026 is 973 days. His conduct in jail has been satisfactory.\nSuperintendent: Central Jail\n"
+ },
+ {
+  "file": "09_police_verification.pdf",
+  "page": 1,
+  "doc_id": "d9",
+  "doc_type": "OTHER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "POLICE VERIFICATION REPORT (antecedents)\nFIR No. 63/2024, P.S. PS-12. Subject: Accused-1.\nOn verification of the records, Accused-1 has no previous involvement in any criminal case.\nNo other criminal case is pending against Accused-1 and he has no criminal antecedents. He is a first-time\noffender.\nVerified by: IO-1\n"
+ },
+ {
+  "file": "10_personal_circumstances.pdf",
+  "page": 1,
+  "doc_id": "d10",
+  "doc_type": "AFFIDAVIT",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "AFFIDAVIT OF PERSONAL CIRCUMSTANCES\nIn FIR No. 63/2024, P.S. PS-12, on behalf of Accused-1.\nAccused-1 is 34 years old and has been a resident of Karol Bagh, New Delhi since birth, where he owns\nhis residence.\nAccused-1 runs a small registered trading business and is the sole earning member of his family.\nHe supports his wife, two minor children aged eight and five, and his widowed mother aged 68 who has a\nheart condition.\nAccused-1 is diabetic and is under treatment in jail, as recorded by the jail medical officer.\nHis brother is willing to stand surety, and Accused-1 does not hold a passport.\n"
+ },
+ {
+  "file": "11_vakalatnama.pdf",
+  "page": 1,
+  "doc_id": "d11",
+  "doc_type": "BAIL_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "VAKALATNAMA\nBEFORE THE HIGH COURT OF DELHI AT NEW DELHI\nCriminal Miscellaneous (Bail) Application under Section 483 BNSS on behalf of Accused-1.\nIn FIR No. 63/2024, P.S. PS-12, New Delhi.\nCounsel appointed for Accused-1 to apply for regular bail and to appear at every hearing of the application.\n"
+ }
+]

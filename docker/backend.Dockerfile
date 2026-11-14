@@ -40,6 +40,8 @@ COPY pyproject.toml ./
 COPY configs ./configs
 COPY scripts ./scripts
 COPY src ./src
+# The recorded evaluator demo (six synthetic cases and their tours): copied into /app/data/cases at start-up unless VS_DEMO_CASES=off.
+COPY demo ./demo
 USER vs
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \

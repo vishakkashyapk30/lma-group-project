@@ -1,0 +1,92 @@
+[
+ {
+  "file": "01_fir_hindi.pdf",
+  "page": 1,
+  "doc_id": "d1",
+  "doc_type": "FIR",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "प्रथम सूचना रिपोर्ट (भारतीय नागरिक सुरक्षा संहिता की धारा 173 के अंतर्गत)\n1. जिला: लखनऊ थाना: PS-3 एफ.आई.आर. संख्या: 151/2026 दिनांक: 02.07.2026\n2. अधिनियम एवं धाराएँ: NDPS 21(a)\n3. घटना की तिथि: 02.07.2026, समय लगभग 21:00 बजे\n4. थाने पर सूचना प्राप्त होने की तिथि: 02.07.2026\n5. घटनास्थल: चारबाग रेलवे स्टेशन के पास, लखनऊ\n6. सूचनाकर्ता: IO-1, उप निरीक्षक, थाना PS-3\n7. अभियुक्त: Accused-1\n8. गिरफ्तारी की तिथि: 02.07.2026\n9. संक्षिप्त विवरण: गश्त के दौरान संदेह होने पर अभियुक्त Accused-1 को रोका गया। विधिवत तलाशी लेने पर\nउसकी पैंट की जेब से 4 ग्राम हेरोइन (स्मैक) बरामद हुई। बरामद मात्रा अल्प मात्रा की श्रेणी में है। अभियुक्त को मौके\nपर गिरफ्तार किया गया और बरामद माल को सील कर दिया गया। मुकदमा पंजीकृत कर विवेचना प्रारम्भ की गई।\nविवेचक: IO-1\n"
+ },
+ {
+  "file": "02_arrest_memo.pdf",
+  "page": 1,
+  "doc_id": "d2",
+  "doc_type": "ARREST_MEMO",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "ARREST MEMO\nFIR No. 151/2026, P.S. PS-3, Lucknow. Sections: NDPS 21(a).\nAccused-1 was arrested on 02.07.2026 at 21:40 hrs near Charbagh railway station, Lucknow.\nThe grounds of arrest were informed to Accused-1 orally at the time of arrest. No written grounds of arrest\nwere served on him.\nHis mother was informed by telephone on 03.07.2026.\nArresting officer: IO-1\n"
+ },
+ {
+  "file": "03_seizure_memo.pdf",
+  "page": 1,
+  "doc_id": "d3",
+  "doc_type": "OTHER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "SEIZURE MEMO (RECOVERY MEMO)\nFIR No. 151/2026, P.S. PS-3, Lucknow.\nOn 02.07.2026 at about 21:15 hrs, on a personal search of Accused-1 conducted after informing him of his\nright under Section 50 of the NDPS Act, 4 grams of heroin (smack) were recovered from the pocket of his\ntrousers.\nThe quantity recovered is a small quantity (the notified small quantity for heroin is 5 grams).\nThe recovered substance was sealed and a sample was drawn for the forensic laboratory.\nSeizing officer: IO-1\n"
+ },
+ {
+  "file": "04_remand_order.pdf",
+  "page": 1,
+  "doc_id": "d4",
+  "doc_type": "REMAND_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "IN THE COURT OF THE CHIEF JUDICIAL MAGISTRATE, LUCKNOW\nRemand order dated 03.07.2026\nFIR No. 151/2026, P.S. PS-3. Sections: NDPS 21(a).\nThe accused Accused-1 was arrested on 02.07.2026 and produced before this Court on 03.07.2026 at\n14:00 hrs.\nThe accused is remanded to judicial custody until 17.07.2026. This is the first remand order, dated\n03.07.2026.\n"
+ },
+ {
+  "file": "05_charge_sheet.pdf",
+  "page": 1,
+  "doc_id": "d5",
+  "doc_type": "CHARGE_SHEET_COVER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "FINAL REPORT (CHARGE SHEET) under Section 193 BNSS\nFIR No. 151/2026, P.S. PS-3, Lucknow. Sections: NDPS 21(a).\nThe charge sheet was filed on 25.08.2026. Investigation is complete.\nThe forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity.\n6 prosecution witnesses are cited, all of them police officials. No independent witness was joined at the\nrecovery.\nInvestigating officer: IO-1\n"
+ },
+ {
+  "file": "06_custody_certificate.pdf",
+  "page": 1,
+  "doc_id": "d6",
+  "doc_type": "CUSTODY_CERTIFICATE",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "CUSTODY CERTIFICATE\nIssued by the Superintendent, District Jail, Lucknow, on 10.11.2026.\nIt is certified that Accused-1 has been in custody in FIR No. 151/2026 since 02.07.2026.\nThe period of custody as on 10.11.2026 is 131 days. His conduct in jail has been satisfactory.\nSuperintendent: District Jail\n"
+ },
+ {
+  "file": "07_police_verification.pdf",
+  "page": 1,
+  "doc_id": "d7",
+  "doc_type": "OTHER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "POLICE VERIFICATION REPORT (antecedents)\nFIR No. 151/2026, P.S. PS-3, Lucknow. Subject: Accused-1.\nOn verification of the records, Accused-1 has no previous involvement in any criminal case.\nNo other criminal case is pending against Accused-1 and he has no criminal antecedents. He is a first-time\noffender.\nVerified by: IO-1\n"
+ },
+ {
+  "file": "08_personal_circumstances.pdf",
+  "page": 1,
+  "doc_id": "d8",
+  "doc_type": "AFFIDAVIT",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "AFFIDAVIT OF PERSONAL CIRCUMSTANCES\nIn FIR No. 151/2026, P.S. PS-3, Lucknow, on behalf of Accused-1.\nAccused-1 is 22 years old and a second-year B.Com student at a college in Lucknow, where he has lived\nsince birth.\nHis father has died and his mother works as a domestic worker; he has a younger brother in school.\nHis maternal uncle is willing to stand surety. He is represented by legal aid counsel assigned by the District\nLegal Services Authority.\n"
+ },
+ {
+  "file": "09_vakalatnama.pdf",
+  "page": 1,
+  "doc_id": "d9",
+  "doc_type": "BAIL_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "VAKALATNAMA (LEGAL AID)\nIN THE COURT OF THE SPECIAL JUDGE (NDPS ACT), LUCKNOW\nApplication for regular bail under Section 480 BNSS on behalf of Accused-1.\nIn FIR No. 151/2026, P.S. PS-3, Lucknow.\nLegal aid counsel assigned to Accused-1 to apply for bail and to appear at every hearing of the application.\n"
+ }
+]

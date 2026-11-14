@@ -64,7 +64,7 @@
           "cases"
         ],
         "summary": "Create Case",
-        "description": "Create a case at the intake stage (plan \u00a713.5).",
+        "description": "Create a case at the intake stage (plan \u00a713.5). A requested `case_id` must be valid (422) and unused (409).",
         "operationId": "create_case_api_cases_post",
         "parameters": [
           {
@@ -1900,6 +1900,178 @@
           }
         }
       }
+    },
+    "/api/demo/tours": {
+      "get": {
+        "tags": [
+          "demo"
+        ],
+        "summary": "List Tours",
+        "description": "The demo tours whose case is loaded, by slug: `{slug, case_id, title, story, variant}` (empty with `VS_DEMO_CASES=off`).",
+        "operationId": "list_tours_api_demo_tours_get",
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TourSummary"
+                  },
+                  "title": "Response List Tours Api Demo Tours Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/demo/tours/{slug}": {
+      "get": {
+        "tags": [
+          "demo"
+        ],
+        "summary": "Get Tour",
+        "description": "One tour: the recorded run (date, backend, model, spend) and its nine steps, INTAKE to FILE; 404 for an unknown or unloaded slug.",
+        "operationId": "get_tour_api_demo_tours__slug__get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          },
+          {
+            "name": "case_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tour"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/demo/tours/{slug}/reset": {
+      "post": {
+        "tags": [
+          "demo"
+        ],
+        "summary": "Reset Tour",
+        "description": "Put the tour's case back exactly as recorded (Gate 2 open again, no export), so the next evaluator starts afresh.",
+        "operationId": "reset_tour_api_demo_tours__slug__reset_post",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          },
+          {
+            "name": "case_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TourSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2972,11 +3144,22 @@
               }
             ],
             "title": "Title"
+          },
+          "case_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Case Id"
           }
         },
         "type": "object",
         "title": "NewCaseRequest",
-        "description": "Create a case."
+        "description": "Create a case. `case_id` is optional (letters, digits, '-' and '_'; 409 when taken); without it the next free `case-NNNN` is used."
       },
       "Objection": {
         "properties": {
@@ -3828,6 +4011,224 @@
         ],
         "title": "ToolChip",
         "description": "Store/tool chip shown on an answer (plan \u00a713.5)."
+      },
+      "Tour": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "case_id": {
+            "type": "string",
+            "title": "Case Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "story": {
+            "type": "string",
+            "title": "Story"
+          },
+          "variant": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Variant"
+          },
+          "recorded": {
+            "$ref": "#/components/schemas/TourRecorded"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/TourStep"
+            },
+            "type": "array",
+            "title": "Steps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "case_id",
+          "title",
+          "story",
+          "variant",
+          "recorded",
+          "steps"
+        ],
+        "title": "Tour",
+        "description": "`demo/cases/<slug>/tour.json`: the recorded run of one demo case, stage by stage (GET /api/demo/tours/{slug})."
+      },
+      "TourFilled": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "TourFilled",
+        "description": "One thing that was filled in this step: a document uploaded, a question answered, a note given, a result."
+      },
+      "TourRecorded": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "backend": {
+            "type": "string",
+            "title": "Backend"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "cost_inr": {
+            "type": "number",
+            "title": "Cost Inr"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "backend",
+          "model",
+          "cost_inr"
+        ],
+        "title": "TourRecorded",
+        "description": "How the run was made: date, backend, model and the hosted-model spend of the case."
+      },
+      "TourStep": {
+        "properties": {
+          "stage": {
+            "type": "string",
+            "enum": [
+              "INTAKE",
+              "DOSSIER",
+              "GATE_1",
+              "RIGHTS",
+              "BRIEF",
+              "SPAR",
+              "HEARING_PREP",
+              "GATE_2",
+              "FILE"
+            ],
+            "title": "Stage"
+          },
+          "tab": {
+            "type": "string",
+            "enum": [
+              "dossier",
+              "rights",
+              "brief",
+              "spar",
+              "prep"
+            ],
+            "title": "Tab"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "caption": {
+            "type": "string",
+            "title": "Caption"
+          },
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "MUNSHI",
+                  "PESHKAR",
+                  "SUTRADHAR",
+                  "VAKEEL",
+                  "ABHIYOJAK"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent"
+          },
+          "filled": {
+            "items": {
+              "$ref": "#/components/schemas/TourFilled"
+            },
+            "type": "array",
+            "title": "Filled"
+          },
+          "action": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "approve_gate_2"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stage",
+          "tab",
+          "title",
+          "caption"
+        ],
+        "title": "TourStep",
+        "description": "One stage of the tour: what the agent did in the recorded run and where to look."
+      },
+      "TourSummary": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "case_id": {
+            "type": "string",
+            "title": "Case Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "story": {
+            "type": "string",
+            "title": "Story"
+          },
+          "variant": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Variant"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "case_id",
+          "title",
+          "story",
+          "variant"
+        ],
+        "title": "TourSummary",
+        "description": "A tour in the list (GET /api/demo/tours)."
       },
       "TrackedField_ChargeSheetValue_": {
         "properties": {

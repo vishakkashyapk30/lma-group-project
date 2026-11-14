@@ -1,0 +1,42 @@
+[
+ {
+  "file": "01_fir.pdf",
+  "page": 1,
+  "doc_id": "d1",
+  "doc_type": "FIR",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "FIRST INFORMATION REPORT (under Section 173 BNSS)\n1. District: Pune City P.S.: PS-11 FIR No. 410/2026 Date: 20.09.2026\n2. Acts and Sections: BNS 316(2).\n3. Date of occurrence of offence: between 01.06.2026 and 31.08.2026\n4. Date on which information was received at the P.S.: 20.09.2026\n5. Type of information: written\n6. Place of occurrence: the office of a trading firm, Pune City\n7. Name of the complainant/informant: Complainant-1, proprietor of the firm\n8. Name of the accused: Accused-1, the firm's accountant\n9. Brief facts: Complainant-1 states that between June and August 2026 Accused-1, who was entrusted\nwith the cash collections of\nthe firm, did not deposit collections amounting to Rs. 3,80,000 and made false entries in the cash book.\nInvestigating officer: IO-1\n"
+ },
+ {
+  "file": "02_arrest_memo.pdf",
+  "page": 1,
+  "doc_id": "d2",
+  "doc_type": "ARREST_MEMO",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "ARREST MEMO\nFIR No. 410/2026, P.S. PS-11, Pune City. Sections: BNS 316(2).\nAccused-1 was arrested on 05.10.2026 at 11:00 hrs at the office of the firm.\nNotice of appearance under Section 35(3) BNSS: not issued.\nReasons for arrest: (this column is left blank).\nA written note of the grounds of arrest was given to Accused-1 and his wife was informed the same day.\nArresting officer: IO-1\n"
+ },
+ {
+  "file": "03_remand_order.pdf",
+  "page": 1,
+  "doc_id": "d3",
+  "doc_type": "REMAND_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "IN THE COURT OF THE JUDICIAL MAGISTRATE FIRST CLASS, PUNE\nRemand order dated 06.10.2026\nFIR No. 410/2026, P.S. PS-11. Sections: BNS 316(2).\nThe accused Accused-1 was arrested on 05.10.2026 and produced before this Court on 06.10.2026 at\n13:00 hrs.\nThe accused is remanded to judicial custody until 20.10.2026. This is the first remand order, dated\n06.10.2026.\n"
+ },
+ {
+  "file": "04_vakalatnama.pdf",
+  "page": 1,
+  "doc_id": "d4",
+  "doc_type": "BAIL_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "VAKALATNAMA\nIN THE COURT OF THE JUDICIAL MAGISTRATE FIRST CLASS, PUNE\nApplication for regular bail under Section 480 BNSS on behalf of Accused-1.\nIn FIR No. 410/2026, P.S. PS-11, Pune City.\nCounsel appointed for Accused-1 to apply for bail and to appear at every hearing of the application.\n"
+ }
+]

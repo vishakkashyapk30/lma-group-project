@@ -1,0 +1,82 @@
+[
+ {
+  "file": "01_fir.pdf",
+  "page": 1,
+  "doc_id": "d1",
+  "doc_type": "FIR",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "FIRST INFORMATION REPORT (under Section 173 BNSS)\n1. District: South Delhi P.S.: PS-7 FIR No. 214/2026 Date: 10.08.2026\n2. Acts and Sections: BNS 303(2).\n3. Date of occurrence of offence: 09.08.2026, between 21:00 and 22:00 hrs\n4. Date on which information was received at the P.S.: 10.08.2026\n5. Type of information: written\n6. Place of occurrence: a mobile phone shop, Lajpat Nagar, District South Delhi\n7. Name of the complainant/informant: Complainant-1\n8. Name of the accused: Accused-1\n9. Brief facts: Complainant-1, the owner of the shop, states that on the night of 09.08.2026 the shutter of\nhis shop was\nforced open and six mobile phones worth about Rs. 1,10,000 were taken. The CCTV camera of a\nneighbouring shop shows a person\nresembling Accused-1 near the shutter at 21:40 hrs. The case was registered and investigation was taken\nup.\nInvestigating officer: IO-1\n"
+ },
+ {
+  "file": "02_arrest_memo.pdf",
+  "page": 1,
+  "doc_id": "d2",
+  "doc_type": "ARREST_MEMO",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "ARREST MEMO\nFIR No. 214/2026, P.S. PS-7. Sections: BNS 303(2).\nAccused-1 was arrested on 11.08.2026 at 17:30 hrs at Govindpuri, New Delhi.\nThe grounds of arrest were communicated to Accused-1 in writing on 11.08.2026 and his mother was\ninformed the same day.\nTwo mobile phones were recovered at the instance of Accused-1.\nArresting officer: IO-1\n"
+ },
+ {
+  "file": "03_remand_order.pdf",
+  "page": 1,
+  "doc_id": "d3",
+  "doc_type": "REMAND_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "IN THE COURT OF THE JUDICIAL MAGISTRATE FIRST CLASS, SAKET COURTS, NEW DELHI\nRemand order dated 12.08.2026\nFIR No. 214/2026, P.S. PS-7. Sections: BNS 303(2).\nThe accused Accused-1 was arrested on 11.08.2026 and produced before this Court on 12.08.2026 at\n11:30 hrs.\nThe accused is remanded to judicial custody until 26.08.2026. This is the first remand order, dated\n12.08.2026.\n"
+ },
+ {
+  "file": "04_order_sheet.pdf",
+  "page": 1,
+  "doc_id": "d4",
+  "doc_type": "ORDER_SHEET",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "IN THE COURT OF THE JUDICIAL MAGISTRATE FIRST CLASS, SAKET COURTS, NEW DELHI\nOrder sheet, State v. Accused-1, FIR No. 214/2026, P.S. PS-7.\n26.08.2026: Investigation pending. Judicial custody extended until 23.09.2026.\n23.09.2026: Investigation pending. Judicial custody extended until 21.10.2026.\n21.10.2026: IO-1 states that the charge sheet is under preparation. The charge sheet has not been filed.\nJudicial custody extended until 18.11.2026.\nNext date of hearing: 18.11.2026.\n"
+ },
+ {
+  "file": "05_custody_certificate.pdf",
+  "page": 1,
+  "doc_id": "d5",
+  "doc_type": "CUSTODY_CERTIFICATE",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "CUSTODY CERTIFICATE\nIssued by the Superintendent, Central Jail, Tihar, on 10.11.2026.\nIt is certified that Accused-1 has been in custody in FIR No. 214/2026 since 11.08.2026.\nThe period of custody as on 10.11.2026 is 91 days. No charge sheet has been received by the jail.\nHis conduct in jail has been satisfactory.\nSuperintendent: Central Jail\n"
+ },
+ {
+  "file": "06_police_verification.pdf",
+  "page": 1,
+  "doc_id": "d6",
+  "doc_type": "OTHER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "POLICE VERIFICATION REPORT (antecedents)\nFIR No. 214/2026, P.S. PS-7. Subject: Accused-1.\nAccused-1 is involved in one other case: FIR No. 88/2025 under BNS 303(2), P.S. PS-9, in which the trial is\npending\nand Accused-1 is on bail. No other involvement was found.\nVerified by: IO-1\n"
+ },
+ {
+  "file": "07_personal_circumstances.pdf",
+  "page": 1,
+  "doc_id": "d7",
+  "doc_type": "AFFIDAVIT",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "AFFIDAVIT OF PERSONAL CIRCUMSTANCES\nIn FIR No. 214/2026, P.S. PS-7, on behalf of Accused-1.\nAccused-1 is 27 years old and lives in a rented room in Govindpuri, New Delhi with his mother and younger\nsister.\nHe works as a delivery rider and is the only earning member of the family.\nHis brother-in-law is willing to stand surety. Accused-1 does not hold a passport.\n"
+ },
+ {
+  "file": "08_vakalatnama.pdf",
+  "page": 1,
+  "doc_id": "d8",
+  "doc_type": "BAIL_ORDER",
+  "status": "OK",
+  "route": "text_layer",
+  "ocr_conf": null,
+  "text": "VAKALATNAMA\nIN THE COURT OF THE JUDICIAL MAGISTRATE FIRST CLASS, SAKET COURTS, NEW DELHI\nApplication for default bail under Section 187(3) BNSS on behalf of Accused-1.\nIn FIR No. 214/2026, P.S. PS-7, New Delhi.\nCounsel appointed for Accused-1 to apply for bail and to appear at every hearing of the application.\n"
+ }
+]

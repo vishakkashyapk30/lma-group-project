@@ -85,12 +85,23 @@ async def list_cases(log: Annotated[EventLog, Depends(get_event_log)]) -> list[C
 
 @router.post("", response_model=CaseSummary)
 async def create_case(body: NewCaseRequest, log: Annotated[EventLog, Depends(get_event_log)]) -> CaseSummary:
-    """Create a case at the intake stage (plan §13.5)."""
+    """Create a case at the intake stage (plan §13.5). A requested `case_id` must be valid (422) and unused (409)."""
     existing = set(service.all_case_ids(log))
-    n = 1
-    while f"case-{n:04d}" in existing:
-        n += 1
-    case_id = f"case-{n:04d}"
+    if body.case_id is not None:
+        from vakeel_sahayak.api.deps import _data_dir
+        from vakeel_sahayak.schemas.ids import check_case_id
+
+        try:
+            case_id = check_case_id(body.case_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        if case_id in existing or (_data_dir() / "cases" / case_id).exists():
+            raise HTTPException(status_code=409, detail=f"case {case_id} already exists")
+    else:
+        n = 1
+        while f"case-{n:04d}" in existing:
+            n += 1
+        case_id = f"case-{n:04d}"
     log.append(Event(event_id="", case_id=case_id, ts="", kind=EventKind.USER_ACTION, actor=COUNSEL,
                      inputs={"action": "create_case", "title": body.title or case_id}))
     return service.case_summary(log, GateGuard(log), case_id)

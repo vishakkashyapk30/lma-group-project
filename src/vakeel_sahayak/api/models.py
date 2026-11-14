@@ -13,9 +13,10 @@ from vakeel_sahayak.schemas.triage import TriageCard
 
 
 class NewCaseRequest(BaseModel):
-    """Create a case."""
+    """Create a case. `case_id` is optional (letters, digits, '-' and '_'; 409 when taken); without it the next free `case-NNNN` is used."""
 
     title: str | None = None
+    case_id: str | None = None
 
 
 class ChatRequest(BaseModel):

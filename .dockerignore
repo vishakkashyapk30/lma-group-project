@@ -30,3 +30,6 @@ progress.md
 *.gguf
 *.bin
 # tests/ stays in the context: the `test` target copies it.
+# The recorded evaluator demo (synthetic PDFs, page images, tours) is needed by the backend image: keep all of demo/ despite the patterns above.
+!demo/
+!demo/**
