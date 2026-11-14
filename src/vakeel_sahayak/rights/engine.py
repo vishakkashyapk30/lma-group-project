@@ -91,7 +91,7 @@ class RightsEngine:
             RuleInputs.
         """
         f = dossier.fields
-        sections = _value(f.sections)
+        sections = _value(f.sections) or []
         arrest_date = _value(f.arrest_date)
         first_remand = _value(f.first_remand)
         cs = _value(f.charge_sheet)
