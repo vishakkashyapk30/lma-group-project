@@ -29,8 +29,8 @@ def _present(log: EventLog) -> list[Tour]:
 
 @router.get("/tours", response_model=list[TourSummary])
 async def list_tours(log: Annotated[EventLog, Depends(get_event_log)]) -> list[TourSummary]:
-    """The demo tours whose case is loaded, by slug: `{slug, case_id, title, story, variant}` (empty with `VS_DEMO_CASES=off`)."""
-    return [TourSummary(**t.model_dump(include={"slug", "case_id", "title", "story", "variant"})) for t in _present(log)]
+    """The demo tours whose case is loaded, by slug: `{slug, case_id, title, story, variant, hi}` (`hi`: optional Hindi title, story and variant lines) (empty with `VS_DEMO_CASES=off`)."""
+    return [TourSummary(**t.model_dump(include={"slug", "case_id", "title", "story", "variant", "hi"})) for t in _present(log)]
 
 
 @router.get("/tours/{slug}", response_model=Tour)
@@ -49,4 +49,4 @@ async def reset_tour(slug: str, log: Annotated[EventLog, Depends(get_event_log)]
         raise HTTPException(status_code=404, detail=f"no demo tour {slug!r}")
     preload.reset_demo_case(slug, _data_dir(), log)
     tour = next(t for t in preload.load_tours() if t.slug == slug)
-    return TourSummary(**tour.model_dump(include={"slug", "case_id", "title", "story", "variant"}))
+    return TourSummary(**tour.model_dump(include={"slug", "case_id", "title", "story", "variant", "hi"}))

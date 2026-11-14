@@ -13,10 +13,10 @@ import { AGENTS } from "@/lib/agents";
 import * as api from "@/lib/api";
 import { errorMessage } from "@/lib/errors";
 import { formatDateLong } from "@/lib/format";
-import { useT } from "@/lib/i18n";
+import { useLang, useT } from "@/lib/i18n";
 import { GATE_LABELS } from "@/lib/stages";
 import {
-  createTourMachine, gateOfStep, workspaceStageFor, workspaceTabFor, type Tour, type TourMachine, type TourState, type TourStep,
+  createTourMachine, gateOfStep, localizedStep, workspaceStageFor, workspaceTabFor, type Tour, type TourMachine, type TourState, type TourStep,
 } from "@/lib/tour";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/lib/workspace";
@@ -55,6 +55,7 @@ function revealSection(step: TourStep): () => void {
 
 export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
   const t = useT();
+  const { lang } = useLang();
   const ws = useWorkspace();
   const router = useRouter();
   const pathname = usePathname();
@@ -234,6 +235,7 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
   const approving = step.action === "approve_gate_2" && !gateApproved;
   const nextLabel = state.busy ? t("Approving") : last ? t("Finish") : approving ? t("Approve and continue") : t("Next");
   const rec = usable.recorded;
+  const text = localizedStep(step, lang);
 
   return frame(
     <div className="flex max-h-[42dvh] flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-end lg:gap-8">
@@ -259,15 +261,15 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
           className="-mr-2 -mt-2 inline-flex min-h-11 shrink-0 items-center gap-1 rounded-md px-2 text-sm font-medium text-maroon hover:bg-ink/[0.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 lg:hidden"
         >
           {folded ? <ChevronUp aria-hidden className="size-4" /> : <ChevronDown aria-hidden className="size-4" />}
-          {folded ? t("Show the step") : t("Hide the step")}
+          {folded ? t("Read") : t("Hide")}
         </button>
         </div>
         <div aria-live="polite" aria-atomic="true">
           <h2 id="tour-step-title" className="mt-1 font-display text-xl font-semibold leading-snug text-ink">
-            {step.title}
+            {text.title}
           </h2>
           <p id="tour-details" data-testid="tour-caption" className={cn("mt-1 max-w-prose text-ink", folded && "max-lg:hidden")}>
-            {step.caption}
+            {text.caption}
           </p>
         </div>
         {gate ? (
@@ -283,11 +285,11 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
             </span>
           </p>
         ) : null}
-        {step.filled.length > 0 ? (
+        {text.filled.length > 0 ? (
           <div className={cn("mt-3", folded && "max-lg:hidden")}>
             <h3 className="font-sans text-sm font-semibold text-ink">{t("Filled in at this step")}</h3>
             <dl data-testid="tour-filled" className="mt-1.5 grid gap-x-4 gap-y-2 sm:grid-cols-2">
-              {step.filled.map((f, i) => (
+              {text.filled.map((f, i) => (
                 <div key={`${f.label}-${i}`} data-testid="tour-field" className="min-w-0">
                   <dt className="text-sm text-ink-soft">{f.label}</dt>
                   <dd className="mt-0.5 rounded-md border border-line bg-parchment px-2.5 py-1.5 text-sm text-ink">
