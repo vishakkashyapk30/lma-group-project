@@ -63,7 +63,7 @@ from vakeel_sahayak.agents.abhiyojak.prompts import (
     RaisedObjections,
     instructions,
 )
-from vakeel_sahayak.agents.base import AgentContext, BaseAgent, prediction_language
+from vakeel_sahayak.agents.base import AgentContext, BaseAgent, in_sparring, prediction_language
 from vakeel_sahayak.models.base import ModelUnavailable
 from vakeel_sahayak.orchestration.budgets import BudgetExhausted
 from vakeel_sahayak.orchestration.state import CaseGraphState
@@ -460,6 +460,7 @@ class AbhiyojakAgent(BaseAgent):
             kept.append(Objection(id="", against=against, factor=fac, objection=text, grounds=grounds))
         return kept
 
+    @in_sparring
     def raise_objections(self, state: CaseGraphState) -> list[Objection]:
         """Round 1: up to two objections per ground plus general ones (gravity, flight risk, witness tampering, antecedents, statutory bars); discard and log ungrounded ones.
 
@@ -557,6 +558,7 @@ class AbhiyojakAgent(BaseAgent):
         self._decision("replies", f"Vakeel answered {len(replies)} of {len(objections)} objection(s).", answered=len(replies), objections=len(objections))
         return replies
 
+    @in_sparring
     def judge_replies(self, state: CaseGraphState, objections: list[Objection]) -> list[Objection]:
         """Round 2: mark each reply ANSWERED, PARTLY or UNANSWERED with a reason; UNANSWERED goes to counsel as NEEDS_REVIEW.
 
@@ -579,7 +581,16 @@ class AbhiyojakAgent(BaseAgent):
             self._stats["verdict_" + k.lower()] = self._stats.get("verdict_" + k.lower(), 0) + n
         self._stats["judged"] = self._stats.get("judged", 0) + len(judged)
         self._emit_critic_signals()
+        self._emit_reserve()
         return judged
+
+    def _emit_reserve(self) -> None:
+        """One `sparring_reserve` event (only when the reserve is on): its size, what the sparring step spent from it, what is left. The last one is final."""
+        reserve = int(getattr(self.budgets, "sparring_reserve_tokens", 0) or 0)
+        if reserve <= 0:
+            return
+        spent = int(getattr(self.budgets, "to_dict", lambda: {})().get("sparring", {}).get("spent", 0))
+        self._decision("sparring_reserve", f"Sparring reserve: {spent} of {reserve} token(s) spent, {max(0, reserve - spent)} left.", reserve=reserve, spent=spent, left=max(0, reserve - spent))
 
     def _judge_one(self, o: Objection) -> Objection:
         reply = o.reply

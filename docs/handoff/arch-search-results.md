@@ -195,3 +195,5 @@ The holdout block finished (9 arms x 20 cases). The ablation queue stopped mid-w
   the same three losses each time; Full 10/47/7 and 11/47/8 (original 11/49/10), its losses move between runs. Each arm against its own rerun:
   2 of 225 cells decided (both B5). Per order c1457's unsupported-fact rate changes on 62% of orders (mean abs. diff 0.13), citation precision
   on 93%; factor recall, objection recall and the pass verdict change on none. In the report (sections/blind.tex, threats.tex, limitations.tex).
+
+Post-freeze changes (15 Nov 2026): `Switches.sparring_reserve_tokens` (default 0) was added after the freeze and is on in the product preset (`production_switches()`, 60000) only. The frozen results and the report describe the frozen code with the reserve off; it was not rerun on dev, holdout or blind. See `docs/handoff/objections-unanswered-2026-11-15.md`.

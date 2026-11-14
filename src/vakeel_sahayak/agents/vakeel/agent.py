@@ -49,7 +49,7 @@ import re
 from collections.abc import Callable
 from typing import Any
 
-from vakeel_sahayak.agents.base import AgentContext, BaseAgent, prediction_language
+from vakeel_sahayak.agents.base import AgentContext, BaseAgent, in_sparring, prediction_language
 from vakeel_sahayak.agents.vakeel import offline  # noqa: F401  (importing `offline` registers the offline handlers)
 from vakeel_sahayak.agents.vakeel.brief import (
     case_refs_of,
@@ -1303,6 +1303,7 @@ class VakeelAgent(BaseAgent):
 
     # ------------------------------------------------------------------ step 2: reply to objections
 
+    @in_sparring
     def reply_to_objections(self, state: CaseGraphState, objections: list[Objection]) -> list[Reply]:
         """Answer Abhiyojak's objections under the same citation and checking rules (plan §8.1 step 2).
 
