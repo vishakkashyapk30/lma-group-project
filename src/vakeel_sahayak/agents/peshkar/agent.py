@@ -595,6 +595,15 @@ class PeshkarAgent(BaseAgent):
                 value["bailable"] = statute.bailable
             if statute.max_punishment:
                 value["max_punishment"] = statute.max_punishment
+            if value.get("code") == "NDPS":
+                # the section's row holds its heaviest term; with quantity bands the charged clause decides, so keep only what the clause says
+                text = getattr(statute, "text", "") or ""
+                if first_schedule.ndps_is_quantity_dependent(text):
+                    clause = first_schedule.ndps_clause_maximum(value["section"], text)
+                    if clause:
+                        value["max_punishment"] = clause
+                    else:
+                        value.pop("max_punishment", None)
             break
         for code, section in refs:  # the official First Schedule wins where it states a value (pipelines/first_schedule.py)
             bailable, punishment = first_schedule.classify(code, section)

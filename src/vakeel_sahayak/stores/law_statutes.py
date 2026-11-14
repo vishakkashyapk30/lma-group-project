@@ -151,6 +151,13 @@ class StatuteStore(SharedStore):
         for row in self._rows:
             if (row.code, row.section) == want:
                 return row
+        bare = _bare_section(want[1])
+        # '22(c)': a clause is not a row of its own, so the section's row answers (docs/handoff/first-schedule.md). Only for the special acts: an
+        # IPC/BNS clause is looked up in the First Schedule's sub-rows, and the bare row of e.g. BNS 3 (definitions) would give a wrong maximum.
+        if bare != want[1] and want[0] not in ("IPC", "BNS", "CRPC", "BNSS"):
+            for row in self._rows:
+                if (row.code, row.section) == (want[0], bare):
+                    return row
         raise LookupError(f"{want[0]} {want[1]} not found in law.statutes")
 
     def search(self, query: str, code: str | None = None, k: int = 5) -> list[StatuteRow]:
@@ -193,6 +200,12 @@ class StatuteStore(SharedStore):
         ]
         self._tokens = [_TOKEN.findall(f"{r.code} {r.section} {r.text}".lower()) for r in self._rows]
         self._df = Counter(term for toks in self._tokens for term in set(toks))
+
+
+def _bare_section(section: str) -> str:
+    """The section without its bracketed clauses or trailing words: '22(c)' -> '22', '437(1) proviso' -> '437'."""
+    m = re.match(r"^(\d+[A-Z]*)\s*\(", section) or re.match(r"^(\d+[A-Z]*)\s", section)
+    return m.group(1) if m else section
 
 
 def _merge_gap_rows(rows: list[StatuteRow], gaps_dir: Path) -> list[StatuteRow]:

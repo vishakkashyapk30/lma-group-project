@@ -240,3 +240,21 @@ and stops at THE SECOND SCHEDULE. Other tests check the committed table (sources
 is kept; IPC and BNS are not touched).
 
 **Decision, 13 Nov (Vishak): NDPS is excluded from the Part II fallback in Peshkar** (`_map_section`). The store's NDPS `max_punishment` is the section's heaviest term, so s.20 to s.22 would read "20 years" and Part II "non-bailable", although a small-quantity charge is bailable. The table and `classify_other_law` stay; Peshkar leaves NDPS unclassed, as before, and counsel sees no bail class rather than a wrong one. Test: `test_ndps_is_not_classed_by_part2_because_its_punishment_depends_on_the_quantity`.
+
+## 15 Nov 2026: why the Rights Radar had no maximum for BNS 109 and NDPS 21(a) (demo cases 05 and 03), and the fix
+
+- **BNS 109 (case 05).** The First Schedule row and the dossier were right (death). The radar read its maximum with `most_severe`, which returns
+  nothing when any one charged section has none, and the other charge, BNS 3(5) (common intention), has no punishment of its own. So the maximum
+  of the whole charge was dropped. `rights/engine.py` `build_inputs` now leaves out a section that only carries the punishment of the offence it
+  attaches to: IPC 34 and BNS 3(5), and the rows whose printed punishment is "The same as for the offence" (IPC 149, BNS 190); see
+  `first_schedule.carries_offence_punishment`. Conspiracy (BNS 61(2), IPC 120B: "same as for abetment") still leaves the maximum unknown.
+- **NDPS 21(a) (case 03).** `StatuteStore.get` matched exactly, so `NDPS 21(a)` found no row. It now falls back to the bare section when no row
+  exists for the clause, as the note above says the lookup must. The row holds the section's heaviest term (20 years), which is wrong for a
+  small-quantity charge, so Peshkar (`_map_section`) keeps the maximum only when the charged clause is a quantity band and reads it from the
+  section's own text (`first_schedule.ndps_clause_maximum`: 21(a) is "1 year", 21(b) "10 years", 21(c) "20 years"; s.20 by its (A), (B), (C)
+  paragraphs). A bare section (`NDPS 22`) or a clause that is not a band leaves the maximum empty. Part II is still not applied to NDPS.
+- **What the radar says for a bare NDPS section.** The rules still return CHECK for default bail and the s.479 limit, and
+  `RightsEngine.run` appends "The maximum under NDPS s.22 is set by the clause and the quantity (small, lesser than commercial, or commercial),
+  and the charge does not name a clause, so counsel must read it from the charge sheet." The text is added in the engine, not in the rule
+  modules, because any edit to a rule module clears that rule's `last_verified` (and changes the case-0007 golden digests).
+- Tests: `tests/unit/rights/test_max_punishment_lookup.py`. The recorded demo cases still show the old behaviour until they are re-recorded.

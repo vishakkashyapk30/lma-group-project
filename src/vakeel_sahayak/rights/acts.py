@@ -120,6 +120,28 @@ def special_default_bail_limit(inputs: RuleInputs) -> SpecialLimit | None:
     return max(certain or found, key=lambda f: f.base)
 
 
+def ndps_quantity_note(inputs: RuleInputs) -> str:
+    """Why the maximum is open for an NDPS charge, in plain words; '' when no charged NDPS section is waiting on its quantity clause.
+
+    The maximum of NDPS s.20, s.21 and s.22 (and the other sections of the Act that grade by quantity) depends on the clause the charge
+    falls under; the store holds only the heaviest term, which would be wrong for a small-quantity charge, so the dossier leaves the maximum
+    empty until the charged clause is named. Only used when `inputs.max_punishment` is empty.
+    """
+    if inputs.max_punishment:
+        return ""
+    waiting = [
+        s for s in charged_sections(inputs)
+        if s.act == "NDPS" and s.number and s.number not in NDPS_ALWAYS and s.ndps_quantity is None
+    ]  # fmt: skip
+    if not waiting:
+        return ""
+    names = ", ".join(f"NDPS s.{s.number}" for s in waiting)
+    return (
+        f" The maximum under {names} is set by the clause and the quantity (small, lesser than commercial, or commercial), "
+        "and the charge does not name a clause, so counsel must read it from the charge sheet."
+    )
+
+
 def begun_after_bnss(inputs: RuleInputs) -> bool | None:
     """True if the case clearly began on or after 1 July 2024, False if before (an IPC/CrPC section or an earlier FIR, arrest or remand), None if unknown."""
     sections = charged_sections(inputs)

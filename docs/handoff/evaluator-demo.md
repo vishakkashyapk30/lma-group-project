@@ -108,7 +108,9 @@ The backend checks (pre-loading, export) made no model call; they ran with `VS_M
   punishment is not on record"), although the charge sheets were filed in time (days 54 of 60 and 81 of 90; case 05's dossier even lists
   the section's maximum as death). The tour reports the status as recorded. 15 Nov 2026: the story, the custody line of the variant and the
   Rights Radar caption of cases 03 and 05 (and the custody line of case 06) now say exactly this instead of "default bail closed"; text only,
-  no re-recording, snapshots untouched. Not fixed (product): the radar rule that fails to read the maximum for NDPS 21(a) and BNS 109.
+  no re-recording, snapshots untouched. Fixed in the product on 15 Nov 2026 (see `docs/handoff/first-schedule.md`, last section): BNS 3(5) no longer hides the maximum of BNS 109, and
+  NDPS 21(a) now reads "1 year" from the section text (a bare NDPS 20 to 22 stays CHECK and says the clause and quantity decide). The recorded
+  demos still show the old behaviour until they are re-recorded (a coordinator will do that).
 - Seen in the recorded output, left as recorded: case 06's "Notice of appearance" reads "Offence punishable up to 7 years. No arrest memo or
   notice in the file" although an arrest memo is in the file; intake names a "bail order" document type in cases 02, 03 and 06 whose dossier
   lists no earlier bail order.

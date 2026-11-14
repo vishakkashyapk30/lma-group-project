@@ -71,6 +71,69 @@ def classify(code: str, section: str, config_dir: str | None = None) -> tuple[bo
     return row.get("bailable"), _punishment(row.get("max_punishment"))
 
 
+# Provisions that make a person liable for another's offence and set no punishment of their own: the charge carries the punishment of
+# the offence they attach to. IPC s.34 and its BNS counterpart s.3(5) (common intention) are in no schedule row at all.
+COMMON_INTENTION = frozenset({("IPC", "34"), ("BNS", "3(5)")})
+_SAME_AS_OFFENCE = re.compile(r"^\s*the\s+same\s+as\s+for\s+the\s+offence\b", re.I)
+
+
+def carries_offence_punishment(code: str, section: str, config_dir: str | None = None) -> bool:
+    """True when a charged IPC/BNS section has no punishment of its own: it carries that of the offence charged with it.
+
+    Two sources: the section is IPC 34 / BNS 3(5) (common intention), or its First Schedule row prints its punishment as
+    "The same as for the offence" (IPC 149, BNS 190: member of an unlawful assembly). A section whose punishment is relative in another way
+    (conspiracy, abetment: "same as for abetment of ...") is not one of these and stays unknown.
+    """
+    key = (code.upper(), "".join((section or "").split()).upper())
+    if key in COMMON_INTENTION:
+        return True
+    if code not in FILES:
+        return False
+    m = _REF.match(section or "")
+    row = _table(code, str(resolve_config_dir(config_dir))).get(m.group(1)) if m else None
+    return bool(row and _SAME_AS_OFFENCE.match(str(row.get("punishment") or "")))
+
+
+_NUMBER_WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+                 "fifteen": 15, "twenty": 20}  # fmt: skip
+
+
+def ndps_is_quantity_dependent(text: str | None) -> bool:
+    """True when an NDPS section's text sets its punishment by quantity bands (a small and a commercial quantity are both named)."""
+    low = (text or "").lower()
+    return "small quantity" in low and "commercial quantity" in low
+
+
+def ndps_clause_maximum(section: str, text: str | None) -> str | None:
+    """The maximum term of the quantity clause a charged NDPS section names, read from the section's own text; None otherwise.
+
+    `section` is as the dossier writes it ('21(a)', '20(b)(ii)(A)'). The clause is found at the start of a paragraph of `text` and must
+    name a quantity ('where the contravention involves small quantity ... may extend to one year'). Only a clause that is a quantity band
+    (the same rule the Rights Radar uses, `rights.acts.ChargedSection.ndps_quantity`) resolves; a bare section number, or a clause
+    that is not a band, returns None, because the maximum then depends on the quantity.
+
+    Returns:
+        '1 year', '10 years', '20 years' (the term the clause says it may extend to), or None.
+    """
+    from vakeel_sahayak.rights.acts import parse_section
+
+    charged = parse_section(f"NDPS {section}")
+    if charged.ndps_quantity is None:
+        return None
+    label = re.findall(r"\(([^)]*)\)", charged.clause)[-1]
+    for para in (text or "").splitlines():
+        para = para.strip()
+        if not para.startswith(f"({label})") or "quantity" not in para.lower():
+            continue
+        m = re.search(r"may\s+extend\s+to\s+([a-z0-9]+)\s+(year|month)s?", para, re.I)
+        if not m:
+            return None
+        num = m.group(1).lower()
+        value = int(num) if num.isdigit() else _NUMBER_WORDS.get(num)
+        return f"{value} {m.group(2).lower()}{'s' if value != 1 else ''}" if value else None
+    return None
+
+
 # ---- Part II: offences against other laws
 
 PART2_FILE = "first_schedule_part2.jsonl"
