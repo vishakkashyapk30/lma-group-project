@@ -11,6 +11,7 @@
 import { ApiError } from "./errors";
 export { ApiError };
 import * as demo from "./mock/server";
+import { parseTour, parseTourList, type Tour, type TourSummary } from "./tour";
 import type {
   ApproveRequest, BailBrief, BridgeData, BudgetState, CaseDossier, CaseSummary, ChatMessage, CitationGraphData,
   DeskBoard, DraftStartResponse, ExportFormat, GateId, GateStatus, GroundRevision, HearingPrepCard, IngestionReport,
@@ -456,6 +457,28 @@ export function getBridge(code: string, section: string): Promise<BridgeData> {
   return call(() => http("GET", `/api/library/bridge/${enc(code)}/${enc(section)}`), () => demo.getBridge(code, section));
 }
 
+/* ── Guided demos (routers/demo.py) ─────────────────────────────────────────────────────────────────────────────── */
+
+/** GET /api/demo/tours: the guided demos for an evaluator. A server with demos off answers 404 or an empty list: no tours. */
+export async function listTours(): Promise<TourSummary[]> {
+  try {
+    return parseTourList(await call(() => http<unknown>("GET", "/api/demo/tours"), () => demo.listTours()));
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return [];
+    throw e;
+  }
+}
+
+/** GET /api/demo/tours/{slug}: one tour with its steps in workflow order; null for an unknown slug (404). */
+export async function getTour(slug: string): Promise<Tour | null> {
+  try {
+    return parseTour(await call(() => http<unknown>("GET", `/api/demo/tours/${enc(slug)}`), () => demo.getTour(slug)));
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 404) return null;
+    throw e;
+  }
+}
+
 /* ── Grouped client (same functions; older call sites use these names) ──────────────────────────────────────────── */
 
 export const api = {
@@ -495,6 +518,8 @@ export const api = {
   libraryBridge: getBridge,
   eventsUrl,
   getServerStatus,
+  listTours,
+  getTour,
 } as const;
 
 export default api;

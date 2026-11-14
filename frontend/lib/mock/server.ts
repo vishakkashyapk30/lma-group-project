@@ -28,6 +28,7 @@ import {
 } from "./events";
 import { mockBridgeFor, mockCitationGraphFor, mockSearchLibrary } from "./library";
 import { getMockPage } from "./pages";
+import { MOCK_TOUR, mockTourList } from "./tours";
 import type { BridgeData, CitationGraphData, LibrarySearchHit } from "../types";
 
 /* ── State ──────────────────────────────────────────────────────────────────────────────────────────────────────── */
@@ -858,6 +859,19 @@ export async function getBridge(code: string, section: string): Promise<BridgeDa
   const b = mockBridgeFor(code, section);
   if (!b) throw new ApiError(404, `No concordance edge for ${code} ${section} in the demo. Try IPC 420 or IPC 406.`);
   return clone(b);
+}
+
+/* ── Guided demos (/api/demo/tours) ─────────────────────────────────────────────────────────────────────────────── */
+
+export async function listTours(): Promise<unknown[]> {
+  await latency();
+  return clone(mockTourList());
+}
+
+export async function getTour(slug: string): Promise<unknown> {
+  await latency();
+  if (slug !== MOCK_TOUR.slug) throw new ApiError(404, `No guided demo ${slug} in the demo.`);
+  return clone(MOCK_TOUR);
 }
 
 /** The demo's default case (the worked example). */

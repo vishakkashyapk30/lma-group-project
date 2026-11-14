@@ -3,6 +3,7 @@
 // page, or the chat). The documents list is a popover; the agent trace and budget are behind "Details". On a narrow screen the
 // panel is a full-screen sheet.
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AlertTriangle, MessageSquareText, X } from "lucide-react";
 import type { ReactElement } from "react";
 import { usePublishCaseMeta } from "@/components/shell/meta";
@@ -18,6 +19,7 @@ import { SidePanel } from "./SidePanel";
 import { SourcePanel } from "./SourcePanel";
 import { StageRail } from "./StageRail";
 import { StepView } from "./StepView";
+import { TourBar } from "@/components/tour/TourBar";
 import { TraceDrawer } from "./TraceDrawer";
 
 export interface WorkspaceShellProps {
@@ -27,6 +29,8 @@ export interface WorkspaceShellProps {
 
 export function WorkspaceShell({ caseId, className }: WorkspaceShellProps): ReactElement {
   const ws = useWorkspace();
+  // A guided demo for an evaluator (?tour=<slug>): a bar under the workspace steps through the recorded case.
+  const tourSlug = useSearchParams()?.get("tour")?.trim() || null;
   usePublishCaseMeta(caseId, ws.data.summary?.title ?? null, STAGE_BY_ID[stepOf(ws.activeStage)]?.label ?? null);
 
   const notFound = !ws.loading.summary && !ws.data.summary;
@@ -89,6 +93,8 @@ export function WorkspaceShell({ caseId, className }: WorkspaceShellProps): Reac
           <SourcePanel caseId={caseId} />
         ) : null}
       </div>
+
+      {tourSlug ? <TourBar slug={tourSlug} caseId={caseId} /> : null}
 
       <TraceDrawer caseId={caseId} open={ws.detailsOpen} onClose={() => ws.setDetailsOpen(false)} />
     </div>
