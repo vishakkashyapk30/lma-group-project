@@ -22,6 +22,8 @@ from vakeel_sahayak.schemas.enums import EventKind, StoreName
 pytestmark = pytest.mark.system
 
 FORBIDDEN = {"TESTORD-2024-0001", "SAMEFIR-2024-0002"}
+# RECONCILED: /api/library/search now requires an as-of `before` date (9782cff); the response is still a list of paragraphs
+BEFORE = "2025-02-03"
 
 
 def library(tmp_path, monkeypatch):
@@ -32,7 +34,7 @@ def library(tmp_path, monkeypatch):
 # ---- the precedent search ------------------------------------------------------------------------------------------------
 def test_search_returns_reasoning_paragraphs_best_match_first(tmp_path, monkeypatch):
     _, client = library(tmp_path, monkeypatch)
-    hits = client.get("/api/library/search", params={"q": "parity co-accused bail"}).json()
+    hits = client.get("/api/library/search", params={"q": "parity co-accused bail", "before": BEFORE}).json()
     assert hits and hits[0]["doc_id"] == "DLHC-2022-1187" and hits[0]["para"] == 14
     assert all(h["part"] == "reasoning" for h in hits)
 
@@ -40,7 +42,7 @@ def test_search_returns_reasoning_paragraphs_best_match_first(tmp_path, monkeypa
 def test_search_never_returns_test_or_same_fir_orders_and_always_has_a_before_date(tmp_path, monkeypatch):
     """Leakage (plan §2): the excluded orders are in no result, and every store query carries a before date."""
     sc, client = library(tmp_path, monkeypatch)
-    hits = client.get("/api/library/search", params={"q": "bail"}).json()
+    hits = client.get("/api/library/search", params={"q": "bail", "before": BEFORE}).json()
     assert not {h["doc_id"] for h in hits} & FORBIDDEN
     calls = sc.world.stores[StoreName.CASELAW_REASONING].calls
     assert calls and all(kw["before"] for _, kw in calls)
@@ -127,7 +129,7 @@ def test_the_bridge_agrees_with_the_chat_answer_for_the_same_section(tmp_path, m
 def test_no_response_shows_a_grant_rate_or_a_probability(tmp_path, monkeypatch):
     """The similar-facts store shows reasoning, never rates (plan §1.3, §16)."""
     _, client = library(tmp_path, monkeypatch)
-    blob = json.dumps([client.get("/api/library/search", params={"q": "bail"}).json(),
+    blob = json.dumps([client.get("/api/library/search", params={"q": "bail", "before": BEFORE}).json(),
                        client.get("/api/library/citations/SC-2014-0463").json(),
                        client.get("/api/library/bridge/IPC/420").json()]).lower()
     # RECONCILED: "authority" is the citation-graph score of a reported order (how much courts rely on it), not a chance of anything; the
@@ -138,7 +140,7 @@ def test_no_response_shows_a_grant_rate_or_a_probability(tmp_path, monkeypatch):
 
 def test_browsing_the_library_writes_nothing_and_exports_nothing(tmp_path, monkeypatch):
     sc, client = library(tmp_path, monkeypatch)
-    client.get("/api/library/search", params={"q": "parity"})
+    client.get("/api/library/search", params={"q": "parity", "before": BEFORE})
     client.get("/api/library/citations/SC-2014-0463")
     client.get("/api/library/bridge/IPC/420")
     assert sc.events(EventKind.STORE_WRITE) == [] and sc.events(EventKind.GATE_APPROVED) == []

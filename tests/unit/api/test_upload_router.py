@@ -41,9 +41,10 @@ def test_other_input_kinds_of_k10_are_accepted(tmp_path, monkeypatch, name, mime
     assert res.status_code == 200 and res.json()["accepted"] == [name]
 
 
+# RECONCILED: identical bytes are now deduplicated (4e6c94e); the two files carry different bytes
 def test_several_files_in_one_request(tmp_path, monkeypatch):
     res = scenario(tmp_path, monkeypatch).client().post(
-        f"/api/cases/{CASE}/upload", files=files_payload(("a.pdf", "application/pdf", PDF_BYTES), ("b.pdf", "application/pdf", PDF_BYTES)))
+        f"/api/cases/{CASE}/upload", files=files_payload(("a.pdf", "application/pdf", PDF_BYTES), ("b.pdf", "application/pdf", PDF_BYTES + b"% second file\n")))
     assert res.json()["accepted"] == ["a.pdf", "b.pdf"]
 
 
