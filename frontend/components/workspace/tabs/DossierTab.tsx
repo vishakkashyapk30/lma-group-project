@@ -6,6 +6,7 @@ import { Pencil } from "lucide-react";
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { TOUR_READ_ONLY_NOTE, useTourMode } from "@/lib/tourMode";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,6 +42,7 @@ function FactRow({ name, field, changed, focused }: FactRowProps): ReactElement 
   const ws = useWorkspace();
   const toast = useToast();
   const { editField } = useEdits();
+  const tour = useTourMode();
   const { resolutions, acknowledge, unacknowledge } = useGates();
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState("");
@@ -208,6 +210,8 @@ function FactRow({ name, field, changed, focused }: FactRowProps): ReactElement 
                   size="sm"
                   variant="ghost"
                   aria-label={`Mark ${label} as unknown`}
+                  disabled={tour}
+                  title={tour ? TOUR_READ_ONLY_NOTE : undefined}
                   onClick={() => {
                     acknowledge(ackKey);
                     toast({ title: `${label} marked as unknown`, action: { label: "Undo", onClick: () => unacknowledge(ackKey) } });
@@ -217,11 +221,11 @@ function FactRow({ name, field, changed, focused }: FactRowProps): ReactElement 
                 </Button>
               ) : null}
               {markedUnknown ? (
-                <Button size="sm" variant="ghost" onClick={() => unacknowledge(ackKey)} aria-label={`Undo marking ${label} as unknown`}>
+                <Button size="sm" variant="ghost" onClick={() => unacknowledge(ackKey)} aria-label={`Undo marking ${label} as unknown`} disabled={tour} title={tour ? TOUR_READ_ONLY_NOTE : undefined}>
                   Undo
                 </Button>
               ) : null}
-              <Button ref={editBtnRef} size="sm" variant="ghost" data-testid="dossier-field-edit" onClick={startEdit} aria-label={`${verb} ${label}`}>
+              <Button ref={editBtnRef} size="sm" variant="ghost" data-testid="dossier-field-edit" onClick={startEdit} aria-label={`${verb} ${label}`} disabled={tour} title={tour ? TOUR_READ_ONLY_NOTE : undefined}>
                 <Pencil aria-hidden /> {verb}
               </Button>
             </div>
