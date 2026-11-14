@@ -306,11 +306,10 @@ _CASE_03 = DemoCase(
     slug="03-ndps-small-hindi",
     case_id="demo-03",
     title="Demo · NDPS small quantity, Hindi FIR, grounds of arrest only oral",
-    story=("Accused-1, a 22-year-old student, is charged under NDPS 21(a) for 4 grams of heroin, a small quantity, so the "
-           "s.37 bar does not apply; the FIR is in Hindi. He was arrested on 02.07.2026 and told the grounds of arrest only orally; the "
-           "charge sheet was filed in time, and as a first-time offender he has passed one-third of the one-year maximum."),
+    story=("Accused-1, a 22-year-old student, is charged under NDPS 21(a) for 4 grams of heroin, a small quantity, so the s.37 bar does not apply; the FIR is in H"
+           "indi. He was arrested on 02.07.2026 and told the grounds of arrest only orally; the charge sheet was filed in time (day 54 of 60). The Rights Radar still shows CHECK for default bail and for the BNSS s.479 undertrial limit, because no maximum punishment was on record for the charged section, so counsel is asked to check both."),
     variant={"offence": "NDPS 21(a) small quantity (maximum 1 year); the s.37 twin conditions do not apply",
-             "custody": "default bail closed (charge sheet on day 54 of 60); grounds of arrest given only orally; past one-third of the maximum (BNSS s.479)",
+             "custody": "charge sheet filed on day 54 of 60, in time; the radar nevertheless shows CHECK for default bail and for BNSS s.479 because no maximum punishment is on record; grounds of arrest given only orally in the scenario (the radar shows UNKNOWN: no record of them in the dossier)",
              "record": "Hindi FIR (Devanagari text layer) with eight English documents",
              "parity": "no co-accused; first-time offender; no earlier bail application"},
     documents=[
@@ -463,11 +462,10 @@ _CASE_05 = DemoCase(
     slug="05-bns-attempt-murder-parity",
     case_id="demo-05",
     title="Demo · Attempt to murder under the BNS, co-accused on bail",
-    story=("Accused-1 is charged under BNS 109 and 3(5) for a knife wound in a quarrel over parking on 13.03.2025, an offence "
-           "punishable with imprisonment for life. He has been in custody since 16.03.2025; the charge sheet came within 90 days, his "
-           "bail was refused by the Sessions Court, and Co-accused-2, said to have only held the injured, was granted bail by the High Court."),
+    story=("Accused-1 is charged under BNS 109 and 3(5) for a knife wound in a quarrel over parking on 13.03.2025, an attempt to murder. He has been in custody si"
+           "nce 16.03.2025; the charge sheet was filed on day 81 of 90, in time. The Rights Radar shows CHECK for default bail and for the BNSS s.479 limit because it had no maximum punishment on record, although the dossier lists the section's maximum as death, so counsel is asked to check. His bail was refused by the Sessions Court, and Co-accused-2, said to have only held the injured, was granted bail by the High Court."),
     variant={"offence": "BNS 109 with 3(5), attempt to murder (life imprisonment where hurt is caused), offence after 1 July 2024",
-             "custody": "default bail closed (charge sheet on day 81 of 90); BNSS s.479 does not apply to an offence punishable with life",
+             "custody": "charge sheet filed on day 81 of 90, in time; the radar nevertheless shows CHECK for default bail and for BNSS s.479 because no maximum punishment is on record (the dossier lists it as death for BNS 109)",
              "record": "complete file, eleven born-digital documents including the medico-legal report",
              "parity": "Co-accused-2 granted bail with a lesser role; first-time offender; earlier bail application rejected"},
     documents=[
@@ -554,7 +552,7 @@ _CASE_06 = DemoCase(
            "punishable with up to five years. He was arrested on 05.10.2026 without a notice of appearance and without recorded reasons; "
            "counsel has only four papers, so intake asks what is missing and counsel answers from instructions."),
     variant={"offence": "BNS 316(2) criminal breach of trust (maximum 5 years), offence after 1 July 2024",
-             "custody": "arrest without a notice of appearance or recorded reasons (BNSS s.35(3), Arnesh Kumar); default-bail window not yet open",
+             "custody": "arrest without a notice of appearance or recorded reasons (BNSS s.35(3), Arnesh Kumar; the radar shows UNKNOWN for the notice rule); default-bail window not yet open (day 40 of 60)",
              "record": "four documents only: charge-sheet status, custody certificate, antecedents and earlier orders are missing, so intake asks",
              "parity": "no co-accused; first-time offender (by counsel's answer); no earlier bail application"},
     documents=[

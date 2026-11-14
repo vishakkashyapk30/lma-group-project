@@ -2,10 +2,10 @@
  "slug": "05-bns-attempt-murder-parity",
  "case_id": "demo-05",
  "title": "Demo · Attempt to murder under the BNS, co-accused on bail",
- "story": "Accused-1 is charged under BNS 109 and 3(5) for a knife wound in a quarrel over parking on 13.03.2025, an offence punishable with imprisonment for life. He has been in custody since 16.03.2025; the charge sheet came within 90 days, his bail was refused by the Sessions Court, and Co-accused-2, said to have only held the injured, was granted bail by the High Court.",
+ "story": "Accused-1 is charged under BNS 109 and 3(5) for a knife wound in a quarrel over parking on 13.03.2025, an attempt to murder. He has been in custody since 16.03.2025; the charge sheet was filed on day 81 of 90, in time. The Rights Radar shows CHECK for default bail and for the BNSS s.479 limit because it had no maximum punishment on record, although the dossier lists the section's maximum as death, so counsel is asked to check. His bail was refused by the Sessions Court, and Co-accused-2, said to have only held the injured, was granted bail by the High Court.",
  "variant": {
   "offence": "BNS 109 with 3(5), attempt to murder (life imprisonment where hurt is caused), offence after 1 July 2024",
-  "custody": "default bail closed (charge sheet on day 81 of 90); BNSS s.479 does not apply to an offence punishable with life",
+  "custody": "charge sheet filed on day 81 of 90, in time; the radar nevertheless shows CHECK for default bail and for BNSS s.479 because no maximum punishment is on record (the dossier lists it as death for BNS 109)",
   "record": "complete file, eleven born-digital documents including the medico-legal report",
   "parity": "Co-accused-2 granted bail with a lesser role; first-time offender; earlier bail application rejected"
  },
@@ -136,7 +136,7 @@
    "title": "Rights Radar",
    "agent": "PESHKAR",
    "action": null,
-   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-14: date arithmetic and statute tables, not the language model. Default bail: CHECK, Undertrial limit (BNSS s.479): CHECK, Production within 24 hours: CHECK and Antil category: CHECK. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified.",
+   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-14: date arithmetic and statute tables, not the language model. Default bail: CHECK, Undertrial limit (BNSS s.479): CHECK, Production within 24 hours: CHECK and Antil category: CHECK. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified. The charge sheet came on day 81 of 90, but the radar had no maximum punishment on record, so it asks counsel to check default bail and the s.479 limit instead of ruling.",
    "filled": [
     {
      "label": "Default bail",

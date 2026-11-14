@@ -2,10 +2,10 @@
  "slug": "03-ndps-small-hindi",
  "case_id": "demo-03",
  "title": "Demo · NDPS small quantity, Hindi FIR, grounds of arrest only oral",
- "story": "Accused-1, a 22-year-old student, is charged under NDPS 21(a) for 4 grams of heroin, a small quantity, so the s.37 bar does not apply; the FIR is in Hindi. He was arrested on 02.07.2026 and told the grounds of arrest only orally; the charge sheet was filed in time, and as a first-time offender he has passed one-third of the one-year maximum.",
+ "story": "Accused-1, a 22-year-old student, is charged under NDPS 21(a) for 4 grams of heroin, a small quantity, so the s.37 bar does not apply; the FIR is in Hindi. He was arrested on 02.07.2026 and told the grounds of arrest only orally; the charge sheet was filed in time (day 54 of 60). The Rights Radar still shows CHECK for default bail and for the BNSS s.479 undertrial limit, because no maximum punishment was on record for the charged section, so counsel is asked to check both.",
  "variant": {
   "offence": "NDPS 21(a) small quantity (maximum 1 year); the s.37 twin conditions do not apply",
-  "custody": "default bail closed (charge sheet on day 54 of 60); grounds of arrest given only orally; past one-third of the maximum (BNSS s.479)",
+  "custody": "charge sheet filed on day 54 of 60, in time; the radar nevertheless shows CHECK for default bail and for BNSS s.479 because no maximum punishment is on record; grounds of arrest given only orally in the scenario (the radar shows UNKNOWN: no record of them in the dossier)",
   "record": "Hindi FIR (Devanagari text layer) with eight English documents",
   "parity": "no co-accused; first-time offender; no earlier bail application"
  },
@@ -136,7 +136,7 @@
    "title": "Rights Radar",
    "agent": "PESHKAR",
    "action": null,
-   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-14: date arithmetic and statute tables, not the language model. Default bail: CHECK, Undertrial limit (BNSS s.479): CHECK, Production within 24 hours: CHECK and Antil category: C. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified.",
+   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-14: date arithmetic and statute tables, not the language model. Default bail: CHECK, Undertrial limit (BNSS s.479): CHECK, Production within 24 hours: CHECK and Antil category: C. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified. The charge sheet came on day 54 of 60, but the radar had no maximum punishment on record, so it asks counsel to check default bail and the s.479 limit instead of ruling.",
    "filled": [
     {
      "label": "Default bail",

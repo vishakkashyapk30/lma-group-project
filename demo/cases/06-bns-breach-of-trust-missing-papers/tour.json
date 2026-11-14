@@ -5,7 +5,7 @@
  "story": "Accused-1, an accountant, is charged under BNS 316(2) for diverting Rs. 3,80,000 of his employer's collections, an offence punishable with up to five years. He was arrested on 05.10.2026 without a notice of appearance and without recorded reasons; counsel has only four papers, so intake asks what is missing and counsel answers from instructions.",
  "variant": {
   "offence": "BNS 316(2) criminal breach of trust (maximum 5 years), offence after 1 July 2024",
-  "custody": "arrest without a notice of appearance or recorded reasons (BNSS s.35(3), Arnesh Kumar); default-bail window not yet open",
+  "custody": "arrest without a notice of appearance or recorded reasons (BNSS s.35(3), Arnesh Kumar; the radar shows UNKNOWN for the notice rule); default-bail window not yet open (day 40 of 60)",
   "record": "four documents only: charge-sheet status, custody certificate, antecedents and earlier orders are missing, so intake asks",
   "parity": "no co-accused; first-time offender (by counsel's answer); no earlier bail application"
  },
