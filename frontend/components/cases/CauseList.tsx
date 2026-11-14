@@ -11,6 +11,7 @@ import { errorMessage } from "@/lib/errors";
 import { STEPPER_STAGES, stepOf } from "@/lib/stages";
 import { RIGHTS_URGENCY, parseRightsChip } from "@/lib/status";
 import { cn } from "@/lib/utils";
+import { GuidedDemos } from "@/components/tour/GuidedDemos";
 import type { Stage } from "@/lib/types";
 import { CaseCard, type CaseSummaryWithActivity } from "./CaseCard";
 
@@ -62,6 +63,8 @@ export function CauseList({ className }: CauseListProps): ReactElement {
   return (
     <div className={cn("mx-auto max-w-content px-4 py-8 sm:px-6 sm:py-10", className)}>
       <PageHeader title="Cases" description="Every matter, with the most urgent possible entitlement first. These are things to check, never advice or a prediction." />
+
+      <GuidedDemos />
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <div className="relative min-w-[14rem] flex-1">

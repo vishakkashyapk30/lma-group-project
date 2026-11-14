@@ -295,6 +295,10 @@ export class MockBackend {
       return this.json(route, { ...this.summary(), case_id: decodeURIComponent(m[1]) });
     }
 
+    // ---- guided demos (routers/demo.py): this mock backend has none, like a server with demos off
+    if (p === "/api/demo/tours" && method === "GET") return this.json(route, []);
+    if (p.startsWith("/api/demo/tours/") && method === "GET") return this.json(route, { detail: "no guided demos" }, 404);
+
     // ---- library (not exercised by the specs beyond smoke)
     if (p === "/api/library/search") return this.json(route, []);
     if (p.startsWith("/api/library/")) return this.json(route, {});

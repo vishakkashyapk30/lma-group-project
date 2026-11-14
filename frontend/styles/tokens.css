@@ -25,7 +25,7 @@
   /* Derived neutrals */
   --color-parchment-deep: #EFEBE3; /* sidebar, hover, subtle fills (ink 14.1:1) */
   --color-ink-soft: #484039;       /* secondary text (9.4:1 on canvas) */
-  --color-ink-muted: #675D54;      /* captions, placeholders (5.9:1 on canvas, 6.4:1 on white) */
+  --color-ink-muted: #615850;      /* captions, placeholders (6.4:1 on canvas, 6.9:1 on white, 5.2:1 on a hairline fill) */
   --color-line: #E4DED2;           /* hairlines, dividers */
   --color-line-strong: #8C8277;    /* input and control borders (3.8:1 on white, 3.5:1 on canvas, above the 3:1 needed for controls) */
   --color-gold-pale: #D9BE8A;      /* text and focus ring on oxblood only (8.6:1) */
@@ -33,7 +33,7 @@
 
   --rgb-parchment-deep: 239 235 227;
   --rgb-ink-soft: 72 64 57;
-  --rgb-ink-muted: 103 93 84;
+  --rgb-ink-muted: 97 88 80;
   --rgb-line: 228 222 210;
   --rgb-line-strong: 140 130 119;
   --rgb-gold-pale: 217 190 138;
