@@ -71,7 +71,7 @@ def test_production_preset_is_c1457_without_changing_the_eval_default():
         "abstention": "strict",
         "draft_source": "facts_text",
         "objection_grounding": "by_id",
-        "sparring_reserve_tokens": 60000,  # RECONCILED: the product flow only; no evaluation variant sets it
+        "sparring_reserve_tokens": 120000,  # RECONCILED: the product flow only; no evaluation variant sets it
     }
     assert Switches().model_dump(exclude_defaults=True) == {}
 
