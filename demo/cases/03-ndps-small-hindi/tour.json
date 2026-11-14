@@ -2,18 +2,18 @@
  "slug": "03-ndps-small-hindi",
  "case_id": "demo-03",
  "title": "Demo · NDPS small quantity, Hindi FIR, grounds of arrest only oral",
- "story": "Accused-1, a 22-year-old student, is charged under NDPS 21(a) for 4 grams of heroin, a small quantity, so the s.37 bar does not apply; the FIR is in Hindi. He was arrested on 02.07.2026 and told the grounds of arrest only orally; the charge sheet was filed in time (day 54 of 60). The Rights Radar still shows CHECK for default bail and for the BNSS s.479 undertrial limit, because no maximum punishment was on record for the charged section, so counsel is asked to check both.",
+ "story": "Accused-1, a 22-year-old student, is charged under NDPS 21(a) for 4 grams of heroin, a small quantity, so the s.37 bar does not apply; the FIR is in Hindi. He was arrested on 02.07.2026 and told the grounds of arrest only orally; the charge sheet was filed in time (day 54 of 60). The Rights Radar reads the maximum of the charged clause as one year: default bail is WINDOW_CLOSED (the charge sheet came inside the 60 days) and the BNSS s.479 undertrial limit is ELIGIBLE (136 days in custody against a threshold of 122 for a first-time offender).",
  "variant": {
   "offence": "NDPS 21(a) small quantity (maximum 1 year); the s.37 twin conditions do not apply",
-  "custody": "charge sheet filed on day 54 of 60, in time; the radar nevertheless shows CHECK for default bail and for BNSS s.479 because no maximum punishment is on record; grounds of arrest given only orally in the scenario (the radar shows UNKNOWN: no record of them in the dossier)",
+  "custody": "charge sheet filed on day 54 of 60, in time, so default bail is WINDOW_CLOSED; BNSS s.479 is ELIGIBLE (136 days in custody, threshold 122 days); grounds of arrest given only orally in the scenario (the radar shows UNKNOWN: no record of them in the dossier)",
   "record": "Hindi FIR (Devanagari text layer) with eight English documents",
   "parity": "no co-accused; first-time offender; no earlier bail application"
  },
  "recorded": {
-  "date": "2026-11-14",
+  "date": "2026-11-15",
   "backend": "sarvam",
   "model": "sarvam-105b",
-  "cost_inr": 3.51
+  "cost_inr": 6.57
  },
  "steps": [
   {
@@ -60,7 +60,58 @@
      "label": "09_vakalatnama.pdf",
      "value": "born-digital PDF"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "01_fir_hindi.pdf",
+      "value": ""
+     },
+     {
+      "label": "02_arrest_memo.pdf",
+      "value": ""
+     },
+     {
+      "label": "03_seizure_memo.pdf",
+      "value": ""
+     },
+     {
+      "label": "04_remand_order.pdf",
+      "value": ""
+     },
+     {
+      "label": "05_charge_sheet.pdf",
+      "value": ""
+     },
+     {
+      "label": "06_custody_certificate.pdf",
+      "value": ""
+     },
+     {
+      "label": "07_police_verification.pdf",
+      "value": ""
+     },
+     {
+      "label": "08_personal_circumstances.pdf",
+      "value": ""
+     },
+     {
+      "label": "09_vakalatnama.pdf",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.0.label": "2f00d53af0426245",
+     "filled.1.label": "b92cd2202758fed0",
+     "filled.2.label": "cbfe8df7835f104d",
+     "filled.3.label": "7473ff671ca23700",
+     "filled.4.label": "b51bc209b47483b9",
+     "filled.5.label": "c9541e53128199d7",
+     "filled.6.label": "312e84349e367357",
+     "filled.7.label": "91576fe9c897be4b",
+     "filled.8.label": "710ea15dd7ae90a2"
+    }
+   }
   },
   {
    "stage": "DOSSIER",
@@ -80,7 +131,7 @@
     },
     {
      "label": "Sections",
-     "value": "NDPS 21(a) (verified from the papers)"
+     "value": "NDPS 21(a), maximum 1 year (verified from the papers)"
     },
     {
      "label": "Date of arrest",
@@ -92,7 +143,7 @@
     },
     {
      "label": "Days in custody",
-     "value": "135 (computed)"
+     "value": "136 (computed)"
     },
     {
      "label": "Charge sheet",
@@ -110,7 +161,22 @@
      "label": "Antecedents",
      "value": "none (verified from the papers)"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "",
+      "value": ""
+     },
+     {
+      "label": "FIR",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.1.label": "61ef8cb5c4f3d3ea"
+    }
+   }
   },
   {
    "stage": "GATE_1",
@@ -136,19 +202,19 @@
    "title": "Rights Radar",
    "agent": "PESHKAR",
    "action": null,
-   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-14: date arithmetic and statute tables, not the language model. Default bail: CHECK, Undertrial limit (BNSS s.479): CHECK, Production within 24 hours: CHECK and Antil category: C. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified. The charge sheet came on day 54 of 60, but the radar had no maximum punishment on record, so it asks counsel to check default bail and the s.479 limit instead of ruling.",
+   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-15: date arithmetic and statute tables, not the language model. Default bail: WINDOW_CLOSED, Undertrial limit (BNSS s.479): ELIGIBLE, Production within 24 hours: CHECK and Antil category: C. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified.",
    "filled": [
     {
      "label": "Default bail",
-     "value": "CHECK: Maximum punishment is not on record, so the 60 or 90 day limit is unknown."
+     "value": "WINDOW_CLOSED: 60-day limit (maximum 1 year). Day 1 is the first remand, 03.07.2026. The charge sheet was filed on day 54 (25.08.2026). It came within the limit, so the right to default bail never arose."
     },
     {
      "label": "Undertrial limit (BNSS s.479)",
-     "value": "CHECK: Maximum punishment not on record, so the threshold cannot be compared."
+     "value": "ELIGIBLE: 136 days in custody. The threshold is 122 days for a first-time offender (1/3 of 1 years, on bond) and 183 days otherwise (1/2, on bail). The applicable threshold (1/3, first-time offender) of 122 days has been reached. The record shows no other pending case (BNSS s.479(2))."
     },
     {
      "label": "Notice of appearance",
-     "value": "UNKNOWN: Maximum punishment is not on record."
+     "value": "UNKNOWN: Offence punishable up to 7 years. No arrest memo or notice in the file."
     },
     {
      "label": "Grounds of arrest",
@@ -174,43 +240,43 @@
    "title": "Sutradhar plans, Vakeel drafts",
    "agent": "VAKEEL",
    "action": null,
-   "caption": "Sutradhar planned the brief factor by factor (8 factors) and fetched the evidence each needs: 57 store calls. Vakeel drafted 3 grounds (1 repaired and 2 supported). Every sentence was checked against its source; 13 sentences the checker could not support were withheld, leaving 4 grounds for counsel to draft. 18 open issues are listed for counsel.",
+   "caption": "Sutradhar planned the brief factor by factor (9 factors) and fetched the evidence each needs: 57 store calls. Vakeel drafted 2 grounds (2 supported). Every sentence was checked against its source; 11 sentences the checker could not support were withheld, leaving 6 grounds for counsel to draft. 17 open issues are listed for counsel.",
    "filled": [
     {
+     "label": "G2 · custody period",
+     "value": "SUPPORTED: Further custodial detention of the accused seems unwarranted considering the period of detention [A:GAHC010221402022#6]."
+    },
+    {
      "label": "G3 · charge sheet filed",
-     "value": "SUPPORTED: The charge sheet in FIR No. 151/2026, P.S. PS-3, Lucknow, was filed on 25.08.2026, thereby completing the investigation [F:facts_text].The charge sheet was filed on 25.08.2026. 2.5 gram of brown sugar (Heroin) which is said to have been recovered from the joi…"
-    },
-    {
-     "label": "G6 · weak prima facie",
-     "value": "SUPPORTED: The forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity [F:facts_text] [A:TRHC010014022021#11]. The quantity recovered is a small quantity [F:facts_text]."
-    },
-    {
-     "label": "G7 · statutory bar",
-     "value": "REPAIRED: The forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity [F:facts_text].The quantity of narcotic substance recovered in this case is small quantity, not commercial quantity [F:facts_text].Since the seized contraband artic…"
+     "value": "SUPPORTED: The charge sheet was filed on 25.08.2026, which is within the statutory limit, and the investigation is complete [F:facts_text].The charge sheet was filed on 25.08.2026, which is within the statutory limit, and the investigation is complete [F:facts_text].The…"
     },
     {
      "label": "Withheld from G1",
-     "value": "1 sentence; reason: not supported by the cited paragraph (authority support 0.23 < 0.50)"
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.21)"
     },
     {
      "label": "Withheld from G2",
-     "value": "1 sentence; reason: not supported by the dossier quote, not supported by the cited paragraph (fact support 0.00 < 0.50; authority support 0…"
-    },
-    {
-     "label": "Withheld from G3",
-     "value": "2 sentences; reason: has a malformed [F:...] or [A:...] reference, cites no fact or authority (malformed [F:facts_text, A:CGHC010221772025#6…"
+     "value": "2 sentences; reason: not supported by the dossier quote, not supported by the cited paragraph (fact support 0.01 < 0.50; authority support 0…"
     },
     {
      "label": "Withheld from G4",
-     "value": "5 sentences; reason: not supported by the dossier quote (support 0.11)"
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.03)"
     },
     {
      "label": "Withheld from G5",
-     "value": "3 sentences; reason: not supported by the dossier quote (support 0.00)"
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.01)"
     },
     {
      "label": "Withheld from G6",
-     "value": "1 sentence; reason: not supported by the dossier quote (support 0.01)"
+     "value": "3 sentences; reason: not supported by the dossier quote (support 0.12)"
+    },
+    {
+     "label": "Withheld from G7",
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.21)"
+    },
+    {
+     "label": "Withheld from G8",
+     "value": "2 sentences; reason: not supported by the dossier quote (support 0.02)"
     }
    ]
   },
@@ -220,31 +286,31 @@
    "title": "Abhiyojak argues the other side",
    "agent": "ABHIYOJAK",
    "action": null,
-   "caption": "Abhiyojak, the prosecution sparring partner, raised 6 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case; 2 ungrounded objections were discarded. After Vakeel's replies: 6 unanswered.",
+   "caption": "Abhiyojak, the prosecution sparring partner, raised 6 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case; 3 ungrounded objections were discarded. Abhiyojak judged 0 of Vakeel's replies: 0 answered, 0 partly answered, 0 unanswered; 6 objections could not be judged because the sparring token budget was spent, and stay unanswered. Whatever stays open is listed at Gate 2, and counsel answers it before approving.",
    "filled": [
     {
-     "label": "O1 against G7 (statutory bar)",
-     "value": "UNANSWERED: The quantity of 4.0 grams of diacetylmorphine is not a commercial quantity, but the prosecution must still contend that the accused faces a statutory bar under Section 37(1)(b) of the NDPS Act given the nature of the offence and the recovery, and the defence'…"
+     "label": "O1 against G3 (charge sheet filed)",
+     "value": "UNANSWERED: The applicant is charged under NDPS 21(a), which involves a serious offence under the Narcotic Drugs and Psychotropic Substances Act, warranting continued judicial scrutiny of custodial necessity."
     },
     {
      "label": "O2 against general (gravity and punishment)",
-     "value": "UNANSWERED: The offence involves a commercial quantity of narcotic substance under NDPS Section 21(a), which carries a stringent punishment and is of grave nature, warranting continued custody."
+     "value": "UNANSWERED: The offence under NDPS 21(a) carries a maximum punishment of one year, but the prosecution opposes bail on the ground of gravity and severity of punishment, as reflected in the charge sheet and the nature of the accusation."
     },
     {
-     "label": "O3 against general (statutory bar)",
-     "value": "UNANSWERED: Section 37(1) of the NDPS Act imposes a statutory bar to grant bail, as the prosecution has not yet recorded satisfaction that there are reasonable grounds for believing that the accused is not guilty."
+     "label": "O3 against general (flight risk)",
+     "value": "UNANSWERED: The prosecution opposes bail on the ground that the applicant is a flight risk, as the applicant is named in the charge sheet and the warrant of arrest is pending, raising apprehension of absconding."
     },
     {
-     "label": "O4 against general (flight risk)",
-     "value": "UNANSWERED: The applicant has been in custody for 135 days without any bail application being granted, and there is a reasonable apprehension that he may abscond if released."
+     "label": "O4 against general (witness tampering)",
+     "value": "UNANSWERED: The prosecution opposes bail on the ground of reasonable apprehension of tampering with prosecution witnesses, as the trial is at a conclusive end with eleven witnesses examined to date."
     },
     {
-     "label": "O5 against general (witness tampering)",
-     "value": "UNANSWERED: The charge sheet has been filed and the trial is at an advanced stage; releasing the accused may lead to tampering with prosecution witnesses and influencing their testimony."
+     "label": "O5 against general (antecedents)",
+     "value": "UNANSWERED: The prosecution opposes bail on the ground of bad antecedents, as the applicant is named in the FIR and the prosecution witnesses have reiterated their version as alleged in the FIR."
     },
     {
-     "label": "O6 against general (antecedents)",
-     "value": "UNANSWERED: Although no criminal antecedents are formally recorded, the nature of the offence and the applicant's prior conduct during investigation raise concerns about his character and potential for reoffending."
+     "label": "O6 against general (statutory bar)",
+     "value": "UNANSWERED: The prosecution opposes bail on the ground of statutory bar under Section 37(1) of the NDPS Act, as the offence involves commercial quantity and the court cannot record satisfaction that there are reasonable grounds for believing the applicant is not guilty."
     }
    ]
   },
@@ -254,31 +320,23 @@
    "title": "Hearing card",
    "agent": "VAKEEL",
    "action": null,
-   "caption": "Vakeel turned the brief and the sparring into a card for the hearing: 3 likely questions from the bench with answers, 3 grounds to lead with and 1 bail condition counsel can offer. It predicts nothing and gives no grant rate.",
+   "caption": "Vakeel turned the brief and the sparring into a card for the hearing: 2 likely questions from the bench with answers, 2 grounds to lead with and 1 bail condition counsel can offer. It predicts nothing and gives no grant rate.",
    "filled": [
     {
+     "label": "Lead with G2 (custody period)",
+     "value": "Further custodial detention of the accused seems unwarranted considering the period of detention."
+    },
+    {
      "label": "Lead with G3 (charge sheet filed)",
-     "value": "The charge sheet in FIR No. 151/2026, P.S. PS-3, Lucknow, was filed on 25.08.2026, thereby completing the investigation.The charge sheet was filed on 25.08.2026."
-    },
-    {
-     "label": "Lead with G6 (weak prima facie)",
-     "value": "The forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity."
-    },
-    {
-     "label": "Lead with G7 (statutory bar)",
-     "value": "The forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity.The quantity of narcotic substance recovered in this case is small quantity, not commercial quantity.Since the seized contraband article is not of commercial quanti…"
-    },
-    {
-     "label": "Bench may raise: statutory bar",
-     "value": "The forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity.The quantity of narcotic substance recovered in this case is small quantity, not commercial quantity.Since the seized contraband article is not of commercial quanti…"
+     "value": "The charge sheet was filed on 25.08.2026, which is within the statutory limit, and the investigation is complete.The charge sheet was filed on 25.08.2026, which is within the statutory limit, and the investigation is complete.The charge sheet was filed on 25.…"
     },
     {
      "label": "Bench may raise: charge sheet filed",
-     "value": "The charge sheet in FIR No. 151/2026, P.S. PS-3, Lucknow, was filed on 25.08.2026, thereby completing the investigation.The charge sheet was filed on 25.08.2026."
+     "value": "The charge sheet was filed on 25.08.2026, which is within the statutory limit, and the investigation is complete.The charge sheet was filed on 25.08.2026, which is within the statutory limit, and the investigation is complete.The charge sheet was filed on 25.…"
     },
     {
-     "label": "Bench may raise: weak prima facie",
-     "value": "The forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity."
+     "label": "Bench may raise: custody period",
+     "value": "Further custodial detention of the accused seems unwarranted considering the period of detention."
     },
     {
      "label": "Condition counsel can offer",
@@ -322,7 +380,47 @@
      "label": "UNANSWERED:O6",
      "value": "objection O6: no supported reply; counsel has read it"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O1",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O2",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O3",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O4",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O5",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O6",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.1.label": "2297325853ed80d4",
+     "filled.2.label": "15b4cc2f36d2e923",
+     "filled.3.label": "4fe2213becfde785",
+     "filled.4.label": "7cd2b05de56847ff",
+     "filled.5.label": "079f7770ed5383cd",
+     "filled.6.label": "ea7bb9de9897eef8"
+    }
+   }
   },
   {
    "stage": "FILE",
@@ -348,7 +446,33 @@
      "label": "hearing_card.docx",
      "value": "the hearing card"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "application.docx",
+      "value": ""
+     },
+     {
+      "label": "list_of_dates.docx",
+      "value": ""
+     },
+     {
+      "label": "objections_sheet.docx",
+      "value": ""
+     },
+     {
+      "label": "hearing_card.docx",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.0.label": "33cc0b7e431953bc",
+     "filled.1.label": "fce3f6d849a149e6",
+     "filled.2.label": "6de2b8c34ee0461e",
+     "filled.3.label": "d55a5fc741902b6a"
+    }
+   }
   }
  ]
 }

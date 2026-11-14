@@ -5,15 +5,15 @@
  "story": "Accused-1 is charged under IPC 420 and 406 for taking an advance of Rs. 6,50,000 for machinery that was never delivered; the offence (March 2024) predates the BNS, so the IPC governs. He has been in custody since 12.03.2024, the charge sheet was filed in time and the trial is under way; his earlier bail application was rejected, while Co-accused-2, with a comparable role, is on bail.",
  "variant": {
   "offence": "IPC 420/406 cheating (maximum 7 years), offence before 1 July 2024",
-  "custody": "default bail closed (charge sheet on day 55 of 60); past one-third of the maximum as a first-time offender (BNSS s.479)",
+  "custody": "default bail closed (charge sheet on day 55 of 60); past one-third of the maximum as a first-time offender (BNSS s.479 ELIGIBLE: 978 days against 852)",
   "record": "complete file, eleven born-digital documents",
   "parity": "Co-accused-2 granted bail; first-time offender; earlier bail application rejected"
  },
  "recorded": {
-  "date": "2026-11-14",
+  "date": "2026-11-15",
   "backend": "sarvam",
   "model": "sarvam-105b",
-  "cost_inr": 3.63
+  "cost_inr": 3.94
  },
  "steps": [
   {
@@ -22,7 +22,7 @@
    "title": "Munshi reads the papers",
    "agent": "MUNSHI",
    "action": null,
-   "caption": "Counsel uploaded 11 PDFs at once. Munshi read every page (text layer for 11 pages), named 11 documents (FIR, affidavit, arrest memo, bail order, charge sheet, custody certificate, order sheet, other and remand order) in English, and filed 9 dated events and 2 charged sections. The papers answered every checklist item, so intake asked nothing.",
+   "caption": "Counsel uploaded 11 PDFs at once. Munshi read every page (text layer for 11 pages), named 11 documents (FIR, affidavit, arrest memo, bail order, charge sheet, custody certificate, order sheet, other and remand order) in English, and filed 9 dated events and 2 charged sections. Intake put 1 question to counsel.",
    "filled": [
     {
      "label": "01_fir.pdf",
@@ -68,7 +68,68 @@
      "label": "11_vakalatnama.pdf",
      "value": "born-digital PDF"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "01_fir.pdf",
+      "value": ""
+     },
+     {
+      "label": "02_arrest_memo.pdf",
+      "value": ""
+     },
+     {
+      "label": "03_remand_order.pdf",
+      "value": ""
+     },
+     {
+      "label": "04_previous_bail_order.pdf",
+      "value": ""
+     },
+     {
+      "label": "05_charge_sheet.pdf",
+      "value": ""
+     },
+     {
+      "label": "06_co_accused_bail_order.pdf",
+      "value": ""
+     },
+     {
+      "label": "07_order_sheet.pdf",
+      "value": ""
+     },
+     {
+      "label": "08_custody_certificate.pdf",
+      "value": ""
+     },
+     {
+      "label": "09_police_verification.pdf",
+      "value": ""
+     },
+     {
+      "label": "10_personal_circumstances.pdf",
+      "value": ""
+     },
+     {
+      "label": "11_vakalatnama.pdf",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.0.label": "57a1cda9639fd7eb",
+     "filled.1.label": "b92cd2202758fed0",
+     "filled.2.label": "8ef36001e5a89f60",
+     "filled.3.label": "8157fb7ec7597c12",
+     "filled.4.label": "b51bc209b47483b9",
+     "filled.5.label": "b6d77991c25dfdf6",
+     "filled.6.label": "736183edd15b67c3",
+     "filled.7.label": "3409e4bb97125e63",
+     "filled.8.label": "bd3ad529a63fc2fd",
+     "filled.9.label": "93f9195483ace0eb",
+     "filled.10.label": "a9fe216b448f6171"
+    }
+   }
   },
   {
    "stage": "DOSSIER",
@@ -76,11 +137,15 @@
    "title": "Peshkar builds the dossier",
    "agent": "PESHKAR",
    "action": null,
-   "caption": "Peshkar filled the 13 fields of the dossier: 13 from the papers, each with the quoted sentence and page, 0 from counsel and 0 left open. The List of Dates has 9 entries, each tied to its page.",
+   "caption": "Peshkar filled the 13 fields of the dossier: 11 from the papers, each with the quoted sentence and page, 0 from counsel and 2 left open. Counsel answered 1 question from instructions; those fields are marked as counsel's, never as verified. The List of Dates has 9 entries, each tied to its page.",
    "filled": [
     {
+     "label": "The papers give different values for trial stage: charges framed (d7, p.1); trial commenced (d7, p.1). Which one is correct?",
+     "value": "The dates and figures in the FIR, the arrest memo and the remand order are the correct ones; please use those (the court orders prevail over any secondary note)."
+    },
+    {
      "label": "FIR",
-     "value": "number: 63/2024, police_station: PS-12, date: 2024-03-10 (verified from the papers)"
+     "value": "not on record (not supported by the papers)"
     },
     {
      "label": "Sections",
@@ -96,7 +161,7 @@
     },
     {
      "label": "Days in custody",
-     "value": "977 (computed)"
+     "value": "978 (computed)"
     },
     {
      "label": "Charge sheet",
@@ -114,7 +179,22 @@
      "label": "Antecedents",
      "value": "none (verified from the papers)"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "",
+      "value": ""
+     },
+     {
+      "label": "FIR",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.1.label": "61ef8cb5c4f3d3ea"
+    }
+   }
   },
   {
    "stage": "GATE_1",
@@ -122,11 +202,15 @@
    "title": "Gate 1: counsel approves the facts",
    "agent": null,
    "action": null,
-   "caption": "Nothing is drafted until counsel approves the dossier, and the code accepts that approval from counsel only. Every field had a source or counsel's answer, so counsel approved without acknowledging any gap.",
+   "caption": "Nothing is drafted until counsel approves the dossier, and the code accepts that approval from counsel only. Counsel acknowledged 1 field the papers do not support (FIR) and approved.",
    "filled": [
     {
      "label": "Gate 1 note",
      "value": "approved by counsel for the recorded evaluator demo"
+    },
+    {
+     "label": "Acknowledged: FIR",
+     "value": "not supported by the papers; acknowledged by counsel"
     }
    ]
   },
@@ -136,7 +220,7 @@
    "title": "Rights Radar",
    "agent": "PESHKAR",
    "action": null,
-   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-14: date arithmetic and statute tables, not the language model. Default bail: WINDOW_CLOSED, Undertrial limit (BNSS s.479): ELIGIBLE, Production within 24 hours: CHECK and Antil category: CHECK. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified.",
+   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-15: date arithmetic and statute tables, not the language model. Default bail: WINDOW_CLOSED, Undertrial limit (BNSS s.479): ELIGIBLE, Production within 24 hours: CHECK and Antil category: CHECK. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified.",
    "filled": [
     {
      "label": "Default bail",
@@ -144,7 +228,7 @@
     },
     {
      "label": "Undertrial limit (BNSS s.479)",
-     "value": "ELIGIBLE: 977 days in custody. The threshold is 852 days for a first-time offender (1/3 of 7 years, on bond) and 1,278 days otherwise (1/2, on bail). The applicable threshold (1/3, first-time offender) of 852 days has been reached. The record shows no other pending case (BNSS s.479(2))."
+     "value": "ELIGIBLE: 978 days in custody. The threshold is 852 days for a first-time offender (1/3 of 7 years, on bond) and 1,278 days otherwise (1/2, on bail). The applicable threshold (1/3, first-time offender) of 852 days has been reached. The record shows no other pending case (BNSS s.479(2))."
     },
     {
      "label": "Notice of appearance",
@@ -174,63 +258,67 @@
    "title": "Sutradhar plans, Vakeel drafts",
    "agent": "VAKEEL",
    "action": null,
-   "caption": "Sutradhar planned the brief factor by factor (9 factors) and fetched the evidence each needs: 66 store calls. Vakeel drafted 6 grounds (6 supported). Every sentence was checked against its source; 14 sentences the checker could not support were withheld, leaving 3 grounds for counsel to draft. 18 open issues are listed for counsel.",
+   "caption": "Sutradhar planned the brief factor by factor (11 factors) and fetched the evidence each needs: 79 store calls. Vakeel drafted 9 grounds (1 repaired and 8 supported). Every sentence was checked against its source; 16 sentences the checker could not support were withheld. 20 open issues are listed for counsel.",
    "filled": [
     {
+     "label": "G1 · gravity and punishment",
+     "value": "SUPPORTED: The offence is not a rule that bail should be denied in every case since there is no such bar created in the relevant enactment passed by the legislature nor does the bail jurisprudence provide so [A:DLHC010085292023#44]. Therefore, the underlining conclusion…"
+    },
+    {
      "label": "G2 · custody period",
-     "value": "SUPPORTED: Article 21 of the Constitution provides for a right of speedy trial, and continuous long incarceration of an accused without sufficient progress in the trial amounts to infringement of the right to life and liberty, [A:RJHC020351662025#9]."
+     "value": "SUPPORTED: Inordinate delay in disposing of cases and overcrowding in jails often result in undertrial prisoners being deprived of their fundamental rights, and the failure to ensure a speedy trial violates the right to personal liberty under Article 21 [A:UPHC011036002…"
+    },
+    {
+     "label": "G3 · charge sheet filed",
+     "value": "SUPPORTED: The charge-sheet has been filed, no custodial interrogation is required [A:CGHC010051152024#8]. The charge sheet has been filed, indicating that the investigation is complete and further custodial interrogation is no longer required [A:DLHC010171122025#13]. T…"
     },
     {
      "label": "G4 · parity with co accused",
-     "value": "SUPPORTED: Learned State counsel admits that the co-accused having similar role have been granted anticipatory bail by this Court [A:UKHC010093652024#2]."
+     "value": "SUPPORTED: Learned counsel for the applicant would submit that the co-accused having similar role have already been granted anticipatory bail by this Court [A:UKHC010093652024#2]. Learned State counsel admits that the co-accused having similar role have been granted ant…"
     },
     {
      "label": "G5 · antecedents",
-     "value": "SUPPORTED: Accused-1 has no previous involvement in any criminal case, no other criminal case is pending against Accused-1 and he has no criminal antecedents, and Accused-1 is a first-time offender [F:facts_text] [A:UPHC012099282023#6]. Pendency of several criminal case…"
+     "value": "REPAIRED: The police verification report records that Accused-1 has no previous involvement in any criminal case, no other criminal case is pending against him, and he has no criminal antecedents, as he is a first-time offender [F:facts_text].The pendency of several cr…"
     },
     {
      "label": "G6 · flight risk",
-     "value": "SUPPORTED: Accused-1 has been a resident of Karol Bagh, New Delhi since birth, where he owns his residence, runs a small registered trading business, and is the sole earning member of his family, supporting his wife, two minor children aged eight and five, and his widow…"
+     "value": "SUPPORTED: Accused-1 is a resident of New Delhi since birth and owns his residence there, and he is the sole earning member of his family, which includes his wife, two minor children, and his widowed mother who has a heart condition, making him unlikely to abscond [F:fa…"
+    },
+    {
+     "label": "G7 · weak prima facie",
+     "value": "SUPPORTED: 6,50,000 as an advance for the supply of textile machinery and did not deliver it [F:facts_text]. Considering all above facts and circumstances, the nature of accusations, severity of the punishment in the case of conviction and nature of supporting evidence,…"
     },
     {
      "label": "G8 · health age family",
-     "value": "SUPPORTED: Accused-1 is the sole earning member of his family, supporting his wife, two minor children, and his widowed mother who has a heart condition, and his brother is willing to stand surety [F:facts_text]. Accused-1 is diabetic and is under treatment in jail, as…"
+     "value": "SUPPORTED: Accused-1 is the sole earning member of his family, supporting his wife, two minor children, and his widowed mother aged sixty-five or above who has a heart condition [F:facts_text].He is diabetic and is under treatment in jail, as recorded by the jail medica…"
     },
     {
      "label": "G9 · undertrial period",
-     "value": "SUPPORTED: Under Section 479 of the BNSS, an undertrial who has undergone half of the maximum sentence prescribed may be considered for release on bail [A:UKHC010191802024#16]."
+     "value": "SUPPORTED: Under Section 479 of the BNSS, 2023, an undertrial who has undergone half of the maximum sentence prescribed may be considered for release on bail [A:UKHC010191802024#16].The applicant has served nearly five years of custody, which exceeds two-thirds of the m…"
     },
     {
      "label": "Withheld from G1",
-     "value": "1 sentence; reason: not supported by the dossier quote (support 0.04)"
+     "value": "6 sentences; reason: not supported by the dossier quote (support 0.00)"
     },
     {
      "label": "Withheld from G2",
-     "value": "4 sentences; reason: not supported by the dossier quote, not supported by the cited paragraph (fact support 0.45 < 0.50; authority support 0…"
+     "value": "2 sentences; reason: not supported by the dossier quote (support 0.30)"
     },
     {
      "label": "Withheld from G3",
-     "value": "1 sentence; reason: not supported by the dossier quote (support 0.12)"
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.03)"
     },
     {
      "label": "Withheld from G4",
      "value": "1 sentence; reason: not supported by the dossier quote (support 0.00)"
     },
     {
-     "label": "Withheld from G5",
-     "value": "1 sentence; reason: not supported by the dossier quote (support 0.31)"
-    },
-    {
-     "label": "Withheld from G6",
-     "value": "2 sentences; reason: not supported by the dossier quote (support 0.05)"
-    },
-    {
      "label": "Withheld from G7",
-     "value": "3 sentences; reason: not supported by the dossier quote (support 0.02)"
+     "value": "5 sentences; reason: cites no fact or authority"
     },
     {
      "label": "Withheld from G9",
-     "value": "1 sentence; reason: could not be checked (unknown dossier field(s) ['custody_certificate']: use one of ['antecedents', 'arrest_date', 'char…"
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.28)"
     }
    ]
   },
@@ -240,35 +328,71 @@
    "title": "Abhiyojak argues the other side",
    "agent": "ABHIYOJAK",
    "action": null,
-   "caption": "Abhiyojak, the prosecution sparring partner, raised 7 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case; 1 ungrounded objection was discarded. After Vakeel's replies: 7 unanswered.",
+   "caption": "Abhiyojak, the prosecution sparring partner, raised 16 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case; 4 ungrounded objections were discarded. Abhiyojak judged 0 of Vakeel's replies: 0 answered, 0 partly answered, 0 unanswered; 16 objections could not be judged because the sparring token budget was spent, and stay unanswered. Whatever stays open is listed at Gate 2, and counsel answers it before approving.",
    "filled": [
     {
-     "label": "O1 against G4 (parity with co accused)",
-     "value": "UNANSWERED: The offences under IPC 420 and 406 are non-bailable with maximum punishments of seven and three years respectively, and the gravity of the alleged cheating and criminal breach of trust does not diminish merely because co-accused may have been granted anticipa…"
+     "label": "O1 against G1 (gravity and punishment)",
+     "value": "UNANSWERED: The gravity of the offence and the severity of the prescribed punishment are material factors that must be weighed against the presumption of bail, particularly where the maximum punishment exceeds five years and the offence is non-bailable."
     },
     {
-     "label": "O2 against G4 (parity with co accused)",
-     "value": "UNANSWERED: The defence offers no evidence of the accused's antecedents, and the prosecution cannot be expected to concede parity on that basis when the record is silent."
+     "label": "O2 against G2 (custody period)",
+     "value": "UNANSWERED: The offences under IPC 420 (BNS 318(4)), carrying a maximum punishment of 7 years, and IPC 406 (BNS 316(2)), carrying a maximum punishment of 3 years, are serious economic offences that warrant continued custody pending trial."
     },
     {
-     "label": "O3 against G5 (antecedents)",
-     "value": "UNANSWERED: The applicant is charged under IPC 420 and IPC 406, both non-bailable offences carrying maximum sentences of 7 and 3 years respectively, and the gravity of these offences weighs against the grant of bail."
+     "label": "O3 against G3 (charge sheet filed)",
+     "value": "UNANSWERED: The offences are non-bailable, carrying a maximum punishment of 7 years and 3 years respectively, and involve cheating and criminal breach of trust, indicating the gravity of the allegations is substantial."
     },
     {
-     "label": "O4 against G5 (antecedents)",
-     "value": "UNANSWERED: The prosecution has not been given an opportunity to rebut the defence's claim of no criminal antecedents, and the dossier fact 'antecedents' records only that no antecedents are stated without any verified negative finding, which does not conclusively establ…"
+     "label": "O4 against G3 (charge sheet filed)",
+     "value": "UNANSWERED: The applicant has been in custody for 978 days, yet the investigation is complete and the charge sheet filed, raising serious concerns about whether the applicant would abscond if released, given the prolonged delay in proceedings."
     },
     {
-     "label": "O5 against G8 (health age family)",
-     "value": "UNANSWERED: The accused has been in custody for 977 days and there is no indication that he lacks the means or intent to flee, particularly given that he is the sole earning member of his family and has deep roots in New Delhi."
+     "label": "O5 against G4 (parity with co accused)",
+     "value": "UNANSWERED: The gravity of the offence is considerable, with the applicant charged under IPC 420 (equivalent to BNS 318(4)), a non-bailable offence carrying a maximum punishment of 7 years, and IPC 406 (equivalent to BNS 316(2)), a non-bailable offence carrying a maximum…"
     },
     {
-     "label": "O6 against G9 (undertrial period)",
-     "value": "UNANSWERED: The applicant has not completed half of the maximum sentence prescribed for either IPC 420 (7 years) or IPC 406 (3 years); he has been in custody for 977 days but the offence was committed on 05.03.2024 and he was first remanded on 13.03.2024, so the statutor…"
+     "label": "O6 against G5 (antecedents)",
+     "value": "UNANSWERED: The defence's claim that the accused is a first-time offender with no criminal antecedents is contradicted by the dossier fact that no antecedents are stated, and the pendency of criminal cases against an accused may itself not be a basis for refusal of bail,…"
     },
     {
-     "label": "O7 against G9 (undertrial period)",
-     "value": "UNANSWERED: The trial is already progressing with charges framed, 977 days have elapsed, and the applicant has not undergone half of the minimum sentence prescribed for the offences charged, which defeats the applicability of Section 479 BNSS."
+     "label": "O7 against G5 (antecedents)",
+     "value": "UNANSWERED: The defence relies on the pendency of criminal cases not being a basis for refusal of bail, but the State has not shown exceptional circumstances to deny bail on the ground of criminal antecedents, and the charge-sheet has been filed in the present case."
+    },
+    {
+     "label": "O8 against G6 (flight risk)",
+     "value": "UNANSWERED: The prosecution objects that the accused's long period of 978 days in custody does not, by itself, overcome the flight risk considerations, particularly given the non-bailable nature of the charges and the absence of any demonstrated cooperation with the inve…"
+    },
+    {
+     "label": "O9 against G7 (weak prima facie)",
+     "value": "UNANSWERED: The applicant is charged under IPC 420 and 406, which are non-bailable offences with maximum punishments of 7 years and 3 years respectively, and the nature of the accusation involves a substantial sum of Rs. 6,50,000 as an advance for textile machinery that…"
+    },
+    {
+     "label": "O10 against G7 (weak prima facie)",
+     "value": "UNANSWERED: The ground relies on a prima facie case and the nature of supporting evidence, yet the record does not demonstrate that the prosecution has taken any steps to ensure the safety of witnesses or to mitigate the risk of tampering if the applicant is released."
+    },
+    {
+     "label": "O11 against G9 (undertrial period)",
+     "value": "UNANSWERED: The applicant has not undergone half of the maximum sentence for the offence under IPC 420 (BNS 318(4)), which carries a maximum punishment of 7 years, as required under Section 436A of the CrPC."
+    },
+    {
+     "label": "O12 against G9 (undertrial period)",
+     "value": "UNANSWERED: The applicant has not undergone half of the minimum sentence prescribed for the offence under IPC 420 (BNS 318(4)), which carries a minimum sentence of 7 years, as required under the first proviso to Section 436A of the CrPC."
+    },
+    {
+     "label": "O13 against general (gravity and punishment)",
+     "value": "UNANSWERED: The offences charged under IPC 420 and IPC 406 are non-bailable with maximum punishments of 7 years and 3 years respectively, indicating the gravity of the offences is substantial and warrants continued custody pending trial."
+    },
+    {
+     "label": "O14 against general (flight risk)",
+     "value": "UNANSWERED: The applicant has no passport, yet the prosecution must still consider the possibility of flight risk given the economic nature of the offence and the potential for the applicant to abscond if released."
+    },
+    {
+     "label": "O15 against general (witness tampering)",
+     "value": "UNANSWERED: There is a reasonable apprehension that the applicant may tamper with prosecution witnesses or evidence if released on bail, as the investigation is ongoing and key witnesses remain to be examined."
+    },
+    {
+     "label": "O16 against general (antecedents)",
+     "value": "UNANSWERED: The prosecution notes that while no criminal antecedents are stated in the case diary, the applicant's involvement in economic offences and the nature of the charges warrant scrutiny of the applicant's background."
     }
    ]
   },
@@ -281,36 +405,36 @@
    "caption": "Vakeel turned the brief and the sparring into a card for the hearing: 5 likely questions from the bench with answers, 3 grounds to lead with and 1 bail condition counsel can offer. It predicts nothing and gives no grant rate.",
    "filled": [
     {
+     "label": "Lead with G1 (gravity and punishment)",
+     "value": "The offence is not a rule that bail should be denied in every case since there is no such bar created in the relevant enactment passed by the legislature nor does the bail jurisprudence provide so."
+    },
+    {
      "label": "Lead with G2 (custody period)",
-     "value": "Article 21 of the Constitution provides for a right of speedy trial, and continuous long incarceration of an accused without sufficient progress in the trial amounts to infringement of the right to life and liberty,."
+     "value": "Inordinate delay in disposing of cases and overcrowding in jails often result in undertrial prisoners being deprived of their fundamental rights, and the failure to ensure a speedy trial violates the right to personal liberty under Article 21."
     },
     {
-     "label": "Lead with G4 (parity with co accused)",
-     "value": "Learned State counsel admits that the co-accused having similar role have been granted anticipatory bail by this Court."
-    },
-    {
-     "label": "Lead with G5 (antecedents)",
-     "value": "Accused-1 has no previous involvement in any criminal case, no other criminal case is pending against Accused-1 and he has no criminal antecedents, and Accused-1 is a first-time offender."
+     "label": "Lead with G3 (charge sheet filed)",
+     "value": "The charge-sheet has been filed, no custodial interrogation is required."
     },
     {
      "label": "Bench may raise: custody period",
-     "value": "Article 21 of the Constitution provides for a right of speedy trial, and continuous long incarceration of an accused without sufficient progress in the trial amounts to infringement of the right to life and liberty,."
+     "value": "Inordinate delay in disposing of cases and overcrowding in jails often result in undertrial prisoners being deprived of their fundamental rights, and the failure to ensure a speedy trial violates the right to personal liberty under Article 21."
+    },
+    {
+     "label": "Bench may raise: charge sheet filed",
+     "value": "The charge-sheet has been filed, no custodial interrogation is required."
+    },
+    {
+     "label": "Bench may raise: gravity and punishment",
+     "value": "The offence is not a rule that bail should be denied in every case since there is no such bar created in the relevant enactment passed by the legislature nor does the bail jurisprudence provide so."
     },
     {
      "label": "Bench may raise: antecedents",
-     "value": "Accused-1 has no previous involvement in any criminal case, no other criminal case is pending against Accused-1 and he has no criminal antecedents, and Accused-1 is a first-time offender."
+     "value": "The police verification report records that Accused-1 has no previous involvement in any criminal case, no other criminal case is pending against him, and he has no criminal antecedents, as he is a first-time offender.The pendency of several criminal cases ag…"
     },
     {
      "label": "Bench may raise: parity with co accused",
-     "value": "Learned State counsel admits that the co-accused having similar role have been granted anticipatory bail by this Court."
-    },
-    {
-     "label": "Bench may raise: undertrial period",
-     "value": "Under Section 479 of the BNSS, an undertrial who has undergone half of the maximum sentence prescribed may be considered for release on bail."
-    },
-    {
-     "label": "Bench may raise: flight risk",
-     "value": "Accused-1 has been a resident of Karol Bagh, New Delhi since birth, where he owns his residence, runs a small registered trading business, and is the sole earning member of his family, supporting his wife, two minor children aged eight and five, and his widow…"
+     "value": "Learned counsel for the applicant would submit that the co-accused having similar role have already been granted anticipatory bail by this Court."
     },
     {
      "label": "Condition counsel can offer",
@@ -324,8 +448,12 @@
    "title": "Gate 2: your approval",
    "agent": null,
    "action": "approve_gate_2",
-   "caption": "Export is impossible until counsel approves Gate 2: in this run the export call before approval was refused (403). The checklist has 7 items for counsel (7 unanswered objections); approving records that counsel has read them. Next approves Gate 2 as counsel.",
+   "caption": "Export is impossible until counsel approves Gate 2: in this run the export call before approval was refused (403). The checklist has 17 items for counsel (1 unsupported field and 16 unanswered objections); approving records that counsel has read them. Next approves Gate 2 as counsel.",
    "filled": [
+    {
+     "label": "fir",
+     "value": "FIR: not supported by the papers; counsel acknowledges"
+    },
     {
      "label": "UNANSWERED:O1",
      "value": "objection O1: no supported reply; counsel has read it"
@@ -353,8 +481,134 @@
     {
      "label": "UNANSWERED:O7",
      "value": "objection O7: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O8",
+     "value": "objection O8: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O9",
+     "value": "objection O9: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O10",
+     "value": "objection O10: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O11",
+     "value": "objection O11: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O12",
+     "value": "objection O12: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O13",
+     "value": "objection O13: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O14",
+     "value": "objection O14: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O15",
+     "value": "objection O15: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O16",
+     "value": "objection O16: no supported reply; counsel has read it"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O1",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O2",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O3",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O4",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O5",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O6",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O7",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O8",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O9",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O10",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O11",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O12",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O13",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O14",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O15",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O16",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.1.label": "2297325853ed80d4",
+     "filled.2.label": "15b4cc2f36d2e923",
+     "filled.3.label": "4fe2213becfde785",
+     "filled.4.label": "7cd2b05de56847ff",
+     "filled.5.label": "079f7770ed5383cd",
+     "filled.6.label": "ea7bb9de9897eef8",
+     "filled.7.label": "17aeff8fba0502dc",
+     "filled.8.label": "ab1ec1ee92a88312",
+     "filled.9.label": "9a4f0c847c6c1007",
+     "filled.10.label": "20caa704b265ff83",
+     "filled.11.label": "d144359996a333cb",
+     "filled.12.label": "91beebb9c4608ccc",
+     "filled.13.label": "2cdeb0301d47ee8e",
+     "filled.14.label": "e82d3826fba33213",
+     "filled.15.label": "2df900288b9047fc",
+     "filled.16.label": "f3929126c83f4335"
+    }
+   }
   },
   {
    "stage": "FILE",
@@ -380,7 +634,33 @@
      "label": "hearing_card.docx",
      "value": "the hearing card"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "application.docx",
+      "value": ""
+     },
+     {
+      "label": "list_of_dates.docx",
+      "value": ""
+     },
+     {
+      "label": "objections_sheet.docx",
+      "value": ""
+     },
+     {
+      "label": "hearing_card.docx",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.0.label": "33cc0b7e431953bc",
+     "filled.1.label": "fce3f6d849a149e6",
+     "filled.2.label": "6de2b8c34ee0461e",
+     "filled.3.label": "d55a5fc741902b6a"
+    }
+   }
   }
  ]
 }

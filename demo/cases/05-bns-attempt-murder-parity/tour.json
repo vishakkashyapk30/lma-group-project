@@ -2,18 +2,18 @@
  "slug": "05-bns-attempt-murder-parity",
  "case_id": "demo-05",
  "title": "Demo · Attempt to murder under the BNS, co-accused on bail",
- "story": "Accused-1 is charged under BNS 109 and 3(5) for a knife wound in a quarrel over parking on 13.03.2025, an attempt to murder. He has been in custody since 16.03.2025; the charge sheet was filed on day 81 of 90, in time. The Rights Radar shows CHECK for default bail and for the BNSS s.479 limit because it had no maximum punishment on record, although the dossier lists the section's maximum as death, so counsel is asked to check. His bail was refused by the Sessions Court, and Co-accused-2, said to have only held the injured, was granted bail by the High Court.",
+ "story": "Accused-1 is charged under BNS 109 and 3(5) for a knife wound in a quarrel over parking on 13.03.2025, an attempt to murder. He has been in custody since 16.03.2025; the charge sheet was filed on day 81 of 90, in time. The Rights Radar takes the maximum punishment as death: default bail is WINDOW_CLOSED (the charge sheet came inside the 90 days) and the BNSS s.479 undertrial limit is NOT_APPLICABLE, because s.479(1) does not apply where the maximum is death or life imprisonment. His bail was refused by the Sessions Court, and Co-accused-2, said to have only held the injured, was granted bail by the High Court.",
  "variant": {
-  "offence": "BNS 109 with 3(5), attempt to murder (life imprisonment where hurt is caused), offence after 1 July 2024",
-  "custody": "charge sheet filed on day 81 of 90, in time; the radar nevertheless shows CHECK for default bail and for BNSS s.479 because no maximum punishment is on record (the dossier lists it as death for BNS 109)",
+  "offence": "BNS 109 with 3(5), attempt to murder (the radar takes the section's highest maximum, death), offence after 1 July 2024",
+  "custody": "charge sheet filed on day 81 of 90, in time, so default bail is WINDOW_CLOSED; BNSS s.479 is NOT_APPLICABLE because the radar takes the maximum as death",
   "record": "complete file, eleven born-digital documents including the medico-legal report",
   "parity": "Co-accused-2 granted bail with a lesser role; first-time offender; earlier bail application rejected"
  },
  "recorded": {
-  "date": "2026-11-14",
+  "date": "2026-11-15",
   "backend": "sarvam",
   "model": "sarvam-105b",
-  "cost_inr": 3.48
+  "cost_inr": 8.17
  },
  "steps": [
   {
@@ -68,7 +68,68 @@
      "label": "11_personal_circumstances.pdf",
      "value": "born-digital PDF"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "01_fir.pdf",
+      "value": ""
+     },
+     {
+      "label": "02_arrest_memo.pdf",
+      "value": ""
+     },
+     {
+      "label": "03_remand_order.pdf",
+      "value": ""
+     },
+     {
+      "label": "04_medico_legal_report.pdf",
+      "value": ""
+     },
+     {
+      "label": "05_charge_sheet.pdf",
+      "value": ""
+     },
+     {
+      "label": "06_previous_bail_order.pdf",
+      "value": ""
+     },
+     {
+      "label": "07_co_accused_bail_order.pdf",
+      "value": ""
+     },
+     {
+      "label": "08_order_sheet.pdf",
+      "value": ""
+     },
+     {
+      "label": "09_custody_certificate.pdf",
+      "value": ""
+     },
+     {
+      "label": "10_police_verification.pdf",
+      "value": ""
+     },
+     {
+      "label": "11_personal_circumstances.pdf",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.0.label": "57a1cda9639fd7eb",
+     "filled.1.label": "b92cd2202758fed0",
+     "filled.2.label": "8ef36001e5a89f60",
+     "filled.3.label": "2bafd49305f8f724",
+     "filled.4.label": "b51bc209b47483b9",
+     "filled.5.label": "455fc7353dfd8dea",
+     "filled.6.label": "2d35548ee03424f5",
+     "filled.7.label": "4bf51a743d0545cd",
+     "filled.8.label": "2b99aeabccf2f1cc",
+     "filled.9.label": "68fbad50aa0974e8",
+     "filled.10.label": "53e7bbc757d31f94"
+    }
+   }
   },
   {
    "stage": "DOSSIER",
@@ -76,11 +137,11 @@
    "title": "Peshkar builds the dossier",
    "agent": "PESHKAR",
    "action": null,
-   "caption": "Peshkar filled the 13 fields of the dossier: 13 from the papers, each with the quoted sentence and page, 0 from counsel and 0 left open. The List of Dates has 8 entries, each tied to its page.",
+   "caption": "Peshkar filled the 13 fields of the dossier: 12 from the papers, each with the quoted sentence and page, 0 from counsel and 1 left open. The List of Dates has 8 entries, each tied to its page.",
    "filled": [
     {
      "label": "FIR",
-     "value": "number: 302/2025, police_station: PS-14, date: 2025-03-14 (verified from the papers)"
+     "value": "not on record (not supported by the papers)"
     },
     {
      "label": "Sections",
@@ -96,7 +157,7 @@
     },
     {
      "label": "Days in custody",
-     "value": "608 (computed)"
+     "value": "609 (computed)"
     },
     {
      "label": "Charge sheet",
@@ -114,7 +175,18 @@
      "label": "Antecedents",
      "value": "none (verified from the papers)"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "FIR",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.0.label": "61ef8cb5c4f3d3ea"
+    }
+   }
   },
   {
    "stage": "GATE_1",
@@ -122,11 +194,15 @@
    "title": "Gate 1: counsel approves the facts",
    "agent": null,
    "action": null,
-   "caption": "Nothing is drafted until counsel approves the dossier, and the code accepts that approval from counsel only. Every field had a source or counsel's answer, so counsel approved without acknowledging any gap.",
+   "caption": "Nothing is drafted until counsel approves the dossier, and the code accepts that approval from counsel only. Counsel acknowledged 1 field the papers do not support (FIR) and approved.",
    "filled": [
     {
      "label": "Gate 1 note",
      "value": "approved by counsel for the recorded evaluator demo"
+    },
+    {
+     "label": "Acknowledged: FIR",
+     "value": "not supported by the papers; acknowledged by counsel"
     }
    ]
   },
@@ -136,19 +212,19 @@
    "title": "Rights Radar",
    "agent": "PESHKAR",
    "action": null,
-   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-14: date arithmetic and statute tables, not the language model. Default bail: CHECK, Undertrial limit (BNSS s.479): CHECK, Production within 24 hours: CHECK and Antil category: CHECK. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified. The charge sheet came on day 81 of 90, but the radar had no maximum punishment on record, so it asks counsel to check default bail and the s.479 limit instead of ruling.",
+   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-15: date arithmetic and statute tables, not the language model. Default bail: WINDOW_CLOSED, Production within 24 hours: CHECK and Antil category: B. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified.",
    "filled": [
     {
      "label": "Default bail",
-     "value": "CHECK: Maximum punishment is not on record, so the 60 or 90 day limit is unknown."
+     "value": "WINDOW_CLOSED: 90-day limit (maximum death). Day 1 is the first remand, 17.03.2025. The charge sheet was filed on day 81 (05.06.2025). It came within the limit, so the right to default bail never arose."
     },
     {
      "label": "Undertrial limit (BNSS s.479)",
-     "value": "CHECK: Maximum punishment not on record, so the threshold cannot be compared."
+     "value": "NOT_APPLICABLE: Maximum punishment is death; BNSS s.479(1) does not apply to death or life imprisonment."
     },
     {
      "label": "Notice of appearance",
-     "value": "UNKNOWN: Maximum punishment is not on record."
+     "value": "OK: Maximum punishment is death, above 7 years, so the notice-of-appearance norm is not engaged."
     },
     {
      "label": "Grounds of arrest",
@@ -160,7 +236,7 @@
     },
     {
      "label": "Antil category",
-     "value": "CHECK: Maximum punishment is not on record, so the category cannot be set. Antil's categories decide how an accused who was not arrested during investigation and cooperated is treated after the charge sheet; for a client in custody this is context, not a bail entitlement."
+     "value": "B: Maximum punishment is death: category B (death, life or more than 7 years). Antil's categories decide how an accused who was not arrested during investigation and cooperated is treated after the charge sheet; for a client in custody this is context, not a bail entitlement."
     },
     {
      "label": "Statutory bar",
@@ -174,31 +250,27 @@
    "title": "Sutradhar plans, Vakeel drafts",
    "agent": "VAKEEL",
    "action": null,
-   "caption": "Sutradhar planned the brief factor by factor (9 factors) and fetched the evidence each needs: 85 store calls. Vakeel drafted 7 grounds (1 repaired and 6 supported). Every sentence was checked against its source; 12 sentences the checker could not support were withheld, leaving 1 ground for counsel to draft. 21 open issues are listed for counsel.",
+   "caption": "Sutradhar planned the brief factor by factor (9 factors) and fetched the evidence each needs: 91 store calls. Vakeel drafted 6 grounds (6 supported). Every sentence was checked against its source; 19 sentences the checker could not support were withheld, leaving 2 grounds for counsel to draft. 25 open issues are listed for counsel.",
    "filled": [
     {
-     "label": "G1 · gravity and punishment",
-     "value": "SUPPORTED: The object of bail is neither punitive nor preventative [A:HPHC010225332022#6]. Qualification: Order of the Himachal Pradesh High Court dated 29.07.2022 (HPHC010225332022), para 6 construed IPC 34; IPC 34 -> BNS 3(5) is a reworded provision; state the change…"
-    },
-    {
-     "label": "G2 · custody period",
-     "value": "SUPPORTED: Detention behind bars for an indefinite period would amount to violation of Article 21 of the Constitution of India [A:PHHC010872972024#4]. Qualification: Order of the Punjab and Haryana High Court dated 17.07.2024 (PHHC010872972024), para 4 construed IPC 34;…"
-    },
-    {
      "label": "G3 · charge sheet filed",
-     "value": "SUPPORTED: The charge sheet was filed on 05.06.2025 and the investigation is complete, which negates the need for further custodial interrogation of the accused [F:facts_text].The charge sheet has already been filed [A:CGHC010265822024#7].the charge sheet has already be…"
+     "value": "SUPPORTED: Hence, no custodial interrogation is required [A:DLHC010322692025#6]."
     },
     {
      "label": "G4 · parity with co accused",
-     "value": "SUPPORTED: Co-accused-2 is alleged to have held the injured; no weapon is attributed to him [F:facts_text]. Co-accused-2 is alleged to have held the injured and no weapon is attributed to him [F:facts_text] [A:UKHC010200892024#2]. The principle of parity applies where a…"
+     "value": "SUPPORTED: Co-accused-2 is alleged to have held the injured, which is a similar role to that attributed to Accused-1 [F:facts_text]. The principle of parity supports the grant of bail to the applicant, as a similarly situated co-accused has already been enlarged on bail…"
     },
     {
      "label": "G5 · antecedents",
-     "value": "REPAIRED: Accused-1 has no previous involvement in any criminal case and has no criminal antecedents [F:facts_text].. Criminal antecedents by themselves cannot serve as an adequate basis for denying bail [A:DLHC010858492024#10].. Qualification: Order of the Delhi High…"
+     "value": "SUPPORTED: Accused-1 is a first-time offender with no criminal antecedents, as verified by the Investigating Officer in the Police Verification Report [F:facts_text]. The Supreme Court has observed that pendency of several criminal cases against an accused may itself no…"
+    },
+    {
+     "label": "G6 · flight risk",
+     "value": "SUPPORTED: Accused-1 has no previous involvement in any criminal case and has no criminal antecedents, and he is a first-time offender [F:facts_text]."
     },
     {
      "label": "G7 · witness tampering",
-     "value": "SUPPORTED: The apprehension in regard to the evidence being tampered or there being a threat to the complainant is not without merits, however, the same cannot be the sole ground for denying the bail to the applicant, and it is not alleged that the applicant, while on i…"
+     "value": "SUPPORTED: The apprehension in regard to the evidence being tampered or there being a threat to the complainant is not without merits, however, the same cannot be the sole ground for denying the bail to the applicant [A:DLHC010384332023#29]. Qualification: Order of the…"
     },
     {
      "label": "G8 · weak prima facie",
@@ -206,31 +278,35 @@
     },
     {
      "label": "Withheld from G1",
-     "value": "3 sentences; reason: not supported by the dossier quote (support 0.08)"
+     "value": "3 sentences; reason: not supported by the dossier quote (support 0.29)"
     },
     {
      "label": "Withheld from G2",
-     "value": "3 sentences; reason: not supported by the dossier quote (fact support 0.01 < 0.50)"
+     "value": "2 sentences; reason: not supported by the dossier quote (fact support 0.07 < 0.50)"
     },
     {
      "label": "Withheld from G3",
-     "value": "1 sentence; reason: not supported by the dossier quote (support 0.37)"
+     "value": "3 sentences; reason: not supported by the dossier quote (support 0.39)"
     },
     {
      "label": "Withheld from G4",
-     "value": "1 sentence; reason: not supported by the dossier quote (support 0.21)"
+     "value": "3 sentences; reason: not supported by the dossier quote (support 0.12)"
+    },
+    {
+     "label": "Withheld from G5",
+     "value": "2 sentences; reason: not supported by the dossier quote (support 0.13)"
     },
     {
      "label": "Withheld from G6",
-     "value": "1 sentence; reason: not supported by the dossier quote (support 0.01)"
+     "value": "2 sentences; reason: not supported by the dossier quote (support 0.17)"
     },
     {
      "label": "Withheld from G7",
-     "value": "2 sentences; reason: not supported by the dossier quote (support 0.02)"
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.46)"
     },
     {
      "label": "Withheld from G8",
-     "value": "1 sentence; reason: not supported by the dossier quote (support 0.46)"
+     "value": "3 sentences; reason: not supported by the dossier quote (support 0.00)"
     }
    ]
   },
@@ -240,43 +316,59 @@
    "title": "Abhiyojak argues the other side",
    "agent": "ABHIYOJAK",
    "action": null,
-   "caption": "Abhiyojak, the prosecution sparring partner, raised 9 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case; 4 ungrounded objections were discarded. After Vakeel's replies: 9 unanswered.",
+   "caption": "Abhiyojak, the prosecution sparring partner, raised 13 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case. Abhiyojak judged 0 of Vakeel's replies: 0 answered, 0 partly answered, 0 unanswered; 13 objections could not be judged because the sparring token budget was spent, and stay unanswered. Whatever stays open is listed at Gate 2, and counsel answers it before approving.",
    "filled": [
     {
      "label": "O1 against G3 (charge sheet filed)",
-     "value": "UNANSWERED: The applicant has been in custody for 608 days, and the trial has already commenced. Despite this prolonged incarceration, the prosecution maintains that the applicant may still attempt to tamper with evidence or influence witnesses, and the charge sheet alon…"
+     "value": "UNANSWERED: The offence is under BNS 109, equivalent to IPC 307, carrying a maximum punishment of death, which is a grave offence warranting continued custody."
     },
     {
-     "label": "O2 against G5 (antecedents)",
-     "value": "UNANSWERED: The defence's claim of no criminal antecedents is factually incorrect based on the charge sheet material, which shows the applicant is charged under BNS 3(5) (equivalent to IPC 34) in the present case, and the State must consider whether this constitutes a re…"
+     "label": "O2 against G4 (parity with co accused)",
+     "value": "UNANSWERED: The principle of parity cannot be invoked mechanically; the role attributed to the applicant must be scrutinized and is not necessarily similar to that of co-accused-2. The prosecution opposes this ground."
     },
     {
      "label": "O3 against G5 (antecedents)",
-     "value": "UNANSWERED: Even if the applicant has no prior convictions, the prosecution notes that under the circumstances of this case, the absence of any material showing the applicant might tamper with witnesses or evade the process of law does not automatically entitle him to ba…"
+     "value": "UNANSWERED: The accused is charged under BNS 109, which carries a maximum punishment of death, and the offence is of a grave and serious nature. The mere absence of criminal antecedents does not, by itself, outweigh the gravity of the offence or the need to deny bail whe…"
     },
     {
-     "label": "O4 against G8 (weak prima facie)",
-     "value": "UNANSWERED: The applicant has been in custody for 608 days without any earlier bail application, and the trial has already commenced, yet no evidence is offered to demonstrate that he will not abscond or tamper with evidence if released."
+     "label": "O4 against G5 (antecedents)",
+     "value": "UNANSWERED: The charge sheet has been filed in this case and the trial has commenced, with the accused having been in custody for 609 days, indicating that the investigation is complete and the accused has had ample opportunity to tamper with evidence or influence witnes…"
     },
     {
-     "label": "O5 against general (gravity and punishment)",
-     "value": "UNANSWERED: The applicant is charged under BNS 109, which is non-bailable with a maximum punishment of death, indicating the gravity of the offence."
+     "label": "O5 against G6 (flight risk)",
+     "value": "UNANSWERED: The defence's argument that the accused is not a flight risk is contradicted by the fact that the offence is non-bailable, carrying a maximum punishment of death, and the applicant has already spent 609 days in custody, indicating the gravity of the charges."
     },
     {
-     "label": "O6 against general (flight risk)",
-     "value": "UNANSWERED: The applicant has been in custody for 608 days with no earlier bail application on record, suggesting a pattern of remaining in custody rather than absconding, yet the prosecution may still argue flight risk based on the nature of the charge."
+     "label": "O6 against G6 (flight risk)",
+     "value": "UNANSWERED: The applicant is charged under BNS 109, which is a non-bailable offence with a maximum punishment of death, demonstrating the extreme gravity of the offence and undermining the argument that bail should be granted merely because the accused is a first-time of…"
     },
     {
-     "label": "O7 against general (witness tampering)",
-     "value": "UNANSWERED: The trial has commenced, and with prosecution witnesses yet to be fully examined, there is a reasonable apprehension of tampering with witnesses if the applicant is released on bail."
+     "label": "O7 against G7 (witness tampering)",
+     "value": "UNANSWERED: The defence relies on a Delhi High Court order that construed IPC 307, but this court has held that mere allegations of the possibility of the accused influencing witnesses or tampering with evidence cannot be grounds to deny bail. The defence's apprehension…"
     },
     {
-     "label": "O8 against general (antecedents)",
-     "value": "UNANSWERED: The applicant has no criminal antecedents, which may be considered in favour of bail, but the prosecution may argue that the absence of antecedents does not negate the seriousness of the present charge."
+     "label": "O8 against G7 (witness tampering)",
+     "value": "UNANSWERED: The defence's reliance on the apprehension of witness tampering is undermined by the fact that the charge sheet has been filed and the trial has commenced, with six witnesses already examined. The mere possibility of tampering, without specific evidence of su…"
     },
     {
-     "label": "O9 against general (statutory bar)",
-     "value": "UNANSWERED: The applicant is charged under BNS 109, which is non-bailable, and the court must consider the statutory bar in exercising discretion for bail in such offences."
+     "label": "O9 against G8 (weak prima facie)",
+     "value": "UNANSWERED: The offence is BNS 109, equivalent to IPC 307, which carries a maximum punishment of death and is explicitly non-bailable, indicating the grave nature of the offence."
+    },
+    {
+     "label": "O10 against general (gravity and punishment)",
+     "value": "UNANSWERED: The offence is non-bailable and carries a maximum punishment of death, which reflects the gravity of the accusation and the severity of punishment in case of conviction, making it a fit case to deny bail."
+    },
+    {
+     "label": "O11 against general (flight risk)",
+     "value": "UNANSWERED: The applicant has been in custody for 609 days without trial completion, and the prosecution has not yet examined all witnesses, raising reasonable apprehension that premature release could lead to tampering with evidence and influencing witnesses."
+    },
+    {
+     "label": "O12 against general (witness tampering)",
+     "value": "UNANSWERED: The trial has commenced and several prosecution witnesses are yet to be examined, creating a reasonable apprehension that the applicant may tamper with evidence or influence witnesses if released on bail."
+    },
+    {
+     "label": "O13 against general (statutory bar)",
+     "value": "UNANSWERED: The applicant is charged under BNS 109, which is a non-bailable offence with stringent provisions, and the statutory bar under the relevant provisions of the Code applies in the present case."
     }
    ]
   },
@@ -289,36 +381,36 @@
    "caption": "Vakeel turned the brief and the sparring into a card for the hearing: 5 likely questions from the bench with answers, 3 grounds to lead with and 1 bail condition counsel can offer. It predicts nothing and gives no grant rate.",
    "filled": [
     {
-     "label": "Lead with G2 (custody period)",
-     "value": "Detention behind bars for an indefinite period would amount to violation of Article 21 of the Constitution of India."
-    },
-    {
      "label": "Lead with G3 (charge sheet filed)",
-     "value": "The charge sheet was filed on 05.06.2025 and the investigation is complete, which negates the need for further custodial interrogation of the accused.The charge sheet has already been filed.the charge sheet has already been filed and no custodial interrogatio…"
+     "value": "Hence, no custodial interrogation is required."
     },
     {
      "label": "Lead with G4 (parity with co accused)",
-     "value": "Co-accused-2 is alleged to have held the injured; no weapon is attributed to him."
+     "value": "Co-accused-2 is alleged to have held the injured, which is a similar role to that attributed to Accused-1."
     },
     {
-     "label": "Bench may raise: gravity and punishment",
-     "value": "The object of bail is neither punitive nor preventative."
-    },
-    {
-     "label": "Bench may raise: custody period",
-     "value": "Detention behind bars for an indefinite period would amount to violation of Article 21 of the Constitution of India."
+     "label": "Lead with G5 (antecedents)",
+     "value": "Accused-1 is a first-time offender with no criminal antecedents, as verified by the Investigating Officer in the Police Verification Report."
     },
     {
      "label": "Bench may raise: witness tampering",
-     "value": "The apprehension in regard to the evidence being tampered or there being a threat to the complainant is not without merits, however, the same cannot be the sole ground for denying the bail to the applicant, and it is not alleged that the applicant, while on i…"
+     "value": "The apprehension in regard to the evidence being tampered or there being a threat to the complainant is not without merits, however, the same cannot be the sole ground for denying the bail to the applicant."
     },
     {
-     "label": "Bench may raise: parity with co accused",
-     "value": "Co-accused-2 is alleged to have held the injured; no weapon is attributed to him."
+     "label": "Bench may raise: flight risk",
+     "value": "Accused-1 has no previous involvement in any criminal case and has no criminal antecedents, and he is a first-time offender."
     },
     {
      "label": "Bench may raise: antecedents",
-     "value": "Accused-1 has no previous involvement in any criminal case and has no criminal antecedents."
+     "value": "Accused-1 is a first-time offender with no criminal antecedents, as verified by the Investigating Officer in the Police Verification Report."
+    },
+    {
+     "label": "Bench may raise: weak prima facie",
+     "value": "The court should examine the prosecution evidence to find out the existence of a prima facie case and the ingredients of offence and not conduct a mini trial, and the contradictions, inconsistencies or improbabilities in the evidence should not be weighed hea…"
+    },
+    {
+     "label": "Bench may raise: parity with co accused",
+     "value": "Co-accused-2 is alleged to have held the injured, which is a similar role to that attributed to Accused-1."
     },
     {
      "label": "Condition counsel can offer",
@@ -332,8 +424,12 @@
    "title": "Gate 2: your approval",
    "agent": null,
    "action": "approve_gate_2",
-   "caption": "Export is impossible until counsel approves Gate 2: in this run the export call before approval was refused (403). The checklist has 9 items for counsel (9 unanswered objections); approving records that counsel has read them. Next approves Gate 2 as counsel.",
+   "caption": "Export is impossible until counsel approves Gate 2: in this run the export call before approval was refused (403). The checklist has 14 items for counsel (1 unsupported field and 13 unanswered objections); approving records that counsel has read them. Next approves Gate 2 as counsel.",
    "filled": [
+    {
+     "label": "fir",
+     "value": "FIR: not supported by the papers; counsel acknowledges"
+    },
     {
      "label": "UNANSWERED:O1",
      "value": "objection O1: no supported reply; counsel has read it"
@@ -369,8 +465,99 @@
     {
      "label": "UNANSWERED:O9",
      "value": "objection O9: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O10",
+     "value": "objection O10: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O11",
+     "value": "objection O11: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O12",
+     "value": "objection O12: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O13",
+     "value": "objection O13: no supported reply; counsel has read it"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O1",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O2",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O3",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O4",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O5",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O6",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O7",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O8",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O9",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O10",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O11",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O12",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O13",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.1.label": "2297325853ed80d4",
+     "filled.2.label": "15b4cc2f36d2e923",
+     "filled.3.label": "4fe2213becfde785",
+     "filled.4.label": "7cd2b05de56847ff",
+     "filled.5.label": "079f7770ed5383cd",
+     "filled.6.label": "ea7bb9de9897eef8",
+     "filled.7.label": "17aeff8fba0502dc",
+     "filled.8.label": "ab1ec1ee92a88312",
+     "filled.9.label": "9a4f0c847c6c1007",
+     "filled.10.label": "20caa704b265ff83",
+     "filled.11.label": "d144359996a333cb",
+     "filled.12.label": "91beebb9c4608ccc",
+     "filled.13.label": "2cdeb0301d47ee8e"
+    }
+   }
   },
   {
    "stage": "FILE",
@@ -396,7 +583,33 @@
      "label": "hearing_card.docx",
      "value": "the hearing card"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "application.docx",
+      "value": ""
+     },
+     {
+      "label": "list_of_dates.docx",
+      "value": ""
+     },
+     {
+      "label": "objections_sheet.docx",
+      "value": ""
+     },
+     {
+      "label": "hearing_card.docx",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.0.label": "33cc0b7e431953bc",
+     "filled.1.label": "fce3f6d849a149e6",
+     "filled.2.label": "6de2b8c34ee0461e",
+     "filled.3.label": "d55a5fc741902b6a"
+    }
+   }
   }
  ]
 }

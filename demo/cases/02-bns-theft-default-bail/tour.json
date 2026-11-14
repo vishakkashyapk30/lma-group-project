@@ -10,10 +10,10 @@
   "parity": "no co-accused; antecedents (one other case pending); no earlier bail application"
  },
  "recorded": {
-  "date": "2026-11-14",
+  "date": "2026-11-15",
   "backend": "sarvam",
   "model": "sarvam-105b",
-  "cost_inr": 3.01
+  "cost_inr": 3.29
  },
  "steps": [
   {
@@ -56,7 +56,53 @@
      "label": "08_vakalatnama.pdf",
      "value": "born-digital PDF"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "01_fir.pdf",
+      "value": ""
+     },
+     {
+      "label": "02_arrest_memo.pdf",
+      "value": ""
+     },
+     {
+      "label": "03_remand_order.pdf",
+      "value": ""
+     },
+     {
+      "label": "04_order_sheet.pdf",
+      "value": ""
+     },
+     {
+      "label": "05_custody_certificate.pdf",
+      "value": ""
+     },
+     {
+      "label": "06_police_verification.pdf",
+      "value": ""
+     },
+     {
+      "label": "07_personal_circumstances.pdf",
+      "value": ""
+     },
+     {
+      "label": "08_vakalatnama.pdf",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.0.label": "57a1cda9639fd7eb",
+     "filled.1.label": "b92cd2202758fed0",
+     "filled.2.label": "8ef36001e5a89f60",
+     "filled.3.label": "437a47b84d605840",
+     "filled.4.label": "d0d5efebef5e18a8",
+     "filled.5.label": "41910d2b055a80c4",
+     "filled.6.label": "c172874d1314fddb",
+     "filled.7.label": "cb943ee0efdd149c"
+    }
+   }
   },
   {
    "stage": "DOSSIER",
@@ -64,7 +110,7 @@
    "title": "Peshkar builds the dossier",
    "agent": "PESHKAR",
    "action": null,
-   "caption": "Peshkar filled the 13 fields of the dossier: 9 from the papers, each with the quoted sentence and page, 1 from counsel and 3 left open. Counsel answered 1 question from instructions; those fields are marked as counsel's, never as verified. The List of Dates has 6 entries, each tied to its page.",
+   "caption": "Peshkar filled the 13 fields of the dossier: 10 from the papers, each with the quoted sentence and page, 1 from counsel and 2 left open. Counsel answered 1 question from instructions; those fields are marked as counsel's, never as verified. The List of Dates has 6 entries, each tied to its page.",
    "filled": [
     {
      "label": "Were any co-accused granted or refused bail? If so, please upload their orders.",
@@ -72,7 +118,7 @@
     },
     {
      "label": "FIR",
-     "value": "not on record (not supported by the papers)"
+     "value": "number: 214/2026, police_station: PS-7, date: 2026-08-10 (verified from the papers)"
     },
     {
      "label": "Sections",
@@ -88,7 +134,7 @@
     },
     {
      "label": "Days in custody",
-     "value": "95 (computed)"
+     "value": "96 (computed)"
     },
     {
      "label": "Charge sheet",
@@ -106,7 +152,22 @@
      "label": "Antecedents",
      "value": "FIR No. 88/2025 under BNS 303(2), P.S. PS-9, in which the trial is pending and Accused-1 is on bail (verified from the papers)"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "",
+      "value": ""
+     },
+     {
+      "label": "FIR",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.1.label": "61ef8cb5c4f3d3ea"
+    }
+   }
   },
   {
    "stage": "GATE_1",
@@ -114,15 +175,11 @@
    "title": "Gate 1: counsel approves the facts",
    "agent": null,
    "action": null,
-   "caption": "Nothing is drafted until counsel approves the dossier, and the code accepts that approval from counsel only. Counsel acknowledged 3 fields the papers do not support (FIR, Trial stage and Earlier bail orders) and approved.",
+   "caption": "Nothing is drafted until counsel approves the dossier, and the code accepts that approval from counsel only. Counsel acknowledged 2 fields the papers do not support (Trial stage and Earlier bail orders) and approved.",
    "filled": [
     {
      "label": "Gate 1 note",
      "value": "approved by counsel for the recorded evaluator demo"
-    },
-    {
-     "label": "Acknowledged: FIR",
-     "value": "not supported by the papers; acknowledged by counsel"
     },
     {
      "label": "Acknowledged: Trial stage",
@@ -140,15 +197,15 @@
    "title": "Rights Radar",
    "agent": "PESHKAR",
    "action": null,
-   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-14: date arithmetic and statute tables, not the language model. Default bail: ELIGIBLE, Undertrial limit (BNSS s.479): NOT_YET, Production within 24 hours: CHECK and Antil category: A. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified.",
+   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-15: date arithmetic and statute tables, not the language model. Default bail: ELIGIBLE, Undertrial limit (BNSS s.479): NOT_YET, Production within 24 hours: CHECK and Antil category: A. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified.",
    "filled": [
     {
      "label": "Default bail",
-     "value": "ELIGIBLE: 60-day limit (maximum 5 years). Day 1 is the first remand, 12.08.2026. It is day 95 and no charge sheet is on record. The right arose on day 61 (11.10.2026); an application must be made before a charge sheet is filed."
+     "value": "ELIGIBLE: 60-day limit (maximum 5 years). Day 1 is the first remand, 12.08.2026. It is day 96 and no charge sheet is on record. The right arose on day 61 (11.10.2026); an application must be made before a charge sheet is filed."
     },
     {
      "label": "Undertrial limit (BNSS s.479)",
-     "value": "NOT_YET: 95 days in custody. The threshold is 609 days for a first-time offender (1/3 of 5 years, on bond) and 913 days otherwise (1/2, on bail). The applicable threshold (1/2) of 913 days is reached on 09.02.2029, 818 day(s) from now."
+     "value": "NOT_YET: 96 days in custody. The threshold is 609 days for a first-time offender (1/3 of 5 years, on bond) and 913 days otherwise (1/2, on bail). The applicable threshold (1/2) of 913 days is reached on 09.02.2029, 817 day(s) from now."
     },
     {
      "label": "Notice of appearance",
@@ -178,35 +235,31 @@
    "title": "Sutradhar plans, Vakeel drafts",
    "agent": "VAKEEL",
    "action": null,
-   "caption": "Sutradhar planned the brief factor by factor (7 factors) and fetched the evidence each needs: 59 store calls. Vakeel drafted 3 grounds (3 supported). Every sentence was checked against its source; 13 sentences the checker could not support were withheld, leaving 3 grounds for counsel to draft. 17 open issues are listed for counsel.",
+   "caption": "Sutradhar planned the brief factor by factor (6 factors) and fetched the evidence each needs: 45 store calls. Vakeel drafted 2 grounds (2 supported). Every sentence was checked against its source; 11 sentences the checker could not support were withheld, leaving 4 grounds for counsel to draft. 16 open issues are listed for counsel.",
    "filled": [
     {
-     "label": "G4 · flight risk",
-     "value": "SUPPORTED: The petitioners have permanent residence and deep roots in the society, which negates any possibility of absconding [A:HCMD010641222025#15]."
-    },
-    {
-     "label": "G5 · witness tampering",
-     "value": "SUPPORTED: The grounds raised in support of the bail application, coupled with other facts such as absence of any apprehension regarding absconding of applicant-accused, tampering with evidence, or influencing witnesses, it is justified to grant of bail [A:RJHC020801072…"
+     "label": "G2 · custody period",
+     "value": "SUPPORTED: The period of custody as on 10.11.2026 is 91 days [F:custody_days]. The charge sheet has not been filed [F:charge_sheet]. The alleged offence is triable by Magistrate and the maximum sentence is of three years [A:RJHC020020442025#5]."
     },
     {
      "label": "G6 · weak prima facie",
-     "value": "SUPPORTED: The FIR allegations can be read against the sections charged [F:facts_text]. The only prima facie evidence against the petitioner is that it appears from the CDRs that the petitioner’s mobile phone was used to connect the other accused prior to commission of…"
+     "value": "SUPPORTED: The FIR allegations can be read against the sections charged [F:facts_text]."
     },
     {
      "label": "Withheld from G1",
-     "value": "3 sentences; reason: not supported by the cited paragraph (authority support 0.00 < 0.50)"
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.05)"
     },
     {
      "label": "Withheld from G2",
-     "value": "1 sentence; reason: not supported by the dossier quote (support 0.17)"
+     "value": "2 sentences; reason: not supported by the dossier quote, not supported by the cited paragraph (fact support 0.04 < 0.50; authority support 0…"
     },
     {
      "label": "Withheld from G3",
-     "value": "3 sentences; reason: has a malformed [F:...] or [A:...] reference, not supported by the dossier quote (malformed [A:doc_id#para]; support 0.…"
+     "value": "2 sentences; reason: not supported by the dossier quote (support 0.01)"
     },
     {
      "label": "Withheld from G4",
-     "value": "2 sentences; reason: not supported by the dossier quote (support 0.01)"
+     "value": "1 sentence; reason: could not be checked (unknown dossier field(s) ['custody_certificate']: use one of ['antecedents', 'arrest_date', 'char…"
     },
     {
      "label": "Withheld from G5",
@@ -214,7 +267,7 @@
     },
     {
      "label": "Withheld from G6",
-     "value": "1 sentence; reason: only says the record is silent"
+     "value": "2 sentences; reason: not supported by the dossier quote (support 0.14)"
     }
    ]
   },
@@ -224,19 +277,15 @@
    "title": "Abhiyojak argues the other side",
    "agent": "ABHIYOJAK",
    "action": null,
-   "caption": "Abhiyojak, the prosecution sparring partner, raised 3 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case; 3 ungrounded objections were discarded. After Vakeel's replies: 3 unanswered.",
+   "caption": "Abhiyojak, the prosecution sparring partner, raised 2 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case; 2 ungrounded objections were discarded. Abhiyojak judged 2 of Vakeel's replies: 0 answered, 1 partly answered, 1 unanswered. Whatever stays open is listed at Gate 2, and counsel answers it before approving.",
    "filled": [
     {
-     "label": "O1 against G6 (weak prima facie)",
-     "value": "UNANSWERED: The defence's claim that the FIR allegations can be read against the sections charged is misplaced; the CDR evidence shows the petitioner's mobile phone was used to connect the other accused prior to the offence, establishing prima facie involvement that cann…"
+     "label": "O1 against G2 (custody period)",
+     "value": "PARTLY: The applicant has antecedents, specifically FIR No. 88/2025 under BNS 303(2), P.S. PS-9, where the trial is pending and Accused-1 is on bail, indicating a risk of re-offending if released."
     },
     {
-     "label": "O2 against general (flight risk)",
-     "value": "UNANSWERED: The applicant has antecedents of a similar offence and is currently out on bail in another pending trial, raising reasonable apprehension of flight if released."
-    },
-    {
-     "label": "O3 against general (antecedents)",
-     "value": "UNANSWERED: The applicant has a prior FIR under BNS 303(2), P.S. PS-9, in which the trial is pending and Accused-1 is on bail, indicating a pattern of involvement in similar offences."
+     "label": "O2 against G6 (weak prima facie)",
+     "value": "UNANSWERED: The applicant has a prior FIR under BNS 303(2) at PS-9, and the trial is pending, which indicates a pattern of involvement in similar offences."
     }
    ]
   },
@@ -246,27 +295,19 @@
    "title": "Hearing card",
    "agent": "VAKEEL",
    "action": null,
-   "caption": "Vakeel turned the brief and the sparring into a card for the hearing: 3 likely questions from the bench with answers, 3 grounds to lead with and 1 bail condition counsel can offer. It predicts nothing and gives no grant rate.",
+   "caption": "Vakeel turned the brief and the sparring into a card for the hearing: 2 likely questions from the bench with answers, 2 grounds to lead with and 1 bail condition counsel can offer. It predicts nothing and gives no grant rate.",
    "filled": [
     {
-     "label": "Lead with G4 (flight risk)",
-     "value": "The petitioners have permanent residence and deep roots in the society, which negates any possibility of absconding."
+     "label": "Lead with G2 (custody period)",
+     "value": "The period of custody as on 10.11.2026 is 91 days."
     },
     {
      "label": "Lead with G6 (weak prima facie)",
      "value": "The FIR allegations can be read against the sections charged."
     },
     {
-     "label": "Lead with G5 (witness tampering)",
-     "value": "The grounds raised in support of the bail application, coupled with other facts such as absence of any apprehension regarding absconding of applicant-accused, tampering with evidence, or influencing witnesses, it is justified to grant of bail."
-    },
-    {
-     "label": "Bench may raise: flight risk",
-     "value": "The petitioners have permanent residence and deep roots in the society, which negates any possibility of absconding."
-    },
-    {
-     "label": "Bench may raise: witness tampering",
-     "value": "The grounds raised in support of the bail application, coupled with other facts such as absence of any apprehension regarding absconding of applicant-accused, tampering with evidence, or influencing witnesses, it is justified to grant of bail."
+     "label": "Bench may raise: custody period",
+     "value": "The period of custody as on 10.11.2026 is 91 days."
     },
     {
      "label": "Bench may raise: weak prima facie",
@@ -284,12 +325,8 @@
    "title": "Gate 2: your approval",
    "agent": null,
    "action": "approve_gate_2",
-   "caption": "Export is impossible until counsel approves Gate 2: in this run the export call before approval was refused (403). The checklist has 6 items for counsel (3 unsupported fields and 3 unanswered objections); approving records that counsel has read them. Next approves Gate 2 as counsel.",
+   "caption": "Export is impossible until counsel approves Gate 2: in this run the export call before approval was refused (403). The checklist has 3 items for counsel (2 unsupported fields and 1 unanswered objection); approving records that counsel has read them. Next approves Gate 2 as counsel.",
    "filled": [
-    {
-     "label": "fir",
-     "value": "FIR: not supported by the papers; counsel acknowledges"
-    },
     {
      "label": "trial_stage",
      "value": "Trial stage: not supported by the papers; counsel acknowledges"
@@ -299,18 +336,29 @@
      "value": "Earlier bail orders: not supported by the papers; counsel acknowledges"
     },
     {
-     "label": "UNANSWERED:O1",
-     "value": "objection O1: no supported reply; counsel has read it"
-    },
-    {
      "label": "UNANSWERED:O2",
      "value": "objection O2: no supported reply; counsel has read it"
-    },
-    {
-     "label": "UNANSWERED:O3",
-     "value": "objection O3: no supported reply; counsel has read it"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "",
+      "value": ""
+     },
+     {
+      "label": "",
+      "value": ""
+     },
+     {
+      "label": "UNANSWERED:O2",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.2.label": "15b4cc2f36d2e923"
+    }
+   }
   },
   {
    "stage": "FILE",
@@ -336,7 +384,33 @@
      "label": "hearing_card.docx",
      "value": "the hearing card"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "application.docx",
+      "value": ""
+     },
+     {
+      "label": "list_of_dates.docx",
+      "value": ""
+     },
+     {
+      "label": "objections_sheet.docx",
+      "value": ""
+     },
+     {
+      "label": "hearing_card.docx",
+      "value": ""
+     }
+    ],
+    "src": {
+     "filled.0.label": "33cc0b7e431953bc",
+     "filled.1.label": "fce3f6d849a149e6",
+     "filled.2.label": "6de2b8c34ee0461e",
+     "filled.3.label": "d55a5fc741902b6a"
+    }
+   }
   }
  ]
 }
