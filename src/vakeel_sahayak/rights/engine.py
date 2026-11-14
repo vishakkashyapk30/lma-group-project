@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import re
 
+from vakeel_sahayak.pipelines import first_schedule
+from vakeel_sahayak.rights.acts import ndps_quantity_note
 from vakeel_sahayak.rights.base import Rule
 from vakeel_sahayak.rights.day_count import DateRule, count_days
 from vakeel_sahayak.rights.inputs import RuleInputs
@@ -89,7 +91,7 @@ class RightsEngine:
             RuleInputs.
         """
         f = dossier.fields
-        sections = _value(f.sections) or []
+        sections = _value(f.sections)
         arrest_date = _value(f.arrest_date)
         first_remand = _value(f.first_remand)
         cs = _value(f.charge_sheet)
@@ -100,6 +102,9 @@ class RightsEngine:
         known = ante is not None
         pending = _pending_cases(ante) if known else None
         fir = _value(f.fir)
+        # A section that only makes one liable for another's offence (BNS 3(5), IPC 34, BNS 190, IPC 149) has no punishment of its own and
+        # must not hide the maximum of the offence charged with it; every other section without one still leaves the maximum unknown.
+        own = [s for s in sections if not first_schedule.carries_offence_punishment(s.code, s.section)] or []
         codes = [s.code.upper() for s in sections]
         special = next((s.code for s in sections if s.code.upper() not in _GENERAL_CODES), None)
         return RuleInputs(
@@ -109,7 +114,7 @@ class RightsEngine:
             charge_sheet_filed=cs.filed if cs else None,
             arrest_date=arrest_date,
             production_date=first_remand if arrest_date else None,  # the first remand is the first production
-            max_punishment=most_severe([s.max_punishment for s in sections]) if sections else None,
+            max_punishment=most_severe([s.max_punishment for s in own]) if own else None,
             sections=[f"{s.code} {s.section}" for s in sections],
             custody_days=custody,
             antecedents_known=known,
@@ -131,7 +136,20 @@ class RightsEngine:
             RightsReport.
         """
         inputs = self.build_inputs(dossier, timeline, as_of)
-        return RightsReport(case_id=dossier.case_id, as_of=as_of, checks=[r.evaluate(inputs) for r in self.rules])
+        checks = [self._explain_open_maximum(r.evaluate(inputs), inputs) for r in self.rules]
+        return RightsReport(case_id=dossier.case_id, as_of=as_of, checks=checks)
+
+    @staticmethod
+    def _explain_open_maximum(check, inputs: RuleInputs):
+        """Where a rule could not run because the maximum is empty and the cause is an NDPS section graded by quantity, say so in plain words.
+
+        Done here, not in the rules: a change to a rule module clears its `last_verified` (rights/verify_hash.py).
+        """
+        note = ndps_quantity_note(inputs)
+        detail = check.detail or ""
+        if note and "Maximum punishment" in detail and "not on record" in detail and note not in detail:
+            return check.model_copy(update={"detail": detail.rstrip() + note})
+        return check
 
     def clock_crossings(self, previous: RightsReport, current: RightsReport) -> list[str]:
         """Detect threshold crossings (e.g. the s.479 date) that should create a change set (plan §7.4).
