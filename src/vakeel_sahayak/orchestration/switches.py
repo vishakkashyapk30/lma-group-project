@@ -78,7 +78,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 # A3: the legal-rule tools the LLM must do without ("maps sections, counts days and judges rights itself").
 RULE_TOOLS: tuple[str, ...] = ("map_section", "transfer_check", "date_calc", "rights_check")
@@ -153,6 +153,9 @@ C1457_SWITCHES: dict[str, str] = {
     "draft_source": "facts_text",
     "objection_grounding": "by_id",
 }
+# Sparring reserve of the product flow only (docs/handoff/objections-unanswered-2026-11-15.md: about 3.9K tokens per objection, 7 to 10 objections).
+# Not part of C1457_SWITCHES, which describes the frozen evaluated arm; no evaluation variant sets it.
+PRODUCT_SPARRING_RESERVE_TOKENS = 60000
 ARCHITECTURE["H1"] = {k: v for part in H1_PARTS for k, v in ARCHITECTURE[part].items()}
 for _k in H1_PARTS:
     ARCHITECTURE[f"H1m{_k[1:]}"] = {k: v for part in H1_PARTS if part != _k for k, v in ARCHITECTURE[part].items()}
@@ -290,6 +293,14 @@ class Switches(BaseModel):
     objection_grounding: Literal["exact", "by_id"] = "exact"
     # X8: Slobodkin et al., "Attribute First, then Generate", ACL 2024 (https://aclanthology.org/2024.acl-long.182/): the span is selected first.
     fact_grounding: Literal["off", "verbatim"] = "off"
+    # Sparring reserve (post-freeze, 2026-11-15): tokens ADDED to the case cap that only the sparring step may spend (Abhiyojak's calls; Vakeel's
+    # reply, reply-repair and judge calls for objections); they are charged to no factor's drafting pool. 0 (default) is today's behaviour.
+    # Why: Vakeel's drafting and repair had already spent the 16,000-token drafting pool (or the 150,000 case cap) when the reply and judge
+    # calls came, so they were refused with BudgetExhausted and the objection ended UNANSWERED ("could not be judged"): 40 of 41 judge calls in
+    # the six demo runs, 68% of 599 objections on the blind slice. The sizing of that pool (12.0K to 12.8K per factor) came from a smaller
+    # hosted model than the one in use (16.4K to 20.3K). Engineering fix for a measured budget misallocation
+    # (docs/handoff/objections-unanswered-2026-11-15.md); no paper. Enabled by `production_switches()` only (60000); never by an evaluation variant.
+    sparring_reserve_tokens: int = Field(default=0, ge=0)
 
     @model_validator(mode="after")
     def _variants_need_the_planner(self) -> Switches:
@@ -479,9 +490,10 @@ def production_switches() -> Switches:
     Evaluation callers must continue to construct ``Switches()`` or an explicit
     named variant.  Product entry points use this factory so the selected
     architecture is visible at the boundary rather than changing experiment
-    defaults globally.
+    defaults globally. The product flow also turns on the sparring reserve
+    (`sparring_reserve_tokens`, 60000), which the frozen c1457 arm did not have.
     """
-    return Switches(**C1457_SWITCHES)
+    return Switches(**C1457_SWITCHES, sparring_reserve_tokens=PRODUCT_SPARRING_RESERVE_TOKENS)
 
 
 def _variant_table() -> dict[str, dict[str, Any]]:

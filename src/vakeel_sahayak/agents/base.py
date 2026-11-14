@@ -52,6 +52,7 @@ T = TypeVar("T")
 R = TypeVar("R")
 CASE_STORES = frozenset({StoreName.CASE_DOCS, StoreName.CASE_TIMELINE, StoreName.CASE_FACTS})
 _FACTOR: contextvars.ContextVar[str | None] = contextvars.ContextVar("vs_budget_factor", default=None)
+_SPARRING: contextvars.ContextVar[bool] = contextvars.ContextVar("vs_sparring_scope", default=False)  # inside Abhiyojak's objections, Vakeel's replies, the judge
 _PREDICTION = [
     re.compile(p, re.IGNORECASE)
     for p in (
@@ -109,28 +110,56 @@ def _walk_strings(value: Any, path: str = "") -> Iterator[tuple[str, str]]:
             yield from _walk_strings(v, f"{path}[{i}]")
 
 
-def _spent(budgets: Any, specific: str, factor: str | None, actor: Any = None) -> bool:
+def _spent(budgets: Any, specific: str, factor: str | None, actor: Any = None, pool: str | None = None) -> bool:
     """The tracker's narrow check (`store_calls_exhausted` / `tokens_exhausted`), else the general `exhausted(factor)` of a minimal budget.
 
-    The actor is passed only to a check that takes one (the real tracker picks the retrieval or the drafting token pool by it).
+    The actor is passed only to a check that takes one (the real tracker picks the retrieval or the drafting token pool by it); `pool`
+    ('sparring') likewise, and only when the tracker has a sparring reserve.
     """
     import inspect
 
     check = getattr(budgets, specific, None) or budgets.exhausted
-    if actor is not None and "actor" in inspect.signature(check).parameters:
-        return bool(check(factor, actor=actor))
-    return bool(check(factor))
+    params = inspect.signature(check).parameters
+    kwargs: dict[str, Any] = {}
+    if actor is not None and "actor" in params:
+        kwargs["actor"] = actor
+    if pool is not None and "pool" in params:
+        kwargs["pool"] = pool
+    return bool(check(factor, **kwargs))
 
 
-def _charge(budgets: Any, factor: str | None, *, actor: Any, **spend: int) -> None:
+def _charge(budgets: Any, factor: str | None, *, actor: Any, pool: str | None = None, **spend: int) -> None:
     """Charge spend; the actor is passed only to trackers that take one (the real BudgetTracker logs it on a BUDGET_HIT)."""
     import inspect
 
-    if "actor" in inspect.signature(budgets.charge).parameters:
-        budgets.charge(factor, actor=actor, **spend)
+    params = inspect.signature(budgets.charge).parameters
+    if pool is not None and "pool" in params:
+        spend_pool: dict[str, Any] = {"pool": pool}
     else:
-        budgets.charge(factor, **spend)
+        spend_pool = {}
+    if "actor" in params:
+        budgets.charge(factor, actor=actor, **spend, **spend_pool)
+    else:
+        budgets.charge(factor, **spend, **spend_pool)
 
+
+def in_sparring(fn: Callable[..., R]) -> Callable[..., R]:
+    """Method decorator: run the method inside `sparring_scope()` (its model calls draw on the sparring reserve, when there is one)."""
+    import functools
+
+    @functools.wraps(fn)
+    def wrapper(self: Any, *args: Any, **kwargs: Any) -> R:
+        with self.sparring_scope():
+            return fn(self, *args, **kwargs)
+
+    return wrapper
+
+
+def _sparring_pool(budgets: Any) -> str | None:
+    """'sparring' when this call is part of the sparring step and the tracker has a reserve for it, else None (the unchanged pools)."""
+    if budgets is not None and _SPARRING.get() and int(getattr(budgets, "sparring_reserve_tokens", 0) or 0) > 0:
+        return "sparring"
+    return None
 
 @dataclass
 class AgentContext:
@@ -202,6 +231,9 @@ class BaseAgent(ABC):
         self.log = ctx.log
         self.budgets = ctx.budgets
         self.switches = ctx.switches
+        reserve = int(getattr(self.switches, "sparring_reserve_tokens", 0) or 0)
+        if reserve > 0 and hasattr(self.budgets, "set_sparring_reserve"):
+            self.budgets.set_sparring_reserve(reserve)  # opt-in pool for the sparring step; the default 0 touches nothing
         self.tools = ctx.tools
         self.llm = ctx.llm if ctx.llm is not None else self._resolve_llm()
         self.nli = ctx.nli
@@ -508,6 +540,15 @@ class BaseAgent(ABC):
         finally:
             _FACTOR.reset(token)
 
+    @contextmanager
+    def sparring_scope(self) -> Iterator[None]:
+        """Model calls made inside this block draw on the sparring reserve when the tracker has one (`sparring_reserve_tokens`); else a no-op."""
+        token = _SPARRING.set(True)
+        try:
+            yield
+        finally:
+            _SPARRING.reset(token)
+
     @staticmethod
     def current_factor() -> str | None:
         """The factor the current block is charged to, if any."""
@@ -770,7 +811,8 @@ class BaseAgent(ABC):
         instructions = self._handoff(instructions, case, extra)
         self.guard_outbound({"system": self.system_prompt(), "instructions": instructions, "case": case, "extra": extra}, public=corpus)
         budgets = getattr(self, "budgets", None)
-        if budgets is not None and _spent(budgets, 'tokens_exhausted', fkey, self.NAME):
+        pool = _sparring_pool(budgets)
+        if budgets is not None and _spent(budgets, 'tokens_exhausted', fkey, self.NAME, pool):
             raise BudgetExhausted(f"token budget of {fkey or 'the case'} is spent", "factor" if fkey else "case", fkey, "tokens")
         prompt = self.build_prompt(task, instructions, case=case, corpus=corpus, schema=schema, extra=extra)
         shared = self._prefix_meter().observe(task, prompt)  # S14d signal: tokens shared with an earlier prompt of this task (in memory; an event only under the variant)
@@ -802,10 +844,13 @@ class BaseAgent(ABC):
 
     def _log_llm(self, task: str, factor: str | None, prompt: str, p_tok: int, c_tok: int, attempts: int, *, ok: bool, value: Any = None) -> None:
         """Charge the budget and append the llm_call AGENT_MESSAGE (token counts and hashes, not the prompt itself)."""
-        charge = {"factor": factor, "tokens": int(p_tok) + int(c_tok), "store_calls": 0}
+        charge: dict[str, Any] = {"factor": factor, "tokens": int(p_tok) + int(c_tok), "store_calls": 0}
         budgets = getattr(self, "budgets", None)
+        pool = _sparring_pool(budgets)
+        if pool is not None:
+            charge["pool"] = pool  # recorded so a resume replays the charge into the reserve
         if budgets is not None:
-            _charge(budgets, factor, actor=self.NAME, tokens=charge["tokens"])
+            _charge(budgets, factor, actor=self.NAME, pool=pool, tokens=charge["tokens"])
         out_text = value.model_dump_json() if isinstance(value, BaseModel) else str(jsonable(value))
         engine = getattr(self.llm, "last_engine", None)  # a FallbackLLM: which client answered (the hosted primary, or the local fallback and why)
         fell_back = engine is not None and engine is not getattr(self.llm, "primary", engine)
@@ -831,7 +876,8 @@ class BaseAgent(ABC):
         fkey = fkey or _FACTOR.get()
         self.guard_outbound({"prompt": prompt})
         budgets = getattr(self, "budgets", None)
-        if budgets is not None and _spent(budgets, 'tokens_exhausted', fkey, self.NAME):
+        pool = _sparring_pool(budgets)
+        if budgets is not None and _spent(budgets, 'tokens_exhausted', fkey, self.NAME, pool):
             raise BudgetExhausted(f"token budget of {fkey or 'the case'} is spent", "factor" if fkey else "case", fkey, "tokens")
         done = self.llm.complete(prompt, max_tokens=max_tokens, temperature=temperature)
         self._log_llm(task, fkey, prompt, done.prompt_tokens, done.completion_tokens, 1, ok=True, value=done.text)

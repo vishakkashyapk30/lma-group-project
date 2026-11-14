@@ -43,6 +43,7 @@ EV01_DEFAULTS = {
     "signal_source": "dossier", "argument_policy": "single", "sparring_scope": "per_ground", "abstention": "flag", "draft_source": "dossier", "critic_material": "contract",
     "objection_grounding": "exact",  # RECONCILED: architecture search iteration 2 added X7
     "fact_grounding": "off",  # RECONCILED: architecture search iteration 3 added X8
+    "sparring_reserve_tokens": 0,  # RECONCILED: post-freeze 2026-11-15 engineering fix (opt-in, default 0)
 }
 EXTRACTORS = ["finetuned_4b", "base_4b", "prompted_32b"]
 
@@ -70,6 +71,7 @@ def test_production_preset_is_c1457_without_changing_the_eval_default():
         "abstention": "strict",
         "draft_source": "facts_text",
         "objection_grounding": "by_id",
+        "sparring_reserve_tokens": 60000,  # RECONCILED: the product flow only; no evaluation variant sets it
     }
     assert Switches().model_dump(exclude_defaults=True) == {}
 

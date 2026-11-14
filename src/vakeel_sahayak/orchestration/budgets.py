@@ -16,6 +16,12 @@ and reply judging) has its own pool `drafting_tokens_per_factor` (16K, measured:
 so the repair and judge-reply steps were starved after retrieval and drafting had spent it. The case cap still bounds the total.
 A charge without an actor counts as retrieval, as before.
 
+Sparring reserve (opt-in, `Switches.sparring_reserve_tokens`, default 0): when set above 0 the sparring step (Abhiyojak's calls and Vakeel's
+reply, reply-repair and judge calls for objections) draws on its own pool of that many tokens, added to the case cap and charged to no
+factor's drafting pool, so drafting cannot starve it (`docs/handoff/objections-unanswered-2026-11-15.md`). Those charges are recorded with
+`pool: "sparring"` in `budget_charge`. `snapshot()` shows the reserve as part of the total (cap = case cap + reserve; spent = both pools). With
+the reserve 0 nothing here changes.
+
 The tracker is thread-safe (factors run in parallel, plan §6.2 step 2) and rebuildable from the event log after a
 resume (`from_events`): every charge made through `BaseAgent` is recorded in its event's outputs under `budget_charge`.
 """
@@ -94,6 +100,8 @@ class BudgetTracker:
         self.log, self.case_id, self.actor = log, case_id, actor
         self._lock = threading.RLock()
         self._case_tokens = 0
+        self.sparring_reserve_tokens = 0  # opt-in separate pool for the sparring step (0: off, every behaviour as before)
+        self._spar_tokens = 0
         self._factor_tokens: dict[str, int] = {}  # retrieval pool
         self._draft_tokens: dict[str, int] = {}  # drafting pool
         self._store_calls: dict[str, int] = {}
@@ -140,12 +148,17 @@ class BudgetTracker:
         for ev in events:
             charge = (getattr(ev, "outputs", None) or {}).get("budget_charge")
             if isinstance(charge, dict):
-                tracker.charge(charge.get("factor"), int(charge.get("tokens", 0)), int(charge.get("store_calls", 0)), actor=getattr(ev, "actor", None))
+                tracker.charge(charge.get("factor"), int(charge.get("tokens", 0)), int(charge.get("store_calls", 0)), actor=getattr(ev, "actor", None), pool=charge.get("pool"))
             if getattr(ev, "kind", None) == EventKind.BUDGET_HIT:
                 inputs = getattr(ev, "inputs", {}) or {}
                 tracker._hit_keys.add((str(inputs.get("scope")), inputs.get("factor"), str(inputs.get("limit"))))
         tracker.log = log
         return tracker
+
+    def set_sparring_reserve(self, tokens: int) -> None:
+        """Set the sparring pool (tokens added to the case cap for the sparring step only); 0 turns it off."""
+        with self._lock:
+            self.sparring_reserve_tokens = max(0, int(tokens))
 
     def bind(self, log: Any, case_id: str) -> None:
         """Attach the case's event log (for trackers created before the log)."""
@@ -166,7 +179,7 @@ class BudgetTracker:
 
     # ------------------------------------------------------------------ spend
 
-    def charge(self, factor: str | None, tokens: int = 0, store_calls: int = 0, *, actor: AgentName | str | None = None) -> None:
+    def charge(self, factor: str | None, tokens: int = 0, store_calls: int = 0, *, actor: AgentName | str | None = None, pool: str | None = None) -> None:
         """Record spend.
 
         Args:
@@ -174,9 +187,13 @@ class BudgetTracker:
             tokens: tokens spent (count toward the factor and the case)
             store_calls: store calls made
             actor: who spent it (actor of a BUDGET_HIT event this charge triggers)
+            pool: 'sparring' charges the sparring reserve only (not the case total, not a factor pool); None: as before
         """
         key = _key(factor)
         with self._lock:
+            if pool == "sparring":
+                self._spar_tokens += int(tokens)
+                tokens = 0
             self._case_tokens += int(tokens)
             if key is not None:
                 pool = self._draft_tokens if _actor_name(actor) in DRAFTING_ACTORS else self._factor_tokens
@@ -191,7 +208,7 @@ class BudgetTracker:
         key = _key(factor)
         with self._lock:
             if key is None:
-                return self._case_tokens, sum(self._store_calls.values())
+                return self._case_tokens + self._spar_tokens, sum(self._store_calls.values())
             return self._factor_tokens.get(key, 0) + self._draft_tokens.get(key, 0), self._store_calls.get(key, 0)
 
     def left(self, factor: str | None = None) -> BudgetLeft:
@@ -219,6 +236,8 @@ class BudgetTracker:
         out = []
         if self._case_tokens >= self.tokens_per_case:
             out.append(("case", None, "tokens", self._case_tokens, self.tokens_per_case))
+        if self.sparring_reserve_tokens > 0 and self._spar_tokens >= self.sparring_reserve_tokens:
+            out.append(("sparring", None, "tokens", self._spar_tokens, self.sparring_reserve_tokens))
         if key is not None:
             sc_cap, tk_cap = self.limits(key)
             if self._store_calls.get(key, 0) >= sc_cap:
@@ -241,7 +260,7 @@ class BudgetTracker:
         """
         key = _key(factor)
         with self._lock:
-            spent = self._spent_budgets(key)
+            spent = [s for s in self._spent_budgets(key) if s[0] != "sparring"]
         self._check_hits(key, actor)
         return bool(spent)
 
@@ -253,17 +272,23 @@ class BudgetTracker:
         self._check_hits(key, None)
         return bool(spent)
 
-    def tokens_exhausted(self, factor: str | None, actor: AgentName | str | None = None) -> bool:
+    def tokens_exhausted(self, factor: str | None, actor: AgentName | str | None = None, pool: str | None = None) -> bool:
         """True when the token budget the next LLM call draws on is spent, so the call must be refused.
 
         Args:
             factor: the factor (None: the case budget only)
             actor: who is about to call; Vakeel and Abhiyojak draw on the factor's drafting pool, everyone else on its retrieval pool
+            pool: 'sparring' (with a reserve set): only the sparring reserve counts, no factor or case pool
         """
         key = _key(factor)
+        if pool == "sparring" and self.sparring_reserve_tokens > 0:
+            with self._lock:
+                spent = self._spar_tokens >= self.sparring_reserve_tokens
+            self._check_hits(key, None)
+            return spent
         want = "drafting_tokens" if _actor_name(actor) in DRAFTING_ACTORS else "tokens"
         with self._lock:
-            spent = [s for s in self._spent_budgets(key) if s[2] == want or (s[0] == "case" and s[2] == "tokens")]
+            spent = [s for s in self._spent_budgets(key) if s[0] != "sparring" and (s[2] == want or (s[0] == "case" and s[2] == "tokens"))]
         self._check_hits(key, None)
         return bool(spent)
 
@@ -301,17 +326,20 @@ class BudgetTracker:
             BudgetState (store calls per factor; unscoped calls under 'case').
         """
         with self._lock:
-            return BudgetState(tokens_spent=self._case_tokens, tokens_cap=self.tokens_per_case, store_calls=dict(self._store_calls))
+            return BudgetState(tokens_spent=self._case_tokens + self._spar_tokens, tokens_cap=self.tokens_per_case + self.sparring_reserve_tokens, store_calls=dict(self._store_calls))
 
     def to_dict(self) -> dict[str, Any]:
         """JSON-able state for a graph checkpoint."""
         with self._lock:
-            return {
+            out = {
                 "limits": {"tokens_per_case": self.tokens_per_case, "store_calls_per_factor": self.store_calls_per_factor,
                            "tokens_per_factor": self.tokens_per_factor, "drafting_tokens_per_factor": self.drafting_tokens_per_factor, "factors": {k: list(v) for k, v in self._limits.items()}},
                 "case_tokens": self._case_tokens, "factor_tokens": dict(self._factor_tokens), "draft_tokens": dict(self._draft_tokens),
                 "store_calls": dict(self._store_calls), "hits": [list(k) for k in sorted(self._hit_keys, key=str)],
             }  # fmt: skip
+            if self.sparring_reserve_tokens or self._spar_tokens:  # absent when off, so a default checkpoint is unchanged
+                out["sparring"] = {"reserve": self.sparring_reserve_tokens, "spent": self._spar_tokens}
+            return out
 
     @classmethod
     def from_dict(cls, data: dict[str, Any], *, log: Any = None, case_id: str | None = None) -> BudgetTracker:
@@ -324,4 +352,7 @@ class BudgetTracker:
         tracker._draft_tokens = {k: int(v) for k, v in (data.get("draft_tokens") or {}).items()}
         tracker._store_calls = {k: int(v) for k, v in (data.get("store_calls") or {}).items()}
         tracker._hit_keys = {(str(h[0]), h[1], str(h[2])) for h in data.get("hits", [])}
+        spar = data.get("sparring") or {}
+        tracker.sparring_reserve_tokens = int(spar.get("reserve", 0))
+        tracker._spar_tokens = int(spar.get("spent", 0))
         return tracker
