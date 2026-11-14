@@ -1,0 +1,682 @@
+\documentclass[11pt]{article}
+
+% ACL style in final (non-anonymous) mode. The style file discards table-of-contents lines, so the
+% standard command is saved before it is loaded and restored after; page numbers are switched on for the page budget.
+\let\vsaddcontentsline\addcontentsline
+\usepackage[final]{acl}
+\let\addcontentsline\vsaddcontentsline
+
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{inconsolata}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{enumitem}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\usepackage{tikz}
+\usetikzlibrary{positioning,fit,backgrounds,arrows.meta}
+\hypersetup{hidelinks}
+\renewcommand{\topfraction}{0.9}\renewcommand{\bottomfraction}{0.8}\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.8}\renewcommand{\dbltopfraction}{0.9}\renewcommand{\dblfloatpagefraction}{0.8}
+\setlength{\textfloatsep}{10pt plus 2pt minus 2pt}\setlength{\dbltextfloatsep}{10pt plus 2pt minus 2pt}
+\pagestyle{plain}
+\newcommand{\vs}{VS-Final}
+\newcommand{\para}[1]{\paragraph{#1}}
+
+\begin{document}
+
+% ------------------------------------------------------------------ title page and contents (not counted)
+\onecolumn
+\pagenumbering{roman}
+\thispagestyle{empty}
+\begin{center}
+\vspace*{3.2cm}
+{\LARGE\bfseries Vakeel-Sahayak.ai: An Agentic Harness for\\[4pt] Bail Preparation over Typed Legal Stores\par}
+\vspace{0.9cm}
+{\Large Technical Report\par}
+\vspace{1.6cm}
+{\large\bfseries Vishak Kashyap K \qquad Shravani Kalmali \qquad Satvik Rao \qquad Harshita K\par}
+\vspace{0.5cm}
+{\large IIIT Hyderabad\par}
+\vspace{1.6cm}
+{\large LMA Group Project 2026\par}
+\vspace{0.3cm}
+{\large 14 November 2026\par}
+\vfill
+\begin{minipage}{0.8\textwidth}\small
+\textbf{How to read this report.} The body (abstract to conclusion) is eight pages. The references, a glossary of every label used, and the appendix follow it. The final system is called \vs{} throughout; ``Full'' is the first full system, which \vs{} extends.
+\end{minipage}
+\vspace{1.5cm}
+\end{center}
+\clearpage
+\tableofcontents
+\clearpage
+
+% ------------------------------------------------------------------ body (eight pages)
+\twocolumn
+\pagenumbering{arabic}
+
+\begin{abstract}
+Legal-aid lawyers in India prepare bail applications from short and messy case files, and a brief is useful only if it rests on the file and on authorities that exist. However, a language model that drafts from memory invents facts and case law, and it has not been shown that an agent system which plans retrieval, checks every sentence and argues against itself grounds a brief better than simpler retrieval on the same model. We built Vakeel-Sahayak.ai, six agents over ten typed stores with two counsel approvals enforced in code, chose its final configuration (\vs{}) by an architecture search on 50 development orders, and tested it once, with five registered hypotheses, on 80 sealed High Court orders against seven baselines. \vs{} has 46 wins, 69 ties and 5 losses (the first full system: 29, 76 and 15); four hypotheses hold (a fabricated-citation rate of 0.00 against 0.95 and 0.64 for the two comparable retrieval baselines, a lower unsupported-fact rate than all seven baselines, 110 store calls per order against 188), one fails on a single count, and none of 320 export attempts made before counsel's approval was executed. The system beat the baselines only after each of its decisions was measured against a simpler alternative, and 0.89 of its argument sentences are still not entailed by the facts alone, so the brief remains a first draft for counsel.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+A legal-aid lawyer who prepares a regular bail application in an Indian High Court starts from a pile of documents: a High Court order, a scanned Sessions Court order, a phone photo of the first information report (FIR), remand orders and a custody certificate, often merged into one PDF and often in Hindi. The application needs five kinds of knowledge: exact statute text, the mapping from old to new sections after the 2024 change of criminal codes (IPC and CrPC to BNS and BNSS), court reasoning on each bail factor, the citation history of every authority, and the timeline of the case itself. No single search index serves all five.
+
+Existing work covers parts of this task. Commercial legal research tools retrieve before they write, yet they still fabricate and misground citations \citep{magesh2025}, and work on Indian courts mostly predicts judgments or outcomes \citep{nigam2025nyayarag,nigam2024predex}. Adaptive retrieval methods let a model critique what it retrieved, choose a retrieval depth, or judge whether the context is sufficient \citep{asai2024selfrag,yan2024crag,jeong2024adaptive,joren2025sufficient}. Multi-agent methods add a critic or a debate, with mixed evidence: self-critique without an outside verifier helps little \citep{gou2024critic,huang2024selfcorrect}, debate gains are partly explained by voting \citep{choi2025debate}, and shared context can hurt \citep{wynn2025talk}.
+
+However, these parts have not been tested together on legal drafting against simple baselines that use the same model, and with gold labels that need no annotators. Our own experience shows why the test is needed. Our first full system (``Full'': planning, checking and adversarial review all switched on) did not beat every baseline on development orders on any of three hosted model families. A system with more parts is not a better system until each part is measured.
+
+In this paper, we describe the system, the search that repaired it, and one sealed test. Our contributions are:
+\begin{itemize}[leftmargin=*,itemsep=1pt,topsep=3pt]
+\item \textbf{A system with approvals enforced in code.} Six agents work over ten typed stores, and counsel approves twice. On the sealed slice every one of 320 export attempts made before the second approval was refused (Sections~\ref{sec:system} and~\ref{sec:results}).
+\item \textbf{An architecture search with a holdout.} Among about ten configurations on 30 development orders, \vs{} has 30 wins, 37 ties and 3 losses against seven baselines where Full has 11, 49 and 10, and it repeats on 20 held-out orders (22, 26, 3). Two candidates with more wins were rejected because they win by writing fewer or copied sentences (Sections~\ref{sec:arch} and~\ref{sec:method}).
+\item \textbf{A sealed test with registered hypotheses.} On 80 orders opened once, \vs{} has 46 wins, 69 ties and 5 losses; four of five hypotheses hold and one is falsified on one cell (Section~\ref{sec:results}).
+\item \textbf{Two robustness checks.} With gold labels from rules alone the count is 45, 70 and 5 and no verdict changes; two fresh reruns on development orders keep the same three losses (Section~\ref{sec:results}).
+\item \textbf{Ablations.} Removing strict abstention costs \vs{} four wins, and the four cells that a free planner wins against \vs{} are measurement artefacts (Section~\ref{sec:ablations}).
+\item \textbf{An evaluation without manual annotation.} Gold labels come from court text through two independent labelers that must agree on a verbatim span (Section~\ref{sec:eval}).
+\end{itemize}
+
+The system is a drafting aid for panel lawyers, junior advocates and supervised legal-aid clinics. It does not predict outcomes, show grant rates, or advise accused persons or the public. Every label used below is defined at first use and again in the Glossary after the references.
+
+\section{System}
+\label{sec:system}
+
+\para{A worked case.} We start with one development order, t1dev-019: an anticipatory bail petition in the Andhra Pradesh High Court under Sections 143, 341, 332 and 353 read with 34 IPC, with 871 characters of facts. The dossier agent finds almost nothing in so short a record, so ten fields stay unsupported and become questions for counsel (date of arrest, first remand, charge sheet, antecedents). The orchestrator plans five bail factors and queries the stores until a budget or a sufficiency rule stops it (115 store calls). The drafter writes four grounds. The ground on a weak prima facie case cites \emph{Kunal v.\ State} (Delhi High Court, 12 March 2024, para 7), and the checker finds that the cited paragraph supports the sentence (entailment 0.99). The grounds on gravity and witness tampering each fail a first check on one sentence and are repaired against the retrieved authority. The ground on antecedents can only say that the record is silent, so it leaves the argument and is listed as an open issue for counsel. The simulated prosecutor then raises six objections: two are judged answered, two partly answered and two unanswered. Scripted counsel approved the dossier but not the brief, and the export was refused.
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[
+  font=\small, >=Stealth, line width=0.6pt,
+  ag/.style={draw, rounded corners=2pt, align=center, minimum width=2.75cm, minimum height=0.95cm},
+  st/.style={draw, align=center, minimum width=2.75cm, minimum height=0.95cm},
+  gt/.style={draw, dashed, rounded corners=6pt, align=center, minimum width=2.3cm, minimum height=0.9cm},
+  io/.style={align=center, minimum width=2.3cm}]
+\node[io] (pa) at (0,0) {Pairokar\\{\scriptsize batch desk}};
+\node[io] (in) at (3.1,0) {Files, photos,\\chat, voice};
+\node[ag] (mu) at (6.3,0) {Munshi\\{\scriptsize intake}};
+\node[ag] (pe) at (9.5,0) {Peshkar\\{\scriptsize dossier, Rights Radar}};
+\node[gt] (g1) at (12.7,0) {Gate 1\\{\scriptsize counsel: dossier}};
+\node[ag] (su) at (12.7,-2.1) {Sutradhar\\{\scriptsize plans retrieval}};
+\node[ag] (va) at (9.5,-2.1) {Vakeel\\{\scriptsize draft, check, repair}};
+\node[ag] (ab) at (6.3,-2.1) {Abhiyojak\\{\scriptsize prosecution sparring}};
+\node[gt] (g2) at (3.1,-2.1) {Gate 2\\{\scriptsize counsel: brief}};
+\node[io] (out) at (0,-2.1) {Brief, objections,\\open issues};
+\node[st] (stores) at (12.7,-4.0) {Ten typed stores\\{\scriptsize law, case law, advocacy, case}};
+\draw[->] (pa) -- (in); \draw[->] (in) -- (mu); \draw[->] (mu) -- (pe); \draw[->] (pe) -- (g1);
+\draw[->] (g1) -- (su); \draw[->] (su) -- (va); \draw[<->] (va) -- (ab); \draw[->] (ab) -- (g2); \draw[->] (g2) -- (out);
+\draw[<->] (su) -- (stores);
+\begin{scope}[on background layer]
+ \node[draw, densely dotted, rounded corners, fit=(in)(mu)(pe), inner sep=0.3cm] (lap) {};
+ \node[draw, densely dotted, rounded corners, fit=(su)(va)(ab)(stores), inner sep=0.3cm] (srv) {};
+\end{scope}
+\node[font=\scriptsize, anchor=south west] at ([yshift=1pt]lap.north west) {Counsel's machine: raw files stay here};
+\node[font=\scriptsize, anchor=north west] at ([yshift=-1pt]srv.south west) {Model side: pseudonymised text only};
+\end{tikzpicture}
+\caption{Nothing reaches the output without two approvals by counsel. Solid boxes are agents, dashed boxes are the two gates enforced in code, and dotted frames show where each part runs. Arrows give the order of work; double-headed arrows are request and reply.}
+\label{fig:arch}
+\end{figure*}
+
+\para{Six agents.} The case above passes through six agents, each named after a role in an Indian court office and each with one narrow decision (Figure~\ref{fig:arch}). \emph{Munshi} (intake) decides how each page is read and where it is filed. \emph{Peshkar} builds the dossier, a structured summary of the case with a source quote for every field, and the Rights Radar, a set of deterministic checks on custody periods and statutory rights. \emph{Sutradhar} (orchestrator) plans retrieval for each bail factor. \emph{Vakeel} (drafter) writes the grounds and checks and repairs every sentence. \emph{Abhiyojak} plays the prosecution, with its own prompt and its own stores. \emph{Pairokar} (batch desk) orders an office's files by urgency. Every action is appended to an event log, and the dossier, the brief and the sparring record are views of that log.
+
+\para{Ten typed stores.} The agents search ten stores on four shelves, because each kind of knowledge has its own right way to be searched. The \emph{law} shelf holds statutes (exact lookup) and the old-to-new section concordance (a typed graph). The \emph{case-law} shelf holds reasoning paragraphs, the citation graph and whole-order fact vectors. The \emph{advocacy} shelf holds defence arguments and prosecution objections by factor, used for coverage and never cited as authority. The private \emph{case} shelf holds the client's documents, a dated timeline and the dossier. The build used here has 161,708 reasoning paragraphs, 70,880 arguments, 55,161 objections, 114,692 whole-order vectors and 5,842 citation edges.
+
+\para{Evidence contracts.} For each of twelve bail factors, a contract tells Sutradhar what a ground needs: slots such as a co-accused order or an authority, whether each slot is required, the stores that may hold it, and a budget. The contract fixes what is needed and where it may be. Sutradhar decides the order of calls, the query, whether a result is sufficient and when to stop. A required slot that stays empty becomes an open issue for counsel, never a silent omission.
+
+\para{Checks and gates.} Vakeel checks every sentence with a natural-language-inference model and with rules (statute lookup, section mapping, a good-law check), and repairs or flags the sentences that fail. Counsel then approves twice: Gate~1 for the dossier and Gate~2 for the brief. Only counsel can open a gate. Gate~2 is bound to a hash of the brief, so a later change closes it again, and no export is possible before it.
+
+\para{Privacy boundary.} Raw client files stay on counsel's machine, and text reaches a hosted model only through a pseudonymisation boundary. The boundary replaces names and identifiers (FIR and case numbers, police stations, villages, addresses, vehicle numbers, ages) with aliases and shifts every date by a per-case offset. On the 250 orders of our main test set no FIR number, case number or numeric date survived, and the boundary refused the 5 orders whose names OCR had glued to other words. External model services are off by default, and paid providers are locked in code.
+
+\section{Architectures We Tried}
+\label{sec:arch}
+
+\para{Search space.} Every design change is an opt-in switch: a field of one typed configuration object whose default leaves the output byte-identical, so a variant is a flag and not a code fork. The switches fall into five families. \emph{Baselines} B0 to B6 are simpler systems on the same model: B0 to B3 make one model call with no retrieval or one retrieval step, B4 queries every store without a plan, B5 is a learned store router, and B6 is a rule template with no model (Table~\ref{tab:blind}). \emph{Ablations} A1 to A10 remove one part of Full. \emph{Variants} S1 to S18 each adapt one idea from a paper, for example self-critique retrieval (S1), sufficiency-based stopping (S3) or a three-role review (S11). \emph{Intake arms} P5 to P8 change how Munshi reads pages. \emph{Fixes} X1 to X8 came from our own failure analysis below. The Glossary lists every label with its meaning and source paper.
+
+\para{What ran on which model.} Full did not beat every baseline on any of three hosted model families. On OpenAI \texttt{gpt-6-luna} (Full and B0 to B3 on 38 development orders, B4 and seven ablations on up to 30, fourteen variants on 10), Full's unsupported-fact rate was no better than the baselines' (0.87 to 0.89 against 0.82 to 0.87), and B4, which queries every store, had the higher objection recall (0.90 against 0.75 on 20 orders). On the Gemini free tier, which receives public court text only, Full on 25 orders again led B0 to B3 on objection recall but not on unsupported facts. On Sarvam-105B (Full, B0 to B6 and eight ablations on 30 orders, 22 variants on 10), Full's unsupported-fact rate was 1.00 against 0.90 to 0.96 for the baselines. No literature variant improved on Full on Sarvam, so the search started from Full. It ran on Sarvam-105B alone, because OpenAI was locked by an owner decision and the free tier had no B4 run and too low a quota.
+
+\para{Why Full lost.} Reading Full's outputs on Sarvam gave four causes. (1) The unsupported-fact metric checks each argument sentence against the facts of the case only, and 55\% of Full's flagged sentences state a legal principle from a cited authority; only about 9\% are real mismatches with the facts. (2) Intake and dossier filled about 2.8 of 13 dossier fields per case, so the planner never proposed grounds on custody period, parity or trial delay. (3) Abhiyojak's objections were kept only if they named offered material by an exact store label: Full kept 66 objections and discarded 230, and 263 of 320 dropped references named a paragraph that had in fact been offered. (4) Sentences that failed the check stayed in the argument, marked, instead of becoming open issues.
+
+\para{Protocol.} We tested eight fixes for these causes under a protocol that keeps selection and test apart. The 30 development orders t1dev-000 to 029 are the \emph{search} orders, on which single switches and then combinations were compared. The 20 orders t1dev-030 to 049 are a \emph{holdout}, run once for the chosen system, Full and the baselines. The 80 \emph{blind} orders of the test set stayed sealed until the code and the hypotheses were frozen under the tags \texttt{prereg-v1} and \texttt{eval-freeze-v1} on 9 November. The decision rule is the one of Section~\ref{sec:eval}: fewest losses against B0 to B6 on the quality metrics, then most wins.
+
+\begin{table}[t]
+\centering\small
+\setlength\tabcolsep{3.5pt}
+\begin{tabular}{@{}L{3.15cm}cL{2.75cm}@{}}
+\toprule
+Configuration & W/T/L & Decision \\
+\midrule
+Full & 11/49/10 & starting point \\
+Full with free planner (A7) & 7/47/5 & loses coverage to five baselines \\
+\textbf{\vs{}} (Full + X1, X4, X5, X7) & 30/37/3 & \textbf{chosen}: fewest losses \\
+\vs{} + X8 & 33/33/4 & one more loss \\
+\vs{} minus X1 & 38/29/3 & writes fewer sentences \\
+\vs{} with free planner & 38/19/1 & copies the facts; plan not recorded \\
+\bottomrule
+\end{tabular}
+\caption{\vs{} has the fewest losses among the candidates that do not win by writing less. Wins/ties/losses (W/T/L) over the quality metrics against baselines B0 to B6 on the 30 search orders (Sarvam-105B).}
+\label{tab:cands}
+\end{table}
+
+\para{Outcome.} \vs{}, which is Full with X1, X4, X5 and X7, has 30 wins, 37 ties and 3 losses on the search orders where Full has 11, 49 and 10 (Table~\ref{tab:cands}). Objection recall (the share of the real prosecution's objections that the simulated prosecutor also raises) rises from 0.36 to 1.00. Coverage (the share of grounds emitted without a decline) rises from 0.64 to 0.97, and answerable coverage (the share of answerable factors with a supported argument) from 0.38 to 0.61. The unsupported-fact rate falls from 0.99 to 0.90. On the holdout the result repeats with the same three losses: 22, 26 and 3 for \vs{} against 10, 40 and 5 for Full (Table~\ref{tab:wlt_full} in the appendix).
+
+\para{What failed, and why.} Three candidates have more wins than \vs{} and were rejected after we read their outputs. \emph{\vs{} minus X1} has 38 wins, but head to head it differs from \vs{} on two cells only (1 win, 18 ties, 1 loss): it wins the count of unsupported sentences because it writes fewer sentences (5.1 against 6.8 per order, with the same number supported). \emph{\vs{} with the free planner}, in which the model plans without evidence contracts, has 38 wins and 1 loss. Three independent read-only checks of its saved outputs found that the gains come from measurement. It records no plan, so the unfinished-factor metric has nothing to count (88 contract gaps passed to counsel become 1). Its model rarely searches the precedent stores, so the drafter restates the facts under the factor headings: 18\% of its grounds cite an authority against 90\%, and 19 of 30 briefs cite none. \emph{\vs{} plus X8}, which replaces a paraphrased fact by the record sentence, adds one loss for three wins. Two single fixes also failed. X2, which requires case facts to be near-verbatim spans, left most grounds empty on Sarvam (coverage 0.199). X3, one more prosecutor call on unargued factors, added objections but no recall.
+
+\para{Losses that remain.} The three losses of \vs{} on the search orders are structural, and we did not chase them. \vs{} loses the unfinished-factor share (planned factors that stop with a required slot unfilled) to B4 and B5 because those baselines have no required slots and score near zero by construction. \vs{} plans 130 factors, 47 end with a required slot missing, and a search of the facts text finds none of the 62 missing slots stated in the record, so ``missing'' is the true state. It loses the confident-wrong rate (the share of emitted sentences supported neither by the facts nor by the rest of the order) to B4 because B4 emits only 7.5\% of its grounds, a selected few sentences. Over all 50 development orders it also loses coverage to B6, a template that scores 1.00 by construction, and the confident-wrong rate to B5.
+
+\section{Final Method}
+\label{sec:method}
+
+\vs{} is Full with four switches, and each switch answers one cause of Section~\ref{sec:arch}.
+
+\para{X1, dossier gaps from the facts.} When the dossier lacks a field, the factor picker reads the raw facts text with rules (for example wider patterns for custody periods), and the facts text is offered to the drafter for that factor. X1 answers cause (2): a dossier with 2.8 of 13 fields starved the planner.
+
+\para{X4, strict abstention.} A sentence that still fails after repair, and a sentence that only says the record is silent, leaves the argument and becomes an open issue for counsel; an empty ground is not emitted. X4 answers cause (4). Alone it was the strongest single switch: coverage rose from 0.643 to 1.000 and answerable coverage from 0.379 to 0.530.
+
+\para{X5, draft from the facts.} Vakeel drafts from the raw facts text, while the dossier still drives the planner and Gate~1. X5 was the only single switch that moved the unsupported-fact rate with an interval excluding zero ($-0.100$, 95\% interval $-0.150$ to $-0.053$ against Full).
+
+\para{X7, objections resolved by id.} An objection that names offered material under the wrong store label is resolved by the id of the material instead of being discarded. X7 answers cause (3) and lifted objection recall from 0.364 to 1.000 on the 11 search orders with gold objections: the objections had been there and were being thrown away.
+
+\para{Cost.} \vs{} pays for these gains in two places. Citation precision falls from 0.82 to 0.68 on the search orders, because a draft written from the facts text is less tightly tied to each cited paragraph, and the system uses 27\% more tokens than Full.
+
+\section{Evaluation Setup}
+\label{sec:eval}
+
+\para{Data.} All data are public court text, official tables, existing datasets or constructed cases; no client data are used. The corpus is Open India Law: of 115,988 bail-related orders read, 115,524 feed the stores. The main test set, T1, has 200 High Court orders from the test window (2024 onwards) and 50 development orders. The system reads the facts part of an order, and gold labels come from the rest of the same order. Eight further sets (T2 to T9) test intake, updates, rights rules, batching, chat, safety, speech and citation parsing; this report uses T1.
+
+\para{Gold without annotators.} No label is made by hand and no score comes from a model acting as judge. For the factors the defence argued and for dossier fields, two labelers work independently: keyword and date rules, and a hosted model (\texttt{gpt-6-luna}) that does not see the rule output. A label enters the \emph{agreed gold} only if both agree and the model quotes a verbatim span found in the order. Agreement on the 250 orders is $\kappa=0.60$ for factors (95\% interval 0.55 to 0.64) and 0.84 for fields; a second model labeler (Sarvam-105B) on 80 random orders gives $\kappa=0.78$ on factors against the first. The \emph{rule-only gold} is a declared second label source.
+
+\para{Leakage control.} Orders before 2024 feed the stores. Test orders and orders that share an FIR with one (464 in all) are excluded from every store, and an 8-word-overlap check compares each test order's facts with every store paragraph. Of the 200 test orders, 80 form the blind slice, drawn with a seed and hashed before the freeze; the other 120 were not run (deviation D1).
+
+\para{Baselines.} Seven baselines use the same model, the same 12-factor checklist and the same pseudonymised facts as the system (Table~\ref{tab:blind}). B0 to B3 make one model call; B4 and B5 use the tools and stores without contracts and are the baselines of comparable capability; B6 is a rule template with no model.
+
+\begin{table}[t]
+\centering\small
+\setlength\tabcolsep{3.5pt}
+\begin{tabular}{@{}lL{3.55cm}cc@{}}
+\toprule
+ & Baseline & \vs{} & Full \\
+\midrule
+B0 & single pass, no retrieval & 4/8/0 & 3/7/2 \\
+B1 & one store, top 10, one call & 6/10/0 & 4/12/0 \\
+B2 & whole-order retrieval & 7/12/0 & 4/14/1 \\
+B3 & naive chunk retrieval & 7/9/0 & 5/10/1 \\
+B4 & every store, fused, no plan & 10/9/2 & 6/11/4 \\
+B5 & learned store router & 7/15/2 & 4/15/5 \\
+B6 & expert rule template & 5/6/1 & 3/7/2 \\
+\midrule
+ & Total & \textbf{46/69/5} & 29/76/15 \\
+\bottomrule
+\end{tabular}
+\caption{On the 80 sealed orders \vs{} wins 46 comparisons and loses 5; Full wins 29 and loses 15. Cells are wins/ties/losses of the system against one baseline over the 25 quality metrics (paired bootstrap, Holm at 0.05). Per system, 13 further cells have too few pairs and 42 are undefined.}
+\label{tab:blind}
+\end{table}
+
+\para{Metrics.} We score 25 quality metrics, defined in Table~\ref{tab:metrics} of the appendix: factor recall, precision and F1 against gold; objection recall and precision against the objections the real prosecution raised; coverage and answerable coverage; citation precision and recall in the style of ALCE \citep{gao2023alce}; fabricated citations; authority quality; and stopping quality. Two need a word here. \emph{M6}, the unsupported-fact rate, is the share of argument sentences that MiniCheck \citep{tang2024minicheck} does not find supported by the facts of the case; the scorer refuses to use the system's own checker. \emph{M6a} is the same rate on case-fact sentences only, and is reported beside M6, never in its place. Cost (tokens, store calls, seconds) is judged only against B4 and B5.
+
+\para{Statistics.} The unit is the order. Each comparison of a system with a baseline on a metric is a paired bootstrap of the mean difference with 10,000 resamples. For each system and metric, the seven baselines form one family under Holm's correction at 0.05. A comparison is a \emph{win} or a \emph{loss} only when the interval at its Holm level excludes zero; otherwise it is a \emph{tie}. A cell with fewer than five paired orders is ``too few'', and a metric the baseline cannot produce (objection precision when it raises no objection) is ``undefined'', not won.
+
+\para{Pre-registration.} The claims, metrics, seeds and decision rule were fixed in a pre-registration before the blind slice was opened. Five hypotheses for \vs{} (H-A1 to H-A5, Table~\ref{tab:hyp}) were added to it before the opening. Settings and budgets are in Table~\ref{tab:hyper}. Twelve numbered deviations (D1 to D12) record every departure from the registered plan, with date and reason (Table~\ref{tab:dev}).
+
+\section{Results}
+\label{sec:results}
+
+\para{Main result.} On the 80 sealed orders \vs{} has 46 wins, 69 ties and 5 losses against B0 to B6, and Full has 29, 76 and 15 (Table~\ref{tab:blind}). \vs{} loses nothing to the four one-call baselines B0 to B3. Its five losses are to B4 and B5 (two each) and to the template B6 (one). Head to head, \vs{} has 8 wins, 13 ties and 3 losses against Full; it loses citation precision (0.85 to 0.71), citation recall and the unfinished-factor share, which is the price of drafting from the facts and of listing unmet factors instead of filling them.
+
+\begin{table}[t]
+\centering\small
+\setlength\tabcolsep{3pt}
+\begin{tabular}{@{}lL{3.0cm}L{3.15cm}@{}}
+\toprule
+ & Hypothesis for \vs{} & Sealed slice \\
+\midrule
+H-A1 & no loss to B0--B6 outside four cells declared structural & \textbf{falsified}: one further loss, unsupported-sentence count vs B5 (6.0 vs 4.2) \\
+H-A2 & beats Full on objection recall and answerable coverage & \textbf{holds}: 0.52 to 0.73; 0.36 to 0.61 \\
+H-A3 & beats B4 and B5 on citation precision and fabricated citations & \textbf{holds}: 0.71 vs 0.02 and 0.10; 0.00 vs 0.95 and 0.64 \\
+H-A4 & unsupported-fact rate (M6) not worse than any baseline's & \textbf{holds}: 0.89 vs 0.94 to 1.00, a win over all seven \\
+H-A5 & fewer store calls than B4 & \textbf{holds}: 110 vs 188 \\
+\bottomrule
+\end{tabular}
+\caption{Four of the five registered hypotheses hold on the sealed slice. The four structural cells of H-A1 are the unfinished-factor share against B4 and B5, the confident-wrong rate against B4 and coverage against B6; all four are losses, as declared.}
+\label{tab:hyp}
+\end{table}
+
+\begin{table*}[t]
+\centering\small
+\setlength\tabcolsep{4.5pt}
+\begin{tabular}{@{}lrrrrrrrrrrrr@{}}
+\toprule
+ & Obj. & Answ. & Cover- & M6 & M6a & Sent- & Unsup. & Cit. & Fabr. & Unfin. & Conf. & Store \\
+System & recall & cov. & age & & & ences & count & prec. & cit. & factors & wrong & calls \\
+ & $\uparrow$ & $\uparrow$ & $\uparrow$ & $\downarrow$ & $\downarrow$ & & $\downarrow$ & $\uparrow$ & $\downarrow$ & $\downarrow$ & $\downarrow$ & $\downarrow$ \\
+\midrule
+\textbf{\vs{}} & 0.73 & 0.61 & 0.92 & 0.89 & 0.43 & 7.0 & 6.0 & 0.71 & 0.00 & 0.40 & 0.87 & 110 \\
+Full & 0.52 & 0.36 & 0.70 & 0.99 & 0.75 & 7.3 & 7.1 & 0.85 & 0.00 & 0.17 & 0.97 & 103 \\
+\midrule
+B0 & 0.00 & 0.06 & 0.47 & 0.95 & -- & 8.2 & 7.7 & 0.00$^\dagger$ & 1.00$^\dagger$ & -- & 0.93 & 0 \\
+B1 & 0.00 & 0.03 & 0.29 & 0.97 & -- & 5.9 & 5.7 & 0.00 & 0.00 & -- & 0.95 & 1 \\
+B2 & 0.00 & 0.09 & 0.49 & 0.97 & -- & 9.8 & 9.4 & 0.00 & 0.80 & -- & 0.92 & 1 \\
+B3 & 0.00 & 0.03 & 0.24 & 0.96 & -- & 4.2 & 4.0 & 0.00 & 0.00 & -- & 0.94 & 1 \\
+B4 & 0.36 & 0.20 & 0.07 & 0.94 & 0.87 & 16.1 & 15.0 & 0.02 & 0.95 & 0.01 & 0.47 & 188 \\
+B5 & 0.35 & 0.23 & 0.09 & 0.94 & 0.64 & 4.4 & 4.2 & 0.10 & 0.64 & 0.00 & 0.62 & 89 \\
+B6 & 0.00 & 0.00 & 1.00 & 1.00 & -- & 7.8 & 7.7 & -- & -- & -- & 0.93 & 2 \\
+\bottomrule
+\end{tabular}
+\caption{\vs{} leads every baseline on objection recall, answerable coverage, M6 and citation precision, and trails B4 and B5 on unfinished factors and confident-wrong sentences. Means per order on the 80 sealed orders, each over the orders where the metric is defined (objection recall 25, answerable coverage 32, M6a 43 for \vs{}; citation columns 5 to 12 orders for B1 to B3). ``--'': the system cannot produce the metric; $\dagger$: one order. Arrows give the better direction.}
+\label{tab:means}
+\end{table*}
+
+\para{Hypotheses.} Four of the five registered hypotheses hold (Table~\ref{tab:hyp}). \vs{} beats Full on objection recall ($+0.215$, interval $+0.024$ to $+0.400$) and on answerable coverage ($+0.250$, $+0.109$ to $+0.406$). It beats B4 and B5 on citation precision and on fabricated citations: B4 and B5 fabricate at rates of 0.95 and 0.64, and \vs{} at 0.00. Its unsupported-fact rate is a win against all seven baselines. It needs 41\% fewer store calls than B4. H-A1 is falsified on one cell beyond the four declared structural: \vs{} loses the count of unsupported sentences to B5 ($+1.875$ per order, interval $+0.875$ to $+3.067$). The reason is length, since B5 writes 4.4 sentences per order against 7.0, and on the rate \vs{} beats B5. The verdicts are the same when errored records are kept as scored and when the two cases rerun under deviation D7 are dropped.
+
+\para{Absolute meaning.} The wins are relative, and the absolute numbers are still low (Table~\ref{tab:means}). An M6 of 0.89 means that most argument sentences are not entailed by the facts of the case alone. On case-fact sentences alone (M6a) the rate is 0.43 for \vs{} and 0.75 for Full. Citation precision of 0.71 means that about three in ten cited paragraphs do not support the sentence that cites them, although none is invented. Of the 599 objections \vs{}'s prosecutor raises, 86\% stay unanswered and 10\% are answered.
+
+\para{Label source (D11).} The result does not hinge on the model labeler. We scored the same saved outputs once more against the rule-only gold, with the same scoring code. \vs{} has 45 wins, 70 ties and 5 losses (agreed gold: 46, 69, 5) and Full has 29, 74 and 17. Five of 350 cells change outcome; for \vs{} one win against B3 on court-discussed recall becomes a tie, no loss appears or disappears, and all five verdicts are unchanged.
+
+\para{Reruns (D12).} The win and loss pattern survives a rerun, but single orders do not. Every system ran once on the sealed slice, and the hosted model is not deterministic at temperature 0. As an exploratory check, all nine systems ran twice more on the 30 search orders from the frozen code with the response cache off. \vs{} has 30 wins, 31 ties and 3 losses in the first rerun and 35, 28 and 3 in the second (original: 30, 37, 3), with the same three losses each time. Full has 10, 47, 7 and 11, 47, 8, and its losses move between runs. Compared with its own rerun, a system is decided in 2 of 225 cells (both B5). Per order, \vs{}'s M6 differs between the reruns on 62\% of orders (mean absolute difference 0.13) and citation precision on 93\%, while factor recall and objection recall change on none.
+
+\para{Tools and approvals.} \vs{} calls its tools with few bad arguments, and no export ran without approval (Table~\ref{tab:tools} in the appendix; cost is in Table~\ref{tab:cost}). \vs{} makes about 149 tool calls per order over 17 tools, and 1.0\% are refused for a bad argument, against 3.1\% for Full and 4.9\% and 6.4\% for B4 and B5. A refused call returns a typed error, and every order still ends with a complete brief. Each of the four tool-using systems tries one export per order before Gate~2: all 320 attempts are refused, so the unapproved-action rate is 0 of 320. The privacy boundary refused 175 of \vs{}'s outgoing payloads that still carried a personal name; none was sent.
+
+\section{Ablations}
+\label{sec:ablations}
+
+\begin{table}[t]
+\centering\small
+\setlength\tabcolsep{3.5pt}
+\begin{tabular}{@{}L{3.5cm}cL{2.5cm}@{}}
+\toprule
+\vs{} against \vs{} \ldots & W/T/L & \vs{} loses on \\
+\midrule
+minus X1 & 1/18/1 & unsupp.\ count \\
+minus X4 & 4/16/0 & none \\
+minus X5 & 0/20/0 & none \\
+minus X7 & 2/18/0 & none \\
+with A3, no tools & 0/20/0 & none \\
+with A4, plain retrieval & 1/19/0 & none \\
+with A6, fixed router & 0/19/1 & unfinished factors \\
+with A7, free planner & 0/16/4 & M6, unsupp.\ count, unfinished factors, confident wrong \\
+with A1, no dossier & 0/20/0 & none \\
+with A2, no check-repair & 5/13/1 & unfinished factors \\
+with A8, no sparring & 2/17/0 & none \\
+with A9, neither & 6/11/1 & unfinished factors \\
+\bottomrule
+\end{tabular}
+\caption{Strict abstention (X4), check and repair (A2) and sparring (A8) are the parts whose removal costs \vs{} wins. Wins/ties/losses of \vs{} against each ablation on the 30 search orders, same statistics as Table~\ref{tab:blind}. A1, A2, A8 and A9 drop the switches they cannot combine with (Table~\ref{tab:abl_full}).}
+\label{tab:abl}
+\end{table}
+
+\para{The four switches.} Of the four switches, strict abstention is the one whose effect the 30 search orders resolve: removing X4 costs \vs{} four wins and gains none (Table~\ref{tab:abl}). Removing X7 costs two wins. Removing X5 changes no cell, although X5 alone lowered M6 in the single-switch round; X4 and X1 now cover most of that effect. Removing X1 gives one win and one loss, the count effect of Section~\ref{sec:arch}.
+
+\para{The parts of the system.} Check and repair and sparring earn their place; tools, the factor filter and the dossier are not resolved. Without check and repair (A2) \vs{} is worse on five cells, without sparring (A8) on two, and without both (A9) on six. With no tools (A3), with plain retrieval (A4) or with no dossier (A1), no more than one cell changes. The one cell \vs{} loses to A2, A6 and A9 is the unfinished-factor share.
+
+\para{Rows against \vs{}.} Two rows go against \vs{}, and neither is a better brief. The first is minus X1, which writes fewer sentences. The second is the free planner (A7), which beats \vs{} on M6 (0.50 against 0.90), the unsupported count, the confident-wrong rate and the unfinished-factor share. As Section~\ref{sec:arch} explains, it records no plan, cites an authority in 18\% of its grounds against 90\%, and writes 29 fewer grounds; M6 falls because law sentences, which the facts cannot support, give way to copied facts. On M6a, the like-for-like rate on case-fact sentences, the two are tied. These ablations ran on development orders after selection and were not taken to the sealed slice.
+
+\section{Limitations and Discussion}
+\label{sec:limitations}
+
+\para{What M6 measures.} The unsupported-fact rate overstates fabrication. It checks each argument sentence against the facts of the case, and a sentence that states a legal principle from a cited authority cannot be entailed by those facts. On development orders such sentences were 55\% of Full's flagged sentences. M6a removes them and gives 0.43 on the sealed slice, which is still far from zero. A metric that checks law sentences against the cited paragraph and fact sentences against the record is the next step.
+
+\para{Empty statutory position.} The structured statutory position (sections, bailability, maximum punishment) is empty in all 80 sealed briefs of every tool-using system. The hosted extractor found the sections but answered with the phrase of the order where the schema asks for one object per section, and each answer was rejected as malformed. We fixed this after the freeze by reading such a phrase with a rule parser. On order t1dev-019 the dossier then holds the five sections and the position reads ``not bailable, maximum punishment 3 years''. The sealed slice was not rerun with the fix.
+
+\para{Statute-store error.} After the runs we found that the bail flags the statute store took from the CrPC First Schedule were the wrong way round for 43 of the 398 IPC sections. In the frozen runs the dossier's sections were empty, so the flags could reach a brief only through the simulated prosecutor's statute lookups. The schedule was re-extracted by script and the store rebuilt on 13 November; the frozen runs keep the store they were made with.
+
+\para{One model, one slice, one run.} The test result rests on 80 orders, one run per system and one hosted model. The reruns of D12 were on development orders. \vs{} was selected on 30 development orders, which favours it there; the holdout and the sealed slice are the guard. On the sealed slice B0 to B3 have 7 to 25 errored records, which are left out of the paired comparisons. Intake of degraded and Hindi pages and a fine-tuned small extractor were built but not measured on a real model.
+
+\para{Gold and rule checks.} Gold comes from rules and one model labeler, not from people, and $\kappa$ for factors is 0.60. The model labeler is from a family that was also a system backend in development runs, which is why the rule-only gold is reported. The Rights Radar's seven rules match the statute store in an automatic check of each cited section, but that check reads acts only, not the judgments a rule also relies on.
+
+\para{Privacy and scope.} The pseudonymiser is rule-based with thin Hindi coverage, and we do not claim zero leakage. Paid providers are locked in code and were opened one at a time under spend caps (about 4.15 USD on OpenAI, about INR 990 on Sarvam). The gates are enforced in code, but there are no user accounts, so ``approval only from counsel'' is a property of the code path and not of an identity check. The system makes no outcome predictions and gives no advice to the public.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+On the same hosted model, an agent system that plans retrieval per bail factor, checks every sentence and spars with a simulated prosecutor writes better-grounded bail briefs than seven simpler systems, but only after its failures were diagnosed and fixed. On 80 sealed orders \vs{} wins 46 comparisons and loses 5, cites no invented authority, and exports nothing without counsel's approval. One registered hypothesis failed, on a count that favours systems that write less. The lesson is about method: the candidates with the most wins were not the best briefs, and we could tell only by reading their outputs. Next we will measure the statutory-position fix on a full slice, check the prosecutor's objections against the statute store, and repeat the comparison on a second model family.
+
+% ------------------------------------------------------------------ references, glossary, appendix (not counted)
+\bibliography{references}
+
+\clearpage
+\onecolumn
+\section*{Glossary}
+\addcontentsline{toc}{section}{Glossary}
+\label{sec:glossary}
+
+\noindent Every label used in this report, in plain words. ``Source'' names the paper an idea was adapted from, where it has one; no variant reproduces its paper.
+
+{\small
+\setlength\LTleft{0pt}\setlength\LTright{0pt}
+\begin{longtable}{@{}L{2.5cm}L{9.9cm}L{2.6cm}@{}}
+\toprule
+Term & Plain meaning & Where used \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+\multicolumn{3}{@{}l}{\emph{Systems}} \\
+\vs{} & The final system: Full with the four fixes X1, X4, X5 and X7. In the repository's artefacts it is named c1457, with the switch string \texttt{S13:signal\_source=merge,abstention=strict, draft\_source=facts\_text,objection\_grounding=by\_id}. & everywhere \\
+Full & The first full system: all six agents, the ten stores, retrieval planning, check and repair, and prosecution sparring, with every switch at its default. & everywhere \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Agents and gates}} \\
+Munshi & Intake agent: decides how each page is read, document boundaries and types, where each item is filed, and what is missing. & Sec.~\ref{sec:system} \\
+Peshkar & Dossier agent: builds the dossier with a source quote for every field, a list of dates, and the Rights Radar. & Sec.~\ref{sec:system} \\
+Rights Radar & Deterministic checks on custody periods and statutory rights, each with a verification status. & Sec.~\ref{sec:system}, \ref{sec:limitations} \\
+Sutradhar & Orchestrator: plans retrieval for each bail factor from its evidence contract. & Sec.~\ref{sec:system} \\
+Vakeel & Drafter: writes the grounds and checks and repairs every sentence. & Sec.~\ref{sec:system} \\
+Abhiyojak & Simulated prosecutor: raises objections with its own prompt and an allow-listed context (``sparring''). & Sec.~\ref{sec:system} \\
+Pairokar & Batch desk: orders a batch of cases by urgency and decides per case between a full brief, a flag for counsel, or a request for documents. & Sec.~\ref{sec:system} \\
+Dossier & The structured summary of a case (sections, dates, charge-sheet status and other fields), each field with a source quote. & Sec.~\ref{sec:system}, \ref{sec:arch} \\
+Evidence contract & For one bail factor, the list of evidence slots a ground needs, which are required, the stores that may hold them, and a budget. & Sec.~\ref{sec:system} \\
+Gate 1, Gate 2 & Approvals only counsel can give: Gate 1 for the dossier, Gate 2 for the brief. Export is impossible before Gate 2. & Sec.~\ref{sec:system}, \ref{sec:results} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Baselines (simpler systems on the same model, checklist and facts)}} \\
+B0 & Single pass: facts and checklist to brief in one model call, no retrieval. & Tables~\ref{tab:blind}, \ref{tab:means} \\
+B1 & One store, the top 10 paragraphs by the facts, one drafting call. & Tables~\ref{tab:blind}, \ref{tab:means} \\
+B2 & Whole-order embeddings: the top 3 orders in full, one drafting call. & Tables~\ref{tab:blind}, \ref{tab:means} \\
+B3 & B1 with naive chunking of the text (fixed 512 with overlap, recursive, semantic or by page). & Tables~\ref{tab:blind}, \ref{tab:means} \\
+B4 & Every store queried and fused by reciprocal rank, with no orchestrator. & Tables~\ref{tab:blind}, \ref{tab:means} \\
+B5 & A learned store router with no evidence contracts. Source: \citet{zhang2026agentrouter}. & Tables~\ref{tab:blind}, \ref{tab:means} \\
+B6 & An expert rule checklist (template) with no model. & Tables~\ref{tab:blind}, \ref{tab:means} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Ablations (one part switched off)}} \\
+A1 & No dossier: Sutradhar and Vakeel read the raw facts. & Table~\ref{tab:abl} \\
+A2 & No check and repair (sparring on). & Table~\ref{tab:abl} \\
+A3 & No tools: the model maps sections, counts days and judges rights itself. & Table~\ref{tab:abl} \\
+A4 & Plain retrieval: no section family, no part or factor filters, no transfer flag. & Table~\ref{tab:abl} \\
+A5 & Extractor variant: fine-tuned 4B model against base 4B and a prompted 32B model. No model was trained, so it is not reported. & Sec.~\ref{sec:limitations} (context) \\
+A6 & Fixed router: contracts in a fixed order with fixed queries; no planning or sufficiency check. & Table~\ref{tab:abl} \\
+A7 & Free planner: the model plans with no evidence contracts. & Tables~\ref{tab:cands}, \ref{tab:abl} \\
+A8 & No sparring (check and repair on). & Table~\ref{tab:abl} \\
+A9 & Neither sparring nor check and repair. & Table~\ref{tab:abl} \\
+A10 & Store knock-out: one store removed; retrieval and slot filling only. Not reported here. & Sec.~\ref{sec:arch} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Fixes from the failure analysis (architecture search)}} \\
+X1 & Dossier gaps from facts: the factor picker reads the facts text for what the dossier lacks. Source: \citet{joren2025sufficient}. & Sec.~\ref{sec:method} \\
+X2 & Fact and law split: case-fact sentences must be near-verbatim spans of the facts text; legal sentences carry only an authority. Source: ALCE \citep{gao2023alce}. Failed on Sarvam. & Sec.~\ref{sec:arch} \\
+X3 & One more Abhiyojak call on factors with no ground and no objection. Source: \citet{choi2025debate}. Not chosen. & Sec.~\ref{sec:arch} \\
+X4 & Strict abstention: sentences that still fail after repair, and ``the record is silent'' sentences, become open issues. Source: Song et al., Trust-Align, ICLR 2025 (named in the repository's literature map). & Sec.~\ref{sec:method} \\
+X5 & Draft from facts: Vakeel drafts from the raw facts text; the dossier still drives the planner and Gate 1. Source: CRITIC \citep{gou2024critic}. & Sec.~\ref{sec:method} \\
+X6 & Wider material for the critic: Abhiyojak's own stores searched a second time keyed on the facts. Source: \citet{choi2025debate}. Not chosen. & Sec.~\ref{sec:arch} (one of the eight) \\
+X7 & Objections resolved by id: a reference to offered material under a wrong label is resolved by its id. Source: Gao et al., RARR, ACL 2023 (named in the literature map). & Sec.~\ref{sec:method} \\
+X8 & Verbatim grounding: a case-fact sentence that paraphrases the record is replaced by the record sentence. Source: Slobodkin et al., Attribute First, then Generate, ACL 2024 (named in the literature map). Not chosen. & Sec.~\ref{sec:arch} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Literature variants mentioned (S) and intake arms (P)}} \\
+S1 to S18 & Eighteen opt-in variants, each adapting one idea from a paper. The three named in the text follow. & Sec.~\ref{sec:arch} \\
+S1 & Retrieval with a self-critique loop and corrective re-retrieval. Source: \citet{asai2024selfrag,yan2024crag}. & Sec.~\ref{sec:arch} \\
+S3 & Sufficiency-based stopping of retrieval. Source: \citet{joren2025sufficient}. & Sec.~\ref{sec:arch} \\
+S11 & Three-role review (grader, critic, defender). Source: \citet{kumar2025courtevel}. & Sec.~\ref{sec:arch} \\
+P5 & Munshi as a fixed cascade: no gap check, no re-reading, no questions. & Sec.~\ref{sec:arch} \\
+P6 & Munshi without bundle splitting and document labelling. & Sec.~\ref{sec:arch} \\
+P7 & Image-only intake. Source: \citet{yu2025visrag,faysse2025colpali}. & Sec.~\ref{sec:arch} \\
+P8 & Keep a near-miss text layer as a low-confidence read (a design decision; no paper). & Sec.~\ref{sec:arch} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Data and test sets}} \\
+T1 & Main test set: 200 High Court bail orders from the test window plus 50 development orders; facts in, gold from the rest of the order. & Sec.~\ref{sec:eval} \\
+T2 to T9 & T2 messy bundles and native Hindi orders; T3 change-set updates; T4 rights scenarios from the rule table; T5 batch cases with planted deadlines; T6 chat questions; T7 safety scenarios; T8 Hindi utterances; T9 citation strings. Not used for the results here. & Sec.~\ref{sec:eval} \\
+Search orders & The 30 development orders t1dev-000 to 029, used to choose \vs{}. & Sec.~\ref{sec:arch}, \ref{sec:ablations} \\
+Holdout & The 20 development orders t1dev-030 to 049, run once after the search. & Sec.~\ref{sec:arch} \\
+Blind (sealed) slice & 80 of the 200 T1 test orders, drawn with a seed, hashed before the freeze and scored once. & Sec.~\ref{sec:results} \\
+Agreed gold & Labels kept only when the rule labeler and the model labeler agree on a verbatim span. & Sec.~\ref{sec:eval} \\
+Rule-only gold & Labels from the rule labeler alone; the declared second label source. & Sec.~\ref{sec:results} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Metrics and statistics}} \\
+W/T/L & Wins/ties/losses: the number of (metric, baseline) comparisons a system wins, ties or loses. & all result tables \\
+Holm & Holm's step-down correction for multiple comparisons; here at 0.05 over the seven baselines, for each system and metric. & Sec.~\ref{sec:eval} \\
+M6 & Unsupported-fact rate: share of argument sentences that MiniCheck does not find supported by the facts of the case. & Sec.~\ref{sec:eval}, Table~\ref{tab:means} \\
+M6a & M6 on case-fact sentences only. & Sec.~\ref{sec:eval}, Table~\ref{tab:means} \\
+Coverage & Share of grounds emitted without a decline (needs review, unanswered or refusal). & Table~\ref{tab:means} \\
+Answerable coverage & Share of the answerable factors with a supported argument. & Table~\ref{tab:means} \\
+Objection recall & Share of the objections the real prosecution raised (by factor) that the system's sparring also raised. & Table~\ref{tab:means} \\
+Unfinished factors & Share of planned factors that stop with a required evidence slot unfilled. & Table~\ref{tab:means} \\
+Confident wrong & Share of emitted sentences supported neither by the facts nor by the rest of the order. & Table~\ref{tab:means} \\
+Other metrics & All 25 quality metrics are defined in Table~\ref{tab:metrics}. & Appendix~\ref{app:metrics} \\
+H-A1 to H-A5 & The five hypotheses registered for \vs{} before the sealed slice was opened. & Table~\ref{tab:hyp} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Deviations from the pre-registration}} \\
+D1 to D12 & Twelve numbered departures from the registered plan, each with date and reason; listed one by one in Table~\ref{tab:dev}. D7 (two cases rerun), D10 (scorer fix), D11 (rule-only gold) and D12 (two reruns) are used in the text. & Sec.~\ref{sec:results}, Appendix~\ref{app:dev} \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Legal terms}} \\
+IPC, CrPC & Indian Penal Code and Code of Criminal Procedure, the criminal codes in force until 2024. & Sec.~\ref{sec:intro} \\
+BNS, BNSS & Bharatiya Nyaya Sanhita and Bharatiya Nagarik Suraksha Sanhita, which replaced them in 2024. & Sec.~\ref{sec:intro} \\
+FIR & First information report, the police record that starts a criminal case. & Sec.~\ref{sec:intro} \\
+\end{longtable}
+}
+
+\clearpage
+\appendix
+\renewcommand{\thetable}{A\arabic{table}}
+\setcounter{table}{0}
+
+\section{Win/Tie/Loss Tables in Full}
+\label{app:wlt}
+
+Table~\ref{tab:wlt_full} gives the per-baseline counts for every block of runs behind Sections~\ref{sec:arch} and~\ref{sec:results}.
+
+\begin{table}[H]
+\centering\footnotesize
+\setlength\tabcolsep{2.9pt}
+\begin{tabular}{@{}llccccccccc@{}}
+\toprule
+Block & System & B0 & B1 & B2 & B3 & B4 & B5 & B6 & Total & (too few, undefined) \\
+\midrule
+Search, 30 orders & \vs{} & 3/3/0 & 2/11/0 & 4/2/0 & 3/3/0 & 9/5/2 & 5/11/1 & 4/2/0 & 30/37/3 & (43, 62) \\
+ & Full & 0/5/1 & 1/12/0 & 0/6/0 & 0/6/0 & 5/8/3 & 4/8/5 & 1/4/1 & 11/49/10 & (43, 62) \\
+ & Full with A7 & 0/4/1 & 1/3/1 & 1/3/1 & 1/3/1 & 2/14/0 & 0/17/0 & 2/3/1 & 7/47/5 & (46, 70) \\
+Holdout, 20 orders & \vs{} & 3/2/0 & 1/2/0 & 2/3/0 & 2/1/0 & 5/9/2 & 5/7/1 & 4/2/0 & 22/26/3 & (62, 62) \\
+ & Full & 1/4/0 & 0/5/0 & 0/5/0 & 0/3/0 & 5/9/2 & 3/10/2 & 1/4/1 & 10/40/5 & (58, 62) \\
+Pooled, 50 orders & \vs{} & 4/4/0 & 4/9/0 & 6/6/0 & 4/9/0 & 9/7/2 & 7/13/2 & 5/4/1 & 39/52/5 & (24, 55) \\
+ & Full & 2/6/0 & 2/11/0 & 4/8/0 & 3/10/0 & 5/10/3 & 4/14/4 & 2/7/1 & 22/66/8 & (24, 55) \\
+\midrule
+Sealed, 80 orders & \vs{} & 4/8/0 & 6/10/0 & 7/12/0 & 7/9/0 & 10/9/2 & 7/15/2 & 5/6/1 & 46/69/5 & (13, 42) \\
+(agreed gold) & Full & 3/7/2 & 4/12/0 & 4/14/1 & 5/10/1 & 6/11/4 & 4/15/5 & 3/7/2 & 29/76/15 & (13, 42) \\
+Sealed, 80 orders & \vs{} & 4/8/0 & 6/10/0 & 7/12/0 & 6/10/0 & 10/9/2 & 7/15/2 & 5/6/1 & 45/70/5 & (13, 42) \\
+(rule-only gold, D11) & Full & 3/7/2 & 4/12/0 & 4/14/1 & 4/11/1 & 6/9/6 & 5/14/5 & 3/7/2 & 29/74/17 & (13, 42) \\
+\midrule
+Rerun 1, 30 orders (D12) & \vs{} & \multicolumn{7}{c}{} & 30/31/3 & (47, 64) \\
+ & Full & \multicolumn{7}{c}{} & 10/47/7 & (49, 62) \\
+Rerun 2, 30 orders (D12) & \vs{} & \multicolumn{7}{c}{} & 35/28/3 & (48, 61) \\
+ & Full & \multicolumn{7}{c}{} & 11/47/8 & (48, 61) \\
+\bottomrule
+\end{tabular}
+\caption{\vs{} has three to five losses in every block, and Full has five to seventeen. Wins/ties/losses over the 25 quality metrics against each baseline (paired bootstrap, 10,000 resamples; Holm at 0.05 per system and metric). The last column counts the cells left out: too few paired orders, and metrics undefined for the baseline. The losses of \vs{}: unfinished factors against B4 and B5 and confident wrong against B4 in every block; also coverage against B6 and confident wrong against B5 on the pooled orders; also coverage against B6 and the unsupported count against B5 on the sealed slice (both golds).}
+\label{tab:wlt_full}
+\end{table}
+
+\section{Metric Definitions}
+\label{app:metrics}
+
+Table~\ref{tab:metrics} defines the 25 quality metrics. None is scored by a model acting as judge.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}L{4.2cm}L{9.9cm}c@{}}
+\toprule
+Metric & Definition & Better \\
+\midrule
+Factor recall; strict precision; lenient precision; F1 & Set comparison of the bail factors the brief argues with the factors the defence argued in the order (gold G1) on answerable factors; lenient precision also accepts factors the court discussed (G5). & higher \\
+Court-discussed recall & As factor recall, against the factors the court discussed. & higher \\
+Recall at 10 & Share of the precedents the court cited (resolved to a document in the index) found in the top 10 retrieved. & higher \\
+Unsupported facts (M6) & Share of argument sentences that MiniCheck (RoBERTa-Large) does not find supported by the facts of the case; a sentence longer than the checker's window is checked in pieces and the least supported piece decides (D10). & lower \\
+Unsupported case facts (M6a) & M6 on case-fact sentences only. & lower \\
+Unsupported facts, count & Number of unsupported sentences per order. & lower \\
+Confident wrong & Share of emitted sentences supported neither by the facts nor by the rest of the order. & lower \\
+Coverage & Share of grounds emitted without a decline (needs review, unanswered or refusal). & higher \\
+Answerable coverage & Share of the answerable factors with a supported argument: a ground that is not a placeholder and whose check is not a decline. & higher \\
+Objection recall; objection precision & The factors of the objections the system's prosecutor raises, compared with the objections the real prosecution raised in the order. & higher \\
+Fabricated citations & Share of citations whose id is not in the index or whose quoted span is not found verbatim. & lower \\
+Citation precision; citation recall & In the style of ALCE: whether each cited paragraph supports its sentence, and whether each sentence is supported by its citations. & higher \\
+Removal changes claim & Whether a claim changes when its cited paragraph is removed. & higher \\
+Authorities: reasoning; SC; before order & Share of cited authorities that are court reasoning (not counsel's submissions); share from the Supreme Court; share dated before the order. & higher \\
+Good-law violations & Share of cited authorities that fail the good-law check (a lookup in the citation graph). & lower \\
+Known treatment & Share of cited authorities whose later treatment is known in the citation graph. & higher \\
+Over-search & Rate of store calls made beyond the fewest calls after which the slot first passed its rules. & lower \\
+Unfinished factors & Share of planned factors that stop with a required slot unfilled. & lower \\
+\bottomrule
+\end{tabular}
+\caption{The 25 quality metrics behind every win/tie/loss count. Cost (tokens, store calls, seconds) is reported apart and judged only against B4 and B5.}
+\label{tab:metrics}
+\end{table}
+
+\section{Settings and Budgets}
+\label{app:hyper}
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}L{5.2cm}L{9.8cm}@{}}
+\toprule
+Setting & Value \\
+\midrule
+System model (search, holdout, sealed test) & Sarvam-105B, hosted, behind the pseudonymisation boundary; temperature 0; one run per system \\
+Scoring checker & MiniCheck-RoBERTa-Large, 512-token window; long sentences split into 240-token pieces \\
+System checker & DeBERTa NLI, local, inside Vakeel \\
+Retrieval vectors & hashed character n-grams (BGE-M3 vectors exist but were not used in these runs) \\
+Bail factors; dossier fields & 12; 13 \\
+Baseline settings & B1 top 10 paragraphs; B2 top 3 orders; B3 chunks of 512 \\
+Bootstrap & paired, 10,000 resamples, seed 0 \\
+Multiple comparisons & Holm at 0.05 over B0 to B6, per system and metric \\
+Cells not counted & fewer than 5 paired orders (``too few''); metric undefined for the baseline \\
+Orders & search 30, holdout 20, sealed 80 \\
+Freeze & tags \texttt{prereg-v1} and \texttt{eval-freeze-v1}, 9 November 2026 \\
+Sarvam spend & about INR 990 by 13 November, under a cap of INR 5,000 enforced by the ledger \\
+OpenAI spend & about 4.15 USD of a 4.50 USD cap; locked again in code \\
+Gemini free tier & public court text only; 500 requests a day per project, about 49 requests per Full case \\
+Store build & 26 October 2026, 35 minutes on a laptop, 1.77 GB \\
+\bottomrule
+\end{tabular}
+\caption{The settings needed to rerun the evaluation are fixed in code or in the pre-registration. Models, statistics and spending caps of the runs reported here.}
+\label{tab:hyper}
+\end{table}
+
+\clearpage
+\section{Deviations from the Pre-registration}
+\label{app:dev}
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lL{14.6cm}@{}}
+\toprule
+Id & Deviation and reason \\
+\midrule
+D1 & Only the 80 sealed orders were run; the 120 open test orders were not (time, and about INR 5,500 needed for 200 orders against INR 4,600 left). The holdout plays the role of the open check. \\
+D2 & One run per system, not three. \\
+D3 & The headline system is \vs{}, chosen on development orders by the architecture search, not Full. Full runs beside it and every claim registered for Full stays registered. \\
+D4 & One model family, Sarvam-105B (OpenAI locked by owner decision; the Gemini free tier has no B4 and too low a quota). \\
+D5 & Tests failing at the freeze are declared, none changed: 19 left (17 stale reference digests, 2 M6a cells waiting for a rescore). \\
+D6 & The run script reads the 80 sealed ids to select input rows and strips the gold field; no gold or output is looked at. The gated opening happens once, in one scoring call over all nine systems. \\
+D7 & Two sealed cases failed at start-up on the laptop's local store when five processes opened it at once (Full on one order, \vs{} on another). The degraded records were set aside unread and each case was rerun once on the frozen code. A sensitivity analysis drops them (79 paired orders). \\
+D8 & The 17 reference digests of D5 were re-captured after the freeze (test files only); the only difference was a date field, and no source file changed. \\
+D9 & A ranking written after the freeze put ``\vs{} minus X1'' first on win counts (38/29/3). A holdout run of it was started, which breaks ``holdout touched once'', and stopped after one case, unscored. Three checks found it is not better than \vs{}. \\
+D10 & The single gated scoring call crashed in the unsupported-fact checker on a sentence longer than its window, before writing any score. The scorer was fixed (pieces; the least supported piece decides), a rescoring of an already scored development arm was byte-identical, the saved outputs were hashed, and the slice was scored once more. \\
+D11 & The declared label-source analysis (rule-only gold) had been left out of the gated call. It was run once on the same saved outputs with the same scoring code. A first attempt ended when the laptop ran out of memory before any score was written. \\
+D12 & An added exploratory analysis of run-to-run spread: all nine systems run twice more on the 30 search orders, frozen code, response cache off. \\
+\bottomrule
+\end{tabular}
+\caption{Twelve deviations were recorded; none changes a system after the freeze, and D10 changes the scorer before any score existed. Each is listed with date and full reason in Section 8 of the pre-registration.}
+\label{tab:dev}
+\end{table}
+
+\section{Tool Calls and Cost}
+\label{app:cost}
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+ & \vs{} & Full & B4 & B5 \\
+\midrule
+Tool calls per order & 149 & 152 & 234 & 117 \\
+Distinct tools used & 17 & 16 & 16 & 13 \\
+Calls refused for a bad argument & 1.0\% & 3.1\% & 4.9\% & 6.4\% \\
+Calls refused by the budget & 3.8\% & 1.1\% & 4.3\% & 0.1\% \\
+Lookups with no result & 1.7\% & 0.0\% & 0.0\% & 0.4\% \\
+Orders with a tool or model error & 80 & 80 & 79 & 78 \\
+\quad of which finished & 100\% & 100\% & 100\% & 100\% \\
+Exports tried before Gate 2 & 80 & 80 & 80 & 80 \\
+Exports executed & 0 & 0 & 0 & 0 \\
+Payloads refused by the privacy boundary & 175 & 60 & 126 & 49 \\
+\bottomrule
+\end{tabular}
+\caption{No export ran before Gate 2, and \vs{} has the lowest share of calls refused for a bad argument. Counted from the saved event logs of the 80 sealed orders. B0 to B3 and B6 call no tool.}
+\label{tab:tools}
+\end{table}
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}llrrrrl@{}}
+\toprule
+Block & Metric & \vs{} & Full & B4 & B5 & Outcome for \vs{} (vs B4; vs B5) \\
+\midrule
+Search & Tokens & 121065 & 95413 & 118183 & 76842 & tie; loss \\
+ & Store calls & 109 & 98 & 186 & 87 & win; loss \\
+ & Seconds & 534 & 271 & 176 & 138 & loss; loss \\
+Holdout & Tokens & 108542 & 90914 & 111186 & 72603 & tie; loss \\
+ & Store calls & 99 & 95 & 185 & 82 & win; loss \\
+ & Seconds & 547 & 303 & 256 & 100 & loss; loss \\
+Sealed & Tokens & 122387 & 98814 & 120614 & 79877 & tie; loss \\
+ & Store calls & 110 & 103 & 188 & 89 & win; loss \\
+ & Seconds & 719 & 398 & 269 & 160 & loss; loss \\
+\bottomrule
+\end{tabular}
+\caption{\vs{} needs fewer store calls than B4 in every block and as many tokens; it is slower than B4 and B5 and uses more tokens and store calls than B5. Means per order; cost is judged only against B4 and B5, the baselines of comparable capability.}
+\label{tab:cost}
+\end{table}
+
+\section{Ablations in Full}
+\label{app:abl}
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}L{5.6cm}ccL{5.2cm}@{}}
+\toprule
+\vs{} against & W/T/L & (too few, undefined) & \vs{} loses on \\
+\midrule
+minus X1 (dossier gaps from facts) & 1/18/1 & (2, 3) & Unsupported facts, count \\
+minus X4 (strict abstention) & 4/16/0 & (2, 3) & none \\
+minus X5 (draft from facts) & 0/20/0 & (2, 3) & none \\
+minus X7 (objections by id) & 2/18/0 & (2, 3) & none \\
+A3 no tools & 0/20/0 & (2, 3) & none \\
+A4 plain retrieval & 1/19/0 & (2, 3) & none \\
+A6 fixed router & 0/19/1 & (2, 3) & Unfinished factors \\
+A7 free planner & 0/16/4 & (2, 3) & Unsupported facts (M6); Unsupported facts, count; Unfinished factors; Confident wrong \\
+A1 no dossier (without X1, X5) & 0/20/0 & (2, 3) & none \\
+A2 no check-repair (without X4) & 5/13/1 & (2, 4) & Unfinished factors \\
+A8 no sparring (without X7) & 2/17/0 & (2, 4) & none \\
+A9 neither (without X4, X7) & 6/11/1 & (2, 5) & Unfinished factors \\
+\bottomrule
+\end{tabular}
+\caption{The twelve ablations of \vs{} on the 30 search orders: no ablation beats \vs{} on more than four of the 25 quality metrics. A1, A2, A8 and A9 cannot sit on top of all four switches (the switch validator refuses the combinations), so each drops the switch it conflicts with, as shown in brackets.}
+\label{tab:abl_full}
+\end{table}
+
+\section{Reproducibility}
+\label{app:repro}
+
+The repository is the code of record (\url{https://github.com/vishakkashyapk30/lma-group-project}); the sealed runs use the tag \texttt{eval-freeze-v1}. Data, model weights and keys are not in it. Offline stand-in models are the default and need neither a GPU nor a key; the hosted runs need a provider key in the environment and the paid-provider lock opened by the owner.
+
+{\small\begin{verbatim}
+make setup          # Python 3.11+, creates .venv
+make data           # team data bundle (stores, test sets, gold)
+make models         # helper models (NLI, MiniCheck, BGE-M3, Whisper small)
+make smoke          # one case end to end, offline; export stays blocked
+make eval-smoke
+
+# one system on a case file (VS-Final is the switch string below)
+VS_MODELS=auto VS_LLM_BACKEND=sarvam VS_EXTERNAL=pseudonymised \
+  python -m vakeel_sahayak.eval.runners.driver run --system \
+  "S13:signal_source=merge,abstention=strict,draft_source=facts_text,objection_grounding=by_id"
+
+# score one arm (development slice, agreed gold, MiniCheck for M6)
+VS_M6_CHECKER=minicheck python -m vakeel_sahayak.eval.scoring score \
+  --runs <arm outputs> --slice dev --gold-source agreed --out <scores>
+
+# the final tables of this report
+VS_RUNS=<runs root> python scripts/midsub/final_tables.py
+\end{verbatim}}
+
+\noindent The tables of this report are copied from \texttt{docs/results/search/final\_report/} (\texttt{summary.md}, \texttt{hypotheses\_blind.json}, \texttt{means\_blind.csv}, \texttt{variance\_d12.csv} and the \texttt{wlt\_*.csv} files). The sealed slice is scored by one gated call (\texttt{--slice blind --open-blind}), which needs the freeze tag and writes a lock file.
+
+\end{document}
