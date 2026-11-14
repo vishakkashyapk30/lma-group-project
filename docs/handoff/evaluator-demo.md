@@ -6,7 +6,7 @@ An evaluator of the project opens the site, finds six recorded demo cases on the
 
 (handoff, backend half)
 
-Written 14 Nov 2026. An evaluator opens the site and finds six demo cases already loaded. Each has a tour: nine steps (INTAKE, DOSSIER,
+Written 14 Nov 2026, re-recorded 15 Nov 2026 (see "What changed since the first recording"). An evaluator opens the site and finds six demo cases already loaded. Each has a tour: nine steps (INTAKE, DOSSIER,
 GATE_1, RIGHTS, BRIEF, SPAR, HEARING_PREP, GATE_2, FILE) whose captions say what each agent did in that recorded run, with the run's own
 numbers. Every case was run end to end through the real API on Sarvam-105B (the owner's key), exactly as the web interface calls it.
 Gate 2 is left open in every snapshot: the evaluator approves it in the tour, which shows that export is impossible before counsel's
@@ -31,21 +31,35 @@ All invented: role pseudonyms only (Accused-1, Co-accused-2, Complainant-1, IO-1
 Every page carries the image stamp "SYNTHETIC DEMONSTRATION DOCUMENT - NOT A COURT RECORD OR LEGAL EVIDENCE" at top and foot. The
 custody certificates are dated 10.11.2026 and their day counts were checked by date arithmetic.
 
-What each recorded run produced (numbers from `demo/cases/<slug>/tour.json`; rights statuses are the Rights Radar as of 2026-11-14;
-"withheld" is sentences the claim checker could not support; "spend" is Sarvam INR for that case):
+Re-recorded 15 Nov 2026 (second recording; the first, 14 Nov, is described under "What changed since the first recording" below). What each recorded run
+produced (numbers from `demo/cases/<slug>/tour.json`; rights statuses are the Rights Radar as of 2026-11-15; "withheld" is sentences the claim checker
+could not support; "spend" is Sarvam INR for that case; sparring: objections raised, then how many Abhiyojak judged ANSWERED / PARTLY / UNANSWERED, and how many were not
+judged because the sparring token budget was spent):
 
 | Case | Law and file | Rights Radar | Brief (grounds, withheld) | Sparring | Spend |
 |---|---|---|---|---|---|
-| 01 cheating, parity | IPC 420/406, 11 born-digital PDFs, co-accused on bail | default bail WINDOW_CLOSED, s.479 ELIGIBLE (977 days), Antil CHECK | 6 drafted, 6 supported; 14 withheld; 3 grounds left to counsel | 7 objections, 7 unanswered | 3.63 |
-| 02 theft, default bail | BNS 303(2), 8 PDFs, no charge sheet | default bail ELIGIBLE (day 95), s.479 NOT_YET, Antil A | 3 drafted, 3 supported; 13 withheld; 3 left | 3 objections, 3 unanswered | 3.01 |
-| 03 NDPS small, Hindi | NDPS 21(a), Hindi FIR plus 8 English PDFs, grounds of arrest oral | default bail CHECK, s.479 CHECK, Antil C | 3 drafted (1 repaired, 2 supported); 13 withheld; 4 left | 6 objections, 6 unanswered | 3.51 |
-| 04 NDPS commercial, scanned | NDPS 21(c)/29, one image-only page read by OCR | default bail WINDOW_CLOSED, s.37 BAR_APPLIES, Antil C | 8 drafted, 8 supported; 10 withheld; 1 left | 6 objections, 6 unanswered | 3.57 |
-| 05 attempt to murder, parity | BNS 109 with 3(5), 11 PDFs with the medico-legal report | default bail CHECK, s.479 CHECK, Antil CHECK | 7 drafted (1 repaired, 6 supported); 12 withheld; 1 left | 9 objections, 9 unanswered | 3.48 |
-| 06 breach of trust, missing papers | BNS 316(2), 4 PDFs only; intake asked 6 questions | default bail NOT_YET, s.479 CHECK, Antil CHECK | 5 drafted, 5 supported; 6 withheld; 1 left | 10 objections, 10 unanswered | 2.92 |
+| 01 cheating, parity | IPC 420/406, 11 born-digital PDFs, co-accused on bail | default bail WINDOW_CLOSED, s.479 ELIGIBLE (978 days against 852), Antil CHECK | 7 drafted (1 repaired, 6 supported); 16 withheld; 3 grounds left to counsel | 13 raised; 0 judged, 13 not judged | 4.92 |
+| 02 theft, default bail | BNS 303(2), 8 PDFs, no charge sheet | default bail ELIGIBLE (day 96), s.479 NOT_YET, Antil A | 4 drafted (1 repaired, 3 supported); 4 withheld; 2 left | 9 raised; 0 judged, 9 not judged | 3.86 |
+| 03 NDPS small, Hindi | NDPS 21(a), Hindi FIR plus 8 English PDFs, grounds of arrest oral | default bail WINDOW_CLOSED (day 54 of 60), s.479 ELIGIBLE (136 days against 122), Antil C | 3 drafted, 3 supported; 14 withheld; 5 left | 5 raised; 0 judged, 5 not judged | 7.70 |
+| 04 NDPS commercial, scanned | NDPS 21(c)/29, one image-only page read by OCR | default bail WINDOW_CLOSED, s.479 CHECK (the charge names no clause), s.37 BAR_APPLIES, Antil C | 6 drafted (2 repaired, 4 supported); 15 withheld; 3 left | 15 raised; 0 judged, 15 not judged | 4.75 |
+| 05 attempt to murder, parity | BNS 109 with 3(5), 11 PDFs with the medico-legal report | default bail WINDOW_CLOSED (90-day limit, maximum death, day 81), s.479 NOT_APPLICABLE (death), Antil B | 6 drafted (1 repaired, 5 supported); 5 withheld; 1 left | 14 raised; 0 judged, 14 not judged | 4.19 |
+| 06 breach of trust, missing papers | BNS 316(2), 4 PDFs only; intake asked 6 questions | default bail NOT_YET (day 41), s.479 CHECK (antecedents unknown), Antil CHECK | 4 drafted (2 repaired, 2 supported); 6 withheld; 2 left | 11 raised; 8 judged: 2 ANSWERED, 3 PARTLY, 3 UNANSWERED; 3 not judged | 6.77 |
 
-Gate 2 checklist sizes: 7, 6, 7, 6, 9, 13 items (unsupported fields plus unanswered objections). The six differ in law (IPC, BNS, NDPS
+Not judged means the reply or judge call was refused with `BudgetExhausted`; Abhiyojak then records UNANSWERED with the reason "The reply could not be judged; counsel to read it."
+The tour's SPAR caption says so in each case.
+
+Gate 2 checklist sizes: 13, 11, 6, 15, 15, 9 items (unsupported fields plus unanswered objections). The six differ in law (IPC, BNS, NDPS
 small and commercial), custody (default bail open, closed, not yet open, s.37 bar), record quality (complete, Hindi, scanned, four
 papers only) and parity (co-accused granted, refused, none).
+
+#### What changed since the first recording (14 Nov to 15 Nov 2026)
+- Rights Radar: the maximum punishment is found for BNS 109 with 3(5) and NDPS 21(a), so cases 03 and 05 now show real statuses (default bail WINDOW_CLOSED,
+  s.479 ELIGIBLE in 03 and NOT_APPLICABLE in 05) instead of CHECK for a missing maximum; the story and variant lines of 01, 03, 04, 05, 06 in `demo/cases.py` were rewritten to match.
+- Sparring reserve on in the product configuration (60000 at first, 120000 for the final recording): objection raising no longer fails (objections per case: 3 to 10 in the first recording,
+  now 5 to 15), but judging is still starved, see Known limits. Old (first recording, no reserve): 41 objections, 1 judged. New: 67 raised, 8 judged (all in case 06).
+- The SPAR caption now states what happened in the run: objections raised, how many judged, answered, partly answered, unanswered, how many not judged for lack of the sparring token budget, and that counsel answers what stays open before Gate 2 (`record_demos.py`, `build_tour`).
+- Tour contract: optional `hi` text; `translate_tours_hi.py` was run on these recordings (see Hindi tours).
+- A radar crash on dossiers with no sections was fixed in the product; no `rights_check_failed` event is in any recording.
 
 ### Tour contract (`demo/cases/<slug>/tour.json`; pydantic model `demo.preload.Tour`, also in `docs/api/openapi.json`)
 `{slug, case_id, title, story, variant{offence, custody, record, parity}, recorded{date, backend, model, cost_inr}, steps[9]}`; each
@@ -96,21 +110,27 @@ VS_EXTERNAL=consented with counsel's consent recorded per case (`POST /consent`,
 synthetic evaluator-demo case"): the cases are synthetic, so raw pages may go to Sarvam; nothing of a real client is involved.
 
 ### Spend
-All six recordings used the owner's Sarvam key (`sarvam-105b`), capped at INR 300 for the recording (`VS_SARVAM_CAP_INR=300`).
-Per-case spend, from the recording ledger: 01 3.63, 02 3.01, 03 3.51, 04 3.57, 05 3.48, 06 2.92 INR, which is 20.12 INR for the six
-recorded runs. The ledger of the whole recording (410 rows, including earlier test calls with no case id, 2.95 INR) sums to 23.07 INR.
-The backend checks (pre-loading, export) made no model call; they ran with `VS_MODELS=offline`.
+Second recording, 15 Nov 2026: the owner's Sarvam key (`sarvam-105b`), capped at INR 300 for the recording (`VS_SARVAM_CAP_INR=300`, a scratch data
+dir with its own ledger). Per-case spend, from the ledger: 01 4.92, 02 3.86, 03 7.70, 04 4.75, 05 4.19, 06 6.77 INR, which is 32.19 INR for the six
+recorded runs (75 to 126 hosted calls each). The ledger of that recording (550 calls, a fresh directory) sums to 29.23 INR (it counts each call once; the per-case figures overlap in time). Earlier work on the same day, not in these numbers: the 60000-token
+recording (about INR 30, six cases, replaced) and one aborted case 05 run. The first recording (14 Nov) cost 20.12 INR for six cases.
+The backend checks (pre-loading, export) made no model call; they ran with `VS_MODELS=offline`. Hindi captions: Gemma on the Gemini free tier, no cost.
 
 ### Known limits seen while recording (product, not the demo)
-- Gate 2 always lists unanswered objections: in all six recordings Vakeel's replies left every objection unanswered, so the tour
-  approves with acknowledgements (this is what the checker could support, not a recorder fault).
-- The Rights Radar leaves default bail and s.479 at CHECK in cases 03 and 05 because its maximum-punishment input was empty ("Maximum
-  punishment is not on record"), although the charge sheets were filed in time (days 54 of 60 and 81 of 90; case 05's dossier even lists
-  the section's maximum as death). The tour reports the status as recorded. 15 Nov 2026: the story, the custody line of the variant and the
-  Rights Radar caption of cases 03 and 05 (and the custody line of case 06) now say exactly this instead of "default bail closed"; text only,
-  no re-recording, snapshots untouched. Fixed in the product on 15 Nov 2026 (see `docs/handoff/first-schedule.md`, last section): BNS 3(5) no longer hides the maximum of BNS 109, and
-  NDPS 21(a) now reads "1 year" from the section text (a bare NDPS 20 to 22 stays CHECK and says the clause and quantity decide). The recorded
-  demos still show the old behaviour until they are re-recorded (a coordinator will do that).
+- **Sparring is still starved (the main thing to know).** The product now has a 120000-token sparring reserve (`PRODUCT_SPARRING_RESERVE_TOKENS`;
+  it was 60000 in the first re-recording of this day, with the same outcome). With Sarvam-105B it is spent before Abhiyojak judges: in cases 01 to 05
+  none of 13, 9, 5, 15 and 14 objections was judged (all UNANSWERED with "The reply could not be judged"), only case 06 judged 8 of 11 (2 answered, 3 partly,
+  3 unanswered). Why (case 05, events.jsonl): raising the objections costs about 5K tokens per factor plus about 10K for the general round (about 40K);
+  then every objection takes two Vakeel calls (reply and repair, 3.4K to 3.9K each, one factor made 13 calls); judging runs after all replies, so it is
+  last in line and finds the pool empty (`BUDGET_HIT` spent 121127 of 120000). Roughly 8K to 12K per objection in all, so a reserve for 14 objections
+  needs 150K to 180K, or the judge should run per factor, or objection numbers should be capped. Before the reserve (first recording): 40 of 41 objections
+  not judged; now (120000): 56 of 56 in cases 01 to 05 and 3 of 11 in case 06, so 59 of 67 in all (88%). The captions state this plainly. Gate 2 therefore
+  lists the unanswered objections of every case, and the tour approves with acknowledgements.
+- The Rights Radar fixes of 15 Nov show in the new recordings: case 03 default bail WINDOW_CLOSED and s.479 ELIGIBLE (maximum 1 year read from NDPS 21(a)),
+  case 05 default bail WINDOW_CLOSED on a 90-day limit and s.479 NOT_APPLICABLE (maximum death for BNS 109 with 3(5); BNS 109's own maximum is not death in the
+  statute for every clause, the radar takes the highest). Still CHECK for s.479 in case 04 (NDPS 21(c)/29: the charge names no clause, so the radar has no
+  maximum) and case 06 (antecedents unknown). No `rights_check_failed` event in any of the six recordings.
+- NDPS case 03's "Notice of appearance" row reads "Offence punishable up to 7 years" (the NDPS 21(a) maximum is 1 year); left as recorded.
 - Seen in the recorded output, left as recorded: case 06's "Notice of appearance" reads "Offence punishable up to 7 years. No arrest memo or
   notice in the file" although an arrest memo is in the file; intake names a "bail order" document type in cases 02, 03 and 06 whose dossier
   lists no earlier bail order.
@@ -122,8 +142,8 @@ The backend checks (pre-loading, export) made no model call; they ran with `VS_M
   (`lg:max-h-[calc(42dvh-1.5rem)]`), with a layout check in `tour.spec.ts` and `tour_live.spec.ts` (`expectStepInsideBar`).
   Fixed on 15 Nov 2026: the "Exported 4 files" toast no longer covers the export button (toasts now sit bottom-left; during a demo, above the
   bar on wide screens and at the top of the screen below lg); layouts under 1024 px were walked at 768x1024 and 390x844 and the bar folds there.
-  Not fixed: the recorded captions are English until `scripts/demo/translate_tours_hi.py` has been run for the current recordings (the
-  mechanism is built, nothing was translated yet; the interface shows the English where a text has no Hindi).
+  Hindi captions: translated on 15 Nov 2026 for the current recordings (see Hindi tours); 9 texts remain English.
+  The 768 px breadcrumb overlap and the cut-off stepper on a phone are the workspace header, not the tour (not fixed).
 - Day counts in the case descriptions follow the Rights Radar (day 1 is the first remand): cases 01, 03, 04, 05 charge sheets on days
   55, 54, 167 and 81.
 - The exported DOCX files carry the locality "Karol Bagh" (case 01), an address that is part of the synthetic file, not a person's name.
@@ -148,7 +168,7 @@ The backend checks (pre-loading, export) made no model call; they ran with `VS_M
 - Contract (optional, backward compatible; `Tour`, `TourStep` in `demo/preload.py`, `docs/api/openapi.json` regenerated): `hi` on the tour `{title, story, variant{offence,custody,record,parity}, src}` and on each step `{title, caption, filled[{label,value}], src}`. `src` maps each field (`title`, `caption`, `variant.offence`, `filled.0.label`) to a hash of the English it was made from. A tour without `hi` is served as before (`"hi": null`).
 - Frontend: `lib/tour.ts` parses `hi` (`localizedTour`, `localizedStep`); `TourBar` and `GuidedDemos` show the Hindi when the interface language is Hindi, field by field, with the English where a field has none. Vitest: `tests/unit/tourLang.test.tsx`.
 - `scripts/demo/translate_tours_hi.py` fills `hi` through the repo's hosted client (Gemma on the Gemini free tier, data class PUBLIC under `public_scope`, the same gate as `scripts/translate_ui_hi.py`; the demo text is invented, role pseudonyms only). It keeps numbers, section references, role pseudonyms, PS and case numbers, file names, stage terms, Rights Radar statuses and every other upper-case abbreviation as written, rejects an answer that loses one or changes a digit (3 tries, then the field stays English), skips text whose English hash is unchanged, copies text with nothing to translate (file names, keys such as `UNANSWERED:O7`), and saves after every request. `--dry-run` lists strings and requests and writes nothing; `--check` exits 1 for missing or stale Hindi. Tests: `tests/unit/scripts/test_translate_tours_hi.py` (fake translator).
-- State on 15 Nov 2026: the six tours have no Hindi yet; `--dry-run` reports 958 strings, 125 copied unchanged, 833 to translate (441 distinct) in 45 requests of 10. Run after the demos are re-recorded (the recorder rebuilds `tour.json` from English only, so run the translator again after every re-recording): `set -a; . ./.env; set +a; VS_MODELS=auto VS_GEMINI=public .venv/bin/python scripts/demo/translate_tours_hi.py`, then `--check`. Gemma on the free tier is slow (see `hindi-labels.md`); the run resumes from what is saved.
+- State on 15 Nov 2026 (after the final recording): Hindi is in all six tours, 1,031 of 1,040 strings (the rest are copies of text with nothing to translate). Gemma on the Gemini free tier (`gemma-4-31b-it`, then `gemma-4-26b-a4b-it`) only returned `ReadTimeout` for about 40 minutes, so the run used `--model gemini-3.5-flash-lite` (same free tier, public synthetic text only): `--batch 10`, then two passes of `--batch 5` and `--batch 1` over what failed. `--check` still exits 1 for 9 texts (3 distinct): the step title "Rights Radar" in four tours and the label `fir` (a field key) never came back in Devanagari, and one ground value starting "SUPPORTED:" lost its status word in three tries; the interface shows the English for them. 20 captions were read: numbers, section references (BNS, NDPS, s.479), role pseudonyms and status words kept; "Gate 2" is rendered "GATE_2" in some captions; "counsel" is rendered both "अधिवक्ता" and left as the English word for stage terms. Rerun after any re-recording: `set -a; . ./.env; set +a; VS_MODELS=auto VS_GEMINI=public .venv/bin/python scripts/demo/translate_tours_hi.py` (add `--model gemini-3.5-flash-lite` when Gemma times out), then `--check`; it resumes from what is saved.
 
 ### Files
 - `frontend/lib/tour.ts`: types, the parser for `GET /api/demo/tours[/slug]` (steps sorted into INTAKE ... FILE order, unknown stages dropped, the approve action allowed on GATE_2 only), the stage map, and the step machine (`createTourMachine`: bounds, the single-flight Gate 2 action).

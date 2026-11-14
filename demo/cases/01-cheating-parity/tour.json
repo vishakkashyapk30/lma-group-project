@@ -5,15 +5,15 @@
  "story": "Accused-1 is charged under IPC 420 and 406 for taking an advance of Rs. 6,50,000 for machinery that was never delivered; the offence (March 2024) predates the BNS, so the IPC governs. He has been in custody since 12.03.2024, the charge sheet was filed in time and the trial is under way; his earlier bail application was rejected, while Co-accused-2, with a comparable role, is on bail.",
  "variant": {
   "offence": "IPC 420/406 cheating (maximum 7 years), offence before 1 July 2024",
-  "custody": "default bail closed (charge sheet on day 55 of 60); past one-third of the maximum as a first-time offender (BNSS s.479)",
+  "custody": "default bail closed (charge sheet on day 55 of 60); past one-third of the maximum as a first-time offender (BNSS s.479 ELIGIBLE: 978 days against 852)",
   "record": "complete file, eleven born-digital documents",
   "parity": "Co-accused-2 granted bail; first-time offender; earlier bail application rejected"
  },
  "recorded": {
-  "date": "2026-11-14",
+  "date": "2026-11-15",
   "backend": "sarvam",
   "model": "sarvam-105b",
-  "cost_inr": 3.63
+  "cost_inr": 4.92
  },
  "steps": [
   {
@@ -68,7 +68,83 @@
      "label": "11_vakalatnama.pdf",
      "value": "born-digital PDF"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "01_fir.pdf",
+      "value": "बॉर्न-डिजिटल PDF"
+     },
+     {
+      "label": "02_arrest_memo.pdf",
+      "value": "बॉर्न-डिजिटल PDF"
+     },
+     {
+      "label": "03_remand_order.pdf",
+      "value": "बॉर्न-डिजिटल PDF"
+     },
+     {
+      "label": "04_previous_bail_order.pdf",
+      "value": "बॉर्न-डिजिटल PDF"
+     },
+     {
+      "label": "05_charge_sheet.pdf",
+      "value": "बॉर्न-डिजिटल PDF"
+     },
+     {
+      "label": "06_co_accused_bail_order.pdf",
+      "value": "बॉर्न-डिजिटल PDF"
+     },
+     {
+      "label": "07_order_sheet.pdf",
+      "value": "बॉर्न-डिजिटल PDF"
+     },
+     {
+      "label": "08_custody_certificate.pdf",
+      "value": "बॉर्न-डिजिटल PDF"
+     },
+     {
+      "label": "09_police_verification.pdf",
+      "value": "बॉर्न-डिजिटल PDF"
+     },
+     {
+      "label": "10_personal_circumstances.pdf",
+      "value": "बॉर्न-डिजिटल PDF"
+     },
+     {
+      "label": "11_vakalatnama.pdf",
+      "value": "बॉर्न-डिजिटल PDF"
+     }
+    ],
+    "src": {
+     "filled.0.label": "57a1cda9639fd7eb",
+     "filled.1.label": "b92cd2202758fed0",
+     "filled.2.label": "8ef36001e5a89f60",
+     "filled.3.label": "8157fb7ec7597c12",
+     "filled.4.label": "b51bc209b47483b9",
+     "filled.5.label": "b6d77991c25dfdf6",
+     "filled.6.label": "736183edd15b67c3",
+     "filled.7.label": "3409e4bb97125e63",
+     "filled.8.label": "bd3ad529a63fc2fd",
+     "filled.9.label": "93f9195483ace0eb",
+     "filled.10.label": "a9fe216b448f6171",
+     "title": "85fd6f385e3ba15f",
+     "caption": "64397b30d87b11a4",
+     "filled.0.value": "228bcbbc31fb7177",
+     "filled.1.value": "228bcbbc31fb7177",
+     "filled.2.value": "228bcbbc31fb7177",
+     "filled.3.value": "228bcbbc31fb7177",
+     "filled.4.value": "228bcbbc31fb7177",
+     "filled.5.value": "228bcbbc31fb7177",
+     "filled.6.value": "228bcbbc31fb7177",
+     "filled.7.value": "228bcbbc31fb7177",
+     "filled.8.value": "228bcbbc31fb7177",
+     "filled.9.value": "228bcbbc31fb7177",
+     "filled.10.value": "228bcbbc31fb7177"
+    },
+    "title": "Munshi कागजात पढ़ते हैं",
+    "caption": "Counsel ने एक साथ 11 PDFs अपलोड किए। Munshi ने हर पृष्ठ (11 पृष्ठों के लिए टेक्स्ट लेयर) पढ़ा, 11 दस्तावेजों (FIR, affidavit, arrest memo, bail order, charge sheet, custody certificate, order sheet, other और remand order) के नाम अंग्रेजी में रखे, और 9 दिनांकित घटनाओं तथा 2 आरोपित धाराओं को दर्ज किया। कागजात ने प्रत्येक चेकलिस्ट मद का उत्तर दिया, इसलिए intake ने कुछ नहीं पूछा।"
+   }
   },
   {
    "stage": "DOSSIER",
@@ -96,7 +172,7 @@
     },
     {
      "label": "Days in custody",
-     "value": "977 (computed)"
+     "value": "978 (computed)"
     },
     {
      "label": "Charge sheet",
@@ -114,7 +190,71 @@
      "label": "Antecedents",
      "value": "none (verified from the papers)"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "FIR",
+      "value": "number: 63/2024, police_station: PS-12, date: 2024-03-10 (कागज़ात से सत्यापित)"
+     },
+     {
+      "label": "धाराएँ",
+      "value": "IPC 420 (= BNS 318(4)), अधिकतम 7 वर्ष; IPC 406 (= BNS 316(2)), अधिकतम 3 वर्ष (कागज़ात से सत्यापित)"
+     },
+     {
+      "label": "गिरफ़्तारी की तिथि",
+      "value": "2024-03-12 (कागज़ात से सत्यापित)"
+     },
+     {
+      "label": "प्रथम रिमांड",
+      "value": "2024-03-13 (कागज़ात से सत्यापित)"
+     },
+     {
+      "label": "हिरासत में दिन",
+      "value": "978 (गणित)"
+     },
+     {
+      "label": "आरोप-पत्र",
+      "value": "दाखिल: True, दिनांक: 2024-05-06 (दस्तावेज़ों से सत्यापित)"
+     },
+     {
+      "label": "पूर्ववर्ती जमानत आदेश",
+      "value": "न्यायालय: Sessions Court, दिनांक: 2024-04-10, परिणाम: खारिज (दस्तावेज़ों से सत्यापित)"
+     },
+     {
+      "label": "सह-अभयुक्त की जमानत",
+      "value": "id: Co-accused-2, परिणाम: स्वीकृत, दिनांक: 2024-07-18 (दस्तावेज़ों से सत्यापित)"
+     },
+     {
+      "label": "आपराधिक इतिहास",
+      "value": "कोई नहीं (दस्तावेज़ों से सत्यापित)"
+     }
+    ],
+    "src": {
+     "filled.0.label": "61ef8cb5c4f3d3ea",
+     "title": "b7f323ef16f5756f",
+     "caption": "71465e2d6beeaf99",
+     "filled.0.value": "05d49bd71678a98e",
+     "filled.1.label": "9bae918add9affa5",
+     "filled.1.value": "8ae5ce625d5afefd",
+     "filled.2.label": "539d7fc8e5efdd47",
+     "filled.2.value": "585d9b873f2a6570",
+     "filled.3.label": "f7ec9a7f81cea689",
+     "filled.3.value": "237ea9ade82f90bd",
+     "filled.4.label": "be568b6ab38ee8d7",
+     "filled.4.value": "3269db88d221c44f",
+     "filled.5.label": "eab38827513ae20b",
+     "filled.5.value": "ff6f23ba88ee5f47",
+     "filled.6.label": "05f31677202ed63b",
+     "filled.6.value": "bdfb529a836c1849",
+     "filled.7.label": "64f54b91cd98806d",
+     "filled.7.value": "b27df487a31a1fab",
+     "filled.8.label": "b7f98544ccc72721",
+     "filled.8.value": "2d8823dd284e13e3"
+    },
+    "title": "Peshkar डोजियर तैयार करते हैं",
+    "caption": "Peshkar ने डोजियर के 13 फ़ील्ड भरे: 13 कागज़ात से, प्रत्येक उद्धृत वाक्य और पृष्ठ के साथ, 0 अधिवक्ता से और 0 खुले छोड़े गए। List of Dates में 9 प्रविष्टियाँ हैं, प्रत्येक अपने पृष्ठ से जुड़ी हुई है।"
+   }
   },
   {
    "stage": "GATE_1",
@@ -128,7 +268,23 @@
      "label": "Gate 1 note",
      "value": "approved by counsel for the recorded evaluator demo"
     }
-   ]
+   ],
+   "hi": {
+    "title": "GATE_1: अधिवक्ता तथ्यों का अनुमोदन करते हैं।",
+    "src": {
+     "title": "e26f2f4ee02e4a2a",
+     "caption": "bb6bd479239ffae5",
+     "filled.0.label": "dfed6daa2d66ec21",
+     "filled.0.value": "e811f245c92e1c44"
+    },
+    "caption": "जब तक अधिवक्ता डोजियर का अनुमोदन नहीं करते, तब तक कुछ भी मसौदा तैयार नहीं होता है, और कोड केवल अधिवक्ता से ही उस अनुमोदन को स्वीकार करता है। प्रत्येक फ़ील्ड का एक स्रोत या अधिवक्ता का उत्तर था, इसलिए अधिवक्ता ने किसी भी कमी को स्वीकार किए बिना अनुमोदन किया।",
+    "filled": [
+     {
+      "label": "Gate 1 नोट",
+      "value": "अधि-वक्ता द्वारा रिकॉर्ड किए गए मूल्यांकनकर्ता डेमो के लिए अनुमोदित"
+     }
+    ]
+   }
   },
   {
    "stage": "RIGHTS",
@@ -136,7 +292,7 @@
    "title": "Rights Radar",
    "agent": "PESHKAR",
    "action": null,
-   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-14: date arithmetic and statute tables, not the language model. Default bail: WINDOW_CLOSED, Undertrial limit (BNSS s.479): ELIGIBLE, Production within 24 hours: CHECK and Antil category: CHECK. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified.",
+   "caption": "At intake Peshkar ran the 7 rules of the Rights Radar on the dossier as of 2026-11-15: date arithmetic and statute tables, not the language model. Default bail: WINDOW_CLOSED, Undertrial limit (BNSS s.479): ELIGIBLE, Production within 24 hours: CHECK and Antil category: CHECK. Each result names its rule and the dates it used; rules not yet re-checked against the bare act are marked unverified.",
    "filled": [
     {
      "label": "Default bail",
@@ -144,7 +300,7 @@
     },
     {
      "label": "Undertrial limit (BNSS s.479)",
-     "value": "ELIGIBLE: 977 days in custody. The threshold is 852 days for a first-time offender (1/3 of 7 years, on bond) and 1,278 days otherwise (1/2, on bail). The applicable threshold (1/3, first-time offender) of 852 days has been reached. The record shows no other pending case (BNSS s.479(2))."
+     "value": "ELIGIBLE: 978 days in custody. The threshold is 852 days for a first-time offender (1/3 of 7 years, on bond) and 1,278 days otherwise (1/2, on bail). The applicable threshold (1/3, first-time offender) of 852 days has been reached. The record shows no other pending case (BNSS s.479(2))."
     },
     {
      "label": "Notice of appearance",
@@ -166,7 +322,57 @@
      "label": "Statutory bar",
      "value": "NOT_APPLICABLE: No NDPS, UAPA or PMLA section is charged."
     }
-   ]
+   ],
+   "hi": {
+    "caption": "INTAKE पर Peshkar ने 2026-11-15 की स्थिति के अनुसार dossier पर Rights Radar के 7 नियमों को चलाया: दिनांक अंकगणित और कानून तालिकाएं, भाषा मॉडल नहीं। Default bail: WINDOW_CLOSED, Undertrial limit (BNSS s.479): ELIGIBLE, Production within 24 hours: CHECK और Antil category: CHECK। प्रत्येक परिणाम अपने नियम और उसके उपयोग की तिथियों का नाम देता है; नंगे अधिनियम के मुकाबले अभी तक पुनः जांचे गए नियम unverified के रूप में चिह्नित हैं।",
+    "src": {
+     "caption": "75bfe0ae626fc170",
+     "filled.0.label": "e68b6dd942523940",
+     "filled.0.value": "04a39de4cb69d614",
+     "filled.1.label": "d7275406c48a3ae3",
+     "filled.1.value": "4a3ab022b3cc7dcc",
+     "filled.2.label": "1d5e3980d94af7d9",
+     "filled.2.value": "5743c09cc9d9f721",
+     "filled.3.label": "550a739c67b1a6ff",
+     "filled.3.value": "fb537bf5f7e5d8c2",
+     "filled.4.label": "8272cf65fa7450fc",
+     "filled.4.value": "041b25190a96d851",
+     "filled.5.label": "cf2929a161d294cf",
+     "filled.5.value": "47e62548eccfc384",
+     "filled.6.label": "c774a5ce34e5b94f",
+     "filled.6.value": "3c5e990779168039"
+    },
+    "filled": [
+     {
+      "label": "डिफ़ॉल्ट जमानत",
+      "value": "WINDOW_CLOSED: 60-दिन की सीमा (अधिकतम 7 वर्ष)। दिन 1 पहला रिमांड है, 13.03.2024। आरोप-पत्र दिन 55 (06.05.2024) को दाखिल किया गया था। यह सीमा के भीतर आया, इसलिए default bail का अधिकार कभी उत्पन्न नहीं हुआ।"
+     },
+     {
+      "label": "विचारधीन कैदी की सीमा (BNSS s.479)",
+      "value": "ELIGIBLE: हिरासत में 978 दिन। पहली बार के अपराधी के लिए सीमा 852 दिन है (7 वर्ष का 1/3, मुचलके पर) और अन्य मामलों में 1,278 दिन है (1/2, जमानत पर)। लागू सीमा (1/3, पहली बार का अपराधी) 852 दिन पूरी हो चुकी है। रिकॉर्ड में कोई अन्य लंबित मामला नहीं दिखाता है (BNSS s.479(2))।"
+     },
+     {
+      "label": "उपस्थिति का नोटिस",
+      "value": "UNKNOWN: 7 वर्ष तक दंडनीय अपराध। फ़ाइल में कोई गिरफ्तारी मेमो या नोटिस नहीं है।"
+     },
+     {
+      "label": "गिरफ्तारी के आधार",
+      "value": "UNKNOWN: ऐसा कोई रिकॉर्ड नहीं है कि गिरफ्तारी के आधार संसूचित किए गए थे।"
+     },
+     {
+      "label": "24 घंटे के भीतर पेशी",
+      "value": "CHECK: अगले दिन पेश किया गया; समय रिकॉर्ड पर नहीं है।"
+     },
+     {
+      "label": "Antil श्रेणी",
+      "value": "CHECK: श्रेणी A (7 वर्ष तक), जब तक कि आर्थिक अपराध (D) न माना जाए। आरोप-पत्र के बाद ऐसे अभियुक्त के साथ कैसा व्यवहार किया जाए जिसे जांच के दौरान गिरफ्तार नहीं किया गया था और जिसने सहयोग किया था, इसका निर्णय Antil की श्रेणियां करती हैं; हिरासत में मौजूद मुवक्किल के लिए यह संदर्भ है, जमानत का अधिकार नहीं।"
+     },
+     {
+      "label": "सांविधिक बाधा",
+      "value": "NOT_APPLICABLE: NDPS, UAPA या PMLA की कोई धारा आरोपित नहीं है।"
+     }
+    ]
+   }
   },
   {
    "stage": "BRIEF",
@@ -174,65 +380,159 @@
    "title": "Sutradhar plans, Vakeel drafts",
    "agent": "VAKEEL",
    "action": null,
-   "caption": "Sutradhar planned the brief factor by factor (9 factors) and fetched the evidence each needs: 66 store calls. Vakeel drafted 6 grounds (6 supported). Every sentence was checked against its source; 14 sentences the checker could not support were withheld, leaving 3 grounds for counsel to draft. 18 open issues are listed for counsel.",
+   "caption": "Sutradhar planned the brief factor by factor (11 factors) and fetched the evidence each needs: 100 store calls. Vakeel drafted 7 grounds (1 repaired and 6 supported). Every sentence was checked against its source; 16 sentences the checker could not support were withheld, leaving 3 grounds for counsel to draft. 21 open issues are listed for counsel.",
    "filled": [
     {
      "label": "G2 · custody period",
-     "value": "SUPPORTED: Article 21 of the Constitution provides for a right of speedy trial, and continuous long incarceration of an accused without sufficient progress in the trial amounts to infringement of the right to life and liberty, [A:RJHC020351662025#9]."
+     "value": "SUPPORTED: Continuous long incarceration without sufficient progress in the trial amounts to infringement of the right to life and liberty of an accused [A:RJHC020351662025#9]."
+    },
+    {
+     "label": "G3 · charge sheet filed",
+     "value": "SUPPORTED: Evidently, the custody of the petitioner is no longer required [F:facts_text] [A:DLHC010077112023#95]. The case is based on documents, all incriminating documents have been recovered and made part of the charge sheet [A:DLHC010085292023#96]."
     },
     {
      "label": "G4 · parity with co accused",
-     "value": "SUPPORTED: Learned State counsel admits that the co-accused having similar role have been granted anticipatory bail by this Court [A:UKHC010093652024#2]."
+     "value": "SUPPORTED: Co-accused having similar role have already been granted anticipatory bail by this Court [A:UKHC010093652024#2]. Co-accused, having similar role, has already been granted anticipatory bail [A:UKHC010193412023#2]. Co-accused having similar role have already be…"
     },
     {
      "label": "G5 · antecedents",
-     "value": "SUPPORTED: Accused-1 has no previous involvement in any criminal case, no other criminal case is pending against Accused-1 and he has no criminal antecedents, and Accused-1 is a first-time offender [F:facts_text] [A:UPHC012099282023#6]. Pendency of several criminal case…"
+     "value": "REPAIRED: Accused-1 has no previous involvement in any criminal case, no other criminal case is pending against him, and he is a first-time offender [F:facts_text]. The pendency of several criminal cases against an accused may itself not be a basis for refusal of bail…"
     },
     {
-     "label": "G6 · flight risk",
-     "value": "SUPPORTED: Accused-1 has been a resident of Karol Bagh, New Delhi since birth, where he owns his residence, runs a small registered trading business, and is the sole earning member of his family, supporting his wife, two minor children aged eight and five, and his widow…"
+     "label": "G8 · weak prima facie",
+     "value": "SUPPORTED: The FIR allegations can be read against the sections charged, as the charge sheet indicates that the investigation is complete and the evidence is documentary, which suggests a weak prima facie case [A:UPHC011504792023#9].No prima facie case is made out again…"
     },
     {
-     "label": "G8 · health age family",
-     "value": "SUPPORTED: Accused-1 is the sole earning member of his family, supporting his wife, two minor children, and his widowed mother who has a heart condition, and his brother is willing to stand surety [F:facts_text]. Accused-1 is diabetic and is under treatment in jail, as…"
+     "label": "G9 · health age family",
+     "value": "SUPPORTED: Accused-1 is diabetic and is under treatment in jail, as recorded by the jail medical officer [F:facts_text]. Accused-1 is 34 years old and is the sole earning member of his family [F:facts_text]. He supports his wife, two minor children aged eight and five,…"
     },
     {
-     "label": "G9 · undertrial period",
-     "value": "SUPPORTED: Under Section 479 of the BNSS, an undertrial who has undergone half of the maximum sentence prescribed may be considered for release on bail [A:UKHC010191802024#16]."
+     "label": "G10 · undertrial period",
+     "value": "SUPPORTED: Under Section 479 of the BNSS, 2023, an undertrial who has undergone half of the maximum sentence prescribed may be considered for release on bail, and an applicant who has served nearly five years of custody, which exceeds two-thirds of the maximum sentence…"
     },
     {
      "label": "Withheld from G1",
-     "value": "1 sentence; reason: not supported by the dossier quote (support 0.04)"
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.48)"
     },
     {
      "label": "Withheld from G2",
-     "value": "4 sentences; reason: not supported by the dossier quote, not supported by the cited paragraph (fact support 0.45 < 0.50; authority support 0…"
+     "value": "3 sentences; reason: not supported by the dossier quote (support 0.45)"
     },
     {
      "label": "Withheld from G3",
-     "value": "1 sentence; reason: not supported by the dossier quote (support 0.12)"
+     "value": "4 sentences; reason: cites no fact or authority"
     },
     {
      "label": "Withheld from G4",
      "value": "1 sentence; reason: not supported by the dossier quote (support 0.00)"
     },
     {
-     "label": "Withheld from G5",
-     "value": "1 sentence; reason: not supported by the dossier quote (support 0.31)"
-    },
-    {
      "label": "Withheld from G6",
-     "value": "2 sentences; reason: not supported by the dossier quote (support 0.05)"
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.05)"
     },
     {
      "label": "Withheld from G7",
-     "value": "3 sentences; reason: not supported by the dossier quote (support 0.02)"
+     "value": "3 sentences; reason: not supported by the cited paragraph (authority support 0.00 < 0.50)"
     },
     {
-     "label": "Withheld from G9",
-     "value": "1 sentence; reason: could not be checked (unknown dossier field(s) ['custody_certificate']: use one of ['antecedents', 'arrest_date', 'char…"
+     "label": "Withheld from G10",
+     "value": "3 sentences; reason: not supported by the dossier quote, not supported by the cited paragraph (fact support 0.04 < 0.50; authority support 0…"
     }
-   ]
+   ],
+   "hi": {
+    "title": "Sutradhar योजना बनाता है, Vakeel मसौदा तैयार करता है",
+    "src": {
+     "title": "bd1dd6fa0af4c65b",
+     "caption": "14c348e2feda2b35",
+     "filled.0.label": "370eda3e214f4261",
+     "filled.0.value": "0852f09372a36d9f",
+     "filled.1.label": "3158260bbedb788f",
+     "filled.1.value": "50738209e05ef1c0",
+     "filled.2.label": "a6e0b5989e588d62",
+     "filled.2.value": "ba54b037a7f899ff",
+     "filled.3.label": "e9378a1d27188e98",
+     "filled.3.value": "2a43fd73ea2c83e9",
+     "filled.4.label": "3eb8973efab1a4da",
+     "filled.4.value": "fe89c9b6979dbc1c",
+     "filled.5.label": "495525184b2451c7",
+     "filled.6.label": "5576378ebfaa38ca",
+     "filled.7.label": "b9a517bbb9203548",
+     "filled.7.value": "45231e7c2e4133b6",
+     "filled.8.label": "7a0233e8da925a47",
+     "filled.8.value": "0cc8312813a4a542",
+     "filled.9.label": "63f123a598146e7a",
+     "filled.9.value": "377dc6e636358f40",
+     "filled.10.label": "168473446e2fb8d1",
+     "filled.10.value": "5e620b4d64e24c5c",
+     "filled.11.label": "af478b6a0bb28184",
+     "filled.11.value": "353277e972106fe6",
+     "filled.12.label": "d9b9a5250fbd8059",
+     "filled.12.value": "a9d8dd10bb53e953",
+     "filled.13.label": "878d10a1cc0b7321",
+     "filled.13.value": "acc93e0aa0c6d408",
+     "filled.5.value": "0d65c50a709f2bc2",
+     "filled.6.value": "ead3242b747744c4"
+    },
+    "caption": "Sutradhar ने कारक-दर-कारक (11 कारक) संक्षिप्त विवरण की योजना बनाई और प्रत्येक को आवश्यक साक्ष्य प्राप्त किए: 100 स्टोर कॉल। Vakeel ने 7 आधारों का मसौदा तैयार किया (1 संशोधित और 6 समर्थित)। प्रत्येक वाक्य की उसके स्रोत से जांच की गई; 16 वाक्य जिन्हें जांचकर्ता समर्थित नहीं कर सका, उन्हें रोक लिया गया, जिससे अधिवक्ता द्वारा मसौदा तैयार करने के लिए 3 आधार बचे। अधिवक्ता के लिए 21 खुले मुद्दे सूचीबद्ध हैं।",
+    "filled": [
+     {
+      "label": "G2 · हिरासत की अवधि",
+      "value": "SUPPORTED: विचारण में पर्याप्त प्रगति के बिना निरंतर लंबी कैद एक अभियुक्त के जीवन और स्वतंत्रता के अधिकार का उल्लंघन है [A:RJHC020351662025#9]."
+     },
+     {
+      "label": "G3 · आरोप-पत्र दाखिल",
+      "value": "SUPPORTED: स्पष्ट रूप से, याचिकाकर्ता की हिरासत की अब आवश्यकता नहीं है [F:facts_text] [A:DLHC010077112023#95]। मामला दस्तावेजों पर आधारित है, सभी incriminating दस्तावेज बरामद कर लिए गए हैं और आरोप-पत्र का हिस्सा बना दिए गए हैं [A:DLHC010085292023#96]।्न"
+     },
+     {
+      "label": "G4 · सह-अभ अभियुक्त के साथ समरूपता",
+      "value": "SUPPORTED: समान भूमिका वाले सह-अभियुक्त को इस न्यायालय द्वारा पहले ही अग्रिम जमानत दी जा चुकी है [A:UKHC010093652024#2]। समान भूमिका वाले सह-अभियुक्त को पहले ही अग्रिम जमानत दी जा चुकी है [A:UKHC010193412023#2]। समान भूमिका वाले सह-अभियुक्त को पहले ही दी जा चुकी है…"
+     },
+     {
+      "label": "G5 · पूर्ववृत्त",
+      "value": "REPAIRED: Accused-1 की किसी भी आपराधिक मामले में कोई पिछली संलिप्तता नहीं है, उनके खिलाफ कोई अन्य आपराधिक मामला लंबित नहीं है, और वह पहली बार अपराध करने वाले व्यक्ति हैं [F:facts_text]। किसी अभियुक्त के खिलाफ कई आपराधिक मामलों का लंबित होना स्वयं जमानत से इनकार का आधार नहीं हो सकता…"
+     },
+     {
+      "label": "G8 · कमजोर प्रथम दृष्टया मामला",
+      "value": "SUPPORTED: FIR के आरोपों को आरोपित धाराओं के विरुद्ध पढ़ा जा सकता है, क्योंकि आरोप-पत्र इंगित करता है कि जांच पूरी हो चुकी है और साक्ष्य दस्तावेजी हैं, जो एक कमजोर प्रथम दृष्टया मामले का सुझाव देता है [A:UPHC011504792023#9]। कोई प्रथम दृष्टया मामला नहीं बनता है…"
+     },
+     {
+      "label": "G9 · स्वास्थ्य आयु परिवार",
+      "value": "SUPPORTED: Accused-1 को मधुमेह है और वह जेल में चिकित्सीय देखरेख में है, जैसा कि जेल चिकित्सा अधिकारी द्वारा दर्ज किया गया है [F:facts_text]। Accused-1 की आयु 34 वर्ष है और वह अपने परिवार का एकमात्र कमाने वाला सदस्य है [F:facts_text]। वह अपनी पत्नी, आठ और पाँच वर्ष की आयु के दो छोटे बच्चों का भरण-पोषण करता है,…"
+     },
+     {
+      "label": "G10 · विचाराधीन अवधि",
+      "value": "SUPPORTED: BNSS, 2023 की धारा 479 के तहत, एक विचाराधीन कैदी जिसने निर्धारित अधिकतम सजा का आधा हिस्सा काट लिया है, उसे जमानत पर रिहा करने के लिए विचार किया जा सकता है, और एक आवेदक जिसने हिरासत के लगभग पांच साल पूरे कर लिया है, जो अधिकतम सजा के दो-तिहाई से अधिक है,…"
+     },
+     {
+      "label": "G1 से रोकी गई",
+      "value": "1 वाक्य; कारण: डोजियर उद्धरण द्वारा समर्थित नहीं है (समर्थन 0.48)"
+     },
+     {
+      "label": "G2 से रोकी गई",
+      "value": "3 वाक्य; कारण: डोजियर उद्धरण द्वारा समर्थित नहीं है (समर्थन 0.45)"
+     },
+     {
+      "label": "G3 से रोकी गई",
+      "value": "4 वाक्य; कारण: किसी तथ्य या प्राधिकार का हवाला नहीं देता है"
+     },
+     {
+      "label": "G4 से रोका गया",
+      "value": "1 वाक्य; कारण: डोजियर के उद्धरण द्वारा समर्थित नहीं (समर्थन 0.00)"
+     },
+     {
+      "label": "G6 से रोका गया",
+      "value": "1 वाक्य; कारण: डोजियर के उद्धरण द्वारा समर्थित नहीं (समर्थन 0.05)"
+     },
+     {
+      "label": "G7 से रोका गया",
+      "value": "3 वाक्य; कारण: उद्धृत पैराग्राफ द्वारा समर्थित नहीं (प्राधिकार समर्थन 0.00 < 0.50)"
+     },
+     {
+      "label": "G10 से रोका गया",
+      "value": "3 वाक्य; कारण: डोजियर के उद्धरण द्वारा समर्थित नहीं, उद्धृत पैराग्राफ द्वारा समर्थित नहीं (तथ्य समर्थन 0.04 < 0.50; प्राधिकार समर्थन 0…)"
+     }
+    ]
+   }
   },
   {
    "stage": "SPAR",
@@ -240,37 +540,149 @@
    "title": "Abhiyojak argues the other side",
    "agent": "ABHIYOJAK",
    "action": null,
-   "caption": "Abhiyojak, the prosecution sparring partner, raised 7 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case; 1 ungrounded objection was discarded. After Vakeel's replies: 7 unanswered.",
+   "caption": "Abhiyojak, the prosecution sparring partner, raised 13 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case; 6 ungrounded objections were discarded. Abhiyojak judged 0 of Vakeel's replies: 0 answered, 0 partly answered, 0 unanswered; 13 objections could not be judged because the sparring token budget was spent, and stay unanswered. Whatever stays open is listed at Gate 2, and counsel answers it before approving.",
    "filled": [
     {
-     "label": "O1 against G4 (parity with co accused)",
-     "value": "UNANSWERED: The offences under IPC 420 and 406 are non-bailable with maximum punishments of seven and three years respectively, and the gravity of the alleged cheating and criminal breach of trust does not diminish merely because co-accused may have been granted anticipa…"
+     "label": "O1 against G2 (custody period)",
+     "value": "UNANSWERED: The applicant has no stated antecedents and the nature of the offences, coupled with the fact that co-accused-2 was granted bail only after a significant delay, suggests a need for continued judicial custody to ensure trial integrity."
     },
     {
      "label": "O2 against G4 (parity with co accused)",
-     "value": "UNANSWERED: The defence offers no evidence of the accused's antecedents, and the prosecution cannot be expected to concede parity on that basis when the record is silent."
+     "value": "UNANSWERED: The applicant is charged under IPC 420 (equivalent to BNS 318(4)), a non-bailable offence carrying a maximum punishment of seven years, and IPC 406 (equivalent to BNS 316(2)), a non-bailable offence carrying a maximum punishment of three years, indicating the…"
     },
     {
-     "label": "O3 against G5 (antecedents)",
-     "value": "UNANSWERED: The applicant is charged under IPC 420 and IPC 406, both non-bailable offences carrying maximum sentences of 7 and 3 years respectively, and the gravity of these offences weighs against the grant of bail."
+     "label": "O3 against G4 (parity with co accused)",
+     "value": "UNANSWERED: The applicant has already been in custody for 978 days since arrest on 12.03.2024 and first remand on 13.03.2024, and the charge sheet was filed on 06.05.2024, yet the trial has only reached the stage of charges framed with trial commenced, indicating an inor…"
     },
     {
      "label": "O4 against G5 (antecedents)",
-     "value": "UNANSWERED: The prosecution has not been given an opportunity to rebut the defence's claim of no criminal antecedents, and the dossier fact 'antecedents' records only that no antecedents are stated without any verified negative finding, which does not conclusively establ…"
+     "value": "UNANSWERED: The defence's claim of 'no antecedents' is contradicted by the verified fact that an earlier bail application was rejected by the Sessions Court on 10.04.2024, which reflects adversely on the accused's criminal history and judicial conduct."
     },
     {
-     "label": "O5 against G8 (health age family)",
-     "value": "UNANSWERED: The accused has been in custody for 977 days and there is no indication that he lacks the means or intent to flee, particularly given that he is the sole earning member of his family and has deep roots in New Delhi."
+     "label": "O5 against G5 (antecedents)",
+     "value": "UNANSWERED: The defence ignores the statutory gravity of the offences, as both IPC 420 (max 7 years) and IPC 406 (max 3 years) are non-bailable and carry significant punishment, which weighs against the 'no antecedents' argument."
     },
     {
-     "label": "O6 against G9 (undertrial period)",
-     "value": "UNANSWERED: The applicant has not completed half of the maximum sentence prescribed for either IPC 420 (7 years) or IPC 406 (3 years); he has been in custody for 977 days but the offence was committed on 05.03.2024 and he was first remanded on 13.03.2024, so the statutor…"
+     "label": "O6 against G9 (health age family)",
+     "value": "UNANSWERED: The offences charged under IPC 420 and IPC 406 are non-bailable with a combined maximum punishment of ten years' imprisonment, indicating the gravity of the allegations is substantial."
     },
     {
-     "label": "O7 against G9 (undertrial period)",
-     "value": "UNANSWERED: The trial is already progressing with charges framed, 977 days have elapsed, and the applicant has not undergone half of the minimum sentence prescribed for the offences charged, which defeats the applicability of Section 479 BNSS."
+     "label": "O7 against G10 (undertrial period)",
+     "value": "UNANSWERED: The applicant has not completed half of the maximum sentence prescribed for the more serious non-bailable offence of IPC 420, which carries a maximum punishment of seven years; with only 978 days in custody, he has not reached the statutory threshold of three…"
+    },
+    {
+     "label": "O8 against G10 (undertrial period)",
+     "value": "UNANSWERED: The trial has already commenced with charges framed, and the charge sheet was filed on 06.05.2024, indicating that the delay is not solely attributable to the prosecution; the applicant cannot rely on the undertrial period alone where the trial is actively pr…"
+    },
+    {
+     "label": "O9 against general (gravity and punishment)",
+     "value": "UNANSWERED: The offences under IPC 420 and IPC 406 attract a maximum punishment of seven and three years respectively, and the nature and gravity of the accusation, coupled with the severity of punishment, warrant denial of bail."
+    },
+    {
+     "label": "O10 against general (flight risk)",
+     "value": "UNANSWERED: The applicant was arrested during the initial stage of investigation, and given the gravity of the offences, there is a reasonable apprehension that he may abscond or misuse the liberty of bail."
+    },
+    {
+     "label": "O11 against general (witness tampering)",
+     "value": "UNANSWERED: The trial has commenced with charges framed, and several prosecution witnesses remain to be examined; releasing the accused on bail poses a risk of tampering with evidence and influencing witnesses."
+    },
+    {
+     "label": "O12 against general (antecedents)",
+     "value": "UNANSWERED: The applicant has no clean antecedents, and the prosecution has opposed bail on this ground, which strengthens the apprehension that he may not comply with bail conditions."
+    },
+    {
+     "label": "O13 against general (statutory bar)",
+     "value": "UNANSWERED: The offences are non-bailable under IPC 420 and IPC 406, and the prosecution has opposed bail on the ground that the statutory bar under Section 37 of the NDPS Act applies, requiring satisfaction that the accused is not guilty or not likely to commit any offe…"
     }
-   ]
+   ],
+   "hi": {
+    "title": "Abhiyojak दूसरी ओर से बहस करते हैं",
+    "src": {
+     "title": "6b6690e3a72567b9",
+     "caption": "4a1b0e621e296881",
+     "filled.0.label": "a41f33949cf834f8",
+     "filled.0.value": "1a14867d7943411b",
+     "filled.1.label": "82822d6dcb96b04e",
+     "filled.1.value": "648c365658d1bde0",
+     "filled.2.label": "00e7bba26448b47a",
+     "filled.2.value": "a4d47b4162b9f94d",
+     "filled.3.label": "2453087a0e47f5e0",
+     "filled.3.value": "67ed00b102823dbc",
+     "filled.4.label": "fdd460523d0775e8",
+     "filled.4.value": "77bb6224c35a4b7b",
+     "filled.5.label": "2ea9378bd677ef45",
+     "filled.5.value": "fe331ab78bad0d0e",
+     "filled.6.label": "7acf3022361fe661",
+     "filled.6.value": "c8d4403d2ec2feee",
+     "filled.7.label": "c35616fae6a631f1",
+     "filled.7.value": "221b4a55fec80875",
+     "filled.8.label": "e0e8436e0930b1b5",
+     "filled.8.value": "249437326812578a",
+     "filled.9.label": "30bbf0cb1f950fe6",
+     "filled.9.value": "3a9fb59b2ec1762a",
+     "filled.10.label": "7dab8e139abc979a",
+     "filled.10.value": "30c4cb3364b99a7a",
+     "filled.11.label": "7c5fbf5e6fa17cae",
+     "filled.11.value": "6e45059015a8df83",
+     "filled.12.label": "a1ce9415e31300d9",
+     "filled.12.value": "6ca9568b3725f490"
+    },
+    "caption": "Abhiyojak, अभियोजन पक्ष के बहस करने वाले प्रतिद्वंद्वी, ने 2 दौर में 13 आपत्तियां उठाईं, जिनमें से प्रत्येक की जड़ें तुलनीय आदेशों के अभियोजन तर्क या मामले के किसी तथ्य में थीं; 6 निराधार आपत्तियों को खारिज कर दिया गया। Abhiyojak ने Vakeel के जवाबों में से 0 का मूल्यांकन किया: 0 उत्तर दिया गया, 0 आंशिक रूप से उत्तर दिया गया, 0 अनुत्तरित; 13 आपत्तियों का मूल्यांकन नहीं किया जा सका क्योंकि बहस का टोकन बजट समाप्त हो गया था, और वे अनुत्तरित रहती हैं। जो कुछ भी खुला रहता है उसे GATE_2 पर सूचीबद्ध किया जाता है, और अधिवक्ता अनुमोदन से पहले उसका उत्तर देता है।",
+    "filled": [
+     {
+      "label": "G2 (हिरासत की अवधि) के विरुद्ध O1",
+      "value": "UNANSWERED: आवेदक का कोई पूर्ववृत्त नहीं बताया गया है और अपराधों की प्रकृति, इस तथ्य के साथ कि Co-accused-2 को काफी देरी के बाद ही जमानत दी गई थी, विचारण की अखंडता सुनिश्चित करने के लिए निरंतर न्यायिक हिरासत की आवश्यकता का सुझाव देती है।"
+     },
+     {
+      "label": "G4 (सह-अभiयुक्त के साथ समता) के विरुद्ध O2",
+      "value": "UNANSWERED: आवेदक पर IPC 420 (जो BNS 318(4) के समरूप है) के तहत आरोप है, जो अधिकतम सात साल की सजा वाला एक गैर-जमानती अपराध है, और IPC 406 (जो BNS 316(2) के समरूप है) के तहत, जो अधिकतम तीन साल की सजा वाला एक गैर-जमानती अपराध है, यह संकेत देते हुए कि..."
+     },
+     {
+      "label": "G4 (सह-अभiयुक्त के साथ समता) के विरुद्ध O3",
+      "value": "UNANSWERED: 12.03.2024 को गिरफ्तारी और 13.03.2024 को पहली रिमांड के बाद से आवेदक पहले ही 978 दिनों से हिरासत में है, और charge sheet 06.05.2024 को दाखिल की गई थी, फिर भी विचारण केवल आरोप तय होने और विचारण शुरू होने के चरण तक ही पहुँचा है, जो यह दर्शाता है कि..."
+     },
+     {
+      "label": "G5 (पूर्ववृत्त) के विरुद्ध O4",
+      "value": "UNANSWERED: 'कोई पूर्ववृत्त नहीं' के बचाव पक्ष के दावे का इस सत्यापित तथ्य से खंडन होता है कि Sessions Court द्वारा 10.04.2024 को एक पूर्व जमानत आवेदन खारिज कर दिया गया था, जो अभियुक्त के आपराधिक इतिहास और न्यायिक आचरण पर प्रतिकूल प्रभाव डालता है।"
+     },
+     {
+      "label": "G5 (पूर्ववृत्त) के विरुद्ध O5",
+      "value": "UNANSWERED: बचाव पक्ष अपराधों की सांविधिक गंभीरता की उपेक्षा करता है, क्योंकि IPC 420 (अधिकतम 7 वर्ष) और IPC 406 (अधिकतम 3 वर्ष) दोनों गैर-जमानती हैं और इनमें महत्वपूर्ण सजा का प्रावधान है, जो 'कोई पूर्ववृत्त नहीं' तर्क के विरुद्ध जाता है।"
+     },
+     {
+      "label": "G9 (स्वास्थ्य आयु परिवार) के विरुद्ध O6",
+      "value": "UNANSWERED: IPC 420 और IPC 406 के अंतर्गत आरोपित अपराध गैर-जमानती हैं, जिनमें अधिकतम कारावास दस वर्ष तक का है, जो यह दर्शाता है कि आरोपों की गंभीरता पर्याप्त है।"
+     },
+     {
+      "label": "G10 (विचाराराधीन अवधि) के विरुद्ध O7",
+      "value": "UNANSWERED: आवेदक ने IPC 420 के अधिक गंभीर गैर-जमानती अपराध के लिए निर्धारित अधिकतम सजा का आधा हिस्सा पूरा नहीं किया है, जिसमें अधिकतम सात वर्ष का कारावास है; केवल 978 दिन हिरासत में रहने के साथ, वह तीन… की वैधानिक सीमा तक नहीं पहुँचा है।"
+     },
+     {
+      "label": "G10 (विचाराराधीन अवधि) के विरुद्ध O8",
+      "value": "UNANSWERED: आरोप तय किए जाने के साथ विचारण पहले ही शुरू हो चुका है, और आरोप-पत्र 06.05.2024 को दाखिल किया गया था, जो यह दर्शाता है कि देरी के लिए अकेले अभियोजन पक्ष को जिम्मेदार नहीं ठहराया जा सकता; आवेदक केवल विचाराराधीन अवधि पर भरोसा नहीं कर सकता जहाँ विचारण सक्रिय रूप से प्र…"
+     },
+     {
+      "label": "सामान्य (गंभीरता और सजा) के विरुद्ध O9",
+      "value": "UNANSWERED: IPC 420 और IPC 406 के अंतर्गत अपराधों में क्रमशः अधिकतम सात और तीन वर्ष की सजा का प्रावधान है, और आरोप की प्रकृति तथा गंभीरता, सजा की कठोरता के साथ, जमानत से इनकार किए जाने को उचित ठहराती है।"
+     },
+     {
+      "label": "सामान्य (फरार होने का जोखिम) के विरुद्ध O10",
+      "value": "UNANSWERED: आवेदक को जांच के शुरुआती चरण के दौरान गिरफ्तार किया गया था, और अपराधों की गंभीरता को देखते हुए, एक उचित आशंका है कि वह फरार हो सकता है या जमानत की स्वतंत्रता का दुरुपयोग कर सकता है।"
+     },
+     {
+      "label": "O11 अगेंस्ट जनरल (गवाहों को प्रभावित करना)",
+      "value": "UNANSWERED: आरोप तय होने के साथ विचार commencing हो गया है, और कई अभियोजन गवाहों की जांच बाकी है; अभियुक्त को जमानत पर रिहा करने से साक्ष्य से छेड़छाड़ करने और गवाहों को प्रभावित करने का जोखिम है।"
+     },
+     {
+      "label": "O12 अगेंस्ट जनरल (पूर्ववृत्त)",
+      "value": "UNANSWERED: आवेदक का पूर्ववृत्त बेदाग नहीं है, और अभियोजन पक्ष ने इस आधार पर जमानत का विरोध किया है, जो इस आशंका को पुख्ता करता है कि वह जमानत की शर्तों का पालन नहीं कर सकता है।"
+     },
+     {
+      "label": "O13 अगेंस्ट जनरल (वैधानिक रोक)",
+      "value": "UNANSWERED: IPC 420 और IPC 406 के तहत अपराध गैर-जमानती हैं, और अभियोजन पक्ष ने इस आधार पर जमानत का विरोध किया है कि NDPS Act की Section 37 के तहत वैधानिक रोक लागू होती है, जिसके लिए इस संतोष की आवश्यकता है कि अभियुक्त दोषी नहीं है या कोई अपराध करने की संभावना नहीं है..."
+     }
+    ]
+   }
   },
   {
    "stage": "HEARING_PREP",
@@ -278,45 +690,119 @@
    "title": "Hearing card",
    "agent": "VAKEEL",
    "action": null,
-   "caption": "Vakeel turned the brief and the sparring into a card for the hearing: 5 likely questions from the bench with answers, 3 grounds to lead with and 1 bail condition counsel can offer. It predicts nothing and gives no grant rate.",
+   "caption": "Vakeel turned the brief and the sparring into a card for the hearing: 5 likely questions from the bench with answers, 3 grounds to lead with and 2 bail conditions counsel can offer. It predicts nothing and gives no grant rate.",
    "filled": [
     {
      "label": "Lead with G2 (custody period)",
-     "value": "Article 21 of the Constitution provides for a right of speedy trial, and continuous long incarceration of an accused without sufficient progress in the trial amounts to infringement of the right to life and liberty,."
+     "value": "Continuous long incarceration without sufficient progress in the trial amounts to infringement of the right to life and liberty of an accused."
+    },
+    {
+     "label": "Lead with G3 (charge sheet filed)",
+     "value": "Evidently, the custody of the petitioner is no longer required."
     },
     {
      "label": "Lead with G4 (parity with co accused)",
-     "value": "Learned State counsel admits that the co-accused having similar role have been granted anticipatory bail by this Court."
-    },
-    {
-     "label": "Lead with G5 (antecedents)",
-     "value": "Accused-1 has no previous involvement in any criminal case, no other criminal case is pending against Accused-1 and he has no criminal antecedents, and Accused-1 is a first-time offender."
+     "value": "Co-accused having similar role have already been granted anticipatory bail by this Court."
     },
     {
      "label": "Bench may raise: custody period",
-     "value": "Article 21 of the Constitution provides for a right of speedy trial, and continuous long incarceration of an accused without sufficient progress in the trial amounts to infringement of the right to life and liberty,."
+     "value": "Continuous long incarceration without sufficient progress in the trial amounts to infringement of the right to life and liberty of an accused."
+    },
+    {
+     "label": "Bench may raise: charge sheet filed",
+     "value": "Evidently, the custody of the petitioner is no longer required."
     },
     {
      "label": "Bench may raise: antecedents",
-     "value": "Accused-1 has no previous involvement in any criminal case, no other criminal case is pending against Accused-1 and he has no criminal antecedents, and Accused-1 is a first-time offender."
+     "value": "Accused-1 has no previous involvement in any criminal case, no other criminal case is pending against him, and he is a first-time offender."
     },
     {
      "label": "Bench may raise: parity with co accused",
-     "value": "Learned State counsel admits that the co-accused having similar role have been granted anticipatory bail by this Court."
+     "value": "Co-accused having similar role have already been granted anticipatory bail by this Court."
     },
     {
      "label": "Bench may raise: undertrial period",
-     "value": "Under Section 479 of the BNSS, an undertrial who has undergone half of the maximum sentence prescribed may be considered for release on bail."
-    },
-    {
-     "label": "Bench may raise: flight risk",
-     "value": "Accused-1 has been a resident of Karol Bagh, New Delhi since birth, where he owns his residence, runs a small registered trading business, and is the sole earning member of his family, supporting his wife, two minor children aged eight and five, and his widow…"
+     "value": "Under Section 479 of the BNSS, 2023, an undertrial who has undergone half of the maximum sentence prescribed may be considered for release on bail, and an applicant who has served nearly five years of custody, which exceeds two-thirds of the maximum sentence…"
     },
     {
      "label": "Condition counsel can offer",
      "value": "Not to influence witnesses or tamper with evidence"
+    },
+    {
+     "label": "Condition counsel can offer",
+     "value": "Surrender of passport"
     }
-   ]
+   ],
+   "hi": {
+    "title": "सुनवाई कार्ड",
+    "src": {
+     "title": "aa0e58a1edb0eae2",
+     "caption": "80188d1338df7a50",
+     "filled.0.label": "372f6b2fd2908089",
+     "filled.0.value": "2b1c01e947167a8f",
+     "filled.3.value": "2b1c01e947167a8f",
+     "filled.1.label": "d75c7a6a19fc28a2",
+     "filled.1.value": "ecf4b60f1049791b",
+     "filled.2.label": "609ef4c882f638e2",
+     "filled.2.value": "7b6949742492b092",
+     "filled.3.label": "33bb2c60bceea537",
+     "filled.4.label": "fa0d6dc0a45001d4",
+     "filled.4.value": "ecf4b60f1049791b",
+     "filled.5.label": "741578bcb5373e28",
+     "filled.5.value": "0c1fe715d2c59921",
+     "filled.6.label": "e2a79687e3636eea",
+     "filled.6.value": "7b6949742492b092",
+     "filled.7.label": "5c997a973443641d",
+     "filled.7.value": "c0266b391489f29a",
+     "filled.8.label": "50174a7fcb4e72c8",
+     "filled.8.value": "d1b34ed8a231a244",
+     "filled.9.label": "50174a7fcb4e72c8",
+     "filled.9.value": "f3a34f2ae2e32ccd"
+    },
+    "caption": "Vakeel ने संक्षिप्त और बहस को सुनवाई के लिए एक कार्ड में बदल दिया: पीठ से उत्तर के साथ 5 संभावित प्रश्न, नेतृत्व करने के लिए 3 आधार और 2 जमानत शर्तें जो अधिवक्ता दे सकते हैं। यह कुछ भी predict नहीं करता है और कोई grant rate नहीं देता है।",
+    "filled": [
+     {
+      "label": "G2 (हिरासत की अवधि) के साथ शुरुआत करें",
+      "value": "विचार में पर्याप्त प्रगति के बिना निरंतर लंबी कैद किसी अभियुक्त के जीवन और स्वतंत्रता के अधिकार का उल्लंघन है।"
+     },
+     {
+      "label": "G3 (charge sheet filed) के साथ अग्रणी बनें।",
+      "value": "स्पष्ट रूप से, याची की हिरासत की अब कोई आवश्यकता नहीं है।"
+     },
+     {
+      "label": "G4 (co-accused के साथ समता) के साथ अग्रणी बनें।",
+      "value": "समान भूमिका वाले Co-accused को इस न्यायालय द्वारा पहले ही अग्रिम जमानत दी जा चुकी है।"
+     },
+     {
+      "label": "पीठ यह उठा सकती है: हिरासत की अवधि",
+      "value": "विचार में पर्याप्त प्रगति के बिना निरंतर लंबी कैद किसी अभियुक्त के जीवन और स्वतंत्रता के अधिकार का उल्लंघन है।"
+     },
+     {
+      "label": "पीठ यह उठा सकती है: charge sheet filed",
+      "value": "स्पष्ट रूप से, याची की हिरासत की अब कोई आवश्यकता नहीं है।"
+     },
+     {
+      "label": "पीठ यह उठा सकती है: पूर्ववृत्त",
+      "value": "Accused-1 की किसी भी आपराधिक मामले में कोई पूर्व संलिप्तता नहीं है, उसके खिलाफ कोई अन्य आपराधिक मामला लंबित नहीं है, और वह पहली बार अपराध करने वाला व्यक्ति है।"
+     },
+     {
+      "label": "पीठ यह उठा सकती है: co-accused के साथ समता",
+      "value": "समान भूमिका वाले Co-accused को इस न्यायालय द्वारा पहले ही अग्रिम जमानत दी जा चुकी है।"
+     },
+     {
+      "label": "पीठ यह उठा सकती है: विचारणाधीन अवधि",
+      "value": "BNSS, 2023 की धारा 479 के अंतर्गत, एक विचाराधीन कैदी जिसने निर्धारित अधिकतम सजा का आधा हिस्सा पूरा कर लिया है, उसे जमानत पर रिहाई के लिए माना जा सकता है, और एक आवेदक जिसने लगभग पांच वर्ष की हिरासत पूरी कर ली है, जो अधिकतम सजा के दो-तिहाई से अधिक है..."
+     },
+     {
+      "label": "शर्त जो अधिवक्ता प्रस्तुत कर सकता है",
+      "value": "गवाहों को प्रभावित न करना या साक्ष्यों के साथ छेड़छाड़ न करना"
+     },
+     {
+      "label": "शर्त जो अधिवक्ता प्रस्तुत कर सकता है",
+      "value": "पासपोर्ट जमा करना"
+     }
+    ]
+   }
   },
   {
    "stage": "GATE_2",
@@ -324,7 +810,7 @@
    "title": "Gate 2: your approval",
    "agent": null,
    "action": "approve_gate_2",
-   "caption": "Export is impossible until counsel approves Gate 2: in this run the export call before approval was refused (403). The checklist has 7 items for counsel (7 unanswered objections); approving records that counsel has read them. Next approves Gate 2 as counsel.",
+   "caption": "Export is impossible until counsel approves Gate 2: in this run the export call before approval was refused (403). The checklist has 13 items for counsel (13 unanswered objections); approving records that counsel has read them. Next approves Gate 2 as counsel.",
    "filled": [
     {
      "label": "UNANSWERED:O1",
@@ -353,8 +839,120 @@
     {
      "label": "UNANSWERED:O7",
      "value": "objection O7: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O8",
+     "value": "objection O8: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O9",
+     "value": "objection O9: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O10",
+     "value": "objection O10: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O11",
+     "value": "objection O11: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O12",
+     "value": "objection O12: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O13",
+     "value": "objection O13: no supported reply; counsel has read it"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "UNANSWERED:O1",
+      "value": "आपत्ति O1: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है"
+     },
+     {
+      "label": "UNANSWERED:O2",
+      "value": "आपत्ति O2: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है"
+     },
+     {
+      "label": "UNANSWERED:O3",
+      "value": "आपत्ति O3: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है"
+     },
+     {
+      "label": "UNANSWERED:O4",
+      "value": "आपत्ति O4: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है"
+     },
+     {
+      "label": "UNANSWERED:O5",
+      "value": "आपत्ति O5: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
+     },
+     {
+      "label": "UNANSWERED:O6",
+      "value": "आपत्ति O6: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
+     },
+     {
+      "label": "UNANSWERED:O7",
+      "value": "आपत्ति O7: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
+     },
+     {
+      "label": "UNANSWERED:O8",
+      "value": "आपत्ति O8: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
+     },
+     {
+      "label": "UNANSWERED:O9",
+      "value": "आपत्ति O9: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
+     },
+     {
+      "label": "UNANSWERED:O10",
+      "value": "आपत्ति O10: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
+     },
+     {
+      "label": "UNANSWERED:O11",
+      "value": "आपत्ति O11: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
+     },
+     {
+      "label": "UNANSWERED:O12",
+      "value": "आपत्ति O12: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
+     },
+     {
+      "label": "UNANSWERED:O13",
+      "value": "आपत्ति O13: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
+     }
+    ],
+    "src": {
+     "filled.0.label": "2297325853ed80d4",
+     "filled.1.label": "15b4cc2f36d2e923",
+     "filled.2.label": "4fe2213becfde785",
+     "filled.3.label": "7cd2b05de56847ff",
+     "filled.4.label": "079f7770ed5383cd",
+     "filled.5.label": "ea7bb9de9897eef8",
+     "filled.6.label": "17aeff8fba0502dc",
+     "filled.7.label": "ab1ec1ee92a88312",
+     "filled.8.label": "9a4f0c847c6c1007",
+     "filled.9.label": "20caa704b265ff83",
+     "filled.10.label": "d144359996a333cb",
+     "filled.11.label": "91beebb9c4608ccc",
+     "filled.12.label": "2cdeb0301d47ee8e",
+     "title": "82bfb6512e590980",
+     "caption": "9149561489d91c96",
+     "filled.0.value": "78e62c6610ceb4fa",
+     "filled.1.value": "82dcc34a2c0af304",
+     "filled.2.value": "aee81c0912393bc0",
+     "filled.3.value": "b7579390b2545a6c",
+     "filled.4.value": "df3602c8ef05bb82",
+     "filled.5.value": "807ad7569955de98",
+     "filled.6.value": "c2afd8678728392d",
+     "filled.7.value": "2e7d49d3a33a054e",
+     "filled.8.value": "c22718fe2f2b231e",
+     "filled.9.value": "05040970a6647f10",
+     "filled.10.value": "0bb7b8d65b580f1e",
+     "filled.11.value": "654ba4d7ec4170c6",
+     "filled.12.value": "29e02fbbb2add1bb"
+    },
+    "title": "Gate 2: आपका अनुमोदन",
+    "caption": "जब तक अधिवक्ता Gate 2 का अनुमोदन नहीं करता, निर्यात असंभव है: इस रन में अनुमोदन से पहले की गई निर्यात कॉल को अस्वीकार कर दिया गया था (403)। चेकलिस्ट में अधिवक्ता के लिए 13 मदें हैं (13 UNANSWERED आपत्तियां); अनुमोदन यह दर्ज करता है कि अधिवक्ता ने उन्हें पढ़ लिया है। इसके बाद अधिवक्ता के रूप में Gate 2 का अनुमोदन करता है।"
+   }
   },
   {
    "stage": "FILE",
@@ -380,7 +978,59 @@
      "label": "hearing_card.docx",
      "value": "the hearing card"
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "application.docx",
+      "value": "जमानत आवेदन"
+     },
+     {
+      "label": "list_of_dates.docx",
+      "value": "तारीखों और घटनाओं की सूची"
+     },
+     {
+      "label": "objections_sheet.docx",
+      "value": "आपत्तियां और उत्तर"
+     },
+     {
+      "label": "hearing_card.docx",
+      "value": "सुनवाई कार्ड"
+     }
+    ],
+    "src": {
+     "filled.0.label": "33cc0b7e431953bc",
+     "filled.1.label": "fce3f6d849a149e6",
+     "filled.2.label": "6de2b8c34ee0461e",
+     "filled.3.label": "d55a5fc741902b6a",
+     "title": "2f6b6dcf09628e1e",
+     "caption": "70fcd95cd625e1f9",
+     "filled.0.value": "4b73713f065f52ff",
+     "filled.1.value": "440009350f98c7a0",
+     "filled.2.value": "1e85a5655afceecc",
+     "filled.3.value": "309e1d86df2d4c9f"
+    },
+    "title": "फ़ाइल: आवेदन डाउनलोड करें",
+    "caption": "GATE_2 अनुमोदन के साथ, निर्यात चार Word फ़ाइलें तैयार करता है: जमानत आवेदन, तारीखों की सूची, आपत्ति पत्र और सुनवाई कार्ड। प्रत्येक को एक मसौदा कहा जाता है; अधिवक्ता अंतिम पाठ को तय करके हस्ताक्षर करता है।"
+   }
   }
- ]
+ ],
+ "hi": {
+  "title": "डेमो · IPC के तहत धोखाधड़ी, सह-अभुयुक्त पहले से जमानत पर",
+  "src": {
+   "title": "91d667ed321b9e13",
+   "story": "f43698b8c489b0d0",
+   "variant.offence": "189f95da5b150548",
+   "variant.custody": "c2e1a2459ae9487b",
+   "variant.record": "d16df6d32a45d62b",
+   "variant.parity": "2634e60daf4bdcda"
+  },
+  "story": "Accused-1 पर मशीनरी के लिए 6,50,000 रुपये का अग्रिम भुगतान लेकर उसकी डिलीवरी न करने के संबंध में IPC 420 और 406 के तहत आरोप हैं; अपराध (मार्च 2024) BNS लागू होने से पहले का है, इसलिए IPC लागू होता है। वह 12.03.2024 से हिरासत में हैं, आरोप-पत्र समय पर दाखिल किया गया था और विचारण जारी है; उनका पिछला जमानत आवेदन खारिज कर दिया गया था, जबकि समान भूमिका वाले Co-accused-2 जमानत पर हैं।",
+  "variant": {
+   "offence": "IPC 420/406 धोखाधड़ी (अधिकतम 7 वर्ष), 1 जुलाई 2024 से पहले का अपराध",
+   "custody": "डिफ़ॉल्ट जमानत समाप्त (60 में से 55वें दिन आरोप-पत्र); पहली बार के अपराधी के रूप में अधिकतम अवधि का एक तिहाई पूरा (BNSS s.479 ELIGIBLE: 852 के मुकाबले 978 दिन)",
+   "record": "पूर्ण पत्रावली, ग्यारह बॉर्न-डिजिटल दस्तावेज",
+   "parity": "Co-accused-2 को जमानत मंजूर; पहली बार का अपराधी; पिछला जमानत आवेदन खारिज"
+  }
+ }
 }

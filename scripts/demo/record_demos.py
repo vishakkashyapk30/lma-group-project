@@ -335,6 +335,9 @@ def build_tour(case: DemoCase, raw: dict[str, Any]) -> dict[str, Any]:
     for o in objections:
         key = str(o.get("verdict") or "pending").lower()
         verdicts[key] = verdicts.get(key, 0) + 1
+    not_judged = sum(1 for o in objections if str(o.get("reason") or "").startswith("The reply could not be judged"))
+    judged_n = len(objections) - not_judged
+    judged_unanswered = verdicts.get("unanswered", 0) - not_judged
     gate2 = raw.get("gate2", {})
     store_calls = raw.get("budget", {}).get("store_calls", {}) or {}
     store_total = sum(store_calls.values())
@@ -405,7 +408,11 @@ def build_tour(case: DemoCase, raw: dict[str, Any]) -> dict[str, Any]:
         "caption": (f"Abhiyojak, the prosecution sparring partner, raised {_n(len(objections), 'objection')} "
                     f"in {_n(spar.get('rounds', 0), 'round')}, each grounded in a prosecution argument from comparable orders or a fact of the case"
                     + (f"; {_n(len(spar.get('discarded', [])), 'ungrounded objection')} {'were' if len(spar.get('discarded', [])) != 1 else 'was'} discarded" if spar.get("discarded") else "")
-                    + (f". After Vakeel's replies: {_join([f'{v} {k}' for k, v in sorted(verdicts.items())])}." if verdicts else ". There was nothing to reply to.")),
+                    + ((f". Abhiyojak judged {judged_n} of Vakeel's replies: {verdicts.get('answered', 0)} answered, "
+                        f"{verdicts.get('partly', 0)} partly answered, {judged_unanswered} unanswered"
+                        + (f"; {_n(not_judged, 'objection')} could not be judged because the sparring token budget was spent, and {'stays' if not_judged == 1 else 'stay'} unanswered" if not_judged else "")
+                        + ". Whatever stays open is listed at Gate 2, and counsel answers it before approving.")
+                       if verdicts else ". There was nothing to reply to.")),
         "filled": [{"label": f"{o.get('id')} against {o.get('against')} ({str(o.get('factor', '')).replace('_', ' ')})",
                     "value": f"{o.get('verdict') or 'pending'}: {_clip(o.get('objection'))}"} for o in objections],
     })
