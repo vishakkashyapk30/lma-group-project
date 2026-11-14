@@ -39,6 +39,15 @@
 % Contents: sections bold, their sub-headings one per line below them, page numbers on the right.
 \usepackage{titletoc}
 \definecolor{vsblue}{HTML}{1F3A5F}
+% Section headings in the same blue as the title page and the contents.
+% (acl.sty's own definitions, with the colour added; spacing unchanged)
+\makeatletter
+\def\section{\@startsection {section}{1}{\z@}{-2.0ex plus
+    -0.5ex minus -.2ex}{1.5ex plus 0.3ex minus .2ex}{\large\bfseries\raggedright\color{vsblue}}}
+\def\subsection{\@startsection{subsection}{2}{\z@}{-1.8ex plus
+    -0.5ex minus -.2ex}{0.8ex plus .2ex}{\normalsize\bfseries\raggedright\color{vsblue}}}
+\makeatother
+\renewcommand{\abstractname}{\color{vsblue}Abstract}
 \titlecontents{section}[2.4em]{\addvspace{3pt}\bfseries}%
   {\contentslabel[{\color{vsblue}\thecontentslabel}]{2.4em}}{}%
   {\hfill\contentspage}
