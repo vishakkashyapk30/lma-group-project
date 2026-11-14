@@ -233,7 +233,7 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
 
   return frame(
     <div className="flex max-h-[42dvh] flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-end lg:gap-8">
-      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain" data-testid="tour-step" data-stage={step.stage} data-index={state.index}>
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain lg:max-h-[calc(42dvh-1.5rem)]" data-testid="tour-step" data-stage={step.stage} data-index={state.index}>
         <p className="text-sm text-ink-soft">
           <span className="font-medium text-ink">{t("Guided demo")}</span>
           {" · "}

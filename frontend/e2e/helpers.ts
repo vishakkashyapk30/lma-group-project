@@ -2,6 +2,15 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page } from "@playwright/test";
 import { STAGE_NUMERALS, TID } from "./testids";
 
+/** The tour bar's step text and filled values stay inside the bar: a long list scrolls in the bar, never spills over the page. */
+export async function expectStepInsideBar(page: Page) {
+  const bar = await page.getByTestId("tour-bar").boundingBox();
+  const step = await page.getByTestId("tour-step").boundingBox();
+  expect(bar && step).toBeTruthy();
+  expect(step!.y).toBeGreaterThanOrEqual(bar!.y - 1);
+  expect(step!.y + step!.height).toBeLessThanOrEqual(bar!.y + bar!.height + 1);
+}
+
 /** axe-core serious/critical violations (plan §13.7: zero serious violations). Returns a readable list. */
 export async function seriousAxeViolations(page: Page): Promise<string[]> {
   // Measure the settled screen: a step that is still fading in (200 ms) would read every colour at partial opacity.

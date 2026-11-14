@@ -104,8 +104,22 @@ The backend checks (pre-loading, export) made no model call; they ran with `VS_M
 ### Known limits seen while recording (product, not the demo)
 - Gate 2 always lists unanswered objections: in all six recordings Vakeel's replies left every objection unanswered, so the tour
   approves with acknowledgements (this is what the checker could support, not a recorder fault).
-- The Rights Radar leaves default bail and s.479 at CHECK where the dossier lacks a computed date (cases 03 and 05); the tour reports
-  the status as recorded.
+- The Rights Radar leaves default bail and s.479 at CHECK in cases 03 and 05 because its maximum-punishment input was empty ("Maximum
+  punishment is not on record"), although the charge sheets were filed in time (days 54 of 60 and 81 of 90; case 05's dossier even lists
+  the section's maximum as death). The tour reports the status as recorded. 15 Nov 2026: the story, the custody line of the variant and the
+  Rights Radar caption of cases 03 and 05 (and the custody line of case 06) now say exactly this instead of "default bail closed"; text only,
+  no re-recording, snapshots untouched. Not fixed (product): the radar rule that fails to read the maximum for NDPS 21(a) and BNS 109.
+- Seen in the recorded output, left as recorded: case 06's "Notice of appearance" reads "Offence punishable up to 7 years. No arrest memo or
+  notice in the file" although an arrest memo is in the file; intake names a "bail order" document type in cases 02, 03 and 06 whose dossier
+  lists no earlier bail order.
+- Live walk (15 Nov 2026, real backend on offline models, real tour files, `frontend/e2e/tour_live.spec.ts`, reruns with
+  `E2E_LIVE_API=1 E2E_LIVE_API_BASE=<api> E2E_PORT=<web> E2E_TOURLIVE_SHOTS=<dir>`; skipped otherwise): tours 01 and 04 from the Cases page to
+  Export with Next only, real Gate 2 approval, DOCX downloaded (a zip, over 2 KB), titles, captions and filled values equal to tour.json at
+  all nine steps, no console errors. Defect found and fixed: at 1440x900 a long "Filled in at this step" list spilled out of the tour bar
+  over the workspace (the step column was never height-limited in the wide layout); it now scrolls inside the bar
+  (`lg:max-h-[calc(42dvh-1.5rem)]`), with a layout check in `tour.spec.ts` and `tour_live.spec.ts` (`expectStepInsideBar`).
+  Not fixed: the "Exported 4 files" toast covers the right end of the "Export as Word file" button for its few seconds; the Hindi toggle
+  translates the bar's labels but, by design, not the recorded captions; layouts under 1024 px were not looked at.
 - Day counts in the case descriptions follow the Rights Radar (day 1 is the first remand): cases 01, 03, 04, 05 charge sheets on days
   55, 54, 167 and 81.
 - The exported DOCX files carry the locality "Karol Bagh" (case 01), an address that is part of the synthetic file, not a person's name.

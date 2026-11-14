@@ -5,7 +5,7 @@
  * through the approve route on the way, and the tour ends at Export with the export buttons open.
  */
 import { expect, test } from "@playwright/test";
-import { seriousAxeViolations } from "./helpers";
+import { expectStepInsideBar, seriousAxeViolations } from "./helpers";
 import { TID } from "./testids";
 
 const STAGES = ["INTAKE", "DOSSIER", "GATE_1", "RIGHTS", "BRIEF", "SPAR", "HEARING_PREP", "GATE_2", "FILE"];
@@ -36,6 +36,8 @@ test("a guided demo walks the sample case from the papers to Export with Next on
     await expect(bar.getByTestId("tour-progress")).toHaveText(`Step ${i + 1} of ${STAGES.length}`);
     await expect(page.getByTestId(TID.stage(RAIL[stage as keyof typeof RAIL]))).toHaveAttribute("aria-current", "step");
     await expect(bar.getByTestId("tour-caption")).not.toBeEmpty();
+    await page.waitForTimeout(350); // the step's slide settles before the layout is measured
+    await expectStepInsideBar(page);
     if (stage === "DOSSIER") {
       await expect(bar.getByTestId("tour-field").first()).toBeVisible();
       expect(await seriousAxeViolations(page)).toEqual([]);
