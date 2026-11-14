@@ -13,7 +13,7 @@
   "date": "2026-11-15",
   "backend": "sarvam",
   "model": "sarvam-105b",
-  "cost_inr": 8.17
+  "cost_inr": 4.19
  },
  "steps": [
   {
@@ -22,7 +22,7 @@
    "title": "Munshi reads the papers",
    "agent": "MUNSHI",
    "action": null,
-   "caption": "Counsel uploaded 11 PDFs at once. Munshi read every page (text layer for 11 pages), named 11 documents (FIR, affidavit, arrest memo, bail order, charge sheet, custody certificate, medical record, order sheet, other and remand order) in English, and filed 8 dated events and 2 charged sections. The papers answered every checklist item, so intake asked nothing.",
+   "caption": "Counsel uploaded 11 PDFs at once. Munshi read every page (text layer for 11 pages), named 11 documents (FIR, affidavit, arrest memo, bail order, charge sheet, custody certificate, medical record, order sheet, other and remand order) in English, and filed 8 dated events and 2 charged sections. Intake put 1 question to counsel.",
    "filled": [
     {
      "label": "01_fir.pdf",
@@ -73,47 +73,47 @@
     "filled": [
      {
       "label": "01_fir.pdf",
-      "value": ""
+      "value": "बॉर्न-डिजिटल PDF"
      },
      {
       "label": "02_arrest_memo.pdf",
-      "value": ""
+      "value": "बॉर्न-डिजिटल PDF"
      },
      {
       "label": "03_remand_order.pdf",
-      "value": ""
+      "value": "बॉर्न-डिजिटल PDF"
      },
      {
       "label": "04_medico_legal_report.pdf",
-      "value": ""
+      "value": "बॉर्न-डिजिटल PDF"
      },
      {
       "label": "05_charge_sheet.pdf",
-      "value": ""
+      "value": "बॉर्न-डिजिटल PDF"
      },
      {
       "label": "06_previous_bail_order.pdf",
-      "value": ""
+      "value": "बॉर्न-डिजिटल PDF"
      },
      {
       "label": "07_co_accused_bail_order.pdf",
-      "value": ""
+      "value": "बॉर्न-डिजिटल PDF"
      },
      {
       "label": "08_order_sheet.pdf",
-      "value": ""
+      "value": "बॉर्न-डिजिटल PDF"
      },
      {
       "label": "09_custody_certificate.pdf",
-      "value": ""
+      "value": "बॉर्न-डिजिटल PDF"
      },
      {
       "label": "10_police_verification.pdf",
-      "value": ""
+      "value": "बॉर्न-डिजिटल PDF"
      },
      {
       "label": "11_personal_circumstances.pdf",
-      "value": ""
+      "value": "बॉर्न-डिजिटल PDF"
      }
     ],
     "src": {
@@ -127,8 +127,23 @@
      "filled.7.label": "4bf51a743d0545cd",
      "filled.8.label": "2b99aeabccf2f1cc",
      "filled.9.label": "68fbad50aa0974e8",
-     "filled.10.label": "53e7bbc757d31f94"
-    }
+     "filled.10.label": "53e7bbc757d31f94",
+     "title": "85fd6f385e3ba15f",
+     "filled.0.value": "228bcbbc31fb7177",
+     "filled.1.value": "228bcbbc31fb7177",
+     "filled.2.value": "228bcbbc31fb7177",
+     "filled.3.value": "228bcbbc31fb7177",
+     "filled.4.value": "228bcbbc31fb7177",
+     "filled.5.value": "228bcbbc31fb7177",
+     "filled.6.value": "228bcbbc31fb7177",
+     "filled.7.value": "228bcbbc31fb7177",
+     "filled.8.value": "228bcbbc31fb7177",
+     "filled.9.value": "228bcbbc31fb7177",
+     "filled.10.value": "228bcbbc31fb7177",
+     "caption": "cce454fc29f2fd11"
+    },
+    "title": "Munshi कागजात पढ़ते हैं",
+    "caption": "अधिवाक्ता ने एक साथ 11 PDF अपलोड किए। Munshi ने हर पृष्ठ को पढ़ा (11 पृष्ठों के लिए टेक्स्ट लेयर), 11 दस्तावेजों (FIR, affidavit, arrest memo, bail order, charge sheet, custody certificate, medical record, order sheet, other और remand order) का अंग्रेजी में नामकरण किया, और 8 दिनांकित घटनाओं तथा 2 आरोपित धाराओं को दर्ज किया। Intake ने अधिवक्ता से 1 प्रश्न पूछा।"
    }
   },
   {
@@ -137,8 +152,12 @@
    "title": "Peshkar builds the dossier",
    "agent": "PESHKAR",
    "action": null,
-   "caption": "Peshkar filled the 13 fields of the dossier: 12 from the papers, each with the quoted sentence and page, 0 from counsel and 1 left open. The List of Dates has 8 entries, each tied to its page.",
+   "caption": "Peshkar filled the 13 fields of the dossier: 11 from the papers, each with the quoted sentence and page, 0 from counsel and 2 left open. Counsel answered 1 question from instructions; those fields are marked as counsel's, never as verified. The List of Dates has 8 entries, each tied to its page.",
    "filled": [
+    {
+     "label": "The papers give different values for trial stage: charges have been framed (d8, p.1); trial has commenced (d8, p.1); the injured, PW-1 (Complainant-1), has been examined and cross-examined (d8, p.1). Which one is correct?",
+     "value": "The dates and figures in the FIR, the arrest memo and the remand order are the correct ones; please use those (the court orders prevail over any secondary note)."
+    },
     {
      "label": "FIR",
      "value": "not on record (not supported by the papers)"
@@ -165,7 +184,7 @@
     },
     {
      "label": "Earlier bail orders",
-     "value": "none (verified from the papers)"
+     "value": "court: court not stated, date: 2025-07-22, outcome: rejected (verified from the papers)"
     },
     {
      "label": "Co-accused bail",
@@ -179,13 +198,72 @@
    "hi": {
     "filled": [
      {
+      "label": "कागज़ात विचारण चरण के लिए अलग-अलग मूल्य देते हैं: आरोप तय किए जा चुके हैं (d8, p.1); विचारण शुरू हो चुका है (d8, p.1); घायल, PW-1 (Complainant-1) से पूछताछ की जा चुकी है और जिरह की जा चुकी है (d8, p.1)। कौन सा सही है?",
+      "value": "FIR, गिरफ्तारी मेमो और रिमांड आदेश में तारीखें और आँकड़े सही हैं; कृपया उनका उपयोग करें (अदालत के आदेश किसी भी माध्यमिक नोट पर भारी पड़ते हैं)।"
+     },
+     {
       "label": "FIR",
-      "value": ""
+      "value": "अभिक्लृप्त नहीं (दस्तावेजों द्वारा समर्थित नहीं)"
+     },
+     {
+      "label": "धाराएँ",
+      "value": "BNS 109 (= IPC 307), अधिकतम मृत्यु; BNS 3(5) (= IPC 34) (कागज़ों से सत्यापित)"
+     },
+     {
+      "label": "गिरफ़्तारी की तिथि",
+      "value": "2025-03-16 (कागज़ों से सत्यापित)"
+     },
+     {
+      "label": "प्रथम रिमांड",
+      "value": "2025-03-17 (कागज़ों से सत्यापित)"
+     },
+     {
+      "label": "हिरासत में दिन",
+      "value": "609 (गणना की गई)"
+     },
+     {
+      "label": "आरोप-पत्र",
+      "value": "दाखिल: True, तारीख: 2025-06-05 (कागज़ों से सत्यापित)"
+     },
+     {
+      "label": "पूर्ववर्ती जमानत आदेश",
+      "value": "अदालत: अदालत नहीं बताई गई, तारीख: 2025-07-22, परिणाम: खारिज (कागज़ों से सत्यापित)"
+     },
+     {
+      "label": "सह-अभयुक्त की जमानत",
+      "value": "id: Co-accused-2, परिणाम: मंजूर, तारीख: 2026-03-10 (कागज़ों से सत्यापित)"
+     },
+     {
+      "label": "आपराधिक इतिहास",
+      "value": "कोई नहीं (दस्तावेज़ों से सत्यापित)"
      }
     ],
     "src": {
-     "filled.0.label": "61ef8cb5c4f3d3ea"
-    }
+     "filled.1.label": "61ef8cb5c4f3d3ea",
+     "title": "b7f323ef16f5756f",
+     "filled.2.label": "9bae918add9affa5",
+     "filled.3.label": "539d7fc8e5efdd47",
+     "filled.4.label": "f7ec9a7f81cea689",
+     "filled.5.label": "be568b6ab38ee8d7",
+     "filled.6.label": "eab38827513ae20b",
+     "filled.7.label": "05f31677202ed63b",
+     "filled.8.label": "64f54b91cd98806d",
+     "filled.9.label": "b7f98544ccc72721",
+     "filled.9.value": "2d8823dd284e13e3",
+     "filled.1.value": "a11e71a4662a5c0a",
+     "caption": "9cf1b6dec4c2b6a0",
+     "filled.0.label": "dd61f3f07f7a5a8a",
+     "filled.0.value": "6c9c1b2ce4ff1b3a",
+     "filled.2.value": "a99740e5785f7981",
+     "filled.3.value": "d422e3ff35a3b311",
+     "filled.4.value": "fa61b09b628f510d",
+     "filled.5.value": "00fb076cec4d24a3",
+     "filled.6.value": "f67e4a204047da3a",
+     "filled.7.value": "6276ccf79c439ac1",
+     "filled.8.value": "456391a812495043"
+    },
+    "title": "Peshkar डोजियर तैयार करते हैं",
+    "caption": "Peshkar ने डोजियर के 13 फ़ील्ड भरे: 11 कागज़ों से, प्रत्येक उद्धृत वाक्य और पृष्ठ के साथ, 0 अधिवक्ता से और 2 खुले छोड़े गए। अधिवक्ता ने निर्देशों से 1 प्रश्न का उत्तर दिया; वे फ़ील्ड अधिवक्ता के रूप में चिह्नित हैं, कभी सत्यापित के रूप में नहीं। तारीखों की सूची में 8 प्रविष्टियाँ हैं, प्रत्येक अपने पृष्ठ से जुड़ी हुई है।"
    }
   },
   {
@@ -204,7 +282,29 @@
      "label": "Acknowledged: FIR",
      "value": "not supported by the papers; acknowledged by counsel"
     }
-   ]
+   ],
+   "hi": {
+    "title": "GATE_1: अधिवक्ता तथ्यों का अनुमोदन करते हैं।",
+    "src": {
+     "title": "e26f2f4ee02e4a2a",
+     "filled.0.label": "dfed6daa2d66ec21",
+     "filled.0.value": "e811f245c92e1c44",
+     "filled.1.value": "6168042820ca7d79",
+     "caption": "d15e86bbea53a21f",
+     "filled.1.label": "9226e6c7b2e63949"
+    },
+    "filled": [
+     {
+      "label": "Gate 1 नोट",
+      "value": "अधि-वक्ता द्वारा रिकॉर्ड किए गए मूल्यांकनकर्ता डेमो के लिए अनुमोदित"
+     },
+     {
+      "label": "स्वीकृत: FIR",
+      "value": "दस्तावेजों द्वारा समर्थित नहीं; अधिवक्ता द्वारा स्वीकृत"
+     }
+    ],
+    "caption": "जब तक अधिवक्ता डोजियर का अनुमोदन नहीं करते, तब तक कुछ भी मसौदा तैयार नहीं होता, और कोड केवल अधिवक्ता से ही वह अनुमोदन स्वीकार करता है। अधिवक्ता ने 1 ऐसे क्षेत्र को स्वीकार किया जिसका कागजात समर्थन नहीं करते (FIR) और अनुमोदन दिया।"
+   }
   },
   {
    "stage": "RIGHTS",
@@ -242,7 +342,57 @@
      "label": "Statutory bar",
      "value": "NOT_APPLICABLE: No NDPS, UAPA or PMLA section is charged."
     }
-   ]
+   ],
+   "hi": {
+    "filled": [
+     {
+      "label": "डिफ़ॉल्ट जमानत",
+      "value": "WINDOW_CLOSED: 90 दिन की सीमा (अधिकतम मृत्युदंड)। दिन 1 पहला रिमांड है, 17.03.2025। आरोप-पत्र दिन 81 (05.06.2025) पर दाखिल किया गया था। यह सीमा के भीतर आया, इसलिए डिफ़ॉल्ट जमानत का अधिकार कभी उत्पन्न नहीं हुआ।"
+     },
+     {
+      "label": "विचारधीन कैदी की सीमा (BNSS s.479)",
+      "value": "NOT_APPLICABLE: अधिकतम सजा मृत्युदंड है; BNSS s.479(1) मृत्यु या आजीवन कारावास पर लागू नहीं होता।"
+     },
+     {
+      "label": "उपस्थिति का नोटिस",
+      "value": "OK: अधिकतम सजा मृत्युदंड है, जो 7 वर्ष से अधिक है, इसलिए हाजिर होने के नोटिस का मानक लागू नहीं होता।"
+     },
+     {
+      "label": "गिरफ्तारी के आधार",
+      "value": "UNKNOWN: ऐसा कोई रिकॉर्ड नहीं है कि गिरफ्तारी के आधार संसूचित किए गए थे।"
+     },
+     {
+      "label": "24 घंटे के भीतर पेशी",
+      "value": "CHECK: अगले दिन पेश किया गया; समय रिकॉर्ड पर नहीं है।"
+     },
+     {
+      "label": "Antil श्रेणी",
+      "value": "B: अधिकतम सजा मृत्युदंड है: श्रेणी B (मृत्यु, आजीवन कारावास या 7 वर्ष से अधिक)। एंटील की श्रेणियाँ यह तय करती हैं कि जिस अभियुक्त को जांच के दौरान गिरफ्तार नहीं किया गया था और जिसने सहयोग किया था, उसके साथ आरोप-पत्र के बाद कैसा व्यवहार किया जाता है; हिरासत में मौजूद मु मुवक्किल के लिए यह संदर्भ है, जमानत का हक नहीं।"
+     },
+     {
+      "label": "सांविधिक बाधा",
+      "value": "NOT_APPLICABLE: NDPS, UAPA या PMLA की कोई धारा आरोपित नहीं है।"
+     }
+    ],
+    "src": {
+     "filled.0.label": "e68b6dd942523940",
+     "filled.1.label": "d7275406c48a3ae3",
+     "filled.2.label": "1d5e3980d94af7d9",
+     "filled.3.label": "550a739c67b1a6ff",
+     "filled.3.value": "fb537bf5f7e5d8c2",
+     "filled.4.label": "8272cf65fa7450fc",
+     "filled.4.value": "041b25190a96d851",
+     "filled.5.label": "cf2929a161d294cf",
+     "filled.6.label": "c774a5ce34e5b94f",
+     "filled.6.value": "3c5e990779168039",
+     "caption": "f58c8829eb453bb6",
+     "filled.0.value": "de16566c4782cde1",
+     "filled.1.value": "7c8642b61c0f7421",
+     "filled.2.value": "05720344841e8e51",
+     "filled.5.value": "c575e320ad2e6ee9"
+    },
+    "caption": "इंटक (INTAKE) पर पेशकार ने 2026-11-15 के अनुसार डोजियर पर राइट्स रडार के 7 नियमों को चलाया: तिथि अंकगणित और कानून सारणियाँ, भाषा मॉडल नहीं। डिफ़ॉल्ट जमानत: WINDOW_CLOSED, 24 घंटे के भीतर पेशी: CHECK और एंटील श्रेणी: B। प्रत्येक परिणाम अपने नियम और उपयोग की गई तिथियों का नाम देता है; जो नियम बेयर एक्ट के विरुद्ध अभी तक पुनः जाँचे नहीं गए हैं, वे unverified चिह्नित हैं।"
+   }
   },
   {
    "stage": "BRIEF",
@@ -250,65 +400,109 @@
    "title": "Sutradhar plans, Vakeel drafts",
    "agent": "VAKEEL",
    "action": null,
-   "caption": "Sutradhar planned the brief factor by factor (9 factors) and fetched the evidence each needs: 91 store calls. Vakeel drafted 6 grounds (6 supported). Every sentence was checked against its source; 19 sentences the checker could not support were withheld, leaving 2 grounds for counsel to draft. 25 open issues are listed for counsel.",
+   "caption": "Sutradhar planned the brief factor by factor (9 factors) and fetched the evidence each needs: 93 store calls. Vakeel drafted 6 grounds (1 repaired and 5 supported). Every sentence was checked against its source; 5 sentences the checker could not support were withheld, leaving 1 ground for counsel to draft. 16 open issues are listed for counsel.",
    "filled": [
     {
-     "label": "G3 · charge sheet filed",
-     "value": "SUPPORTED: Hence, no custodial interrogation is required [A:DLHC010322692025#6]."
+     "label": "G1 · gravity and punishment",
+     "value": "SUPPORTED: The offence is triable as a non-bailable offence carrying a maximum punishment of more than seven years under Section 109 BNS read with Section 3(5) BNS, as per the charge sheet filed on 05.06.2025 [F:facts_text].The charge sheet was filed on 05.06.2025 [F:fa…"
     },
     {
-     "label": "G4 · parity with co accused",
-     "value": "SUPPORTED: Co-accused-2 is alleged to have held the injured, which is a similar role to that attributed to Accused-1 [F:facts_text]. The principle of parity supports the grant of bail to the applicant, as a similarly situated co-accused has already been enlarged on bail…"
+     "label": "G2 · custody period",
+     "value": "SUPPORTED: Accused-1 has been in custody in FIR No. 302/2025 since 16.03.2025, and the period of custody as on 10.11.2026 is 604 days [F:facts_text]."
+    },
+    {
+     "label": "G3 · charge sheet filed",
+     "value": "SUPPORTED: The charge sheet having already been filed, no custodial interrogation is required [A:CGHC010265822024#7]. Qualification: Order of the Chhattisgarh High Court dated 22.08.2024 (CGHC010265822024), para 7 construed IPC 34; IPC 34 -> BNS 3(5) is a reworded provi…"
     },
     {
      "label": "G5 · antecedents",
-     "value": "SUPPORTED: Accused-1 is a first-time offender with no criminal antecedents, as verified by the Investigating Officer in the Police Verification Report [F:facts_text]. The Supreme Court has observed that pendency of several criminal cases against an accused may itself no…"
+     "value": "SUPPORTED: Accused-1 has no previous involvement in any criminal case, and no other criminal case is pending against him, making him a first-time offender [F:facts_text]. Criminal antecedents by themselves cannot serve as an adequate basis for denying the request for ba…"
     },
     {
      "label": "G6 · flight risk",
-     "value": "SUPPORTED: Accused-1 has no previous involvement in any criminal case and has no criminal antecedents, and he is a first-time offender [F:facts_text]."
+     "value": "REPAIRED: Accused-1 has lived in Rohini, Delhi since birth, supports his wife, an infant daughter and his parents, and his father is willing to stand surety [F:facts_text]. The trial is moving at snail's pace [F:facts_text].The trial is moving at snail's pace [A:DLHC01…"
     },
     {
-     "label": "G7 · witness tampering",
-     "value": "SUPPORTED: The apprehension in regard to the evidence being tampered or there being a threat to the complainant is not without merits, however, the same cannot be the sole ground for denying the bail to the applicant [A:DLHC010384332023#29]. Qualification: Order of the…"
-    },
-    {
-     "label": "G8 · weak prima facie",
-     "value": "SUPPORTED: The court should examine the prosecution evidence to find out the existence of a prima facie case and the ingredients of offence and not conduct a mini trial, and the contradictions, inconsistencies or improbabilities in the evidence should not be weighed hea…"
-    },
-    {
-     "label": "Withheld from G1",
-     "value": "3 sentences; reason: not supported by the dossier quote (support 0.29)"
+     "label": "G7 · weak prima facie",
+     "value": "SUPPORTED: The prosecution evidence is yet to be fully tested, as only 6 of the 18 cited prosecution witnesses have been examined and the material witnesses are yet to be examined [A:JKHC020067692023#31].The court should examine the prosecution evidence to find out the…"
     },
     {
      "label": "Withheld from G2",
-     "value": "2 sentences; reason: not supported by the dossier quote (fact support 0.07 < 0.50)"
+     "value": "2 sentences; reason: not supported by the dossier quote (support 0.40)"
     },
     {
      "label": "Withheld from G3",
-     "value": "3 sentences; reason: not supported by the dossier quote (support 0.39)"
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.39)"
     },
     {
      "label": "Withheld from G4",
-     "value": "3 sentences; reason: not supported by the dossier quote (support 0.12)"
-    },
-    {
-     "label": "Withheld from G5",
-     "value": "2 sentences; reason: not supported by the dossier quote (support 0.13)"
-    },
-    {
-     "label": "Withheld from G6",
-     "value": "2 sentences; reason: not supported by the dossier quote (support 0.17)"
-    },
-    {
-     "label": "Withheld from G7",
-     "value": "1 sentence; reason: not supported by the dossier quote (support 0.46)"
-    },
-    {
-     "label": "Withheld from G8",
-     "value": "3 sentences; reason: not supported by the dossier quote (support 0.00)"
+     "value": "2 sentences; reason: not supported by the dossier quote (support 0.16)"
     }
-   ]
+   ],
+   "hi": {
+    "title": "Sutradhar योजना बनाता है, Vakeel मसौदा तैयार करता है",
+    "src": {
+     "title": "bd1dd6fa0af4c65b",
+     "filled.1.label": "370eda3e214f4261",
+     "filled.2.label": "3158260bbedb788f",
+     "filled.3.label": "e9378a1d27188e98",
+     "filled.6.label": "7a0233e8da925a47",
+     "filled.7.label": "63f123a598146e7a",
+     "filled.8.label": "168473446e2fb8d1",
+     "filled.0.label": "9fb8c2fe1c508282",
+     "filled.5.label": "05960789c784e52c",
+     "caption": "cfe240a1b72aa092",
+     "filled.0.value": "941ec0b0c3232b9f",
+     "filled.1.value": "b7360f29d37708a0",
+     "filled.4.label": "6ca0f663de462df5",
+     "filled.6.value": "7ca6d124d410dce1",
+     "filled.7.value": "eb16267f2428a021",
+     "filled.8.value": "4b5d17266999f08f",
+     "filled.2.value": "a6dda6ced08b499c",
+     "filled.3.value": "f2d186c853346de4",
+     "filled.4.value": "6d759064012a1d80",
+     "filled.5.value": "a2387736bb14a4c9"
+    },
+    "filled": [
+     {
+      "label": "G1 · गुरुत्वाकर्षण और सजा",
+      "value": "SUPPORTED: 05.06.2025 को दाखिल आरोप-पत्र के अनुसार, Section 109 BNS सह-पठित Section 3(5) BNS के तहत अपराध एक गैर-जमानती अपराध के रूप में विचारणीय है जिसमें सात वर्ष से अधिक का अधिकतम कारावास है [F:facts_text]। आरोप-पत्र 05.06.2025 को दाखिल किया गया था [F:fa…"
+     },
+     {
+      "label": "G2 · हिरासत की अवधि",
+      "value": "SUPPORTED: Accused-1 16.03.2025 से FIR No. 302/2025 में हिरासत में है, और 10.11.2026 तक हिरासत की अवधि 604 दिन है [F:facts_text]।"
+     },
+     {
+      "label": "G3 · आरोप-पत्र दाखिल",
+      "value": "SUPPORTED: आरोप-पत्र पहले ही दाखिल किया जा चुका है, अतः किसी अभिरक्षात्मक पूछताछ की आवश्यकता नहीं है [A:CGHC010265822024#7]। अर्हता: छत्तीसगढ़ उच्च न्यायालय का दिनांक 22.08.2024 का आदेश (CGHC010265822024), पैरा 7 ने IPC 34 की व्याख्या की; IPC 34 -> BNS 3(5) एक पुनर्संपादित प्रावधान…"
+     },
+     {
+      "label": "G5 · पूर्ववृत्त",
+      "value": "SUPPORTED: Accused-1 की किसी भी आपराधिक मामले में कोई पूर्व संलिप्तता नहीं है, और उसके विरुद्ध कोई अन्य आपराधिक मामला लंबित नहीं है, जिससे वह प्रथम बार का अपराधी बनता है [F:facts_text]। आपराधिक पूर्ववृत्त स्वयं में जमानत के अनुरोध को अस्वीकार करने का पर्याप्त आधार नहीं हो सकता…"
+     },
+     {
+      "label": "G6 · फरार होने का जोखिम",
+      "value": "REPAIRED: Accused-1 जन्म से रोहिणी, दिल्ली में रहता है, अपनी पत्नी, एक दुधमुंही बेटी और माता-पिता का भरण-पोषण करता है, और उसके पिता जमानतदार बनने के लिए तैयार हैं [F:facts_text]। विचारण बहुत धीमी गति से चल रहा है [F:facts_text]। विचारण बहुत धीमी गति से चल रहा है [A:DLHC01…"
+     },
+     {
+      "label": "G7 · कमजोर प्रथम दृष्टया",
+      "value": "SUPPORTED: अभियोजन साक्ष्य का अभी पूर्ण परीक्षण होना शेष है, क्योंकि 18 उल्लिखित अभियोजन गवाहों में से केवल 6 से पूछताछ की गई है और महत्वपूर्ण गवाहों से पूछताछ अभी बाकी है [A:JKHC020067692023#31]। अदालत को यह पता लगाने के लिए अभियोजन साक्ष्य की जांच करनी चाहिए कि…"
+     },
+     {
+      "label": "G2 से रोकी गई",
+      "value": "2 वाक्य; कारण: डोजियर उद्धरण द्वारा समर्थित नहीं है (समर्थन 0.40)"
+     },
+     {
+      "label": "G3 से रोकी गई",
+      "value": "1 वाक्य; कारण: डोजियर उद्धरण द्वारा समर्थित नहीं है (समर्थन 0.39)"
+     },
+     {
+      "label": "G4 से रोका गया",
+      "value": "2 वाक्य; कारण: डोजियर उद्धरण द्वारा समर्थित नहीं है (समर्थन 0.16)"
+     }
+    ],
+    "caption": "सूत्रधार ने कारक-दर-कारक (9 कारक) संक्षिप्त योजना बनाई और प्रत्येक के लिए आवश्यक साक्ष्य प्राप्त किए: 93 स्टोर कॉल। वकील ने 6 आधारों का मसौदा तैयार किया (1 सुधारा गया और 5 समर्थित)। प्रत्येक वाक्य की उसके स्रोत के विरुद्ध जाँच की गई; जिन 5 वाक्यों का चेकर समर्थन नहीं कर सका, उन्हें रोक लिया गया, जिससे अधिवक्ता के मसौदा तैयार करने के लिए 1 आधार बचा। अधिवक्ता के लिए 16 खुली समस्याएँ सूचीबद्ध हैं।"
+   }
   },
   {
    "stage": "SPAR",
@@ -316,61 +510,159 @@
    "title": "Abhiyojak argues the other side",
    "agent": "ABHIYOJAK",
    "action": null,
-   "caption": "Abhiyojak, the prosecution sparring partner, raised 13 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case. Abhiyojak judged 0 of Vakeel's replies: 0 answered, 0 partly answered, 0 unanswered; 13 objections could not be judged because the sparring token budget was spent, and stay unanswered. Whatever stays open is listed at Gate 2, and counsel answers it before approving.",
+   "caption": "Abhiyojak, the prosecution sparring partner, raised 14 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case; 2 ungrounded objections were discarded. Abhiyojak judged 0 of Vakeel's replies: 0 answered, 0 partly answered, 0 unanswered; 14 objections could not be judged because the sparring token budget was spent, and stay unanswered. Whatever stays open is listed at Gate 2, and counsel answers it before approving.",
    "filled": [
     {
-     "label": "O1 against G3 (charge sheet filed)",
-     "value": "UNANSWERED: The offence is under BNS 109, equivalent to IPC 307, carrying a maximum punishment of death, which is a grave offence warranting continued custody."
+     "label": "O1 against G1 (gravity and punishment)",
+     "value": "UNANSWERED: The offence is triable as a non-bailable offence carrying a maximum punishment of more than seven years under Section 109 BNS read with Section 3(5) BNS, as per the charge sheet filed on 05.06.2025, and the maximum punishment for BNS 109 is death."
     },
     {
-     "label": "O2 against G4 (parity with co accused)",
-     "value": "UNANSWERED: The principle of parity cannot be invoked mechanically; the role attributed to the applicant must be scrutinized and is not necessarily similar to that of co-accused-2. The prosecution opposes this ground."
+     "label": "O2 against G2 (custody period)",
+     "value": "UNANSWERED: The applicant is charged under BNS 109, which is non-bailable with a maximum punishment of death, and BNS 3(5), which makes the offence extremely serious and grave."
     },
     {
-     "label": "O3 against G5 (antecedents)",
-     "value": "UNANSWERED: The accused is charged under BNS 109, which carries a maximum punishment of death, and the offence is of a grave and serious nature. The mere absence of criminal antecedents does not, by itself, outweigh the gravity of the offence or the need to deny bail whe…"
+     "label": "O3 against G2 (custody period)",
+     "value": "UNANSWERED: The applicant has no local roots or community ties, and the gravity of the offence charged renders him a high flight risk if released on bail."
     },
     {
-     "label": "O4 against G5 (antecedents)",
-     "value": "UNANSWERED: The charge sheet has been filed in this case and the trial has commenced, with the accused having been in custody for 609 days, indicating that the investigation is complete and the accused has had ample opportunity to tamper with evidence or influence witnes…"
+     "label": "O4 against G3 (charge sheet filed)",
+     "value": "UNANSWERED: The applicant is charged with BNS 109, which carries a maximum punishment of death, indicating the utmost gravity of the offence."
     },
     {
-     "label": "O5 against G6 (flight risk)",
-     "value": "UNANSWERED: The defence's argument that the accused is not a flight risk is contradicted by the fact that the offence is non-bailable, carrying a maximum punishment of death, and the applicant has already spent 609 days in custody, indicating the gravity of the charges."
+     "label": "O5 against G3 (charge sheet filed)",
+     "value": "UNANSWERED: The applicant has already been in custody for 609 days, and his earlier bail application was rejected on 22.07.2025, suggesting persistent concerns regarding his conduct and the need for continued custody."
     },
     {
-     "label": "O6 against G6 (flight risk)",
-     "value": "UNANSWERED: The applicant is charged under BNS 109, which is a non-bailable offence with a maximum punishment of death, demonstrating the extreme gravity of the offence and undermining the argument that bail should be granted merely because the accused is a first-time of…"
+     "label": "O6 against G5 (antecedents)",
+     "value": "UNANSWERED: The defence's reliance on first-time offender status ignores that the offence charged is BNS 109 (equivalent to IPC 307), carrying a maximum punishment of death, and the applicant has already been in custody for 609 days with the charge sheet filed, making th…"
     },
     {
-     "label": "O7 against G7 (witness tampering)",
-     "value": "UNANSWERED: The defence relies on a Delhi High Court order that construed IPC 307, but this court has held that mere allegations of the possibility of the accused influencing witnesses or tampering with evidence cannot be grounds to deny bail. The defence's apprehension…"
+     "label": "O7 against G5 (antecedents)",
+     "value": "UNANSWERED: The defence misapplies the principle that criminal antecedents alone cannot deny bail; the prosecution has not relied solely on antecedents but on the combination of the grave nature of the offence, the pendency of the charge sheet, and the fact that the appl…"
     },
     {
-     "label": "O8 against G7 (witness tampering)",
-     "value": "UNANSWERED: The defence's reliance on the apprehension of witness tampering is undermined by the fact that the charge sheet has been filed and the trial has commenced, with six witnesses already examined. The mere possibility of tampering, without specific evidence of su…"
+     "label": "O8 against G6 (flight risk)",
+     "value": "UNANSWERED: The defence's assertion that the applicant poses no flight risk is undermined by the gravity of the offence charged under BNS 109, which carries a maximum punishment of death and is non-bailable."
     },
     {
-     "label": "O9 against G8 (weak prima facie)",
-     "value": "UNANSWERED: The offence is BNS 109, equivalent to IPC 307, which carries a maximum punishment of death and is explicitly non-bailable, indicating the grave nature of the offence."
+     "label": "O9 against G6 (flight risk)",
+     "value": "UNANSWERED: The defence's argument that the trial's slow pace eliminates flight risk is speculative; the applicant has already been in custody for 609 days and the charge sheet was filed only on 05.06.2025, with no indication of imminent conclusion, yet this does not neg…"
     },
     {
-     "label": "O10 against general (gravity and punishment)",
-     "value": "UNANSWERED: The offence is non-bailable and carries a maximum punishment of death, which reflects the gravity of the accusation and the severity of punishment in case of conviction, making it a fit case to deny bail."
+     "label": "O10 against G7 (weak prima facie)",
+     "value": "UNANSWERED: The applicant is charged under BNS 109, which is not bailable and carries a maximum punishment of death, indicating the gravity of the offence is extremely high."
     },
     {
-     "label": "O11 against general (flight risk)",
-     "value": "UNANSWERED: The applicant has been in custody for 609 days without trial completion, and the prosecution has not yet examined all witnesses, raising reasonable apprehension that premature release could lead to tampering with evidence and influencing witnesses."
+     "label": "O11 against G7 (weak prima facie)",
+     "value": "UNANSWERED: The applicant has already been in custody for 609 days and has a previous bail application rejected on 22.07.2025, demonstrating a pattern of non-compliance with bail conditions and a serious flight risk."
     },
     {
-     "label": "O12 against general (witness tampering)",
-     "value": "UNANSWERED: The trial has commenced and several prosecution witnesses are yet to be examined, creating a reasonable apprehension that the applicant may tamper with evidence or influence witnesses if released on bail."
+     "label": "O12 against general (flight risk)",
+     "value": "UNANSWERED: The applicant has been in custody for 609 days and has a previous bail application rejected on 22.07.2025, suggesting a pattern of non-compliance and potential flight risk."
     },
     {
-     "label": "O13 against general (statutory bar)",
-     "value": "UNANSWERED: The applicant is charged under BNS 109, which is a non-bailable offence with stringent provisions, and the statutory bar under the relevant provisions of the Code applies in the present case."
+     "label": "O13 against general (witness tampering)",
+     "value": "UNANSWERED: The applicant has been in custody for 609 days, and the charge sheet was filed on 05.06.2025, indicating the trial is at a conclusive stage with prosecution witnesses yet to be examined, raising apprehension of tampering."
+    },
+    {
+     "label": "O14 against general (antecedents)",
+     "value": "UNANSWERED: The prosecution has not been able to examine all witnesses, and the applicant's long period of custody raises concerns about the integrity of the trial process."
     }
-   ]
+   ],
+   "hi": {
+    "title": "Abhiyojak दूसरी ओर से बहस करते हैं",
+    "src": {
+     "title": "6b6690e3a72567b9",
+     "filled.4.label": "c80fab4a0280eb8c",
+     "filled.11.label": "519372c88fdb6d0e",
+     "filled.12.label": "dda73b7367b0da4f",
+     "filled.13.label": "083ca453a2185fd1",
+     "caption": "aa5b42bd2656df76",
+     "filled.1.value": "6281605e98579ff9",
+     "filled.2.value": "18d333b3237159ce",
+     "filled.3.value": "fabccdc41f60953f",
+     "filled.4.value": "2beb12703ea83fe4",
+     "filled.5.label": "b71a1523106c9f8a",
+     "filled.5.value": "3a3a7c14f8f70750",
+     "filled.6.label": "ca91888396c1d72a",
+     "filled.6.value": "065aed73dac28822",
+     "filled.7.label": "735dbca531f8c7f3",
+     "filled.7.value": "72e565e65da94499",
+     "filled.8.label": "78350bb1e09f26db",
+     "filled.8.value": "5f9b89549e7f58d3",
+     "filled.9.label": "d3886efd797d86ec",
+     "filled.9.value": "85cf3d2078eadb16",
+     "filled.10.label": "2bfed3392c8b34a8",
+     "filled.10.value": "5694ef5f8fc3f108",
+     "filled.11.value": "285920baf5d6eb58",
+     "filled.12.value": "3573ee6530945889",
+     "filled.13.value": "233715d32a1987ca",
+     "filled.0.label": "df16a064b157a212",
+     "filled.2.label": "730ad207e148f12b",
+     "filled.3.label": "8f555272636eea92",
+     "filled.0.value": "d1f6837bbc5a8788",
+     "filled.1.label": "e2c43bd0290d2042"
+    },
+    "filled": [
+     {
+      "label": "G1 (गुरुत्वाकर्षण और सजा) के खिलाफ O1",
+      "value": "UNANSWERED: 05.06.2025 को दाखिल आरोप-पत्र के अनुसार, Section 109 BNS पठित Section 3(5) BNS के तहत अपराध गैर-जमानती प्रकृति का है जिसमें सात वर्ष से अधिक का अधिकतम कारावास है, और BNS 109 के लिए अधिकतम सजा मृत्युदंड है।"
+     },
+     {
+      "label": "G2 के विरुद्ध O2 (हिरासत की अवधि)",
+      "value": "UNANSWERED: अभियुक्त पर BNS 109 के तहत आरोप है, जो गैर-जमानती है जिसमें अधिकतम मृत्युदंड का प्रावधान है, और BNS 3(5) के तहत, जो अपराध को अत्यंत गंभीर बनाता है।"
+     },
+     {
+      "label": "G2 (हिरासत की अवधि) के विरुद्ध O3",
+      "value": "UNANSWERED: अभियुक्त की कोई स्थानीय जड़ें या सामुदायिक संबंध नहीं हैं, और आरोपित अपराध की गंभीरता उसे जमानत पर रिहा होने पर भागने का अत्यधिक जोखिम बनाती है।"
+     },
+     {
+      "label": "G3 के विरुद्ध O4 (आरोप-पत्र दाखिल)",
+      "value": "UNANSWERED: अभियुक्त पर BNS 109 के तहत आरोप है, जिसमें अधिकतम मृत्युदंड का प्रावधान है, जो अपराध की अत्यधिक गंभीरता को दर्शाता है।"
+     },
+     {
+      "label": "G3 के विरुद्ध O5 (आरोप-पत्र दाखिल)",
+      "value": "UNANSWERED: अभियुक्त पहले से ही 609 दिनों से हिरासत में है, और उसका पिछला जमानत आवेदन 22.07.2025 को खारिज कर दिया गया था, जो उसके आचरण के संबंध में निरंतर चिंताओं और निरंतर हिरासत की आवश्यकता का सुझाव देता है।"
+     },
+     {
+      "label": "G5 (पूर्ववृत्त) के विरुद्ध O6",
+      "value": "UNANSWERED: बचाव पक्ष का पहली बार अपराधी होने के दर्जे पर भरोसा करना इस बात की अनदेखी करता है कि आरोपित अपराध BNS 109 (IPC 307 के समकक्ष) है, जिसमें अधिकतम मृत्युदंड का प्रावधान है, और अभियुक्त आरोप-पत्र दाखिल होने के साथ 609 दिनों से पहले ही हिरासत में है, जिससे थ…"
+     },
+     {
+      "label": "G5 (पूर्ववृत्त) के विरुद्ध O7",
+      "value": "UNANSWERED: बचाव पक्ष इस सिद्धांत का गलत अनुप्रयोग करता है कि अकेले आपराधिक इतिहास के आधार पर जमानत से इनकार नहीं किया जा सकता है; अभियोजन पक्ष ने केवल आपराधिक इतिहास पर भरोसा नहीं किया है बल्कि अपराध की गंभीर प्रकृति, आरोप-पत्र के लंबित होने और इस तथ्य के संयोजन पर भरोसा किया है कि अभियुक्त…"
+     },
+     {
+      "label": "G6 (फरार होने का जोखिम) के विरुद्ध O8",
+      "value": "UNANSWERED: बचाव पक्ष का यह दावा कि अभियुक्त भागने का कोई जोखिम नहीं है, BNS 109 के तहत आरोपित अपराध की गंभीरता से कमजोर होता है, जिसमें अधिकतम मृत्युदंड का प्रावधान है और यह गैर-जमानती है।"
+     },
+     {
+      "label": "G6 (फरार होने का जोखिम) के विरुद्ध O9",
+      "value": "UNANSWERED: बचाव पक्ष का यह तर्क कि विचारण की धीमी गति फरार होने के जोखिम को समाप्त करती है, अटकलबाजी है; आवेदक पहले से ही 609 दिनों से हिरासत में है और आरोप-पत्र केवल 05.06.2025 को दाखिल किया गया था, जिसमें शीघ्र निष्कर्ष का कोई संकेत नहीं है, फिर भी यह खंडन नहीं करता…"
+     },
+     {
+      "label": "G7 (कमजोर प्रथम दृष्टया मामला) के विरुद्ध O10",
+      "value": "UNANSWERED: आवेदक पर BNS 109 के तहत आरोप है, जो जमानती नहीं है और जिसमें मृत्युदंड तक की अधिकतम सजा का प्रावधान है, जो अपराध की अत्यधिक गंभीरता को दर्शाता है।"
+     },
+     {
+      "label": "G7 (कमजोर प्रथम दृष्टया मामला) के विरुद्ध O11",
+      "value": "UNANSWERED: आवेदक पहले से ही 609 दिनों से हिरासत में है और उसकी पिछली जमानत अर्जी 22.07.2025 को खारिज कर दी गई थी, जो जमानत की शर्तों के गैर-अनुपालन के पैटर्न और गंभीर फरार होने के जोखिम को प्रदर्शित करती है।"
+     },
+     {
+      "label": "सामान्य के विरुद्ध O12 (भागने का जोखिम)",
+      "value": "UNANSWERED: आवेदक 609 दिनों से हिरासत में है और उसकी पिछली जमानत अर्जी 22.07.2025 को खारिज कर दी गई थी, जो गैर-अनुपालन के पैटर्न और संभावित फरार होने के जोखिम का सुझाव देती है।"
+     },
+     {
+      "label": "सामान्य के विरुद्ध O13 (गवाहों को प्रभावित करना)",
+      "value": "UNANSWERED: आवेदक 609 दिनों से हिरासत में है, और आरोप-पत्र 05.06.2025 को दाखिल किया गया था, जो यह दर्शाता है कि विचारण एक निर्णायक चरण में है और अभियोजन गवाहों की परीक्षा अभी बाकी है, जिससे साक्ष्यों से छेड़छाड़ की आशंका बढ़ जाती है।"
+     },
+     {
+      "label": "सामान्य के विरुद्ध O14 (पूर्ववृत्त)",
+      "value": "UNANSWERED: अभियोजन पक्ष सभी गवाहों की परीक्षा करने में सक्षम नहीं रहा है, और आवेदक की लंबी अवधि की हिरासत विचारण प्रक्रिया की शुचिता पर चिंता पैदा करती है।"
+     }
+    ],
+    "caption": "Abhiyojak, जो अभियोजन पक्ष का विरोधी भागीदार है, ने 2 चरणों में 14 आपत्तियां उठाईं, जिनमें से प्रत्येक तुलनीय आदेशों के अभियोजन तर्क या मामले के एक तथ्य पर आधारित थी; 2 आधारहीन आपत्तियों को खारिज कर दिया गया। Abhiyojak ने Vakeel के उत्तरों में से 0 का मूल्यांकन किया: 0 का उत्तर दिया गया, 0 का आंशिक उत्तर दिया गया, 0 अनुत्तरित रहे; 14 आपत्तियों का मूल्यांकन नहीं किया जा सका क्योंकि स्पैरिंग टोकन बजट समाप्त हो गया था, और वे अनुत्तरित रहती हैं। जो भी खुला रहता है उसे Gate 2 पर सूचीबद्ध किया जाता है, और अधिवक्ता अनुमोदन से पहले उसका उत्तर देता है।"
+   }
   },
   {
    "stage": "HEARING_PREP",
@@ -381,42 +673,106 @@
    "caption": "Vakeel turned the brief and the sparring into a card for the hearing: 5 likely questions from the bench with answers, 3 grounds to lead with and 1 bail condition counsel can offer. It predicts nothing and gives no grant rate.",
    "filled": [
     {
-     "label": "Lead with G3 (charge sheet filed)",
-     "value": "Hence, no custodial interrogation is required."
+     "label": "Lead with G2 (custody period)",
+     "value": "Accused-1 has been in custody in FIR No. 302/2025 since 16.03.2025, and the period of custody as on 10.11.2026 is 604 days."
     },
     {
-     "label": "Lead with G4 (parity with co accused)",
-     "value": "Co-accused-2 is alleged to have held the injured, which is a similar role to that attributed to Accused-1."
+     "label": "Lead with G3 (charge sheet filed)",
+     "value": "The charge sheet having already been filed, no custodial interrogation is required."
     },
     {
      "label": "Lead with G5 (antecedents)",
-     "value": "Accused-1 is a first-time offender with no criminal antecedents, as verified by the Investigating Officer in the Police Verification Report."
+     "value": "Accused-1 has no previous involvement in any criminal case, and no other criminal case is pending against him, making him a first-time offender."
     },
     {
-     "label": "Bench may raise: witness tampering",
-     "value": "The apprehension in regard to the evidence being tampered or there being a threat to the complainant is not without merits, however, the same cannot be the sole ground for denying the bail to the applicant."
+     "label": "Bench may raise: custody period",
+     "value": "Accused-1 has been in custody in FIR No. 302/2025 since 16.03.2025, and the period of custody as on 10.11.2026 is 604 days."
     },
     {
-     "label": "Bench may raise: flight risk",
-     "value": "Accused-1 has no previous involvement in any criminal case and has no criminal antecedents, and he is a first-time offender."
+     "label": "Bench may raise: gravity and punishment",
+     "value": "The offence is triable as a non-bailable offence carrying a maximum punishment of more than seven years under Section 109 BNS read with Section 3(5) BNS, as per the charge sheet filed on 05.06.2025.The charge sheet was filed on 05.06.2025.Sections: BNS 109, B…"
     },
     {
      "label": "Bench may raise: antecedents",
-     "value": "Accused-1 is a first-time offender with no criminal antecedents, as verified by the Investigating Officer in the Police Verification Report."
+     "value": "Accused-1 has no previous involvement in any criminal case, and no other criminal case is pending against him, making him a first-time offender."
     },
     {
      "label": "Bench may raise: weak prima facie",
-     "value": "The court should examine the prosecution evidence to find out the existence of a prima facie case and the ingredients of offence and not conduct a mini trial, and the contradictions, inconsistencies or improbabilities in the evidence should not be weighed hea…"
+     "value": "The prosecution evidence is yet to be fully tested, as only 6 of the 18 cited prosecution witnesses have been examined and the material witnesses are yet to be examined.The court should examine the prosecution evidence to find out the existence of a prima fac…"
     },
     {
-     "label": "Bench may raise: parity with co accused",
-     "value": "Co-accused-2 is alleged to have held the injured, which is a similar role to that attributed to Accused-1."
+     "label": "Bench may raise: charge sheet filed",
+     "value": "The charge sheet having already been filed, no custodial interrogation is required."
     },
     {
      "label": "Condition counsel can offer",
      "value": "Not to influence witnesses or tamper with evidence"
     }
-   ]
+   ],
+   "hi": {
+    "title": "सुनवाई कार्ड",
+    "src": {
+     "title": "aa0e58a1edb0eae2",
+     "filled.0.label": "372f6b2fd2908089",
+     "filled.1.label": "d75c7a6a19fc28a2",
+     "filled.3.label": "33bb2c60bceea537",
+     "filled.5.label": "741578bcb5373e28",
+     "filled.7.label": "fa0d6dc0a45001d4",
+     "filled.8.label": "50174a7fcb4e72c8",
+     "filled.8.value": "d1b34ed8a231a244",
+     "filled.6.label": "3170196246cf6a34",
+     "filled.4.label": "ad80dbffefc540b9",
+     "caption": "2157784d3ac5f7d5",
+     "filled.0.value": "fe936cf6c5b75e04",
+     "filled.1.value": "95100b170371a276",
+     "filled.2.label": "233819163bb1ae3f",
+     "filled.2.value": "b78ba6df9f1d31a1",
+     "filled.3.value": "fe936cf6c5b75e04",
+     "filled.4.value": "31f964993317a20c",
+     "filled.5.value": "b78ba6df9f1d31a1",
+     "filled.6.value": "8adf977bcf985d57",
+     "filled.7.value": "95100b170371a276"
+    },
+    "filled": [
+     {
+      "label": "G2 (हिरासत की अवधि) के साथ शुरुआत करें",
+      "value": "FIR No. 302/2025 में Accused-1 16.03.2025 से हिरासत में है, और 10.11.2026 की स्थिति के अनुसार हिरासत की अवधि 604 दिन है।"
+     },
+     {
+      "label": "G3 (charge sheet filed) के साथ अग्रणी बनें।",
+      "value": "आरोप-पत्र पहले ही दाखिल किए जा चुके हैं, अतः किसी हिरासत में पूछताछ की आवश्यकता नहीं है।"
+     },
+     {
+      "label": "G5 (पूर्ववृत्त) के साथ शुरुआत करें",
+      "value": "Accused-1 की किसी भी आपराधिक मामले में कोई पिछली संलिप्तता नहीं है, और उसके विरुद्ध कोई अन्य आपराधिक मामला लंबित नहीं है, जो उसे प्रथम बार का अपराधी बनाता है।"
+     },
+     {
+      "label": "पीठ यह उठा सकती है: हिरासत की अवधि",
+      "value": "FIR No. 302/2025 में Accused-1 16.03.2025 से हिरासत में है, और 10.11.2026 की स्थिति के अनुसार हिरासत की अवधि 604 दिन है।"
+     },
+     {
+      "label": "न्यायापीठ उठा सकती है: गंभीरता और सजा",
+      "value": "यह अपराध एक गैर-जमानती अपराध के रूप में विचारणीय है जिसमें 05.06.2025 को दाखिल आरोप-पत्र के अनुसार Section 109 BNS पठित Section 3(5) BNS के अंतर्गत सात वर्ष से अधिक का अधिकतम कारावास है। आरोप-पत्र 05.06.2025 को दाखिल किया गया था। Sections: BNS 109, B…"
+     },
+     {
+      "label": "पीठ यह उठा सकती है: पूर्ववृत्त",
+      "value": "Accused-1 की किसी भी आपराधिक मामले में कोई पिछली संलिप्तता नहीं है, और उसके विरुद्ध कोई अन्य आपराधिक मामला लंबित नहीं है, जो उसे प्रथम बार का अपराधी बनाता है।"
+     },
+     {
+      "label": "पीठ यह उठा सकती है: कमजोर प्रथम दृष्टया मामला",
+      "value": "अभियोजन साक्ष्य का अभी पूर्ण परीक्षण होना शेष है, क्योंकि उल्लिखित 18 अभियोजन गवाहों में से केवल 6 से ही पूछताछ की गई है और अभी महत्वपूर्ण गवाहों से पूछताछ बाकी है। अदालत को प्रथम दृष्ट्या... के अस्तित्व का पता लगाने के लिए अभियोजन साक्ष्य की जांच करनी चाहिए।"
+     },
+     {
+      "label": "पीठ यह उठा सकती है: charge sheet filed",
+      "value": "आरोप-पत्र पहले ही दाखिल किए जा चुके हैं, अतः किसी हिरासत में पूछताछ की आवश्यकता नहीं है।"
+     },
+     {
+      "label": "शर्त जो अधिवक्ता प्रस्तुत कर सकता है",
+      "value": "गवाहों को प्रभावित न करना या साक्ष्यों के साथ छेड़छाड़ न करना"
+     }
+    ],
+    "caption": "Vakeel ने सुनवाई के लिए मसौदा और बहस को एक कार्ड में बदल दिया: पीठ के संभावित 5 प्रश्न उत्तरों के साथ, अगुवाई करने के लिए 3 आधार और 1 जमानत की शर्त जो अधिवक्ता पेश कर सकता है। यह कुछ भी अनुमानित नहीं करता है और कोई अनुदान दर नहीं देता है।"
+   }
   },
   {
    "stage": "GATE_2",
@@ -424,7 +780,7 @@
    "title": "Gate 2: your approval",
    "agent": null,
    "action": "approve_gate_2",
-   "caption": "Export is impossible until counsel approves Gate 2: in this run the export call before approval was refused (403). The checklist has 14 items for counsel (1 unsupported field and 13 unanswered objections); approving records that counsel has read them. Next approves Gate 2 as counsel.",
+   "caption": "Export is impossible until counsel approves Gate 2: in this run the export call before approval was refused (403). The checklist has 15 items for counsel (1 unsupported field and 14 unanswered objections); approving records that counsel has read them. Next approves Gate 2 as counsel.",
    "filled": [
     {
      "label": "fir",
@@ -481,65 +837,73 @@
     {
      "label": "UNANSWERED:O13",
      "value": "objection O13: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O14",
+     "value": "objection O14: no supported reply; counsel has read it"
     }
    ],
    "hi": {
     "filled": [
      {
       "label": "",
-      "value": ""
+      "value": "FIR: कागजातों द्वारा समर्थित नहीं है; अधिवक्ता स्वीकार करता है"
      },
      {
       "label": "UNANSWERED:O1",
-      "value": ""
+      "value": "आपत्ति O1: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है"
      },
      {
       "label": "UNANSWERED:O2",
-      "value": ""
+      "value": "आपत्ति O2: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है"
      },
      {
       "label": "UNANSWERED:O3",
-      "value": ""
+      "value": "आपत्ति O3: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है"
      },
      {
       "label": "UNANSWERED:O4",
-      "value": ""
+      "value": "आपत्ति O4: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है"
      },
      {
       "label": "UNANSWERED:O5",
-      "value": ""
+      "value": "आपत्ति O5: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
      },
      {
       "label": "UNANSWERED:O6",
-      "value": ""
+      "value": "आपत्ति O6: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
      },
      {
       "label": "UNANSWERED:O7",
-      "value": ""
+      "value": "आपत्ति O7: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
      },
      {
       "label": "UNANSWERED:O8",
-      "value": ""
+      "value": "आपत्ति O8: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
      },
      {
       "label": "UNANSWERED:O9",
-      "value": ""
+      "value": "आपत्ति O9: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
      },
      {
       "label": "UNANSWERED:O10",
-      "value": ""
+      "value": "आपत्ति O10: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
      },
      {
       "label": "UNANSWERED:O11",
-      "value": ""
+      "value": "आपत्ति O11: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
      },
      {
       "label": "UNANSWERED:O12",
-      "value": ""
+      "value": "आपत्ति O12: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
      },
      {
       "label": "UNANSWERED:O13",
-      "value": ""
+      "value": "आपत्ति O13: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
+     },
+     {
+      "label": "UNANSWERED:O14",
+      "value": "आपत्ति O14: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है"
      }
     ],
     "src": {
@@ -555,8 +919,28 @@
      "filled.10.label": "20caa704b265ff83",
      "filled.11.label": "d144359996a333cb",
      "filled.12.label": "91beebb9c4608ccc",
-     "filled.13.label": "2cdeb0301d47ee8e"
-    }
+     "filled.13.label": "2cdeb0301d47ee8e",
+     "filled.14.label": "e82d3826fba33213",
+     "title": "82bfb6512e590980",
+     "filled.1.value": "78e62c6610ceb4fa",
+     "filled.2.value": "82dcc34a2c0af304",
+     "filled.3.value": "aee81c0912393bc0",
+     "filled.4.value": "b7579390b2545a6c",
+     "filled.5.value": "df3602c8ef05bb82",
+     "filled.6.value": "807ad7569955de98",
+     "filled.7.value": "c2afd8678728392d",
+     "filled.8.value": "2e7d49d3a33a054e",
+     "filled.9.value": "c22718fe2f2b231e",
+     "filled.10.value": "05040970a6647f10",
+     "filled.11.value": "0bb7b8d65b580f1e",
+     "filled.12.value": "654ba4d7ec4170c6",
+     "filled.13.value": "29e02fbbb2add1bb",
+     "filled.14.value": "0322e30569fa7790",
+     "caption": "c7c01b7171206e93",
+     "filled.0.value": "ad9a37927ce91498"
+    },
+    "title": "Gate 2: आपका अनुमोदन",
+    "caption": "जब तक अधिवक्ता Gate 2 का अनुमोदन नहीं करता तब तक निर्यात असंभव है: इस रन में अनुमोदन से पहले का निर्यात कॉल अस्वीकार कर दिया गया था (403)। चेकलिस्ट में अधिवक्ता के लिए 15 मदें हैं (1 असमर्थित क्षेत्र और 14 UNANSWERED आपत्तियां); अनुमोदन यह दर्ज करता है कि अधिवक्ता ने उन्हें पढ़ लिया है। इसके बाद अधिवक्ता के रूप में Gate 2 का अनुमोदन करता है।"
    }
   },
   {
@@ -588,28 +972,54 @@
     "filled": [
      {
       "label": "application.docx",
-      "value": ""
+      "value": "जमानत आवेदन"
      },
      {
       "label": "list_of_dates.docx",
-      "value": ""
+      "value": "तारीखों और घटनाओं की सूची"
      },
      {
       "label": "objections_sheet.docx",
-      "value": ""
+      "value": "आपत्तियां और उत्तर"
      },
      {
       "label": "hearing_card.docx",
-      "value": ""
+      "value": "सुनवाई कार्ड"
      }
     ],
     "src": {
      "filled.0.label": "33cc0b7e431953bc",
      "filled.1.label": "fce3f6d849a149e6",
      "filled.2.label": "6de2b8c34ee0461e",
-     "filled.3.label": "d55a5fc741902b6a"
-    }
+     "filled.3.label": "d55a5fc741902b6a",
+     "title": "2f6b6dcf09628e1e",
+     "caption": "70fcd95cd625e1f9",
+     "filled.0.value": "4b73713f065f52ff",
+     "filled.1.value": "440009350f98c7a0",
+     "filled.2.value": "1e85a5655afceecc",
+     "filled.3.value": "309e1d86df2d4c9f"
+    },
+    "title": "फ़ाइल: आवेदन डाउनलोड करें",
+    "caption": "GATE_2 अनुमोदन के साथ, निर्यात चार Word फ़ाइलें तैयार करता है: जमानत आवेदन, तारीखों की सूची, आपत्ति पत्र और सुनवाई कार्ड। प्रत्येक को एक मसौदा कहा जाता है; अधिवक्ता अंतिम पाठ को तय करके हस्ताक्षर करता है।"
    }
   }
- ]
+ ],
+ "hi": {
+  "title": "Demo · BNS के तहत हत्या का प्रयास, सह-अभुयुक्त जमानत पर",
+  "src": {
+   "title": "708703b0827ec2d0",
+   "story": "82ca08ba26e9557a",
+   "variant.offence": "d32ff82b9f74a3a3",
+   "variant.custody": "9ea4adcb5f3bc002",
+   "variant.record": "32085590077ef015",
+   "variant.parity": "257ec077818acca6"
+  },
+  "story": "Accused-1 पर 13.03.2025 को पार्किंग को लेकर हुए झगड़े में चाकू से वार करने के आरोप में BNS 109 और 3(5) के तहत आरोप है, जो हत्या का प्रयास है। वह 16.03.2025 से हिरासत में है; आरोप-पत्र 90 में से 81वें दिन, समय पर दाखिल किया गया था। Rights Radar अधिकतम सजा मृत्युदंड मानता है: डिफ़ॉल्ट जमानत WINDOW_CLOSED है (आरोप-पत्र 90 दिनों के भीतर आ गया था) और BNSS s.479 के तहत विचाराधीन कैદી की सीमा NOT_APPLICABLE है, क्योंकि s.479(1) वहां लागू नहीं होता जहां अधिकतम सजा मृत्युदंड या आजीवन कारावास हो। सत्र न्यायालय द्वारा उसकी जमानत खारिज कर दी गई थी, और Co-accused-2, जिस पर केवल घायल को पकड़ने का आरोप था, को उच्च न्यायालय द्वारा जमानत दे दी गई थी।",
+  "variant": {
+   "offence": "BNS 109 के साथ 3(5), हत्या का प्रयास (रडार धारा का सर्वोच्च अधिकतम, मृत्युदंड, लेता है), 1 जुलाई 2024 के बाद का अपराध",
+   "custody": "आरोप-पत्र 90 में से 81वें दिन, समय पर दाखिल किया गया, इसलिए डिफ़ॉल्ट जमानत WINDOW_CLOSED है; BNSS s.479 NOT_APPLICABLE है क्योंकि रडार अधिकतम सजा मृत्युदंड मानता है",
+   "record": "पूर्ण फ़ाइल, मेडिको-कानूनी रिपोर्ट सहित ग्यारह बॉर्न-डिजिटल दस्तावेज़",
+   "parity": "Co-accused-2 को कम भूमिका के साथ जमानत दी गई; पहली बार का अपराधी; पूर्व जमानत आवेदन अस्वीकार किया गया"
+  }
+ }
 }
