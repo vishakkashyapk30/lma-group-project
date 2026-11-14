@@ -4,6 +4,10 @@ import { STAGE_NUMERALS, TID } from "./testids";
 
 /** axe-core serious/critical violations (plan §13.7: zero serious violations). Returns a readable list. */
 export async function seriousAxeViolations(page: Page): Promise<string[]> {
+  // Measure the settled screen: a step that is still fading in (200 ms) would read every colour at partial opacity.
+  await page
+    .waitForFunction(() => document.getAnimations().every((a) => a.playState !== "running" || a.effect?.getTiming().iterations === Infinity), null, { timeout: 2000 })
+    .catch(() => undefined);
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
   return results.violations
     .filter((v) => v.impact === "serious" || v.impact === "critical")

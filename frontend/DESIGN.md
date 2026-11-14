@@ -70,7 +70,7 @@ Tokens live in `styles/tokens.css`; names are kept from the earlier palette so e
 | parchment-deep | `#EFEBE3` | sidebar, hover, subtle fill | | |
 | ink | `#211C19` | text | 15.5 | 16.9 |
 | ink-soft | `#484039` | secondary text | 9.3 | 10.2 |
-| ink-muted | `#675D54` | captions, placeholders | 5.9 | 6.4 |
+| ink-muted | `#615850` | captions, placeholders (darkened from `#675D54` so muted text keeps 4.5:1 or more over hover fills and translucent layers) | 6.4 | 6.9 |
 | line | `#E4DED2` | hairlines | decoration | |
 | line-strong | `#8C8277` | control borders | 3.5 | 3.8 |
 | maroon | `#7A1626` | primary action, active, links | 9.8 | 10.7 |
