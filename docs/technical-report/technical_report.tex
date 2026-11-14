@@ -36,14 +36,15 @@
 \def\vsstrip#1.\vsend{#1}
 \newcommand{\para}[1]{\paragraph{#1}\addcontentsline{toc}{subsection}{\vsstrip#1\vsend}}
 \setcounter{tocdepth}{2}
-% Contents: sections bold with a dotted leader; their sub-headings run in below, small and grey.
+% Contents: sections bold, their sub-headings one per line below them, page numbers on the right.
 \usepackage{titletoc}
 \definecolor{vsblue}{HTML}{1F3A5F}
-\titlecontents{section}[2.4em]{\addvspace{9pt}\normalsize\bfseries}%
+\titlecontents{section}[2.4em]{\addvspace{3pt}\bfseries}%
   {\contentslabel[{\color{vsblue}\thecontentslabel}]{2.4em}}{}%
   {\hfill\contentspage}
-\titlecontents*{subsection}[2.4em]{\addvspace{2pt}\small\color{black!68}\rightskip=3em plus 1fil\parfillskip=0pt plus 1fil\relax}{}{}%
-  {\enspace{\color{vsblue}\thecontentspage}}[;\quad][]
+\titlecontents{subsection}[4.6em]{}%
+  {\contentslabel{2.2em}}{}%
+  {\hfill\contentspage}
 
 \begin{document}
 
@@ -88,14 +89,10 @@
 \vfill
 \clearpage
 \thispagestyle{plain}
-\vspace*{1.2cm}
-\begin{minipage}{\textwidth}
-{\color{vsblue}{\fontsize{22}{26}\selectfont\bfseries Contents}\par\vspace{6pt}\rule{\textwidth}{2.2pt}\par}
-\vspace{4pt}
-\setlength{\parskip}{0pt}
-\makeatletter\@starttoc{toc}\makeatother
-\vspace{8pt}{\color{vsblue}\rule{\textwidth}{0.6pt}}
-\end{minipage}
+{\color{vsblue}{\fontsize{20}{24}\selectfont\bfseries Contents}\par\vspace{4pt}\rule{\textwidth}{2.2pt}\par}
+\vspace{2pt}
+{\small\linespread{1.12}\selectfont\setlength{\parskip}{0pt}
+\makeatletter\@starttoc{toc}\makeatother}
 \clearpage
 
 % ------------------------------------------------------------------ body (eight pages)
