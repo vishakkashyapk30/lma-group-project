@@ -176,3 +176,13 @@ def test_clause_maximum_function():
     assert fs.ndps_clause_maximum("21", NDPS_21) is None
     assert fs.ndps_clause_maximum("21(a)", "") is None
     assert fs.ndps_is_quantity_dependent(NDPS_21) and not fs.ndps_is_quantity_dependent("27. consumption")
+
+
+def test_engine_runs_when_sections_are_missing():
+    """Regression: a dossier with no sections on record must not crash the Radar (build_inputs iterated None)."""
+    from vakeel_sahayak.rights.engine import RightsEngine
+    from vakeel_sahayak.schemas import CaseDossier
+
+    dossier = CaseDossier(case_id="no-sections")
+    inputs = RightsEngine().build_inputs(dossier, [], "2026-01-01")
+    assert inputs.sections == [] and inputs.max_punishment is None

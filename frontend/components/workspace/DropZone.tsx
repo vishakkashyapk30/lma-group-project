@@ -4,6 +4,7 @@ import { FileUp, Headphones, Loader2 } from "lucide-react";
 import { useCallback, useId, useRef, useState, type DragEvent, type ReactElement } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { TOUR_READ_ONLY_NOTE, useTourMode } from "@/lib/tourMode";
 import { useWorkspace } from "@/lib/workspace";
 import { MicButton } from "./MicButton";
 import { rememberUpload } from "./pdfShared";
@@ -19,6 +20,7 @@ const ACCEPT = ".pdf,.png,.jpg,.jpeg,.tif,.tiff,.docx,application/pdf,image/*";
 
 export function DropZone({ caseId, className, compact = false }: DropZoneProps): ReactElement {
   const ws = useWorkspace();
+  const tour = useTourMode();
   const inputId = useId();
   const fileInput = useRef<HTMLInputElement>(null);
   const audioInput = useRef<HTMLInputElement>(null);
@@ -28,24 +30,25 @@ export function DropZone({ caseId, className, compact = false }: DropZoneProps):
 
   const send = useCallback(
     async (files: File[]) => {
-      if (files.length === 0) return;
+      if (files.length === 0 || tour) return;
       rememberUpload(caseId, files);
       setStatus(`Sending ${files.length} file${files.length === 1 ? "" : "s"}…`);
       const res = await ws.upload(files);
       setStatus(res ? `Added ${res.accepted.length} file${res.accepted.length === 1 ? "" : "s"}. Reading them now.` : "The upload did not go through.");
     },
-    [caseId, ws],
+    [caseId, ws, tour],
   );
 
   const sendAudio = useCallback(
     async (blob: Blob, name: string) => {
+      if (tour) return;
       setStatus("Transcribing your dictation…");
       setDictation("Transcribing");
       const res = await ws.uploadAudio(blob, name);
       setDictation(res ? "Heard" : "");
       setStatus(res ? "Dictation received. The dates and sections it heard will appear in the chat for you to confirm." : "The dictation did not go through.");
     },
-    [ws],
+    [ws, tour],
   );
 
   const onDrop = (e: DragEvent<HTMLDivElement>) => {
@@ -74,6 +77,8 @@ export function DropZone({ caseId, className, compact = false }: DropZoneProps):
           aria-label="Add files to this case: drop them here or press Enter to choose"
           aria-describedby={`${inputId}-hint`}
           onClick={() => fileInput.current?.click()}
+          disabled={tour}
+          title={tour ? TOUR_READ_ONLY_NOTE : undefined}
           className={cn(
             "flex w-full cursor-pointer items-center gap-3 rounded-lg px-4",
             compact ? "py-3 text-left" : "flex-col justify-center py-12 text-center",
@@ -96,6 +101,7 @@ export function DropZone({ caseId, className, compact = false }: DropZoneProps):
           id={inputId}
           data-testid="upload-input"
           type="file"
+          disabled={tour}
           multiple
           accept={ACCEPT}
           className="sr-only"
@@ -114,6 +120,7 @@ export function DropZone({ caseId, className, compact = false }: DropZoneProps):
           testId="mic-button"
           onRecorded={sendAudio}
           busy={ws.uploading}
+          disabled={tour}
           label="Dictate what you know"
           variant="ghost"
           size="sm"
@@ -122,7 +129,7 @@ export function DropZone({ caseId, className, compact = false }: DropZoneProps):
             if (r) setDictation("Recording");
           }}
         />
-        <Button variant="ghost" size="sm" onClick={() => audioInput.current?.click()} disabled={ws.uploading}>
+        <Button variant="ghost" size="sm" onClick={() => audioInput.current?.click()} disabled={ws.uploading || tour}>
           <Headphones aria-hidden /> Upload audio
         </Button>
         <span data-testid="dictation-status" role="status" aria-live="polite" className="text-sm text-ink-soft">
@@ -132,6 +139,7 @@ export function DropZone({ caseId, className, compact = false }: DropZoneProps):
           ref={audioInput}
           type="file"
           accept="audio/*"
+          disabled={tour}
           className="sr-only"
           tabIndex={-1}
           aria-hidden

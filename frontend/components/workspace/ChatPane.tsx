@@ -9,6 +9,7 @@ import { agentTitle, AGENTS } from "@/lib/agents";
 import type { AgentName, ChatMessage } from "@/lib/types";
 import { prefersReducedMotion } from "@/lib/useReducedMotion";
 import { cn } from "@/lib/utils";
+import { useTourMode } from "@/lib/tourMode";
 import { useWorkspace } from "@/lib/workspace";
 import { MicButton } from "./MicButton";
 import { rememberUpload } from "./pdfShared";
@@ -155,6 +156,7 @@ function ReadbackCard({ lines, onConfirm, onDismiss }: { lines: string[]; onConf
 
 export function ChatPane({ caseId, className }: ChatPaneProps): ReactElement {
   const ws = useWorkspace();
+  const tour = useTourMode();
   const [draft, setDraft] = useState("");
   const logRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -288,6 +290,7 @@ export function ChatPane({ caseId, className }: ChatPaneProps): ReactElement {
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={onKey}
             rows={1}
+            disabled={tour}
             placeholder="Ask about custody, sections, rights, precedents"
             aria-describedby="chat-hint"
             className="max-h-36 min-h-10 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-ink placeholder:text-ink-muted focus:outline-none focus-visible:outline-none"
@@ -296,6 +299,7 @@ export function ChatPane({ caseId, className }: ChatPaneProps): ReactElement {
             ref={fileRef}
             type="file"
             multiple
+            disabled={tour}
             accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.docx,application/pdf,image/*"
             className="sr-only"
             tabIndex={-1}
@@ -309,11 +313,11 @@ export function ChatPane({ caseId, className }: ChatPaneProps): ReactElement {
               }
             }}
           />
-          <Button type="button" variant="ghost" size="icon" onClick={() => fileRef.current?.click()} disabled={ws.uploading} aria-label="Attach files to the case" title="Attach files to the case">
+          <Button type="button" variant="ghost" size="icon" onClick={() => fileRef.current?.click()} disabled={ws.uploading || tour} aria-label="Attach files to the case" title="Attach files to the case">
             <Paperclip aria-hidden />
           </Button>
-          <MicButton onRecorded={(blob, name) => ws.uploadAudio(blob, name)} busy={ws.uploading} />
-          <Button type="submit" size="icon" data-testid="chat-send" disabled={!draft.trim() || ws.chatPending} aria-label="Send question" title="Send (Enter)">
+          <MicButton onRecorded={(blob, name) => ws.uploadAudio(blob, name)} busy={ws.uploading} disabled={tour} />
+          <Button type="submit" size="icon" variant={tour ? "secondary" : "primary"} data-testid="chat-send" disabled={!draft.trim() || ws.chatPending || tour} aria-label="Send question" title="Send (Enter)">
             <ArrowUp aria-hidden />
           </Button>
         </form>

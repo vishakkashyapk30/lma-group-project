@@ -155,7 +155,7 @@ C1457_SWITCHES: dict[str, str] = {
 }
 # Sparring reserve of the product flow only (docs/handoff/objections-unanswered-2026-11-15.md: about 3.9K tokens per objection, 7 to 10 objections).
 # Not part of C1457_SWITCHES, which describes the frozen evaluated arm; no evaluation variant sets it.
-PRODUCT_SPARRING_RESERVE_TOKENS = 60000
+PRODUCT_SPARRING_RESERVE_TOKENS = 120000
 ARCHITECTURE["H1"] = {k: v for part in H1_PARTS for k, v in ARCHITECTURE[part].items()}
 for _k in H1_PARTS:
     ARCHITECTURE[f"H1m{_k[1:]}"] = {k: v for part in H1_PARTS if part != _k for k, v in ARCHITECTURE[part].items()}
@@ -491,7 +491,7 @@ def production_switches() -> Switches:
     named variant.  Product entry points use this factory so the selected
     architecture is visible at the boundary rather than changing experiment
     defaults globally. The product flow also turns on the sparring reserve
-    (`sparring_reserve_tokens`, 60000), which the frozen c1457 arm did not have.
+    (`sparring_reserve_tokens`, 120000), which the frozen c1457 arm did not have.
     """
     return Switches(**C1457_SWITCHES, sparring_reserve_tokens=PRODUCT_SPARRING_RESERVE_TOKENS)
 

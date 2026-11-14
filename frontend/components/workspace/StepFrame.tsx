@@ -6,6 +6,7 @@ import type { ReactElement, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useT, useTx } from "@/lib/i18n";
+import { useTourMode } from "@/lib/tourMode";
 import { ProgressLine } from "./ProgressLine";
 
 export interface StepFrameProps {
@@ -59,19 +60,26 @@ export interface StepFooterProps {
   control?: ReactNode;
   /** Shown above the button row, inside the footer (the gate's list of open items). */
   above?: ReactNode;
+  /** In a guided demo the gate button is not drawn (the tour's Next decides); this line says why. */
+  tourNote?: string;
 }
 
-export function StepFooter({ label, onClick, disabled, busy, hint, testId, secondary, next = true, control, above }: StepFooterProps): ReactElement {
+export function StepFooter({ label, onClick, disabled, busy, hint, testId, secondary, next = true, control, above, tourNote }: StepFooterProps): ReactElement {
   const t = useT();
   const tx = useTx();
+  // In a guided demo the tour's Next is the one primary button: the step's own button turns secondary, and a gate button
+  // (a different path than the tour's) is not drawn.
+  const tour = useTourMode();
   return (
     <div data-print-hide data-step-footer className="sticky bottom-0 z-raised -mx-5 mt-12 border-t border-line-strong/50 bg-parchment px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:-mx-8 sm:px-8">
       {above}
       <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
         {hint ? <p id="step-hint" className="mr-auto min-w-0 text-sm text-ink-soft">{tx(hint)}</p> : null}
         {secondary}
-        {control ?? (
-          <Button data-testid={testId} size="lg" onClick={onClick} disabled={disabled || busy} aria-describedby={hint && disabled ? "step-hint" : undefined}>
+        {control && tour ? (
+          tourNote ? <p data-testid="tour-gate-note" className="min-w-0 text-sm text-ink-soft">{t(tourNote)}</p> : null
+        ) : control ?? (
+          <Button data-testid={testId} variant={tour ? "secondary" : "primary"} size="lg" onClick={onClick} disabled={disabled || busy} aria-describedby={hint && disabled ? "step-hint" : undefined}>
             {t(label)}
             {next ? <ArrowRight aria-hidden /> : null}
           </Button>

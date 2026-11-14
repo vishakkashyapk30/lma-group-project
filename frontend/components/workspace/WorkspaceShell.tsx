@@ -5,10 +5,11 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AlertTriangle, MessageSquareText, X } from "lucide-react";
-import type { ReactElement } from "react";
+import { useLayoutEffect, type ReactElement } from "react";
 import { usePublishCaseMeta } from "@/components/shell/meta";
 import { Button } from "@/components/ui/button";
 import { STAGE_BY_ID, stepOf } from "@/lib/stages";
+import { setTourMode } from "@/lib/tourMode";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/lib/workspace";
 import { ChangeBanner } from "./ChangeBanner";
@@ -31,6 +32,11 @@ export function WorkspaceShell({ caseId, className }: WorkspaceShellProps): Reac
   const ws = useWorkspace();
   // A guided demo for an evaluator (?tour=<slug>): a bar under the workspace steps through the recorded case.
   const tourSlug = useSearchParams()?.get("tour")?.trim() || null;
+  // The recorded case is shared by every evaluator: while a tour runs the workspace is read-only (lib/tourMode.ts).
+  useLayoutEffect(() => {
+    setTourMode(Boolean(tourSlug));
+    return () => setTourMode(null);
+  }, [tourSlug]);
   usePublishCaseMeta(caseId, ws.data.summary?.title ?? null, STAGE_BY_ID[stepOf(ws.activeStage)]?.label ?? null);
 
   const notFound = !ws.loading.summary && !ws.data.summary;

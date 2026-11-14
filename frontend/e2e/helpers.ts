@@ -2,6 +2,21 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page } from "@playwright/test";
 import { STAGE_NUMERALS, TID } from "./testids";
 
+/**
+ * Chooses a workspace step by its stepper numeral ("II"). RECONCILED: below 1024 px the steps are one "Step k of 6" control that
+ * opens the list (components/workspace/StageRail.tsx), so on a narrow screen the list is opened first.
+ */
+export async function chooseStep(page: Page, numeral: string): Promise<void> {
+  const toggle = page.getByTestId("stage-rail-toggle");
+  const button = page.getByTestId(TID.stage(numeral));
+  // A press before the page hydrates does nothing, so press again until the list is open.
+  await expect(async () => {
+    if ((await toggle.isVisible()) && (await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
+    await expect(button).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 15_000 });
+  await button.click();
+}
+
 /** The tour bar's step text and filled values stay inside the bar: a long list scrolls in the bar, never spills over the page. */
 export async function expectStepInsideBar(page: Page) {
   const bar = await page.getByTestId("tour-bar").boundingBox();

@@ -7,6 +7,7 @@ import { CheckCircle2, Pencil, Undo2 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { TOUR_READ_ONLY_NOTE, useTourMode } from "@/lib/tourMode";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
@@ -67,6 +68,7 @@ function ReviewControls({ itemKey, label, ground }: ReviewControlsProps): ReactE
   const toast = useToast();
   const { resolutions, resolveItem, unresolveItem } = useGates();
   const { editGround, resetGround, editedGrounds } = useEdits();
+  const tour = useTourMode();
   const [mode, setMode] = useState<"idle" | "reword" | "accept">("idle");
   const [text, setText] = useState("");
   const [note, setNote] = useState("");
@@ -92,7 +94,7 @@ function ReviewControls({ itemKey, label, ground }: ReviewControlsProps): ReactE
           <CheckCircle2 aria-hidden className="size-4" /> {reworded ? "Reworded by you" : "Reviewed by you"}
           {resolution.note && resolution.note !== "Reworded by counsel" && resolution.note !== "Accepted by counsel" ? <span className="font-normal text-ink-soft">: {resolution.note}</span> : null}
         </span>
-        <Button size="sm" variant="ghost" aria-label={`Undo review of ${label}`} onClick={() => (ground && reworded ? resetGround(ground.id) : unresolveItem(itemKey))}>
+        <Button size="sm" variant="ghost" aria-label={`Undo review of ${label}`} disabled={tour} title={tour ? TOUR_READ_ONLY_NOTE : undefined} onClick={() => (ground && reworded ? resetGround(ground.id) : unresolveItem(itemKey))}>
           <Undo2 aria-hidden /> Undo
         </Button>
       </div>
@@ -163,11 +165,13 @@ function ReviewControls({ itemKey, label, ground }: ReviewControlsProps): ReactE
             setMode("reword");
           }}
           aria-label={`Reword ${label}`}
+          disabled={tour}
+          title={tour ? TOUR_READ_ONLY_NOTE : undefined}
         >
           <Pencil aria-hidden /> Reword
         </Button>
       ) : null}
-      <Button size="sm" variant={ground ? "ghost" : "secondary"} ref={ground ? undefined : openerRef} onClick={() => setMode("accept")} aria-label={`Accept ${label} with a note`}>
+      <Button size="sm" variant={ground ? "ghost" : "secondary"} ref={ground ? undefined : openerRef} onClick={() => setMode("accept")} aria-label={`Accept ${label} with a note`} disabled={tour} title={tour ? TOUR_READ_ONLY_NOTE : undefined}>
         <CheckCircle2 aria-hidden /> Accept with a note
       </Button>
     </div>
@@ -366,7 +370,8 @@ export function BriefTab({ caseId }: { caseId: string }): ReactElement {
   const focused = useFocusItem("brief", Boolean(brief));
   const [bySentence, setBySentence] = useState(false);
 
-  const canDraft = ws.gates.approvals.gate1;
+  const tour = useTourMode();
+  const canDraft = ws.gates.approvals.gate1 && !tour;
   const drafting = ws.drafting || ws.activity.byAgent.VAKEEL.phase === "working";
 
   const state = stepState({
