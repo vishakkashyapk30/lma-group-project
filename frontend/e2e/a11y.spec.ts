@@ -5,7 +5,7 @@
  */
 import { expect, test, type Page } from "@playwright/test";
 import { MockBackend } from "./mockBackend";
-import { seriousAxeViolations } from "./helpers";
+import { chooseStep, seriousAxeViolations } from "./helpers";
 import { TID } from "./testids";
 
 async function audit(page: Page, where: string, found: string[]) {
@@ -31,10 +31,10 @@ for (const width of [1440, 390]) {
     await page.goto("/case/case-0007");
     await expect(page.getByTestId(TID.stageRail)).toBeVisible();
     for (const key of ["I", "II", "III", "IV", "VI", "VII"]) {
-      await page.getByTestId(TID.stage(key)).click();
+      await chooseStep(page, key);
       await audit(page, `step ${key}`, found);
     }
-    await page.getByTestId(TID.stage("II")).click();
+    await chooseStep(page, "II");
     await page.getByTestId(TID.rightTab("dates")).click();
     await audit(page, "List of dates", found);
     await page.getByTestId(TID.rightTab("dossier")).click();
@@ -67,7 +67,7 @@ test("axe: a fresh case and an empty cause list have no serious violations", asy
 test("a fresh case offers no fact confirmation before any paper is read", async ({ page }) => {
   await MockBackend.install(page, { caseId: "case-0042", fresh: true, gate1Approved: false, draft: "none" });
   await page.goto("/case/case-0042");
-  await page.getByTestId(TID.stage("II")).click();
+  await chooseStep(page, "II");
   await expect(page.getByText("No facts yet")).toBeVisible();
   await expect(page.getByTestId(TID.confirmFactsButton)).toHaveCount(0);
 });
@@ -118,7 +118,7 @@ test("Hindi text on screen is marked lang=hi", async ({ page }) => {
   await page.goto("/");
   expect(await unmarked()).toEqual([]);
   await page.goto("/case/case-0007");
-  await page.getByTestId(TID.stage("II")).click();
+  await chooseStep(page, "II");
   await page.locator('[data-testid=dossier-field][data-field="fir"]').getByTestId(TID.dossierFieldSource).click();
   await expect(page.getByTestId(TID.sourcePanel)).toBeVisible();
   expect(await unmarked()).toEqual([]);

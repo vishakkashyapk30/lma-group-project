@@ -5,7 +5,7 @@
  * spring: the panel stops at its limit and closes or returns at once.
  */
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { seriousAxeViolations } from "./helpers";
+import { chooseStep, seriousAxeViolations } from "./helpers";
 import { MockBackend } from "./mockBackend";
 import { TID } from "./testids";
 
@@ -13,7 +13,7 @@ const offset = (panel: Locator) => panel.evaluate((el) => Number((el as HTMLElem
 
 async function openSource(page: Page): Promise<Locator> {
   await page.goto("/case/case-0007");
-  await page.getByTestId(TID.stage("II")).click();
+  await chooseStep(page, "II");
   await page.locator('[data-testid=dossier-field][data-field="fir"]').getByTestId(TID.dossierFieldSource).click();
   const panel = page.getByTestId(TID.sourcePanel);
   await expect(panel).toBeVisible();
@@ -171,7 +171,7 @@ test.describe("the gate that holds", () => {
     await MockBackend.install(page, { gate1Approved: false, draft: "none" });
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/case/case-0007");
-    await page.getByTestId(TID.stage("II")).click();
+    await chooseStep(page, "II");
   });
 
   const gate = (page: Page) => page.getByTestId(TID.confirmFactsButton);
@@ -227,7 +227,7 @@ test.describe("the gate that holds, reduced motion", () => {
   test("it does not move, and the list still opens", async ({ page }) => {
     await MockBackend.install(page, { gate1Approved: false, draft: "none" });
     await page.goto("/case/case-0007");
-    await page.getByTestId(TID.stage("II")).click();
+    await chooseStep(page, "II");
     const g = page.getByTestId(TID.confirmFactsButton);
     let seen = 1;
     await drag(page, g, 200, 0, { during: async () => { seen = await g.evaluate((el) => Number((el as HTMLElement).dataset.holdOffset ?? 0)); } });
@@ -241,7 +241,7 @@ test.describe("rights timeline in the Check rights step", () => {
     await MockBackend.install(page, { gate1Approved: true, draft: "done" });
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/case/case-0007");
-    await page.getByTestId(TID.stage("III")).click();
+    await chooseStep(page, "III");
     const tl = page.getByTestId("workspace-rights-timeline");
     await expect(tl).toBeVisible();
     const before = await tl.getByTestId("hearing-date").innerText();

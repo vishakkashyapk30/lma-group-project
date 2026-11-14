@@ -8,6 +8,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
+import { seriousAxeViolations } from "./helpers";
 import { TID } from "./testids";
 
 const SIZES = [
@@ -137,6 +138,8 @@ test("on a phone the step list opens from one control, keeps keyboard and screen
   await toggle.click();
   const list = nav.getByRole("list", { name: "Steps" });
   await expect(list).toBeVisible();
+  await page.waitForTimeout(300);
+  expect(await seriousAxeViolations(page), "axe on the open step list").toEqual([]);
   // Each step still reads its state as a word, and the current one is marked.
   await expect(list.getByRole("button", { name: /Step Add documents\s*, Done/ })).toHaveCount(1);
   await expect(list.locator('[aria-current="step"]')).toHaveCount(1);
