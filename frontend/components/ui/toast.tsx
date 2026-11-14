@@ -1,5 +1,7 @@
 "use client";
 // Toast: a short confirmation that never blocks. Announced politely, dismisses itself after 4 s, one quick fade.
+// Bottom-left, away from the primary action at the right end of a step's footer. During a guided demo (html[data-tour]) it sits
+// above the tour bar on wide screens and at the top of the screen below lg, so it never covers Next or the step's own buttons.
 import { Check, X } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -58,7 +60,7 @@ export function ToastProvider({ children }: { children: ReactNode }): ReactEleme
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed bottom-[calc(1rem+var(--tour-bar-h,0px))] right-4 z-toast flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2" data-print-hide>
+      <div className="pointer-events-none fixed bottom-[calc(1rem+var(--tour-bar-h,0px))] left-4 z-toast flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2 [[data-tour]_&]:max-lg:bottom-auto [[data-tour]_&]:max-lg:top-3" data-print-hide>
         {items.map((t) => (
           <div
             key={t.id}

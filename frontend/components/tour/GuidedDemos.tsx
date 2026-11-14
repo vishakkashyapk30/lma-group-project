@@ -6,8 +6,8 @@ import { ArrowRight } from "lucide-react";
 import { useEffect, useState, type ReactElement } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { listTours } from "@/lib/api";
-import { useT } from "@/lib/i18n";
-import type { TourSummary, TourVariant } from "@/lib/tour";
+import { useLang, useT } from "@/lib/i18n";
+import { localizedTour, type TourSummary, type TourVariant } from "@/lib/tour";
 import { cn } from "@/lib/utils";
 
 /** The workspace URL that opens a case in tour mode. */
@@ -17,6 +17,7 @@ export function tourHref(tour: Pick<TourSummary, "slug" | "case_id">): string {
 
 export function GuidedDemos({ className }: { className?: string }): ReactElement | null {
   const t = useT();
+  const { lang } = useLang();
   const [tours, setTours] = useState<TourSummary[] | null>(null);
 
   useEffect(() => {
@@ -46,7 +47,9 @@ export function GuidedDemos({ className }: { className?: string }): ReactElement
         {t("Recorded cases that walk through every step, from the papers to the export. Open one and press Next after each step.")}
       </p>
       <ul className="mt-3 divide-y divide-line overflow-hidden rounded-lg border border-line bg-cream">
-        {tours.map((tour) => (
+        {tours.map((full) => {
+          const tour = { ...full, ...localizedTour(full, lang) };
+          return (
           <li key={tour.slug} data-testid="guided-demo" data-slug={tour.slug} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:gap-6 sm:px-5">
             <div className="min-w-0 flex-1">
               <h3 className="font-sans text-base font-semibold text-ink">{tour.title}</h3>
@@ -64,12 +67,13 @@ export function GuidedDemos({ className }: { className?: string }): ReactElement
               href={tourHref(tour)}
               data-testid="guided-demo-start"
               aria-label={`${t("Start the guided demo")}: ${tour.title}`}
-              className={cn(buttonVariants({ variant: "secondary", size: "md" }), "shrink-0 self-start no-underline")}
+              className={cn(buttonVariants({ variant: "secondary", size: "md" }), "shrink-0 self-start no-underline max-lg:h-11")}
             >
               {t("Start the guided demo")} <ArrowRight aria-hidden />
             </Link>
           </li>
-        ))}
+          );
+        })}
       </ul>
     </section>
   );

@@ -4,7 +4,7 @@
  * The evaluator starts the tour from the cases page and presses only Next: the workspace walks every step, Gate 2 is approved
  * through the approve route on the way, and the tour ends at Export with the export buttons open.
  */
-import { expect, test } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { expectStepInsideBar, seriousAxeViolations } from "./helpers";
 import { TID } from "./testids";
 
@@ -85,3 +85,88 @@ test("an unknown tour says so and offers a way out", async ({ page }) => {
   await page.getByTestId("tour-exit").click();
   await expect(page).toHaveURL(/\/case\/case-0007$/);
 });
+
+/** Walks the tour with Next only, up to (and including) the last step. `each` runs once the step has settled. */
+async function walkToEnd(page: Page, each?: (stage: string) => Promise<void>) {
+  const bar = page.getByTestId("tour-bar");
+  for (const [i, stage] of STAGES.entries()) {
+    await expect(bar.getByTestId("tour-step")).toHaveAttribute("data-stage", stage);
+    await page.waitForTimeout(350);
+    await each?.(stage);
+    if (i < STAGES.length - 1) await bar.getByTestId("tour-next").click();
+  }
+}
+
+async function box(l: Locator) {
+  const b = await l.boundingBox();
+  expect(b).toBeTruthy();
+  return b!;
+}
+
+type Box = { x: number; y: number; width: number; height: number };
+function overlap(a: Box, b: Box) {
+  return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+}
+
+for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+  test(`the export toast never covers the export button or Next at ${size.width}x${size.height}`, async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.route("http://localhost:8000/**", (route) => route.abort());
+    await page.setViewportSize(size);
+    await page.goto("/case/case-0007?tour=00-sample-cheating-parity");
+    await walkToEnd(page);
+    await page.getByTestId("export-button").click();
+    const toast = page.getByRole("status").filter({ hasText: /Exported \d+ files?/ });
+    await expect(toast).toBeVisible();
+    await page.waitForTimeout(350); // the toast's fade settles
+    const t = await box(toast);
+    expect(t.x).toBeGreaterThanOrEqual(0);
+    expect(t.x + t.width).toBeLessThanOrEqual(size.width);
+    for (const id of ["export-button", "export-link"]) {
+      const target = page.getByTestId(id).first();
+      if (await target.count()) expect(overlap(t, await box(target)), `${id} is covered by the toast`).toBe(false);
+    }
+    expect(overlap(t, await box(page.getByTestId("tour-next"))), "Next is covered by the toast").toBe(false);
+    expect(overlap(t, await box(page.getByTestId("tour-bar"))), "the tour bar is covered by the toast").toBe(false);
+  });
+}
+
+for (const size of [{ width: 768, height: 1024 }, { width: 390, height: 844 }]) {
+  test(`the tour fits a ${size.width}x${size.height} screen: no sideways scroll, buttons reachable, step inside the bar`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.route("http://localhost:8000/**", (route) => route.abort());
+    await page.setViewportSize(size);
+    await page.goto("/cases");
+    const start = page.getByTestId("guided-demo-start").first();
+    await expect(start).toBeVisible();
+    expect((await box(start)).height).toBeGreaterThanOrEqual(44);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await start.click();
+    const bar = page.getByTestId("tour-bar");
+    await walkToEnd(page, async () => {
+      await expectStepInsideBar(page);
+      const b = await box(bar);
+      expect(b.y + b.height).toBeLessThanOrEqual(size.height + 1);
+      expect(b.height).toBeLessThanOrEqual(size.height * 0.45);
+      for (const id of ["tour-exit", "tour-back", "tour-next"]) {
+        const r = await box(bar.getByTestId(id));
+        expect(r.x, id).toBeGreaterThanOrEqual(0);
+        expect(r.x + r.width, id).toBeLessThanOrEqual(size.width);
+        expect(r.y + r.height, id).toBeLessThanOrEqual(size.height);
+        expect(r.height, `${id} touch target`).toBeGreaterThanOrEqual(44);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), "horizontal overflow").toBe(true);
+    });
+    // Fold the bar to its title and buttons, then open it again.
+    const fold = bar.getByTestId("tour-fold");
+    await expect(fold).toBeVisible();
+    expect((await box(fold)).height).toBeGreaterThanOrEqual(44);
+    const open = (await box(bar)).height;
+    await fold.click();
+    await expect(bar.getByTestId("tour-caption")).toBeHidden();
+    expect((await box(bar)).height).toBeLessThan(open);
+    await expect(bar.getByTestId("tour-next")).toBeVisible();
+    await fold.click();
+    await expect(bar.getByTestId("tour-caption")).toBeVisible();
+  });
+}

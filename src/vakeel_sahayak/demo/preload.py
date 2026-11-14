@@ -42,6 +42,32 @@ class TourFilled(BaseModel):
     value: str
 
 
+class TourFilledHi(BaseModel):
+    """The Hindi of one filled-in line (`scripts/demo/translate_tours_hi.py`)."""
+
+    label: str
+    value: str
+
+
+class TourStepHi(BaseModel):
+    """Optional Hindi text of a step; the interface shows it when the language is Hindi. `src` holds, per field, a hash of the
+    English text it was made from (`title`, `caption`, `filled.0.label`, ...), so a changed English text is found stale."""
+
+    title: str | None = None
+    caption: str | None = None
+    filled: list[TourFilledHi] | None = None
+    src: dict[str, str] = Field(default_factory=dict)
+
+
+class TourHi(BaseModel):
+    """Optional Hindi text of a tour (title, story, the four variant lines), with the same `src` hashes."""
+
+    title: str | None = None
+    story: str | None = None
+    variant: dict[str, str] | None = None
+    src: dict[str, str] = Field(default_factory=dict)
+
+
 class TourStep(BaseModel):
     """One stage of the tour: what the agent did in the recorded run and where to look."""
 
@@ -52,6 +78,7 @@ class TourStep(BaseModel):
     agent: Literal["MUNSHI", "PESHKAR", "SUTRADHAR", "VAKEEL", "ABHIYOJAK"] | None = None
     filled: list[TourFilled] = Field(default_factory=list)
     action: Literal["approve_gate_2"] | None = None
+    hi: TourStepHi | None = None
 
 
 class TourRecorded(BaseModel):
@@ -71,6 +98,7 @@ class TourSummary(BaseModel):
     title: str
     story: str
     variant: dict[str, str]
+    hi: TourHi | None = None
 
 
 class Tour(TourSummary):

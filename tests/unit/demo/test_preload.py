@@ -151,8 +151,10 @@ async def test_tour_routes_return_the_contract(demo_root, monkeypatch):
     monkeypatch.setenv("VS_DEMO_CASES", "on")
     async with await _client(create_app()) as client:
         listed = (await client.get("/api/demo/tours")).json()
-        assert listed == [{k: tour_doc()[k] for k in ("slug", "case_id", "title", "story", "variant")}]
+        assert listed == [{**{k: tour_doc()[k] for k in ("slug", "case_id", "title", "story", "variant")}, "hi": None}]
         full = (await client.get(f"/api/demo/tours/{SLUG}")).json()
+        # The optional Hindi text is null when the tour file has none.
+        assert full.pop("hi") is None and all(s.pop("hi") is None for s in full["steps"])
         assert full == tour_doc()
         assert [s["stage"] for s in full["steps"]] == list(STAGES)
         assert (await client.get("/api/demo/tours/no-such-tour")).status_code == 404
@@ -199,3 +201,18 @@ def test_every_committed_tour_matches_the_contract_and_its_snapshot():
         assert any(e.inputs.get("action") == "create_case" for e in events)
         assert not any(e.kind == EventKind.GATE_APPROVED and e.inputs.get("gate") == "GATE_2_EXPORT" for e in events), "Gate 2 must be left open"
         assert [s.stage for s in tour.steps] == list(STAGES)
+
+
+async def test_hindi_text_is_accepted_and_served(demo_root, monkeypatch):
+    """A tour file with an optional `hi` object on the tour and on its steps is valid and is served as written; a file without is unchanged."""
+    doc = tour_doc()
+    doc["hi"] = {"title": "डेमो", "story": "कथा", "variant": {"offence": "अपराध"}, "src": {"title": "abc"}}
+    doc["steps"][0]["hi"] = {"title": "शीर्षक", "caption": "विवरण", "filled": [{"label": "l", "value": "v"}], "src": {"caption": "d"}}
+    (demo_root / "cases" / SLUG / "tour.json").write_text(json.dumps(doc), encoding="utf-8")
+    monkeypatch.setenv("VS_DEMO_CASES", "on")
+    async with await _client(create_app()) as client:
+        full = (await client.get(f"/api/demo/tours/{SLUG}")).json()
+        assert full["hi"]["title"] == "डेमो" and full["hi"]["variant"] == {"offence": "अपराध"}
+        assert full["steps"][0]["hi"]["caption"] == "विवरण" and full["steps"][0]["hi"]["filled"] == [{"label": "l", "value": "v"}]
+        assert full["steps"][1]["hi"] is None
+        assert (await client.get("/api/demo/tours")).json()[0]["hi"]["story"] == "कथा"

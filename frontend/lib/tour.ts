@@ -22,15 +22,29 @@ export interface TourField {
   value: string;
 }
 
+/** Optional Hindi text of a step (scripts/demo/translate_tours_hi.py). Any field may be missing; `src` (hashes) is not read here. */
+export interface TourStepHi {
+  title?: string;
+  caption?: string;
+  filled?: { label?: string; value?: string }[];
+}
+
+export interface TourHi {
+  title?: string;
+  story?: string;
+  variant?: Partial<TourVariant>;
+}
+
 export interface TourStep {
   stage: TourStage;
   tab: TourTab;
   title: string;
-  /** Two to four sentences from the tour file, shown as written (not translated). */
+  /** Two to four sentences from the tour file (English; the Hindi, when present, is in `hi`). */
   caption: string;
   agent: AgentName | null;
   filled: TourField[];
   action: TourAction | null;
+  hi?: TourStepHi;
 }
 
 export interface TourVariant {
@@ -46,6 +60,7 @@ export interface TourSummary {
   title: string;
   story: string;
   variant: TourVariant;
+  hi?: TourHi;
 }
 
 export interface TourRecording {
@@ -71,13 +86,38 @@ function parseVariant(raw: unknown): TourVariant {
   return { offence: str(v.offence), custody: str(v.custody), record: str(v.record), parity: str(v.parity) };
 }
 
+const optStr = (v: unknown): string | undefined => (typeof v === "string" && v.trim() ? v : undefined);
+
+function parseTourHi(raw: unknown): TourHi | undefined {
+  if (!isObj(raw)) return undefined;
+  const variant: Partial<TourVariant> = {};
+  if (isObj(raw.variant)) {
+    for (const k of ["offence", "custody", "record", "parity"] as const) {
+      const v = optStr(raw.variant[k]);
+      if (v) variant[k] = v;
+    }
+  }
+  const out: TourHi = { title: optStr(raw.title), story: optStr(raw.story), variant };
+  return out.title || out.story || Object.keys(variant).length ? out : undefined;
+}
+
+function parseStepHi(raw: unknown): TourStepHi | undefined {
+  if (!isObj(raw)) return undefined;
+  const filled = Array.isArray(raw.filled)
+    ? raw.filled.map((f) => (isObj(f) ? { label: optStr(f.label), value: optStr(f.value) } : {}))
+    : undefined;
+  const out: TourStepHi = { title: optStr(raw.title), caption: optStr(raw.caption), filled };
+  return out.title || out.caption || filled?.some((f) => f.label || f.value) ? out : undefined;
+}
+
 /** A tour summary from the list endpoint, or null when it lacks a slug or a case. */
 export function parseTourSummary(raw: unknown): TourSummary | null {
   if (!isObj(raw)) return null;
   const slug = str(raw.slug).trim();
   const caseId = str(raw.case_id).trim();
   if (!slug || !caseId) return null;
-  return { slug, case_id: caseId, title: str(raw.title) || slug, story: str(raw.story), variant: parseVariant(raw.variant) };
+  const hi = parseTourHi(raw.hi);
+  return { slug, case_id: caseId, title: str(raw.title) || slug, story: str(raw.story), variant: parseVariant(raw.variant), ...(hi ? { hi } : {}) };
 }
 
 /** GET /api/demo/tours: the usable tours; anything that is not a list is no tours. */
@@ -103,7 +143,8 @@ function parseStep(raw: unknown): TourStep | null {
     : [];
   // The Gate 2 step approves the draft whatever the file says; no other step has an action.
   const action: TourAction | null = stage === "GATE_2" ? "approve_gate_2" : null;
-  return { stage, tab, title: str(raw.title) || stage, caption: str(raw.caption), agent, filled, action };
+  const hi = parseStepHi(raw.hi);
+  return { stage, tab, title: str(raw.title) || stage, caption: str(raw.caption), agent, filled, action, ...(hi ? { hi } : {}) };
 }
 
 /**
@@ -124,6 +165,28 @@ export function parseTour(raw: unknown): Tour | null {
     ? { date: str(rec.date), backend: str(rec.backend), model: str(rec.model), cost_inr: typeof rec.cost_inr === "number" ? rec.cost_inr : null }
     : null;
   return { ...summary, recorded, steps };
+}
+
+/* ── Language ───────────────────────────────────────────────────────────────────────────────────────────────────── */
+
+/** The tour's title, story and variant lines in the interface language: the Hindi text where the file has it, else the English. */
+export function localizedTour(tour: Pick<TourSummary, "title" | "story" | "variant" | "hi">, lang: "en" | "hi"): Pick<TourSummary, "title" | "story" | "variant"> {
+  const hi = lang === "hi" ? tour.hi : undefined;
+  if (!hi) return { title: tour.title, story: tour.story, variant: tour.variant };
+  const variant = { ...tour.variant };
+  for (const k of ["offence", "custody", "record", "parity"] as const) variant[k] = hi.variant?.[k] || tour.variant[k];
+  return { title: hi.title || tour.title, story: hi.story || tour.story, variant };
+}
+
+/** A step's title, caption and filled lines in the interface language, field by field with the English as the fallback. */
+export function localizedStep(step: TourStep, lang: "en" | "hi"): Pick<TourStep, "title" | "caption" | "filled"> {
+  const hi = lang === "hi" ? step.hi : undefined;
+  if (!hi) return { title: step.title, caption: step.caption, filled: step.filled };
+  return {
+    title: hi.title || step.title,
+    caption: hi.caption || step.caption,
+    filled: step.filled.map((f, i) => ({ label: hi.filled?.[i]?.label || f.label, value: hi.filled?.[i]?.value || f.value })),
+  };
 }
 
 /* ── Where a step shows in the workspace ────────────────────────────────────────────────────────────────────────── */

@@ -1907,7 +1907,7 @@
           "demo"
         ],
         "summary": "List Tours",
-        "description": "The demo tours whose case is loaded, by slug: `{slug, case_id, title, story, variant}` (empty with `VS_DEMO_CASES=off`).",
+        "description": "The demo tours whose case is loaded, by slug: `{slug, case_id, title, story, variant, hi}` (`hi`: optional Hindi title, story and variant lines) (empty with `VS_DEMO_CASES=off`).",
         "operationId": "list_tours_api_demo_tours_get",
         "parameters": [
           {
@@ -4037,6 +4037,16 @@
             "type": "object",
             "title": "Variant"
           },
+          "hi": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TourHi"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "recorded": {
             "$ref": "#/components/schemas/TourRecorded"
           },
@@ -4079,6 +4089,75 @@
         ],
         "title": "TourFilled",
         "description": "One thing that was filled in this step: a document uploaded, a question answered, a note given, a result."
+      },
+      "TourFilledHi": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "TourFilledHi",
+        "description": "The Hindi of one filled-in line (`scripts/demo/translate_tours_hi.py`)."
+      },
+      "TourHi": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "story": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Story"
+          },
+          "variant": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variant"
+          },
+          "src": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Src"
+          }
+        },
+        "type": "object",
+        "title": "TourHi",
+        "description": "Optional Hindi text of a tour (title, story, the four variant lines), with the same `src` hashes."
       },
       "TourRecorded": {
         "properties": {
@@ -4181,6 +4260,16 @@
               }
             ],
             "title": "Action"
+          },
+          "hi": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TourStepHi"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -4192,6 +4281,56 @@
         ],
         "title": "TourStep",
         "description": "One stage of the tour: what the agent did in the recorded run and where to look."
+      },
+      "TourStepHi": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "caption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caption"
+          },
+          "filled": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TourFilledHi"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filled"
+          },
+          "src": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Src"
+          }
+        },
+        "type": "object",
+        "title": "TourStepHi",
+        "description": "Optional Hindi text of a step; the interface shows it when the language is Hindi. `src` holds, per field, a hash of the\nEnglish text it was made from (`title`, `caption`, `filled.0.label`, ...), so a changed English text is found stale."
       },
       "TourSummary": {
         "properties": {
@@ -4217,6 +4356,16 @@
             },
             "type": "object",
             "title": "Variant"
+          },
+          "hi": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TourHi"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
