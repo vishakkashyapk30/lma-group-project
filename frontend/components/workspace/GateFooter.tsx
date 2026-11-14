@@ -65,6 +65,7 @@ export function GateFooter({ gate, label, onApprove, testId, verb, next, seconda
         onClick={onApprove}
         hint={hint}
         secondary={secondary}
+        tourNote={gate === "GATE_2_EXPORT" ? "In this demo, Next approves the draft for export." : "In this demo, Next moves on; counsel confirmed these facts when the case was recorded."}
         above={
           <AnimatePresence initial={false}>
             {listOpen && held ? (

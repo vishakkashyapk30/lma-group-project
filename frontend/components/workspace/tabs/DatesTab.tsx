@@ -4,6 +4,7 @@
 import { Pencil } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { Button } from "@/components/ui/button";
+import { TOUR_READ_ONLY_NOTE, useTourMode } from "@/lib/tourMode";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { daysBetween, formatCourtDate, parseIsoDate, plural } from "@/lib/format";
@@ -22,6 +23,7 @@ function EventRow({ event, dayNumber, focused }: EventRowProps): ReactElement {
   const ws = useWorkspace();
   const toast = useToast();
   const { editDate, resetDate } = useEdits();
+  const tour = useTourMode();
   const [editing, setEditing] = useState(false);
   const [date, setDate] = useState(event.date);
   const [label, setLabel] = useState(event.label);
@@ -126,11 +128,13 @@ function EventRow({ event, dayNumber, focused }: EventRowProps): ReactElement {
                 setEditing(true);
               }}
               aria-label={`Edit row: ${event.label}`}
+              disabled={tour}
+              title={tour ? TOUR_READ_ONLY_NOTE : undefined}
             >
               <Pencil aria-hidden /> Edit
             </Button>
             {event.status === "USER_EDITED" ? (
-              <Button size="sm" variant="ghost" onClick={() => resetDate(event.event_id)} aria-label={`Restore the original of row: ${event.label}`}>
+              <Button size="sm" variant="ghost" onClick={() => resetDate(event.event_id)} aria-label={`Restore the original of row: ${event.label}`} disabled={tour} title={tour ? TOUR_READ_ONLY_NOTE : undefined}>
                 Restore
               </Button>
             ) : null}

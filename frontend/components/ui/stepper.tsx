@@ -11,26 +11,27 @@ export interface StepperProps {
   label: string;
   children: ReactNode;
   className?: string;
+  id?: string;
 }
 
 /** The list. Left/Right/Home/End move focus between items marked `data-stepper-item`. */
-export function Stepper({ label, children, className }: StepperProps): ReactElement {
+export function Stepper({ label, children, className, id }: StepperProps): ReactElement {
   const ref = useRef<HTMLOListElement>(null);
   const onKeyDown = (e: KeyboardEvent<HTMLOListElement>) => {
-    if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(e.key)) return;
+    if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
     const items = Array.from(ref.current?.querySelectorAll<HTMLElement>("[data-stepper-item]") ?? []);
     const at = items.indexOf(document.activeElement as HTMLElement);
     if (at < 0) return;
     e.preventDefault();
-    const to = e.key === "Home" ? 0 : e.key === "End" ? items.length - 1 : (at + (e.key === "ArrowRight" ? 1 : -1) + items.length) % items.length;
+    const to = e.key === "Home" ? 0 : e.key === "End" ? items.length - 1 : (at + (e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
     items[to]?.focus();
   };
   const kids = Children.toArray(children);
   return (
-    <ol ref={ref} aria-label={label} onKeyDown={onKeyDown} className={cn("relative flex items-center overflow-x-auto", className)}>
+    <ol ref={ref} id={id} aria-label={label} onKeyDown={onKeyDown} className={cn("relative flex items-center overflow-x-auto max-lg:flex-col max-lg:items-stretch max-lg:overflow-visible", className)}>
       {kids.map((k, i) => (
         <Fragment key={i}>
-          {i > 0 ? <li aria-hidden className="mx-1 h-px w-3 shrink-0 bg-line-strong/50" /> : null}
+          {i > 0 ? <li aria-hidden className="mx-1 h-px w-3 shrink-0 bg-line-strong/50 max-lg:hidden" /> : null}
           {k}
         </Fragment>
       ))}
@@ -70,7 +71,7 @@ export interface StepProps {
 export function Step({ label, state, viewed = false, onClick, title, testId, describedBy, srPrefix }: StepProps): ReactElement {
   const locked = state === "locked";
   return (
-    <li className="shrink-0">
+    <li className="shrink-0 max-lg:w-full">
       <button
         type="button"
         data-stepper-item=""
@@ -82,7 +83,7 @@ export function Step({ label, state, viewed = false, onClick, title, testId, des
         onClick={onClick}
         title={title}
         className={cn(
-          "flex h-8 items-center gap-2 rounded-md px-2 text-sm transition-colors duration-fast",
+          "flex h-8 items-center gap-2 rounded-md px-2 text-sm transition-colors duration-fast max-lg:h-11 max-lg:w-full max-lg:px-3",
           viewed ? "bg-maroon/[0.08] font-semibold text-maroon" : locked ? "cursor-not-allowed text-ink-muted" : "text-ink-soft hover:bg-ink/[0.05] hover:text-ink",
         )}
       >
