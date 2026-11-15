@@ -79,6 +79,29 @@ cd frontend && npm ci && npm run dev                                   # optiona
 
 Heavy ML dependencies (vLLM, torch, Docling, Surya) are in optional extras and are imported lazily. Read `docs/architecture/skeleton.md` before adding code.
 
+## Reproducing the results
+
+The final report is `docs/technical-report/technical_report.pdf` (8-page technical report) and `docs/report/main.pdf` (full report). The sealed runs were made from the git tag `eval-freeze-v1`; data, model weights and keys are not in the repository (`make data`, `make models`; keys only in an untracked `.env`).
+
+```bash
+make setup && make data && make models   # environment, team data bundle, helper models (NLI, MiniCheck, BGE-M3, Whisper small)
+make smoke && make eval-smoke            # offline end-to-end checks (no key, no GPU)
+
+# run one system on the development cases (VS-Final = the c1457 switch string); hosted runs need VS_ALLOW_PAID=sarvam and a key
+VS_MODELS=auto VS_LLM_BACKEND=sarvam VS_EXTERNAL=pseudonymised \
+  .venv/bin/python -m vakeel_sahayak.eval.runners.driver run --system \
+  "S13:signal_source=merge,abstention=strict,draft_source=facts_text,objection_grounding=by_id" --cases <cases.jsonl> --out <dir>
+
+# score an arm against the agreed reference labels, then build the final tables
+VS_M6_CHECKER=minicheck .venv/bin/python -m vakeel_sahayak.eval.scoring score --runs <arm outputs> --slice dev --gold-source agreed --out <scores>
+VS_RUNS=<runs root> .venv/bin/python scripts/midsub/final_tables.py     # writes docs/results/search/final_report/
+
+# rebuild the reports and check every number in the full report against the result files
+bash docs/technical-report/build.sh && bash docs/report/build.sh && .venv/bin/python scripts/check_consistency.py
+```
+
+The tables in both reports are copied from `docs/results/search/final_report/` (`summary.md`, `hypotheses_blind.json`, `means_blind.csv`, `variance_d12.csv`, `reserve_dev.md`). The evaluator demo (six recorded synthetic cases with a guided tour) loads automatically with `docker compose up` (http://localhost:3000, "Guided demos"); see `DOCKER.md` and `docs/handoff/evaluator-demo.md`.
+
 ## Building the proposal PDF
 
 ```bash
