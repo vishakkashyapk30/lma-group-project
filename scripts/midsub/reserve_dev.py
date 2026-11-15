@@ -24,12 +24,14 @@ import win_loss_tie as wlt  # noqa: E402
 
 UNJUDGED = "The reply could not be judged"
 BASES = ["b0", "b1", "b2", "b3", "b4", "b5", "b6"]
-CLASSES = ["answered", "partly", "not judged", "no supported reply", "statutory bar (NDPS s.37)", "restates / no facts or authority", "other"]
+CLASSES = ["answered", "partly", "not judged", "not replied (budget)", "no supported reply", "statutory bar (NDPS s.37)", "restates / no facts or authority", "other"]
 
 
 def classify_reason(verdict, reason):
     """Reason class of a verdict (keyword classes of the judge's text; 'not judged' is the fail-safe text of a refused call)."""
     r = reason or ""
+    if r.startswith("NOT_REPLIED_BUDGET"):
+        return "not replied (budget)"
     if r.startswith(UNJUDGED):
         return "not judged"
     if verdict == "ANSWERED":
@@ -73,7 +75,7 @@ def objection_table(outdir):
         for oid in raised:
             v = verdict.get(oid)
             cls = classify_reason(v["verdict"], v.get("reason")) if v else "not judged"
-            c["verdict:" + (v["verdict"] if v and cls != "not judged" else "NOT_JUDGED")] += 1
+            c["verdict:" + (v["verdict"] if v and cls not in ("not judged", "not replied (budget)") else "NOT_JUDGED")] += 1
             c["class:" + cls] += 1
             r = reply.get(oid)
             c["reply drafted" if r and r.get("drafted") else "reply not drafted"] += 1
