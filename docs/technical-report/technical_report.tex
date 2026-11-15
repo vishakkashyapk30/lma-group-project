@@ -616,7 +616,7 @@ Payloads refused by the privacy boundary & 175 & 60 & 126 & 49 \\*
 \caption{No export ran before Gate 2, and \vs{} has the lowest share of calls refused for a bad argument. Counted from the saved event logs of the 80 sealed orders; B0 to B3 and B6 call no tool. The errors row counts an order if its log holds any typed error result of a tool call (a budget refusal, a bad-argument refusal or an empty lookup) or any model-side error other than the privacy refusals; it does not separate failures from expected refusals. For \vs{}, the logs show a budget refusal in 76 orders, an empty lookup in 63, a bad-argument refusal in 71 or more (64 orders with \texttt{invalid\_args} and 16 with \texttt{invalid\_input}; the union was not counted), and a model-side error (model unavailable, failed extraction or invalid structured output) in 6 orders, 4 or 5 of which also carry the same intake-side errors in every tool-using arm. Every order ended with a complete brief, and the logs do not say whether a model-side error was unexpected or an expected fallback (for example after a privacy refusal), so we do not classify it.}\label{tab:tools}\\
 \end{longtable}}
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering\footnotesize
 \renewcommand{\arraystretch}{0.86}
 \begin{tabular}{@{}llrrrrl@{}}
@@ -638,11 +638,11 @@ Sealed & Tokens & 122387 & 98814 & 120614 & 79877 & tie; loss \\
 \label{tab:cost}
 \end{table}
 
-\needspace{26\baselineskip}
+\needspace{6\baselineskip}
 \section{Ablations in Full}
 \label{app:abl}
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering\footnotesize
 \renewcommand{\arraystretch}{0.86}
 \begin{tabular}{@{}L{5.6cm}ccL{5.2cm}@{}}
@@ -667,7 +667,7 @@ A9 neither (also removes X4, X7) & 6/11/1 & (2, 5) & Unfinished factors \\
 \label{tab:abl_full}
 \end{table}
 
-\begin{table}[H]
+\begin{table}[!htbp]
 \centering\footnotesize
 \setlength\tabcolsep{3.5pt}
 \begin{tabular}{@{}L{3.15cm}cL{2.75cm}@{}}
