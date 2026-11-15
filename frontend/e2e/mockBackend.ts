@@ -98,7 +98,10 @@ export class MockBackend {
   static async install(page: Page, options: MockOptions = {}): Promise<MockBackend> {
     const mock = new MockBackend(options);
     await page.route("**/api/**", (route) => mock.handle(route));
-    await page.route("**/files/**", (route) => route.fulfill({ status: 200, headers: CORS, contentType: "application/octet-stream", body: "mock" }));
+    // RECONCILED: Playwright runs the last-registered matching route first, so "**/files/**" also caught the page-image URLs
+    // (/api/cases/<id>/files/<doc>/pages/<n>) and answered them with "mock" bytes, so the viewer never drew the highlight box.
+    // Only the export downloads (/files/<case>/...) belong here; /api/ URLs go to the handler above.
+    await page.route((url) => url.pathname.includes("/files/") && !url.pathname.startsWith("/api/"), (route) => route.fulfill({ status: 200, headers: CORS, contentType: "application/octet-stream", body: "mock" }));
     return mock;
   }
 
