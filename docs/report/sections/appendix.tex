@@ -18,6 +18,8 @@ python -m vakeel_sahayak.eval.scoring report \
   --scores data/eval/dev_scores
 \end{verbatim}}
 
+\paragraph{Demo cases, reserve and repaired result files.} The six recorded demo cases are in \texttt{demo/cases/<slug>/} (the case folder, \texttt{events.jsonl} and \texttt{tour.json}); \texttt{scripts/demo/record\_demos.py} records them through the API and \texttt{VS\_DEMO\_CASES=off} stops their pre-loading. The sparring reserve is the field \texttt{sparring\_reserve\_tokens} of the switch object, on in the product through \texttt{production\_switches()} and absent from the frozen arm \texttt{C1457\_SWITCHES}. Deviations D13 and D14 of \texttt{docs/preregistration.md} record the repair of the offline A10 count of case-fact sentences and the rerun of six Gemini 3.1 arms (\texttt{scripts/midsub/gemini31\_rerun.py}; the old rows are kept in \texttt{historical\_pre\_m6a\_rows.csv}).
+
 \paragraph{Manifests.} Each run writes a manifest with the system id and variant, prompt hash, config hash, model names and modes, test-set and gold hashes, shard count, and the code stamp (\texttt{git\_sha}, \texttt{git\_dirty}, \texttt{code\_tree\_hash}). The scoring loader refuses runs from different commits unless told otherwise, and a dirty stamp is not admissible for frozen runs. The hosted-model settings are \texttt{VS\_MODELS=auto}, \texttt{VS\_LLM\_BACKEND=openai}, \texttt{VS\_EXTERNAL=pseudonymised}, with keys read from an untracked \texttt{.env}; offline stand-ins are the default and need neither a GPU nor a key. Agreed-gold hashes: agreed-gold sha256 \texttt{5583690e3754dacd8f2ebd4e27987ae7cfa0c3df9eb2fd9e8bc9a879d86c05be}, shared by every run of the current code; code tag \texttt{dev-sweep-v3}, git sha \texttt{7ad6ed41ea39}, code tree hash \texttt{d85cdc64f123}; the 24-case file of scorable orders has cases hash \texttt{ec0611f23b3c7749}.
 
 \section{Arms}
@@ -37,8 +39,8 @@ S2 & adaptive depth \citep{jeong2024adaptive} & \texttt{retrieval\_policy} & run
 S3, S3b & sufficiency stopping \citep{joren2025sufficient} & \texttt{stopping} & run (OpenAI, 10 cases) \\
 S4 & score-skew weak signal & \texttt{weak\_signal} & offline study \\
 S5 & citation-graph expansion \citep{gutierrez2025hipporag2} & \texttt{graph\_expansion} & offline study \\
-S6 & learned store prior \citep{zhang2026agentrouter} & \texttt{store\_prior} & run, no effect without a trained prior \\
-S7 & hierarchy re-reading for Munshi & \texttt{munshi\_gap\_policy} & run offline (T2), not yet scored \\
+S6 & learned store prior \citep{zhang2026agentrouter} & \texttt{store\_prior} & run (OpenAI, 10 cases) \\
+S7 & hierarchy re-reading for Munshi & \texttt{munshi\_gap\_policy} & run offline (T2); scoring is future work \\
 S8 & self-critique repair \citep{gou2024critic,huang2024selfcorrect} & \texttt{repair\_mode} & run (OpenAI, 10 cases) \\
 S9, S10 & sampling critic; no isolation \citep{choi2025debate,wynn2025talk} & \texttt{critic\_mode}, \texttt{abhiyojak\_isolation} & run (OpenAI, 10 cases) \\
 S11 & three-role review, debate, vote \citep{kumar2025courtevel} & \texttt{critic\_mode}, \texttt{draft\_mode} & S11 run (OpenAI); S11b, S11c run (Gemini block B, 2 cases) \\
@@ -47,9 +49,9 @@ S13 & searched workflow (grid on dev) & none (grid over switches) & offline smok
 S14, S14b--d & plan cache, scheduling, prefix signal \citep{zheng2024sglang} & \texttt{plan\_cache}, \texttt{urgency\_policy} & offline study \\
 S15, S15b & output format \citep{tam2024speak} & \texttt{output\_format} & S15 run (OpenAI); S15b run (Gemini block B, 2 cases) \\
 S16, S16b & proposition units, late chunking \citep{chen2024densex} & \texttt{chunking} & offline study \\
-S17 & injection defences \citep{beurerkellner2025patterns} & defence flags & run offline (T7), not yet scored \\
+S17 & injection defences \citep{beurerkellner2025patterns} & defence flags & run offline (T7); scoring is future work \\
 S18 & authority stance \citep{wachsmuth2018} & \texttt{authority\_stance} & run (OpenAI, 10 cases) \\
-P5--P8 & ingestion arms, image-only \citep{yu2025visrag,faysse2025colpali} & \texttt{munshi\_*} & run offline (T2), not yet scored \\
+P5--P8 & ingestion arms, image-only \citep{yu2025visrag,faysse2025colpali} & \texttt{munshi\_*} & run offline (T2); scoring is future work \\
 A1--A10 & remove one part (dossier, repair, tools, filter, extractor, router, planner, sparring, a store) & \texttt{Switches} flags & A1 to A3, A6 to A9 run (OpenAI); A4, A5 run (Gemini block B); A10 run offline, scored \\
 \bottomrule
 \end{tabular}
@@ -120,7 +122,9 @@ Dev runs, code \texttt{dev-sweep-v1} (superseded) & OpenAI & \texttt{gpt-6-luna}
 Block A (OpenAI) & OpenAI & \texttt{gpt-6-luna} & hosted & Full, B0 to B3, A1: 25 cases \\
 Block A (Gemini) & Google, free tier & \texttt{gemini-3.5-flash-lite}; B0L on \texttt{gemini-3.6-flash} & hosted & Full, B0 to B3, B0L: 25 cases; A1: 10; scored \\
 Block C (Sarvam) & Sarvam & \texttt{sarvam-105b} & hosted & Full, B0 to B6, A1 to A4, A6 to A9: 30 cases; 22 variants: 10; scored \\
-Block B & Google, free tier & \texttt{gemini-3.1-flash-lite} & hosted & Full, A2, A8: 5 cases; run, not yet scored \\
+Block B & Google, free tier & \texttt{gemini-3.1-flash-lite} & hosted & Full, A2, A8: 5 cases; outputs saved, outside the scored tables \\
+Evaluator demo recordings & Sarvam & \texttt{sarvam-105b} & hosted & six synthetic cases through the real API, counsel's consent recorded per case; INR 36.67 \\
+Hindi interface and tour text & Google, free tier & \texttt{gemma-4-31b-it} (interface), \texttt{gemini-3.5-flash-lite} (tours) & hosted & public interface and synthetic text only \\
 Offline studies & none (no language model) & real stores, hashed n-gram and BGE-M3 & local & S4 and S5 (150 queries), S14 (100 simulated batches), S16 (292 orders) \\
 Gold labeler & OpenAI & \texttt{gpt-6-luna} & hosted & labels the dev and test orders (public court text only); a label counts only if the rule labeler agrees \\
 Claim checker (system) & local & DeBERTa NLI & local & inside Vakeel \\
