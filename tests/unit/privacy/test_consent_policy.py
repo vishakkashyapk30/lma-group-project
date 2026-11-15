@@ -187,4 +187,10 @@ def test_no_product_module_uses_the_public_source_declaration_or_writes_consent(
         if re.search(r"public_source_scope\(", text):
             assert rel.startswith("eval/") or rel in ("models/sarvam/policy.py",), rel
         if re.search(r"record_consent\(", text):
+            if rel == "api/routers/cases.py":
+                # RECONCILED 15 Nov: counsel's consent route (POST /api/cases/{id}/consent, PR #13) is counsel acting through the
+                # API, not a module consenting on its own. It must stay the only call, inside the `set_consent` route function.
+                assert len(re.findall(r"record_consent\(", text)) == 1, rel
+                assert re.search(r"async def set_consent\(.*?record_consent\(", text, re.S), rel
+                continue
             assert rel == "models/sarvam/policy.py", rel
