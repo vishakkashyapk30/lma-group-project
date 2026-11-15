@@ -51,3 +51,27 @@ Note: `docs/results/search/final_report/reserve_dev.md` does not exist; the repo
 ## Left in place because it is a result
 
 Table 3 (H-A1 falsified on one cell), all W/T/L counts including the 5 losses and Full's 15, the structural losses (unfinished factors, confident wrong, coverage against B6), the citation precision fall from 0.85 to 0.71 and 0.82 to 0.68, the D11 and D12 W/T/L, the unsupported-count loss to B5, the "Losses of VS-Final" paragraph, the rejected candidates with their reasons, and the ablation table with its A7 rows.
+
+
+## Sparring-reserve measurement on the 30 development orders (added after the measurement finished)
+Source for every number: `docs/results/search/final_report/reserve_dev.md` (sections named below), `docs/handoff/sparring-reserve-measurement.md`.
+
+| Number | Where | Source |
+|---|---|---|
+| 227 of 233 judged (97%); 53 of 207 (26%) | body, limitations, abstract, glossary or appendix | "Objections by outcome": R1 judged 227 (97%), R0 53 (26%) |
+| 72 answered, 58 partly answered; 130 of 233 = 56% | body | same table; arithmetic 72+58=130, 130/233=0.558 |
+| 23 of 207 (11%) for the arm with no reserve | body | same table: 15+8=23, 23/207=0.111 |
+| 0 orders ran out; mean 75,933, maximum 157,040 of 200,000 (long report) | body | "Failed sparring calls and reserve use" |
+| tokens per order 120,643 to 151,434 (+26%); INR 2.30 against 1.85; INR 69.0 against 55.6 | body | "Tokens and spend": 151434/120643=1.255 |
+| 20 paired metrics compared; over-search 0.0107 to 0.0258, +0.0152, [+0.0046, +0.0276], survives Holm | body, limitations | "Quality metrics" table (20 rows), Over-search row |
+| objection recall 0.73 to 1.00, +0.27, [0.00, +0.55], p 0.061 | body | Objection recall row (the file's +0.2727 and [+0.0000, +0.5455] to two decimals) |
+| W/T/L 30/36/4 against 29/38/3; extra loss over-search against B5 | body, limitations | "W/T/L against B0-B6" and the loss lists |
+| 30/31/3 and 35/28/3 (D12 reruns) | limitations | last line of the file |
+| 5 privacy-boundary refusals and 1 model error among the 6 not judged | limitations | "Failed sparring calls": R1 PrivacyBoundaryError 5, ModelUnavailable 1 |
+| about 7 objections per development order | limitations | handoff note ("these orders raise about 7 objections each"); 207/30=6.9 |
+| 26% to 97% (frozen D12 run 1: 58 of 216, 27%) | glossary or appendix, challenges row, abstract | table rows |
+| 120,035 tokens (frozen D12 run 1) and the counts of long-report Table `tab:reserve` | long report | "Objections by outcome" and "Tokens and spend" |
+
+Caveats are only in Limitations and Future Work. The arm with no reserve is the current code, not the frozen code; this is stated there.
+
+Passages: Final Method "Sparring reserve (after the freeze)" (measurement sentences added); Limitations "A sparring step starved by the token budget" (the "in progress, no numbers" sentence replaced by the result and five limits); Future work (over-search added); glossary row "Sparring reserve" (numbers); abstract (one sentence).
