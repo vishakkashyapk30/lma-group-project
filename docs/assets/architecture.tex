@@ -1,0 +1,38 @@
+% Standalone source of Figure 1 of docs/technical-report/technical_report.tex (the pipeline figure); the tikzpicture is copied unchanged.
+% Build: bash docs/assets/build.sh
+\documentclass[11pt,border=6pt]{standalone}
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{positioning,fit,backgrounds,arrows.meta}
+\begin{document}
+\begin{tikzpicture}[
+  font=\small, >=Stealth, line width=0.6pt,
+  ag/.style={draw, rounded corners=2pt, align=center, minimum width=2.75cm, minimum height=0.95cm},
+  st/.style={draw, align=center, minimum width=2.75cm, minimum height=0.95cm},
+  gt/.style={draw, dashed, rounded corners=6pt, align=center, minimum width=2.3cm, minimum height=0.9cm},
+  io/.style={align=center, minimum width=2.3cm}]
+\node[io] (pa) at (0,0) {Pairokar\\{\scriptsize batch desk}};
+\node[io] (in) at (3.1,0) {Files, photos,\\chat, voice};
+\node[ag] (mu) at (6.3,0) {Munshi\\{\scriptsize intake}};
+\node[ag] (pe) at (9.5,0) {Peshkar\\{\scriptsize dossier, Rights Radar}};
+\node[gt] (g1) at (12.7,0) {Gate 1\\{\scriptsize counsel: dossier}};
+\node[ag] (su) at (12.7,-2.1) {Sutradhar\\{\scriptsize plans retrieval}};
+\node[ag] (va) at (9.5,-2.1) {Vakeel\\{\scriptsize draft, check, repair}};
+\node[ag] (ab) at (6.3,-2.1) {Abhiyojak\\{\scriptsize prosecution sparring}};
+\node[gt] (g2) at (3.1,-2.1) {Gate 2\\{\scriptsize counsel: brief}};
+\node[io] (out) at (0,-2.1) {Brief, objections,\\open issues};
+\node[st] (stores) at (12.7,-4.0) {Ten typed stores\\{\scriptsize law, case law, advocacy, case}};
+\draw[->] (pa) -- (in); \draw[->] (in) -- (mu); \draw[->] (mu) -- (pe); \draw[->] (pe) -- (g1);
+\draw[->] (g1) -- (su); \draw[->] (su) -- (va); \draw[<->] (va) -- (ab); \draw[->] (ab) -- (g2); \draw[->] (g2) -- (out);
+\draw[<->] (su) -- (stores);
+\begin{scope}[on background layer]
+ \node[draw, densely dotted, rounded corners, fit=(in)(mu)(pe), inner sep=0.3cm] (lap) {};
+ \node[draw, densely dotted, rounded corners, fit=(su)(va)(ab)(stores), inner sep=0.3cm] (srv) {};
+\end{scope}
+\node[font=\scriptsize, anchor=south west] at ([yshift=1pt]lap.north west) {Counsel's machine: raw files stay here};
+\node[font=\scriptsize, anchor=north west] at ([yshift=-1pt]srv.south west) {Model side: pseudonymised text only};
+\end{tikzpicture}
+\end{document}

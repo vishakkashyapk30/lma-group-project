@@ -1,87 +1,164 @@
 # Vakeel-Sahayak.ai
 
-**A bail-preparation assistant for legal-aid lawyers (LMA Group Project 2026).**
+**A Multi-Agent Harness for Evidence-Grounded Bail Drafting**
 
-Vakeel-Sahayak.ai helps a lawyer prepare a regular bail application in an Indian court from the case file. Six agents work together:
+Vakeel-Sahayak.ai helps a legal-aid lawyer in India prepare a regular bail application from the case file: it reads the papers, builds a source-checked dossier, drafts grounds that cite only the record and real judgments, and rehearses the prosecution's objections. It is a research prototype (course project, IIIT Hyderabad) built to answer one question: **does a structured multi-agent harness ground bail drafting better than simpler systems on the same model?**
 
-1. **Munshi** (intake) reads any kind of PDF (digital, scanned, photographed, Hindi, several documents in one file), files what it finds into typed stores and asks the lawyer only for what is missing.
-2. **Peshkar** builds the source-checked dossier and the List of Dates, runs a rules-based Rights Radar (default bail, BNSS s.479, notice of appearance, grounds of arrest, and more), and spots what changed when a new order arrives.
-3. **Sutradhar** decides, for each bail factor, which of ten stores to query and when it has enough evidence.
-4. **Vakeel** drafts grounds that cite only facts on record and real judgments, checks every claim, and never drops one silently.
-5. **Abhiyojak** attacks the draft the way the prosecution would, kept deliberately isolated from the drafter.
-6. **Pairokar** ranks many files by legal urgency for a legal-aid office.
+Reports: [8-page technical report](docs/technical-report/technical_report.pdf) and [full report](docs/report/main.pdf).
 
-The lawyer approves the dossier and the final draft; nothing is exported without that approval, and this is enforced in code. The project combines all five course capabilities and is evaluated against simpler baselines (see `docs/evaluation-plan.md`).
+## Contents
 
-**Status (2026-10-27):** the agents, stores, Rights Radar, evaluation infrastructure (one driver entry for every variant, job plans, preregistration template), test sets T1 to T9, gold labels G1 to G7 by agreement with a non-Qwen labeler, the feature and ingestion arms, the LangGraph flow and the API routes (with Swagger) are built and tested on offline stand-ins; the hosted-model driver has run on three dev cases. Since then (2026-10-27): the scoring code (including label-source sensitivity and the citation and abstention metrics), S15b (the variant registry now equals the full table), the evaluation studies for scheduling, chunking and retrieval, and the dev-set sweep plan and runner are built; run manifests carry the code stamp and scoring refuses to mix code. Not yet built: a trained store prior for S6 and B5, the model-backed S13 arm, and any real-model result numbers (the dev-set sweep waits for a pinned code tag). The team data copy is a private Hugging Face dataset (`make data`). Start with `AGENTS.md`, then `split.md` (who does what) and `progress.md` (status of everything).
+- [Results in brief](#results-in-brief)
+- [Architecture](#architecture)
+- [Quick start](#quick-start)
+- [Step-by-step setup](#step-by-step-setup)
+- [Run the full stack](#run-the-full-stack)
+- [Evaluator demo](#evaluator-demo)
+- [Hosted models](#hosted-models)
+- [Reproducing the results](#reproducing-the-results)
+- [Tests](#tests)
+- [Repository layout](#repository-layout)
+- [Privacy and safety rules](#privacy-and-safety-rules)
+- [Team](#team) and [Licences](#licences)
 
-**Quick start:** `./install.sh`, then open the printed localhost URL (the installer checks Docker/disk/ports, seeds the persistent data volume, and starts the offline stack). Supported on Linux. `docker compose up` remains the lower-level command. See `DOCKER.md`.
+## Results in brief
 
-## Repository layout
+Tested once on 80 sealed public High Court orders, with one model (Sarvam-105B). The input is the facts part of each order, and the reference labels are derived automatically from the rest of the order. VS-Final is the selected system; Full is the first full system; B4 and B5 are the two baselines that retrieve comparably.
 
-```
-.
-├── README.md
-├── pyproject.toml                 Package `vakeel_sahayak` (Python >= 3.11); extras: ocr, speech, models, train, eval, dev
-├── Makefile                       Targets: setup, datasets, interim, stores, models, smoke, eval-*, test-*, docker-*
-├── .env.example  .gitignore
-├── configs/                       YAML: models, stores, budgets, thresholds, paths, tools, rights rules, splits
-│   ├── finetune/                  QLoRA and teacher-pilot configs
-│   └── eval/                      Run registry (shards, node-hours) and hypotheses
-├── src/vakeel_sahayak/
-│   ├── schemas/                   IngestionReport, CaseDossier, RightsReport, RetrievalPlan, BailBrief,
-│   │                              SparringRecord, TriageCard, Event, store rows, enums
-│   ├── record/                    Event log, case state (views), SQLite checkpointer
-│   ├── orchestration/             LangGraph wiring, approval gates, budgets, ablation switches
-│   ├── agents/                    munshi/ peshkar/ sutradhar/ vakeel/ abhiyojak/ pairokar/ (+ base, registry)
-│   ├── tools/                     39 tools by domain: intake/, dossier, case/, law/, caselaw/, advocacy/, drafting/
-│   ├── stores/                    Ten stores on four shelves, one module each, plus base, registry, chunking
-│   ├── contracts/                 Evidence-contract loader and factors/*.yaml (12 factors)
-│   ├── rights/                    Rights Radar engine and rules/ (7 rules)
-│   ├── ingestion/                 Routing ladder, page signals, routes/, bundles, gaps, Hindi, voice
-│   ├── truth_maintenance/         Dependencies, staleness, incremental redraft
-│   ├── batch/                     Pairokar queue, retrieval cache, scheduler, urgency rule
-│   ├── privacy/                   Pseudonymisation, leak check, injection guard, sensitive-matter decline
-│   ├── models/                    Model clients: vLLM, local 4B, VLM, OCR, ASR, translation, NLI, embeddings
-│   ├── export/                    DOCX application, List of Dates, hearing card, PDF
-│   ├── api/                       FastAPI app and routers (cases, upload, chat, events, gates, export, desk, library)
-│   ├── pipelines/                 Open India Law ingest, order splitter, factor tagger, gold G1-G7, store builders
-│   ├── finetune/                  Teacher dossiers, span-check filter, noise augmentation, QLoRA
-│   ├── testsets/                  Construction of T1-T9
-│   ├── eval/                      baselines B0-B4, ablations A1-A10, ingestion P1-P6, features F1-F8, metrics, stats, runners
-│   └── config.py
-├── frontend/                      Next.js (App Router, TypeScript): app/ routes, components/{landing,agents,workspace,...},
-│                                  lib/ (API client, SSE hook, types), styles/tokens.css ("Manuscript" palette)
-├── scripts/                       Local helpers; scripts/ada/ holds interactive shard runners and the QLoRA sbatch
-├── data/                          raw/ interim/ stores/ testsets/ cases/ (contents gitignored; see data/README.md)
-├── compose.yaml  DOCKER.md        One-command stack (backend + frontend), see DOCKER.md
-└── docs/
-    ├── plan.md                    Working project plan (v6)
-    ├── architecture/skeleton.md   Plan-section to module map and conventions for coding agents
-    ├── proposal/                  Proposal for TA review (md, tex, pdf, build.sh, figures/)
-    ├── handoff/                   Per-workstream notes: done, not done, next steps, decisions (read before editing an area)
-    ├── status/                    One status note per teammate
-    ├── results/                   Dev-sweep result tables and manifests
-    ├── research/                  Background research from the ideation phase
-    └── course/                    Course project brief
-```
+| Metric (sealed slice) | VS-Final | Full | B4 | B5 |
+|---|---|---|---|---|
+| Objection recall (higher is better) | 0.73 | 0.52 | 0.36 | 0.35 |
+| Answerable coverage (higher is better) | 0.61 | 0.36 | 0.20 | 0.23 |
+| Fabricated-citation rate (lower is better) | 0.00 | 0.00 | 0.95 | 0.64 |
+| Citation precision (higher is better) | 0.71 | 0.85 | 0.02 | 0.10 |
+| Time per order, seconds | 719 | 398 | 269 | 160 |
 
-## Getting started
+The trade-off: against Full, VS-Final gives up citation precision (0.85 to 0.71) and takes longer per order (398 to 719 s). Four of the five registered hypotheses hold. These are automated metrics on public orders; use in a legal-aid office has not been studied. Definitions, intervals and all seven baselines are in the technical report.
 
-Python 3.11 or newer, git, bash, perl (for the commit hook); Node 20 only for the frontend. Full walk-through for new teammates: the "First day" block of `AGENTS.md`.
+## Architecture
+
+![The six agents, the two counsel gates and the ten typed stores](docs/assets/architecture.png)
+
+*Figure 1 of the technical report. Dashed boxes are the two gates enforced in code; dotted frames show where each part runs; double-headed arrows are request and reply. Source: `docs/assets/architecture.tex` (rebuild with `bash docs/assets/build.sh`).*
+
+Six agents, each named after a role in an Indian court office and each making one narrow decision:
+
+| Agent | Role |
+|---|---|
+| **Munshi** (intake) | Reads any PDF (digital, scanned, photographed, Hindi, several documents in one file), files it into typed stores, asks counsel only for what is missing |
+| **Peshkar** (dossier) | Builds the dossier with a source quote for every field, the List of Dates, and the rules-based Rights Radar (custody periods, statutory rights) |
+| **Sutradhar** (orchestrator) | Plans retrieval for each bail factor: which store to query, with what, and when the evidence is sufficient |
+| **Vakeel** (drafter) | Writes the grounds, then checks and repairs every sentence |
+| **Abhiyojak** (prosecution sparring) | Attacks the draft as the prosecution would, with its own prompt and its own stores |
+| **Pairokar** (batch desk) | Orders a legal-aid office's files by urgency |
+
+- **Ten typed stores on four shelves.** Law (statutes, old-to-new section concordance), case law (reasoning paragraphs, citation graph, whole-order fact vectors), advocacy (defence arguments, prosecution objections; used for coverage, never cited as authority) and the private case shelf (client documents, dated timeline, dossier).
+- **Evidence contracts.** For each of twelve bail factors, a contract states what a ground needs (slots, which are required, which stores may hold them, a budget). A required slot that stays empty becomes an open issue for counsel.
+- **Per-sentence checks.** Vakeel checks every sentence with a natural-language-inference model and with rules (statute lookup, section mapping, a good-law check), and repairs or flags what fails.
+- **Two counsel gates, enforced in code.** Gate 1 approves the dossier, Gate 2 the brief. Only counsel can open a gate; Gate 2 is bound to a hash of the brief, so a later change closes it again, and no export is possible before it.
+- **Privacy boundary.** Raw client files stay on counsel's machine. Text reaches a hosted model only after pseudonymisation (names and identifiers become aliases, dates shift by a per-case offset). External services are off by default.
+- **Event log.** Every action is appended to a log; the dossier, the brief and the sparring record are views of it.
+
+More: the Methodology section of the technical report, `docs/architecture/skeleton.md` (module map), `docs/plan.md` (design).
+
+## Quick start
 
 ```bash
-make setup         # .venv + `pip install -e '.[dev,data,testsets]'` + .env from .env.example + git hooks (make setup-full for the heavy extras)
-make test-collect  # sanity check; `make smoke` runs the case-0007 fixture end to end offline (no data, no GPU, no key needed)
-make data          # the team data bundle (needs HF_TOKEN in .env and membership of the Hugging Face organisation Vakeel-Sahayak); `make data-check` shows what is there
-cd frontend && npm ci && npm run dev                                   # optional; Node 20
+git clone https://github.com/vishakkashyapk30/lma-group-project && cd lma-group-project
+make setup    # Python 3.11+: creates .venv, installs the package, copies .env.example to .env, installs git hooks
+make smoke    # runs the case-0007 fixture end to end offline: no data, no GPU, no key
 ```
 
-Heavy ML dependencies (vLLM, torch, Docling, Surya) are in optional extras and are imported lazily. Read `docs/architecture/skeleton.md` before adding code.
+To see the product in a browser on Linux with Docker: `./install.sh`, then open http://localhost:3000.
+
+## Step-by-step setup
+
+**Prerequisites:** Python 3.11 or newer, git, bash, perl (for the commit hook). Node 20 only for the frontend. Docker only for the one-command stack. About 10 GB of free disk for data and stores, more for model weights. Offline stand-in models are the default, so nothing below needs a GPU or an API key.
+
+```bash
+# 1. Environment
+make setup            # safe to re-run; `make setup-full` adds the heavy extras (torch, docling; several GB)
+make test-collect     # optional: test collection must be clean
+make help             # lists every target
+
+# 2. Data: the team bundle (private Hugging Face dataset)
+#    needs HF_TOKEN in the untracked .env (or `hf auth login`) and membership of the Hugging Face organisation Vakeel-Sahayak
+make data             # skips if data/ is in place; RAW=0 make data skips the raw sources (about 1.8 GB)
+make data-check       # table of what is present or missing
+
+# 3. Helper models (BGE-M3, DeBERTa NLI, MiniCheck, Whisper small; about 5.5 GB)
+make models-dry-run   # lists sizes and free disk, downloads nothing
+make models
+
+# 4. Offline end-to-end checks
+make smoke            # case-0007 through the agents: Gate 1 approved, Gate 2 left closed, export blocked
+make eval-smoke       # 3 development cases through the Full system (needs the data from step 2)
+```
+
+<details>
+<summary>No access to the team bundle? Rebuild the data from public sources</summary>
+
+```bash
+make datasets   # public datasets into data/raw (resumable): Open India Law bail shards, IPC2BNS-Verify, Kathbath
+make interim    # data/raw to data/interim (orders, statutes, concordance edges, splits)
+SAMPLE=2000 EMBEDDER=hashed-ngram make stores   # quick sample build first
+make stores     # full build of the shared stores (took about 35 minutes)
+```
+
+Some items need a person (HLDC on Hugging Face, the CrPC and NDPS statutes from India Code). See `data/README.md` and `docs/handoff/data-and-models.md`.
+</details>
+
+## Run the full stack
+
+**With Docker (Linux).** The installer checks Docker, disk and ports, installs the data bundle if it is absent, seeds the data volume and starts the offline stack.
+
+```bash
+./install.sh               # then open the printed URL
+./install.sh --skip-data   # empty stack without stores (API and UI diagnostics only)
+./install.sh --help        # other options
+
+docker compose up          # the lower-level command, when data is already seeded (or: make docker-up)
+docker compose down        # stop; named volumes are kept
+```
+
+| Service | URL | Change the port with |
+|---|---|---|
+| UI (Next.js) | http://localhost:3000 | `FRONTEND_PORT` |
+| API (FastAPI) | http://localhost:8000 (`GET /healthz`) | `BACKEND_PORT` |
+
+Ports bind to 127.0.0.1 and nothing external is called by default. Profiles, variables and image notes: [`DOCKER.md`](DOCKER.md).
+
+**Without Docker (Node 20 for the UI).** Two terminals:
+
+```bash
+# terminal 1: API on :8000 (same as `make api`)
+.venv/bin/python -m uvicorn vakeel_sahayak.api.asgi:app --port 8000
+
+# terminal 2: UI on :3000, production build
+cd frontend && npm ci && npm run build && NEXT_PUBLIC_API_BASE=http://localhost:8000 npx next start -p 3000
+# or the dev server: make frontend
+```
+
+The UI is in live mode: an unreachable API shows an error, never sample data. The interface also runs in Hindi.
+
+## Evaluator demo
+
+Six recorded synthetic cases (no real record) load when the API starts, so the system can be walked through without a key or a model call. Start the stack, open http://localhost:3000, go to the Cases page and pick a case under **Guided demos**. Each tour has nine steps from the papers to the exported application. The Gate 2 step runs the real gate: export stays closed until you approve. The cases demonstrate the interface and workflow; they are not an evaluation. Details: [`docs/handoff/evaluator-demo.md`](docs/handoff/evaluator-demo.md).
+
+## Hosted models
+
+Everything above runs on offline stand-ins. Real or hosted models need an explicit `VS_MODELS=auto` (or `real`).
+
+| Provider | Default | To use it |
+|---|---|---|
+| Sarvam, OpenAI (paid) | Locked: every call is refused in code | Name the provider in `VS_ALLOW_PAID` (for example `VS_ALLOW_PAID=sarvam`), set `VS_EXTERNAL=pseudonymised` and choose it with `VS_LLM_BACKEND`. Team members: do not unlock without the owner. Spend is capped in code (`make openai-spend`, `make sarvam-spend`) |
+| Gemini free tier | Off | Public data only (the provider may use free-tier prompts), so client text is refused in every mode. `GEMINI_API_KEY` in `.env`, then `make gemini-models MODEL=<id>` and `make gemini-usage` |
+
+Keys (`SARVAM_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`) live only in an untracked `.env` or the shell; never commit, print or log one. Every external payload must pass the pseudonymisation boundary. Details: `docs/handoff/pilot-hosted-model.md`, `docs/handoff/gemini-free-tier.md`, and `.env.example` for every variable.
 
 ## Reproducing the results
 
-The final report is `docs/technical-report/technical_report.pdf` (8-page technical report) and `docs/report/main.pdf` (full report). The sealed runs were made from the git tag `eval-freeze-v1`; data, model weights and keys are not in the repository (`make data`, `make models`; keys only in an untracked `.env`).
+The sealed runs were made from the git tag `eval-freeze-v1`. Data, model weights and keys are not in the repository (`make data`, `make models`; keys only in an untracked `.env`).
 
 ```bash
 make setup && make data && make models   # environment, team data bundle, helper models (NLI, MiniCheck, BGE-M3, Whisper small)
@@ -100,12 +177,59 @@ VS_RUNS=<runs root> .venv/bin/python scripts/midsub/final_tables.py     # writes
 bash docs/technical-report/build.sh && bash docs/report/build.sh && .venv/bin/python scripts/check_consistency.py
 ```
 
-The tables in both reports are copied from `docs/results/search/final_report/` (`summary.md`, `hypotheses_blind.json`, `means_blind.csv`, `variance_d12.csv`, `reserve_dev.md`). The evaluator demo (six recorded synthetic cases with a guided tour) loads automatically with `docker compose up` (http://localhost:3000, "Guided demos"); see `DOCKER.md` and `docs/handoff/evaluator-demo.md`.
+The tables in both reports are copied from `docs/results/search/final_report/` (`summary.md`, `hypotheses_blind.json`, `means_blind.csv`, `variance_d12.csv`, `reserve_dev.md`). Claims, baselines and metrics: `docs/evaluation-plan.md` and `docs/preregistration.md`.
 
-## Building the proposal PDF
+## Tests
+
+The full suite is slow (about 4,950 tests), so run it by area. Per-area commands are in `progress.md` section 5; see also `tests/README.md`.
+
+```bash
+make test-collect                              # collection must be clean
+make test-unit                                 # or one area: .venv/bin/pytest tests/unit/privacy -q
+make test-integration && make test-system      # modules wired together, user flows and the safety suite (no GPU)
+make test-frontend                             # Vitest; needs `cd frontend && npm ci`
+```
+
+Each test gets its own data directory, so no test depends on `data/`.
+
+## Repository layout
+
+| Path | What it holds |
+|---|---|
+| `src/vakeel_sahayak/agents/` | The six agents (`munshi`, `peshkar`, `sutradhar`, `vakeel`, `abhiyojak`, `pairokar`) |
+| `src/vakeel_sahayak/stores/`, `contracts/`, `rights/` | Ten stores on four shelves; evidence contracts (12 factors); Rights Radar rules |
+| `src/vakeel_sahayak/orchestration/`, `record/` | LangGraph wiring, approval gates, budgets, opt-in switches; event log and case state |
+| `src/vakeel_sahayak/privacy/`, `models/` | Pseudonymisation boundary, leak check, injection guard; model clients and the paid-provider lock |
+| `src/vakeel_sahayak/ingestion/`, `tools/`, `export/` | PDF routing ladder, Hindi and voice intake; agent tools; DOCX and PDF export |
+| `src/vakeel_sahayak/eval/`, `pipelines/`, `testsets/` | Baselines, ablations, metrics, statistics, runners; data pipelines; test-set construction |
+| `src/vakeel_sahayak/api/`, `frontend/` | FastAPI app and routers; Next.js UI (design rules in `frontend/DESIGN.md`) |
+| `configs/`, `scripts/`, `tests/` | YAML configuration; data, model, sweep and report helpers; unit, integration and system tests |
+| `demo/`, `data/`, `models/` | Recorded evaluator demo cases; data and weights (contents gitignored, see `data/README.md`) |
+| `docs/` | Reports (`technical-report/`, `report/`), `plan.md`, `architecture/`, `results/`, `handoff/` (per-workstream notes), `proposal/` |
+
+Contributors and coding agents start with [`AGENTS.md`](AGENTS.md), then `split.md` (ownership) and the notes in [`docs/handoff/`](docs/handoff/).
+
+<details>
+<summary>Building the proposal PDF</summary>
 
 ```bash
 ./docs/proposal/build.sh
 ```
 
 The script needs `pdflatex` (TeX Live). If the diagram source has changed, it also needs Node.js and Chrome or Chromium, because it re-renders the diagram with `@mermaid-js/mermaid-cli`.
+</details>
+
+## Privacy and safety rules
+
+- Raw client files stay on the user's machine. External model services are off by default and gated by `VS_EXTERNAL=off|public|pseudonymised|consented` plus per-case consent.
+- Approvals come only from counsel, and the code enforces it: export is impossible before Gate 2.
+- No outcome predictions, no grant rates, no advice to the public. The system is a drafting aid for a lawyer, who remains responsible for the application.
+- Ground truth for evaluation comes from court text, official tables, existing datasets, construction and agreement between automatic labelers, never from hand-made labels.
+
+## Team
+
+Vishak Kashyap K, Shravani K, Satvik Rao, Harshita Kumari. IIIT Hyderabad, CL3.410 Language Models and Agents (group project, 2026).
+
+## Licences
+
+The repository has no `LICENSE` file. [`NOTICE`](NOTICE) lists the third-party datasets, models, fonts and libraries the project uses, with each licence and the required attribution (for example Open India Law by Vaquill AI under CC BY 4.0), and marks which entries are verified. Some sources are for non-commercial research use only; read `NOTICE` before any reuse.
