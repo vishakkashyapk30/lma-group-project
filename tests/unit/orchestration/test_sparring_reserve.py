@@ -30,7 +30,7 @@ def _starved() -> BudgetTracker:
 def test_default_is_zero_and_only_the_product_preset_turns_it_on():
     assert Switches().sparring_reserve_tokens == 0
     assert Switches().variant() == "full"
-    assert production_switches().sparring_reserve_tokens == 120000  # RECONCILED 15 Nov: 60000 was measured too small (the repair loop spends it before the judge runs)
+    assert production_switches().sparring_reserve_tokens == 200000  # RECONCILED 15 Nov: 60000 and then 120000 were measured too small (about 8K to 12K per objection, raising calls about 40K per case; 14 objections need 150K to 180K)
     for name in ("A8", "S3", "X1", "H1"):
         assert Switches.for_variant(name).sparring_reserve_tokens == 0
 

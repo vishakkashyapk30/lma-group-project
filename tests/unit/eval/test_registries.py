@@ -90,6 +90,7 @@ def test_every_switch_belongs_to_some_ablation_or_variant():
         "authority_stance", "munshi_keep_weak_text",  # RECONCILED: sweep 4 (S18, P8)
         "prefix_layout",  # RECONCILED: sweep 3 added S14d (prefix-friendly prompt layout)
         "signal_source", "argument_policy", "sparring_scope", "abstention", "draft_source", "critic_material", "objection_grounding", "fact_grounding",  # RECONCILED: architecture search 2026-11-01 (X1-X6)
+        "sparring_reserve_tokens",  # RECONCILED: field added on arch-report after this registry list was written (sparring token reserve); the test only requires every Switches field to be listed
     }
     assert set(Switches.model_fields) <= documented | {"extractor", "knockout_store", "stopping"} | ev01
 

@@ -80,6 +80,9 @@ from vakeel_sahayak.tools.base import ToolError
 MAX_ROUNDS = 2  # plan §9: two rounds, no more
 MAX_PER_GROUND = 2  # plan §9: up to two objections per ground
 MAX_PER_GENERAL = 1  # one objection on each general factor
+NOT_REPLIED_BUDGET = "NOT_REPLIED_BUDGET"  # stable name of the state; carried in `reason` (the schema's verdict stays UNANSWERED, so every consumer shows it to counsel)
+NOT_REPLIED_REASON = NOT_REPLIED_BUDGET + ": no reply was drafted because the sparring budget was spent; counsel answers this one."
+JUDGE_HOLDBACK_TOKENS = 4500  # kept back from reply and repair calls when the reserve is on: a judge call (0.8K measured) plus the overshoot of one reply call (3.4K to 3.9K measured)
 MAX_EXTRA = 4  # X3: objections on factors without a ground, per case
 GENERAL_FACTORS: tuple[str, ...] = ("gravity_and_punishment", "flight_risk", "witness_tampering", "antecedents", "statutory_bar")
 BANK, REFUSALS, STATUTES = "advocacy.objections", "caselaw.reasoning", "law.statutes"
@@ -558,6 +561,88 @@ class AbhiyojakAgent(BaseAgent):
         self._decision("replies", f"Vakeel answered {len(replies)} of {len(objections)} objection(s).", answered=len(replies), objections=len(objections))
         return replies
 
+    # ------------------------------------------------------------------ interleaved replies and judging (only with a sparring reserve)
+
+    @in_sparring
+    def reply_and_judge(
+        self, state: CaseGraphState, objections: list[Objection], replier: Callable[[CaseGraphState, list[Objection]], list[Reply]] | None = None
+    ) -> list[Objection]:
+        """Reply to and judge the objections one at a time, so the judge calls cannot find the reserve empty (only with `sparring_reserve_tokens` > 0).
+
+        Order, fixed: for objection 1, 2, ...: Vakeel's reply (draft, check, repair), then the judge call for that reply. The reserve is
+        spent in this priority: (a) the judge call of a reply already drafted (`JUDGE_HOLDBACK_TOKENS` of the pool are kept back from the reply
+        and repair calls, so the judge is not refused while the pool holds one judge call), (b) drafting a reply, (c) repair. Before each
+        objection the pool left is compared with the running average of what the objections done so far cost (reply plus judge); when it cannot
+        cover another one, drafting stops and every remaining objection is recorded as NOT_REPLIED_BUDGET (verdict UNANSWERED, reason
+        starting `NOT_REPLIED_BUDGET:`; counsel answers it), never as a judged UNANSWERED.
+
+        Args:
+            state: the graph state
+            objections: the raised objections, in order
+            replier: how to get one reply (a callable taking `(state, [objection])`); default Vakeel sharing this context
+
+        Returns:
+            The objections with reply and verdict, in the input order.
+        """
+        self._decision("round_2", f"Replies and round 2, one objection at a time: {len(objections)} objection(s).", objections=[o.id for o in objections], interleaved=True)
+        if not self.isolated:
+            self._view = vakeel_view(state, self.log, self.case_id)
+        reserve = int(getattr(self.budgets, "sparring_reserve_tokens", 0) or 0)
+        spent = getattr(self.budgets, "sparring_spent", lambda: 0)
+        hold = getattr(self.budgets, "set_spar_holdback", lambda n: None)
+        if replier is None:
+            replier = self._replier_fn()
+        costs: list[int] = []
+        judged: list[Objection] = []
+        answered = 0
+        stopped = False
+        for o in objections:
+            left = reserve - int(spent())
+            need = (sum(costs) // len(costs)) if costs else 2 * JUDGE_HOLDBACK_TOKENS
+            if stopped or left < max(need, 2 * JUDGE_HOLDBACK_TOKENS):
+                stopped = True
+                judged.append(self._not_replied(o, left, need))
+                continue
+            before = int(spent())
+            hold(JUDGE_HOLDBACK_TOKENS)
+            try:
+                got = list(replier(state, [o]))
+            finally:
+                hold(0)
+            reply = got[0] if got else None
+            if reply is not None:
+                answered += 1
+            judged.append(self._judge_one(o.model_copy(update={"reply": reply})))
+            costs.append(int(spent()) - before)
+        self._decision("replies", f"Vakeel answered {answered} of {len(objections)} objection(s).", answered=answered, objections=len(objections))
+        counts = {v.value: sum(1 for o in judged if o.verdict == v) for v in SparringVerdict}
+        self._decision("round_2_done", "Round 2 done: " + ", ".join(f"{n} {k}" for k, n in counts.items()) + ".", **counts)
+        for k, n in counts.items():
+            self._stats["verdict_" + k.lower()] = self._stats.get("verdict_" + k.lower(), 0) + n
+        self._stats["judged"] = self._stats.get("judged", 0) + len(judged)
+        self._emit_critic_signals()
+        self._emit_reserve()
+        return judged
+
+    def _replier_fn(self) -> Callable[[CaseGraphState, list[Objection]], list[Reply]]:
+        """The reply function: the replier given, else a VakeelAgent sharing this context (as `_replies`)."""
+        if self.replier is not None:
+            return self.replier
+        if self._vakeel is None:
+            import dataclasses
+
+            from vakeel_sahayak.agents.registry import create_agent
+
+            self._vakeel = create_agent(AgentName.VAKEEL, dataclasses.replace(self.ctx, llm=None))
+        return self._vakeel.reply_to_objections  # type: ignore[attr-defined,no-any-return]
+
+    def _not_replied(self, o: Objection, left: int, need: int) -> Objection:
+        """No reply was drafted because the sparring pool could not cover another objection: the plain message for counsel, no model call."""
+        self._decision(
+            "not_replied_budget", f"{o.id} ({o.factor}): no reply drafted, the sparring budget was spent.", objection=o.id, against=o.against, left=left, estimate=need, state=NOT_REPLIED_BUDGET
+        )
+        return self._verdict(o, SparringVerdict.UNANSWERED, NOT_REPLIED_REASON, drop_reply=True)
+
     @in_sparring
     def judge_replies(self, state: CaseGraphState, objections: list[Objection]) -> list[Objection]:
         """Round 2: mark each reply ANSWERED, PARTLY or UNANSWERED with a reason; UNANSWERED goes to counsel as NEEDS_REVIEW.
@@ -616,9 +701,9 @@ class AbhiyojakAgent(BaseAgent):
             return self._verdict(o, SparringVerdict.UNANSWERED, "The judgement was not one of ANSWERED, PARTLY or UNANSWERED; counsel to read the reply.")
         return self._verdict(o, verdict, str(getattr(out, "reason", "") or "").strip() or None)
 
-    def _verdict(self, o: Objection, verdict: SparringVerdict, reason: str | None) -> Objection:
+    def _verdict(self, o: Objection, verdict: SparringVerdict, reason: str | None, drop_reply: bool = False) -> Objection:
         update: dict[str, Any] = {"verdict": verdict, "reason": reason}
-        if verdict == SparringVerdict.UNANSWERED and o.reply is not None:
+        if verdict == SparringVerdict.UNANSWERED and o.reply is not None and not drop_reply:
             update["reply"] = o.reply.model_copy(update={"check": ClaimCheck.NEEDS_REVIEW})  # goes to counsel
         self._decision("verdict", f"{o.id}: {verdict.value}.", objection=o.id, against=o.against, verdict=verdict.value, reason=reason)
         if verdict == SparringVerdict.UNANSWERED:
@@ -674,6 +759,11 @@ class AbhiyojakAgent(BaseAgent):
         if not objections:
             self._decision("no_objections", "No grounded objection could be raised: nothing to answer or judge.")
             return SparringRecord(case_id=state.case_id, rounds=1, objections=[], discarded=discarded)
+        if self.max_rounds >= 2 and int(getattr(self.budgets, "sparring_reserve_tokens", 0) or 0) > 0:
+            objections = self.reply_and_judge(state, objections)  # reserve on: each reply is judged right after it is drafted
+            record = SparringRecord(case_id=state.case_id, rounds=2, objections=objections, discarded=discarded)
+            self._decision("record", f"Sparring record: {len(objections)} objection(s) over 2 round(s), {len(discarded)} discarded.", objections=len(objections), rounds=2, discarded=len(discarded))
+            return record
         replies = self._replies(state, objections)
         objections = [o.model_copy(update={"reply": replies[i] if i < len(replies) else None}) for i, o in enumerate(objections)]
         rounds = 1

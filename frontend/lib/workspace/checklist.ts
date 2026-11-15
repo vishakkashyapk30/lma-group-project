@@ -3,6 +3,7 @@
 // Gate 2 (export): the same, plus every NEEDS_REVIEW item (grounds and open issues) and every UNANSWERED objection
 // resolved. Gate 2 also needs Gate 1. Mirrors src/vakeel_sahayak/record/gates.py, which counts the same items.
 import { fieldLabel } from "../fields";
+import { plainReason } from "../format";
 import { FACTOR_SHORT_LABELS } from "../labels";
 import type { GateUiStatus } from "../status";
 import type { WorkspaceTab } from "../stages";
@@ -134,7 +135,7 @@ export function rawChecklistItems(gate: GateId, input: ChecklistInput): Omit<Che
           kind: "UNANSWERED",
           ref: o.id,
           label: `${o.id}: ${o.objection}`,
-          detail: o.reason ?? undefined,
+          detail: plainReason(o.reason) ?? undefined,
           target: { tab: "spar", id: o.id },
           canAcknowledge: false,
         });

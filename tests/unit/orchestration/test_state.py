@@ -27,7 +27,7 @@ def test_product_state_selects_c1457_without_changing_the_plain_state_default(mo
         "abstention": "strict",
         "draft_source": "facts_text",
         "objection_grounding": "by_id",
-        "sparring_reserve_tokens": 120000,  # RECONCILED: product flow only, post-freeze 2026-11-15
+        "sparring_reserve_tokens": 200000,  # RECONCILED: product flow only, post-freeze 2026-11-15; 120000 was too small (docs/handoff/objections-unanswered-2026-11-15.md, second correction)
     }
     assert product.facts_text == "Person-1 has been in custody since 04.01.2024."
     assert product.product is True

@@ -139,3 +139,19 @@ export function humanize(id: string): string {
 export function plural(n: number, word: string, pluralWord?: string): string {
   return `${formatNumberIN(n)} ${n === 1 ? word : (pluralWord ?? `${word}s`)}`;
 }
+
+/** The prefix the backend puts on the `reason` of an objection that got no reply because the sparring budget was spent. */
+export const NOT_REPLIED_BUDGET_PREFIX = "NOT_REPLIED_BUDGET:";
+
+/** True when no reply was drafted for the objection because the sparring budget was spent (its verdict is still UNANSWERED, so counsel sees it). */
+export function isNotRepliedBudget(reason: string | null | undefined): boolean {
+  return typeof reason === "string" && reason.startsWith(NOT_REPLIED_BUDGET_PREFIX);
+}
+
+/** A verdict reason in plain words: the stable budget prefix is dropped and the sentence capitalised; any other reason is unchanged. */
+export function plainReason(reason: string | null | undefined): string | null {
+  if (reason == null) return null;
+  if (!isNotRepliedBudget(reason)) return reason;
+  const rest = reason.slice(NOT_REPLIED_BUDGET_PREFIX.length).trim();
+  return rest ? rest.charAt(0).toUpperCase() + rest.slice(1) : "No reply was drafted because the sparring budget was spent; counsel answers this one.";
+}
