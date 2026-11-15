@@ -43,6 +43,12 @@ DEVANAGARI = re.compile(r"[ऀ-ॿ]")
 DEVANAGARI_DIGITS = str.maketrans("०१२३४५६७८९", "0123456789")
 VARIANT_KEYS = ("offence", "custody", "record", "parity")
 
+# Terms that stay in English by design, so they are copied, never sent to the model, and `--check` accepts them: the product's own
+# name for a tab ("Rights Radar") and a dossier field key shown as a label ("fir"). Exact matches only; add a term here only when
+# the model has been seen to refuse or mangle it and the English is what counsel sees.
+ENGLISH_BY_DESIGN = frozenset({"Rights Radar", "fir"})
+FIELD_KEY = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*")  # a dossier field key shown as a label (fir, previous_bail, trial_stage): code, not prose
+
 # Text that must come back unchanged. Order does not matter; matches may overlap and are all required.
 PROTECTED = [
     re.compile(r"\b(?:Co-accused|Accused|Complainant|IO|Witness|Victim|Surety|PW|DW)-\d+\b"),  # role pseudonyms
@@ -108,6 +114,8 @@ def numbers_of(text: str) -> list[str]:
 
 def needs_model(en: str) -> bool:
     """False when nothing is left to translate once the protected pieces and the digits are taken out (a file name, a number)."""
+    if en.strip() in ENGLISH_BY_DESIGN or FIELD_KEY.fullmatch(en.strip()):
+        return False
     rest = en
     for tok in sorted(protected_tokens(en), key=len, reverse=True):
         rest = rest.replace(tok, " ")
@@ -262,6 +270,16 @@ def batches(texts: list[str], size: int = 10, max_chars: int = 3500) -> list[lis
     return out
 
 
+STATUS_PREFIX = re.compile(r"([A-Z][A-Z0-9_]*(?: ·|:)) (.+)", re.S)  # "SUPPORTED: sentence", "G4 · antecedents"
+
+
+def split_prefix(en: str) -> tuple[str, str]:
+    """("SUPPORTED: ", "sentence") for a value that starts with a status word or an id; the model sees only the sentence, so it cannot
+    translate or drop the status word (it did, in 3 tries, for some values). ("", en) for any other text."""
+    m = STATUS_PREFIX.fullmatch(en)
+    return (m.group(1) + " ", m.group(2)) if m else ("", en)
+
+
 def translate_texts(
     texts: list[str], translator: Translator, size: int = 10, tries: int = 3, on_batch: Callable[[dict[str, str]], None] | None = None
 ) -> tuple[dict[str, str], dict[str, str]]:
@@ -276,10 +294,11 @@ def translate_texts(
         for _ in range(tries):
             if not todo:
                 break
-            answers = translator(todo)
+            parts = [split_prefix(en) for en in todo]
+            answers = translator([rest for _, rest in parts])
             still: list[str] = []
             for n, en in enumerate(todo):
-                hi = answers.get(n, "")
+                hi = (parts[n][0] + answers[n].strip()) if answers.get(n, "").strip() else ""
                 reason = check_translation(en, hi)
                 if reason is None:
                     got_here[en] = hi.strip()

@@ -78,6 +78,18 @@ def test_a_translation_that_loses_a_token_or_stays_english_is_rejected():
     assert mod.check_translation("born-digital PDF", "x" * 400) is not None
 
 
+def test_terms_kept_in_english_by_design_are_copied_and_accepted_by_check():
+    for term in ("Rights Radar", "fir"):
+        assert term in mod.ENGLISH_BY_DESIGN
+        assert not mod.needs_model(term)
+        assert mod.check_translation(term, term) is None
+    for key in ("previous_bail", "trial_stage", "co_accused_bail"):
+        assert not mod.needs_model(key)  # a dossier field key shown as a label is code, not prose
+    assert mod.needs_model("Previous bail")
+    assert mod.needs_model("Rights Radar of the case")
+    assert mod.needs_model("fir was filed")
+
+
 def test_text_with_nothing_to_translate_is_copied_not_sent():
     assert not mod.needs_model("01_fir.pdf")
     assert not mod.needs_model("UNANSWERED:O7")
@@ -245,3 +257,18 @@ def test_the_committed_tours_load_and_every_text_is_found():
         items = mod.collect(tour)
         assert len(items) > 50, slug
         assert any(mod.protected_tokens(it.en) for it in items)
+
+
+def test_a_status_word_or_id_in_front_of_a_sentence_is_never_sent_to_the_model():
+    assert mod.split_prefix("SUPPORTED: The charge sheet was filed.") == ("SUPPORTED: ", "The charge sheet was filed.")
+    assert mod.split_prefix("G4 · antecedents") == ("G4 · ", "antecedents")
+    assert mod.split_prefix("born-digital PDF") == ("", "born-digital PDF")
+    seen: list[str] = []
+
+    def translator(texts: list[str]) -> dict[int, str]:
+        seen.extend(texts)
+        return {n: "आरोप पत्र दाखिल किया गया।" for n, _ in enumerate(texts)}
+
+    done, why = mod.translate_texts(["SUPPORTED: The charge sheet was filed."], translator)
+    assert seen == ["The charge sheet was filed."]
+    assert done == {"SUPPORTED: The charge sheet was filed.": "SUPPORTED: आरोप पत्र दाखिल किया गया।"} and not why

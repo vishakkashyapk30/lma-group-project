@@ -127,7 +127,7 @@ _CASE_01 = DemoCase(
            "offence (March 2024) predates the BNS, so the IPC governs. He has been in custody since 12.03.2024, the charge sheet was filed in "
            "time and the trial is under way; his earlier bail application was rejected, while Co-accused-2, with a comparable role, is on bail."),
     variant={"offence": "IPC 420/406 cheating (maximum 7 years), offence before 1 July 2024",
-             "custody": "default bail closed (charge sheet on day 55 of 60); past one-third of the maximum as a first-time offender (BNSS s.479 ELIGIBLE: 978 days against 852)",
+             "custody": "default bail closed (charge sheet on day 55 of 60); 978 days in custody are past one-third of the 7-year maximum (852 days) but the radar applies the half threshold of 1,278 days, so BNSS s.479 shows NOT_YET (reached on 11.09.2027)",
              "record": "complete file, eleven born-digital documents",
              "parity": "Co-accused-2 granted bail; first-time offender; earlier bail application rejected"},
     documents=[
@@ -309,7 +309,7 @@ _CASE_03 = DemoCase(
     story=("Accused-1, a 22-year-old student, is charged under NDPS 21(a) for 4 grams of heroin, a small quantity, so the s.37 bar does not apply; the FIR is in H"
            "indi. He was arrested on 02.07.2026 and told the grounds of arrest only orally; the charge sheet was filed in time (day 54 of 60). The Rights Radar reads the maximum of the charged clause as one year: default bail is WINDOW_CLOSED (the charge sheet came inside the 60 days) and the BNSS s.479 undertrial limit is ELIGIBLE (136 days in custody against a threshold of 122 for a first-time offender)."),
     variant={"offence": "NDPS 21(a) small quantity (maximum 1 year); the s.37 twin conditions do not apply",
-             "custody": "charge sheet filed on day 54 of 60, in time, so default bail is WINDOW_CLOSED; BNSS s.479 is ELIGIBLE (136 days in custody, threshold 122 days); grounds of arrest given only orally in the scenario (the radar shows UNKNOWN: no record of them in the dossier)",
+             "custody": "charge sheet filed on day 54 of 60, in time, so default bail is WINDOW_CLOSED; BNSS s.479 is ELIGIBLE (136 days in custody, threshold 122 days); the notice-of-appearance row says 'punishable up to 7 years', which is the rule's band (seven years or less) that the one-year maximum falls in, not the section's maximum; grounds of arrest given only orally in the scenario (the radar shows UNKNOWN: no record of them in the dossier)",
              "record": "Hindi FIR (Devanagari text layer) with eight English documents",
              "parity": "no co-accused; first-time offender; no earlier bail application"},
     documents=[

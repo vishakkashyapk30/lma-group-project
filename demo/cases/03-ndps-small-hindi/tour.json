@@ -5,7 +5,7 @@
  "story": "Accused-1, a 22-year-old student, is charged under NDPS 21(a) for 4 grams of heroin, a small quantity, so the s.37 bar does not apply; the FIR is in Hindi. He was arrested on 02.07.2026 and told the grounds of arrest only orally; the charge sheet was filed in time (day 54 of 60). The Rights Radar reads the maximum of the charged clause as one year: default bail is WINDOW_CLOSED (the charge sheet came inside the 60 days) and the BNSS s.479 undertrial limit is ELIGIBLE (136 days in custody against a threshold of 122 for a first-time offender).",
  "variant": {
   "offence": "NDPS 21(a) small quantity (maximum 1 year); the s.37 twin conditions do not apply",
-  "custody": "charge sheet filed on day 54 of 60, in time, so default bail is WINDOW_CLOSED; BNSS s.479 is ELIGIBLE (136 days in custody, threshold 122 days); grounds of arrest given only orally in the scenario (the radar shows UNKNOWN: no record of them in the dossier)",
+  "custody": "charge sheet filed on day 54 of 60, in time, so default bail is WINDOW_CLOSED; BNSS s.479 is ELIGIBLE (136 days in custody, threshold 122 days); the notice-of-appearance row says 'punishable up to 7 years', which is the rule's band (seven years or less) that the one-year maximum falls in, not the section's maximum; grounds of arrest given only orally in the scenario (the radar shows UNKNOWN: no record of them in the dossier)",
   "record": "Hindi FIR (Devanagari text layer) with eight English documents",
   "parity": "no co-accused; first-time offender; no earlier bail application"
  },
@@ -13,7 +13,7 @@
   "date": "2026-11-15",
   "backend": "sarvam",
   "model": "sarvam-105b",
-  "cost_inr": 7.7
+  "cost_inr": 8.42
  },
  "steps": [
   {
@@ -65,39 +65,39 @@
     "filled": [
      {
       "label": "01_fir_hindi.pdf",
-      "value": "देवनागरी टेक्स्ट लेयर के साथ हिंदी FIR"
+      "value": "देवनागरी टेक्स्ट लेयर वाली हिंदी FIR"
      },
      {
       "label": "02_arrest_memo.pdf",
-      "value": "बॉर्न-डिजिटल PDF"
+      "value": "मूल रूप से डिजिटल PDF"
      },
      {
       "label": "03_seizure_memo.pdf",
-      "value": "बॉर्न-डिजिटल PDF"
+      "value": "मूल रूप से डिजिटल PDF"
      },
      {
       "label": "04_remand_order.pdf",
-      "value": "बॉर्न-डिजिटल PDF"
+      "value": "मूल रूप से डिजिटल PDF"
      },
      {
       "label": "05_charge_sheet.pdf",
-      "value": "बॉर्न-डिजिटल PDF"
+      "value": "मूल रूप से डिजिटल PDF"
      },
      {
       "label": "06_custody_certificate.pdf",
-      "value": "बॉर्न-डिजिटल PDF"
+      "value": "मूल रूप से डिजिटल PDF"
      },
      {
       "label": "07_police_verification.pdf",
-      "value": "बॉर्न-डिजिटल PDF"
+      "value": "मूल रूप से डिजिटल PDF"
      },
      {
       "label": "08_personal_circumstances.pdf",
-      "value": "बॉर्न-डिजिटल PDF"
+      "value": "मूल रूप से डिजिटल PDF"
      },
      {
       "label": "09_vakalatnama.pdf",
-      "value": "बॉर्न-डिजिटल PDF"
+      "value": "मूल रूप से डिजिटल PDF"
      }
     ],
     "src": {
@@ -122,8 +122,8 @@
      "caption": "17d09fc1127ef02e",
      "filled.0.value": "4e43db761177a4e2"
     },
-    "title": "Munshi कागजात पढ़ते हैं",
-    "caption": "अधिवक्ता ने एक साथ 9 PDF अपलोड किए। Munshi ने हर पृष्ठ को पढ़ा (9 पृष्ठों के लिए टेक्स्ट लेयर), अंग्रेजी और हिंदी में 9 दस्तावेजों (FIR, affidavit, arrest memo, bail order, charge sheet, custody certificate, other और remand order) के नाम रखे, और 7 दिनांकित घटनाओं तथा 3 आरोपित धाराओं को दर्ज किया। Intake ने अधिवक्ता से 1 प्रश्न पूछा।"
+    "title": "Munshi कागजात पढ़ता है",
+    "caption": "अधिवाक्ता (counsel) ने एक साथ 9 PDF अपलोड किए। Munshi ने प्रत्येक पृष्ठ को पढ़ा (9 पृष्ठों के लिए टेक्स्ट लेयर), 9 दस्तावेजों (FIR, हलफनामा, गिरफ्तारी मेमो, जमानत आदेश, आरोप-पत्र, हिरासत प्रमाण पत्र, अन्य और रिमांड आदेश) का अंग्रेजी और हिंदी में नामकरण किया, और 7 दिनांकित घटनाओं और 3 आरोपित धाराओं को दर्ज किया। INTAKE ने अधिवक्ता (counsel) से 1 प्रश्न पूछा।"
    }
   },
   {
@@ -132,7 +132,7 @@
    "title": "Peshkar builds the dossier",
    "agent": "PESHKAR",
    "action": null,
-   "caption": "Peshkar filled the 13 fields of the dossier: 11 from the papers, each with the quoted sentence and page, 1 from counsel and 1 left open. Counsel answered 1 question from instructions; those fields are marked as counsel's, never as verified. The List of Dates has 7 entries, each tied to its page.",
+   "caption": "Peshkar filled the 13 fields of the dossier: 10 from the papers, each with the quoted sentence and page, 1 from counsel and 2 left open. Counsel answered 1 question from instructions; those fields are marked as counsel's, never as verified. The List of Dates has 7 entries, each tied to its page.",
    "filled": [
     {
      "label": "Were any co-accused granted or refused bail? If so, please upload their orders.",
@@ -140,7 +140,7 @@
     },
     {
      "label": "FIR",
-     "value": "number: 151/2026, police_station: PS-3, date: 2026-07-02 (verified from the papers)"
+     "value": "not on record (not supported by the papers)"
     },
     {
      "label": "Sections",
@@ -178,24 +178,24 @@
    "hi": {
     "filled": [
      {
-      "label": "क्या किसी सह-अभियुक्त को जमानत दी गई है या अस्वीकार की गई है? यदि हाँ, तो कृपया उनके आदेश अपलोड करें।",
+      "label": "क्या किसी सह-अभ अभियुक्त को जमानत दी गई या अस्वीकार की गई? यदि हाँ, तो कृपया उनके आदेश अपलोड करें।",
       "value": "ऐसा कोई सह-अभियुक्त नहीं है जिसने जमानत के लिए आवेदन किया हो।"
      },
      {
       "label": "FIR",
-      "value": "number: 151/2026, police_station: PS-3, date: 2026-07-02 (कागज़ात से सत्यापित)"
+      "value": "अभिलेखागार पर नहीं (कागज़ात द्वारा समर्थित नहीं)"
      },
      {
       "label": "धाराएँ",
-      "value": "NDPS 21(a), अधिकतम 1 वर्ष (कागज़ात से सत्यापित)"
+      "value": "NDPS 21(a), अधिकतम 1 वर्ष (कागजातों से सत्यापित)"
      },
      {
-      "label": "गिरफ़्तारी की तिथि",
-      "value": "2026-07-02 (कागज़ात से सत्यापित)"
+      "label": "गिरफ्तारी की तिथि",
+      "value": "2026-07-02 (कागजातों से सत्यापित)"
      },
      {
       "label": "प्रथम रिमांड",
-      "value": "2026-07-03 (कागज़ात से सत्यापित)"
+      "value": "2026-07-03 (कागजातों से सत्यापित)"
      },
      {
       "label": "हिरासत में दिन",
@@ -203,24 +203,25 @@
      },
      {
       "label": "आरोप-पत्र",
-      "value": "filed: True, date: 2026-08-25 (कागज़ात से सत्यापित)"
+      "value": "दाखिल किया गया: True, दिनांक: 2026-08-25 (कागजातों से सत्यापित)"
      },
      {
       "label": "पूर्ववर्ती जमानत आदेश",
       "value": "कोई नहीं (दस्तावेज़ों से सत्यापित)"
      },
      {
-      "label": "सह-अभयुक्त की जमानत",
+      "label": "सह-अभियुक्त की जमानत",
       "value": "कोई नहीं (अधिवक्ता द्वारा निर्धारित)"
      },
      {
-      "label": "आपराधिक इतिहास",
+      "label": "पूर्ववृत्त",
       "value": "कोई नहीं (दस्तावेज़ों से सत्यापित)"
      }
     ],
     "src": {
      "filled.1.label": "61ef8cb5c4f3d3ea",
      "title": "b7f323ef16f5756f",
+     "filled.1.value": "a11e71a4662a5c0a",
      "filled.2.label": "9bae918add9affa5",
      "filled.3.label": "539d7fc8e5efdd47",
      "filled.4.label": "f7ec9a7f81cea689",
@@ -234,16 +235,15 @@
      "filled.0.label": "5a7b4e575f989104",
      "filled.0.value": "795a8f14e1faba22",
      "filled.8.value": "8cf66102dd073814",
-     "caption": "db1c9397f15239ea",
-     "filled.1.value": "ac475a110eea80e1",
+     "caption": "f837cce12875ca5c",
      "filled.2.value": "526a38fa00168d20",
      "filled.3.value": "881aadc57d32bf81",
      "filled.4.value": "cbc00b320428a054",
      "filled.5.value": "458391b2f3643e3c",
      "filled.6.value": "0d3808c908ee1fd4"
     },
-    "title": "Peshkar डोजियर तैयार करते हैं",
-    "caption": "Peshkar ने डोजियर के 13 फ़ील्ड भरे: 11 कागज़ात से, प्रत्येक उद्धृत वाक्य और पृष्ठ के साथ, 1 अधिवक्ता से और 1 खुला छोड़ा गया। अधिवक्ता ने निर्देशों से 1 प्रश्न का उत्तर दिया; उन फ़ील्ड को अधिवक्ता का रूप में चिह्नित किया गया है, कभी सत्यापित के रूप में नहीं। दिनांक की सूची में 7 प्रविष्टियाँ हैं, प्रत्येक अपने पृष्ठ से जुड़ी है।"
+    "title": "Peshkar डोजियर तैयार करता है",
+    "caption": "Peshkar ने डोजियर के 13 फ़ील्ड भरे: कागजातों से 10, प्रत्येक उद्धृत वाक्य और पृष्ठ के साथ, अधिवक्ता (counsel) से 1 और 2 खुले छोड़े गए। अधिवक्ता (counsel) ने निर्देशों से 1 प्रश्न का उत्तर दिया; वे फ़ील्ड अधिवक्ता (counsel) के रूप में चिह्नित हैं, कभी भी सत्यापित के रूप में नहीं। तारीखों की सूची (List of Dates) में 7 प्रविष्टियाँ हैं, प्रत्येक अपने पृष्ठ से जुड़ी हुई है।"
    }
   },
   {
@@ -252,11 +252,15 @@
    "title": "Gate 1: counsel approves the facts",
    "agent": null,
    "action": null,
-   "caption": "Nothing is drafted until counsel approves the dossier, and the code accepts that approval from counsel only. Counsel acknowledged 1 field the papers do not support (Trial stage) and approved.",
+   "caption": "Nothing is drafted until counsel approves the dossier, and the code accepts that approval from counsel only. Counsel acknowledged 2 fields the papers do not support (FIR and Trial stage) and approved.",
    "filled": [
     {
      "label": "Gate 1 note",
      "value": "approved by counsel for the recorded evaluator demo"
+    },
+    {
+     "label": "Acknowledged: FIR",
+     "value": "not supported by the papers; acknowledged by counsel"
     },
     {
      "label": "Acknowledged: Trial stage",
@@ -264,26 +268,32 @@
     }
    ],
    "hi": {
-    "title": "GATE_1: अधिवक्ता तथ्यों का अनुमोदन करते हैं।",
+    "title": "GATE_1: अधिवक्ता तथ्यों का अनुमोदन करते हैं",
     "src": {
      "title": "e26f2f4ee02e4a2a",
+     "caption": "20c31d8d42d2df70",
+     "filled.2.label": "c8777122172ee46e",
      "filled.0.label": "dfed6daa2d66ec21",
      "filled.0.value": "e811f245c92e1c44",
-     "filled.1.label": "c8777122172ee46e",
+     "filled.1.label": "9226e6c7b2e63949",
      "filled.1.value": "6168042820ca7d79",
-     "caption": "c714dafd97cd8d69"
+     "filled.2.value": "6168042820ca7d79"
     },
+    "caption": "जब तक अधिवक्ता (counsel) डोजियर का अनुमोदन (approval) नहीं करते तब तक कुछ भी मसौदा तैयार नहीं किया जाता है, और कोड केवल अधिवक्ता (counsel) से ही वह अनुमोदन स्वीकार करता है। अधिवक्ता (counsel) ने 2 फ़ील्ड्स को स्वीकार किया जिनका कागजात समर्थन नहीं करते हैं (FIR और Trial चरण) और अनुमोदन किया।",
     "filled": [
      {
-      "label": "Gate 1 नोट",
-      "value": "अधि-वक्ता द्वारा रिकॉर्ड किए गए मूल्यांकनकर्ता डेमो के लिए अनुमोदित"
+      "label": "Gate 1 टिप्पणी",
+      "value": "अभिलेखित evaluator demo के लिए अधिवक्ता द्वारा अनुमोदित"
+     },
+     {
+      "label": "स्वीकृत: FIR",
+      "value": "कागजातों द्वारा समर्थित नहीं; अधिवक्ता द्वारा स्वीकृत"
      },
      {
       "label": "स्वीकृत: विचारण चरण",
-      "value": "दस्तावेजों द्वारा समर्थित नहीं; अधिवक्ता द्वारा स्वीकृत"
+      "value": "कागजातों द्वारा समर्थित नहीं; अधिवक्ता द्वारा स्वीकृत"
      }
-    ],
-    "caption": "जब तक अधिवक्ता डोजियर का अनुमोदन नहीं करते, तब तक कुछ भी मसौदा तैयार नहीं किया जाता है, और कोड केवल अधिवक्ता से वह अनुमोदन स्वीकार करता है। अधिवक्ता ने 1 क्षेत्र को स्वीकार किया जिसका कागजात समर्थन नहीं करते हैं (Trial stage) और अनुमोदन किया।"
+    ]
    }
   },
   {
@@ -324,40 +334,9 @@
     }
    ],
    "hi": {
-    "filled": [
-     {
-      "label": "डिफ़ॉल्ट जमानत",
-      "value": "WINDOW_CLOSED: 60-दिन की सीमा (अधिकतम 1 वर्ष)। दिन 1 पहला रिमांड है, 03.07.2026। आरोप-पत्र दिन 54 (25.08.2026) को दाखिल किया गया था। यह सीमा के भीतर आ गया, इसलिए डिफ़ॉल्ट जमानत का अधिकार कभी उत्पन्न नहीं हुआ।"
-     },
-     {
-      "label": "विचारधीन कैदी की सीमा (BNSS s.479)",
-      "value": "ELIGIBLE: हिरासत में 136 दिन। पहली बार अपराध करने वाले के लिए सीमा 122 दिन है (1 वर्ष का 1/3, मुचलके पर) और अन्य मामलों में 183 दिन (1/2, जमानत पर)। लागू होने वाली सीमा (1/3, पहली बार अपराध करने वाला) 122 दिन पूरी हो चुकी है। अभिलेख से कोई अन्य लंबित मामला नहीं दिखाई देता है (BNSS s.479(2))।"
-     },
-     {
-      "label": "उपस्थिति का नोटिस",
-      "value": "UNKNOWN: 7 वर्ष तक दंडनीय अपराध। फ़ाइल में कोई गिरफ्तारी मेमो या नोटिस नहीं है।"
-     },
-     {
-      "label": "गिरफ्तारी के आधार",
-      "value": "UNKNOWN: ऐसा कोई रिकॉर्ड नहीं है कि गिरफ्तारी के आधार संसूचित किए गए थे।"
-     },
-     {
-      "label": "24 घंटे के भीतर पेशी",
-      "value": "CHECK: अगले दिन पेश किया गया; समय रिकॉर्ड पर नहीं है।"
-     },
-     {
-      "label": "Antil श्रेणी",
-      "value": "C: कठोर जमानत प्रावधानों (NDPS s.37) वाले एक विशेष अधिनियम के तहत आरोपित: श्रेणी C। Antil की श्रेणियाँ तय करती हैं कि जिस अभियुक्त को जांच के दौरान गिरफ्तार नहीं किया गया था और जिसने सहयोग किया था, उसके साथ आरोप-पत्र के बाद कैसा व्यवहार किया जाता है; हिरासत में मौजूद मु मुक्किल के लिए यह संदर्भ है, जमानत का अधिकार नहीं।"
-     },
-     {
-      "label": "सांविधिक बाधा",
-      "value": "NOT_APPLICABLE: आरोपित NDPS धारा कम मात्रा का खंड है, जिस तक NDPS s.37(1)(b) नहीं पहुँचता।"
-     }
-    ],
+    "title": "Rights Radar",
     "src": {
-     "filled.0.label": "e68b6dd942523940",
-     "filled.1.label": "d7275406c48a3ae3",
-     "filled.2.label": "1d5e3980d94af7d9",
+     "title": "513ef60927284c69",
      "filled.2.value": "5743c09cc9d9f721",
      "filled.3.label": "550a739c67b1a6ff",
      "filled.3.value": "fb537bf5f7e5d8c2",
@@ -369,9 +348,42 @@
      "filled.0.value": "d42cc4a02dd909d0",
      "filled.1.value": "2a85d6c3018f7b82",
      "filled.5.value": "c5c898f5bc4c6ac2",
-     "filled.6.value": "200e7139c293bec2"
+     "filled.6.value": "200e7139c293bec2",
+     "filled.0.label": "e68b6dd942523940",
+     "filled.1.label": "d7275406c48a3ae3",
+     "filled.2.label": "1d5e3980d94af7d9"
     },
-    "caption": "INTAKE पर Peshkar ने 2026-11-15 तक डोजियर पर Rights Radar के 7 नियमों को चलाया: भाषा मॉडल नहीं, दिनांक अंकगणित और कानून तालिकाएं। Default bail: WINDOW_CLOSED, Undertrial limit (BNSS s.479): ELIGIBLE, Production within 24 hours: CHECK और Antil category: C. प्रत्येक परिणाम अपने नियम और उपयोग की गई तारीखों का नाम देता है; नंगे अधिनियम के मुकाबले अभी तक पुनः जांचे गए नियम unverified के रूप में चिह्नित हैं।"
+    "filled": [
+     {
+      "label": "डिफ़ॉल्ट जमानत",
+      "value": "WINDOW_CLOSED: 60 दिन की सीमा (अधिकतम 1 वर्ष)। दिन 1 पहला रिमांड है, 03.07.2026। आरोप-पत्र दिन 54 (25.08.2026) पर दाखिल किया गया था। यह सीमा के भीतर आया, इसलिए डिफ़ॉल्ट जमानत का अधिकार कभी उत्पन्न नहीं हुआ।"
+     },
+     {
+      "label": "विचारधीन कैदी की सीमा (BNSS s.479)",
+      "value": "ELIGIBLE: हिरासत में 136 दिन। पहली बार के अपराधी के लिए सीमा 122 दिन है (1 वर्ष का 1/3, मुचलके पर) और अन्यथा 183 दिन (1/2, जमानत पर)। लागू सीमा (1/3, पहली बार का अपराधी) 122 दिन पूरी हो चुकी है। रिकॉर्ड में कोई अन्य लंबित मामला नहीं दिखाया गया है (BNSS s.479(2))।"
+     },
+     {
+      "label": "उपस्थिति का नोटिस",
+      "value": "UNKNOWN: 7 साल तक की सजा वाला अपराध। फ़ाइल में कोई गिरफ्तारी मेमो या नोटिस नहीं है।"
+     },
+     {
+      "label": "गिरफ्तारी के आधार",
+      "value": "UNKNOWN: इसका कोई रिकॉर्ड नहीं है कि गिरफ्तारी के आधार बताए गए थे।"
+     },
+     {
+      "label": "24 घंटे के भीतर पेशी",
+      "value": "CHECK: अगले दिन पेश किया गया; समय रिकॉर्ड पर नहीं है।"
+     },
+     {
+      "label": "Antil श्रेणी",
+      "value": "C: कठोर जमानत प्रावधानों वाले एक विशेष अधिनियम के तहत आरोपित (NDPS s.37): श्रेणी C। Antil की श्रेणियां तय करती हैं कि जांच के दौरान गिरफ्तार न किए गए और सहयोग करने वाले अभियुक्त के साथ आरोप-पत्र के बाद कैसा व्यवहार किया जाता है; हिरासत में मौजूद मुवक्किल के लिए यह संदर्भ है, जमानत का अधिकार नहीं।"
+     },
+     {
+      "label": "वैधानिक रोक",
+      "value": "NOT_APPLICABLE: आरोपित NDPS धारा कम मात्रा का खंड है, जिस तक NDPS s.37(1)(b) नहीं पहुंचता है।"
+     }
+    ],
+    "caption": "INTAKE पर Peshkar ने 2026-11-15 की स्थिति के अनुसार डोजियर पर Rights Radar के 7 नियमों को चलाया: भाषा मॉडल नहीं, बल्कि दिनांक अंकगणित और कानून तालिकाएँ। डिफ़ॉल्ट जमानत: WINDOW_CLOSED, विचाराधीन कैदी सीमा (BNSS s.479): ELIGIBLE, 24 घंटे के भीतर पेशी: CHECK और Antil श्रेणी: C। प्रत्येक परिणाम अपने नियम और उपयोग की गई तारीखों का नाम बताता है; बेर एक्ट के मुकाबले अभी तक दोबारा जांचे न गए नियम unverified चिह्नित हैं।"
    }
   },
   {
@@ -380,117 +392,138 @@
    "title": "Sutradhar plans, Vakeel drafts",
    "agent": "VAKEEL",
    "action": null,
-   "caption": "Sutradhar planned the brief factor by factor (9 factors) and fetched the evidence each needs: 63 store calls. Vakeel drafted 3 grounds (3 supported). Every sentence was checked against its source; 14 sentences the checker could not support were withheld, leaving 5 grounds for counsel to draft. 22 open issues are listed for counsel.",
+   "caption": "Sutradhar planned the brief factor by factor (9 factors) and fetched the evidence each needs: 56 store calls. Vakeel drafted 4 grounds (4 supported). Every sentence was checked against its source; 18 sentences the checker could not support were withheld, leaving 4 grounds for counsel to draft. 24 open issues are listed for counsel.",
    "filled": [
     {
-     "label": "G3 · charge sheet filed",
-     "value": "SUPPORTED: The charge sheet was filed on 25.08.2026, which is within the 60-day limit prescribed under Section 187(3) of the BNSS, meaning the right to default bail never arose [F:facts_text].The investigation is complete, as confirmed by the final report [F:facts_text]…"
+     "label": "G1 · gravity and punishment",
+     "value": "SUPPORTED: The quantity of the recovered contraband, 4 grams of heroin, is less than the notified small quantity of 5 grams [F:facts_text]. 2.5 gram of brown sugar (Heroin) which is said to have been recovered from the joint possession of the applicant along with co-acc…"
     },
     {
-     "label": "G5 · flight risk",
-     "value": "SUPPORTED: The accused has no previous involvement in any criminal case and is a first-time offender [F:facts_text].The accused has no criminal antecedents [F:facts_text]."
+     "label": "G3 · charge sheet filed",
+     "value": "SUPPORTED: The quantity of contraband recovered is a small quantity of 4.0 grams [F:facts_text]. The charge sheet was filed before the competent court [A:CGHC010436002025#7]. Investigation of the case is complete and charge sheet has been filed [A:KAHC010151502025#6]. I…"
+    },
+    {
+     "label": "G6 · weak prima facie",
+     "value": "SUPPORTED: The forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity, and the recovered quantity of 4 grams of heroin is below the notified small quantity of 5 grams [F:facts_text]."
     },
     {
      "label": "G7 · statutory bar",
-     "value": "SUPPORTED: The twin conditions under Section 37 of the NDPS Act are satisfied where there are reasonable grounds to believe that the applicant is not guilty of committing the alleged offence, after taking a broad and prima facie view of the case, and particularly the fa…"
+     "value": "SUPPORTED: The charge sheet was filed on 25.08.2026, and investigation is complete [F:facts_text].The charge sheet was filed on 25.08.2026. Investigation is complete [A:KAHC010151502025#8].<<UNTRUSTED_DOCUMENT_DATA 18a77e1e2918>> [doc=KAHC010151502025#8] The text betwee…"
     },
     {
      "label": "Withheld from G1",
-     "value": "2 sentences; reason: not supported by the dossier quote (support 0.17)"
+     "value": "3 sentences; reason: cites no fact or authority"
     },
     {
      "label": "Withheld from G2",
-     "value": "3 sentences; reason: not supported by the dossier quote (support 0.02)"
+     "value": "4 sentences; reason: not supported by the dossier quote (fact support 0.04 < 0.50)"
+    },
+    {
+     "label": "Withheld from G3",
+     "value": "1 sentence; reason: cites an authority that was not retrieved (KAHC010436002025#7 was not retrieved)"
     },
     {
      "label": "Withheld from G4",
-     "value": "1 sentence; reason: not supported by the dossier quote (support 0.08)"
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.02)"
     },
     {
      "label": "Withheld from G5",
-     "value": "1 sentence; reason: not supported by the dossier quote (support 0.03)"
+     "value": "1 sentence; reason: not supported by the cited paragraph (authority support 0.23 < 0.50)"
     },
     {
      "label": "Withheld from G6",
-     "value": "1 sentence; reason: only says the record is silent"
+     "value": "1 sentence; reason: not supported by the cited paragraph (authority support 0.23 < 0.50)"
     },
     {
      "label": "Withheld from G7",
-     "value": "3 sentences; reason: not supported by the dossier quote (support 0.25)"
+     "value": "6 sentences; reason: cites no fact or authority"
     },
     {
      "label": "Withheld from G8",
-     "value": "3 sentences; reason: not supported by the dossier quote (fact support 0.01 < 0.50)"
+     "value": "1 sentence; reason: not supported by the dossier quote (support 0.30)"
     }
    ],
    "hi": {
     "title": "Sutradhar योजना बनाता है, Vakeel मसौदा तैयार करता है",
     "src": {
      "title": "bd1dd6fa0af4c65b",
-     "filled.0.label": "3158260bbedb788f",
-     "filled.3.label": "b9a517bbb9203548",
-     "filled.4.label": "7a0233e8da925a47",
-     "filled.5.label": "168473446e2fb8d1",
-     "filled.7.label": "af478b6a0bb28184",
-     "filled.8.label": "d9b9a5250fbd8059",
-     "filled.2.label": "de4009e04b48dbc7",
-     "filled.3.value": "491614dd1faf3158",
-     "filled.4.value": "78829059016a549a",
-     "filled.5.value": "cbec83226b92b83d",
-     "filled.6.label": "c13f708cf7902161",
-     "filled.6.value": "0b098f0230d38aee",
-     "filled.7.value": "55a55ea481bd4151",
-     "filled.8.value": "5e72391d7ff5258e",
-     "filled.9.label": "770575fb47cd3335",
-     "filled.9.value": "1d7dee85f3d2b887",
-     "caption": "cbb1cb45f024359b",
-     "filled.0.value": "bc5a696f32c48502",
-     "filled.1.label": "c7848daae6c94c7b",
-     "filled.1.value": "0fc5c741868eea14"
+     "filled.0.label": "9fb8c2fe1c508282",
+     "filled.1.label": "3158260bbedb788f",
+     "filled.4.label": "b9a517bbb9203548",
+     "filled.5.label": "7a0233e8da925a47",
+     "filled.4.value": "60b28695774fbf7e",
+     "filled.8.label": "c13f708cf7902161",
+     "filled.9.label": "af478b6a0bb28184",
+     "filled.10.label": "d9b9a5250fbd8059",
+     "filled.11.label": "770575fb47cd3335",
+     "filled.6.label": "63f123a598146e7a",
+     "filled.7.label": "168473446e2fb8d1",
+     "caption": "779cbd77848ed20c",
+     "filled.0.value": "219b91107d158c37",
+     "filled.1.value": "d3247a45635042a4",
+     "filled.2.label": "a14dcecfe152a3a0",
+     "filled.2.value": "3fd2921eea4b077a",
+     "filled.3.label": "de4009e04b48dbc7",
+     "filled.3.value": "aa90c9268a4441b4",
+     "filled.5.value": "d893c849e7736d53",
+     "filled.6.value": "03c712bbc828b746",
+     "filled.7.value": "89890818764193dc",
+     "filled.8.value": "aaa82a3051e08346",
+     "filled.9.value": "aaa82a3051e08346",
+     "filled.10.value": "38a758df2222c355",
+     "filled.11.value": "9a88e104c03ba38f"
     },
     "filled": [
      {
+      "label": "G1 · गंभीर प्रकृति और दंड",
+      "value": "SUPPORTED: बरामद contraband की मात्रा, 4 ग्राम हेरोइन, 5 ग्राम की अधिसूचित कम मात्रा से कम है [F:facts_text]। 2.5 ग्राम ब्राउन शुगर (हेरोइन) जिसके बारे में कहा जाता है कि सह-अभियुक्त के साथ आवेदक के संयुक्त कब्जे से बरामद हुई है..."
+     },
+     {
       "label": "G3 · आरोप-पत्र दाखिल",
-      "value": "SUPPORTED: आरोप-पत्र 25.08.2026 को दाखिल किया गया था, जो BNSS की धारा 187(3) के तहत निर्धारित 60 दिन की सीमा के भीतर है, जिसका अर्थ है कि डिफ़ॉल्ट जमानत का अधिकार कभी उत्पन्न नहीं हुआ [F:facts_text]। अंतिम रिपोर्ट द्वारा पुष्टि के अनुसार जांच पूरी हो चुकी है [F:facts_text]…"
+      "value": "SUPPORTED: बरामद contraband की मात्रा 4.0 ग्राम की कम मात्रा है [F:facts_text]। आरोप-पत्र सक्षम अदालत के समक्ष दाखिल किया गया था [A:CGHC010436002025#7]। मामले की जांच पूरी हो चुकी है और आरोप-पत्र दाखिल कर दिया गया है [A:KAHC010151502025#6]। I…"
      },
      {
-      "label": "G5 · फरार होने का जोखिम",
-      "value": "SUPPORTED: अभियुक्त का किसी भी आपराधिक मामले में कोई पिछला संलिप्तता नहीं है और वह पहली बार का अपराधी है [F:facts_text]. अभियुक्त का कोई आपराधिक इतिहास नहीं है [F:facts_text]."
+      "label": "G6 · कमजोर प्रथम दृष्टया",
+      "value": "SUPPORTED: विधिवत फॉरेंसिक रिपोर्ट डाय एसिटाइलमॉर्फिन (हेरोइन) की पुष्टि करती है, कुल वजन 4.0 ग्राम, जो एक छोटी मात्रा है, और हेरोइन की बरामद 4 ग्राम मात्रा 5 ग्राम की अधिसूचित छोटी मात्रा से कम है [F:facts_text]."
      },
      {
-      "label": "G7 · वैधानिक रोक",
-      "value": ""
+      "label": "G7 · सांविधिक रोक",
+      "value": "SUPPORTED: आरोप-पत्र 25.08.2026 को दाखिल किया गया था, और अनुसंधान पूर्ण है [F:facts_text]। आरोप-पत्र 25.08.2026 को दाखिल किया गया था। अनुसंधान पूर्ण है [A:KAHC010151502025#8]। <<UNTRUSTED_DOCUMENT_DATA 18a77e1e2918>> [doc=KAHC010151502025#8] The text betwee…"
      },
      {
-      "label": "G1 से रोकी गई",
-      "value": "2 वाक्य; कारण: डॉसियर के उद्धरण द्वारा समर्थित नहीं (समर्थन 0.17)"
+      "label": "G1 से रोका गया",
+      "value": "3 वाक्य; कारण: कोई तथ्य या प्राधिकार उद्धृत नहीं करता है"
      },
      {
-      "label": "G2 से रोकी गई",
-      "value": "3 वाक्य; कारण: डॉसियर के उद्धरण द्वारा समर्थित नहीं (समर्थन 0.02)"
+      "label": "G2 से रोका गया",
+      "value": "4 sentences; reason: dossiar quote द्वारा समर्थित नहीं है (fact support 0.04 < 0.50)"
+     },
+     {
+      "label": "G3 से रोका गया",
+      "value": "1 sentence; reason: ऐसे प्राधिकार का हवाला देता है जिसे पुनर्प्राप्त नहीं किया गया था (KAHC010436002025#7 को पुनर्प्राप्त नहीं किया गया था)"
      },
      {
       "label": "G4 से रोका गया",
-      "value": "1 वाक्य; कारण: डॉसियर के उद्धरण द्वारा समर्थित नहीं (समर्थन 0.08)"
+      "value": "1 sentence; reason: dossier quote द्वारा समर्थित नहीं है (support 0.02)"
      },
      {
-      "label": "G5 से रोका गया",
-      "value": "1 वाक्य; कारण: डॉसियर के उद्धरण द्वारा समर्थित नहीं (समर्थन 0.03)"
+      "label": "G5 से रोके रखा गया",
+      "value": "1 sentence; reason: उद्धृत पैराग्राफ द्वारा समर्थित नहीं है (authority support 0.23 < 0.50)"
      },
      {
-      "label": "G6 से रोका गया",
-      "value": "1 वाक्य; कारण: केवल यह कहता है कि रिकॉर्ड चुप है"
+      "label": "G6 से रोके रखा गया",
+      "value": "1 sentence; reason: उद्धृत पैराग्राफ द्वारा समर्थित नहीं है (authority support 0.23 < 0.50)"
      },
      {
-      "label": "G7 से रोका गया",
-      "value": "3 वाक्य; कारण: डॉसियर के उद्धरण द्वारा समर्थित नहीं (समर्थन 0.25)"
+      "label": "G7 से रोके रखा गया",
+      "value": "6 sentences; reason: किसी तथ्य या प्राधिकार का हवाला नहीं देता है"
      },
      {
-      "label": "G8 से रोका गया",
-      "value": "3 वाक्य; कारण: डोजियर उद्धरण द्वारा समर्थित नहीं (तथ्य समर्थन 0.01 < 0.50)"
+      "label": "G8 से रोके रखा गया",
+      "value": "1 sentence; reason: dossier quote द्वारा समर्थित नहीं है (support 0.30)"
      }
     ],
-    "caption": "Sutradhar ने एक-एक कारक (9 कारक) के आधार पर मसौदे की योजना बनाई और प्रत्येक के लिए आवश्यक साक्ष्य प्राप्त किए: 63 स्टोर कॉल। Vakeel ने 3 आधार तैयार किए (3 समर्थित)। प्रत्येक वाक्य की उसके स्रोत से जाँच की गई; जिन 14 वाक्यों का परीक्षक समर्थन नहीं कर सका, उन्हें रोक लिया गया, जिससे अधिवक्ता द्वारा तैयार करने के लिए 5 आधार बचे। अधिवक्ता के लिए 22 खुले मुद्दे सूचीबद्ध हैं।"
+    "caption": "Sutradhar ने कारक-दर-कारक (9 कारक) मसौदे की योजना बनाई और प्रत्येक की आवश्यकता वाले साक्ष्य को प्राप्त किया: 56 स्टोर कॉल। Vakeel ने 4 आधारों का मसौदा तैयार किया (4 समर्थित)। प्रत्येक वाक्य की उसके स्रोत के विरुद्ध जाँच की गई; जिन 18 वाक्यों का चेकर समर्थन नहीं कर सका, उन्हें रोक लिया गया, जिससे अधिवक्ता के मसौदा तैयार करने के लिए 4 आधार बचे। अधिवक्ता के लिए 24 खुली समस्याएं सूचीबद्ध हैं।"
    }
   },
   {
@@ -499,68 +532,108 @@
    "title": "Abhiyojak argues the other side",
    "agent": "ABHIYOJAK",
    "action": null,
-   "caption": "Abhiyojak, the prosecution sparring partner, raised 5 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case; 6 ungrounded objections were discarded. Abhiyojak judged 0 of Vakeel's replies: 0 answered, 0 partly answered, 0 unanswered; 5 objections could not be judged because the sparring token budget was spent, and stay unanswered. Whatever stays open is listed at Gate 2, and counsel answers it before approving.",
+   "caption": "Abhiyojak, the prosecution sparring partner, raised 9 objections in 2 rounds, each grounded in a prosecution argument from comparable orders or a fact of the case; 3 ungrounded objections were discarded. Vakeel replied to 9 of them and Abhiyojak judged each reply: 2 answered, 4 partly answered, 3 unanswered. Whatever stays open is listed at Gate 2, and counsel answers it before approving.",
    "filled": [
     {
-     "label": "O1 against G5 (flight risk)",
-     "value": "UNANSWERED: The accused has been in custody for 136 days and the charge sheet was filed only on 25.08.2026, indicating prolonged pre-trial detention without trial commencement."
+     "label": "O1 against G1 (gravity and punishment)",
+     "value": "PARTLY: The offence under NDPS 21(a) carries a maximum punishment of one year, but the gravity of the offence must also account for the fact that the applicant has been in custody for 136 days, which is a substantial pre-trial detention period that weighs against the…"
     },
     {
-     "label": "O2 against G5 (flight risk)",
-     "value": "UNANSWERED: The offence is under NDPS 21(a) with a maximum punishment of 1 year, and the applicant was charged under this section, which warrants consideration of statutory factors including the nature of the offence and potential for tampering."
+     "label": "O2 against G3 (charge sheet filed)",
+     "value": "PARTLY: The offence involves a controlled substance under the NDPS Act, which carries a significant penalty, and the quantity recovered, while claimed to be small by the defence, must be evaluated in the context of the statutory framework governing narcotic drugs."
     },
     {
-     "label": "O3 against general (gravity and punishment)",
-     "value": "UNANSWERED: The offence under NDPS 21(a) involves a non-bailable provision with a maximum punishment of 20 years, and the gravity of the accusation coupled with the stringent punishment provided by law weighs heavily against the grant of bail at this stage."
+     "label": "O3 against G3 (charge sheet filed)",
+     "value": "UNANSWERED: The applicant has been in custody for 136 days, and despite the completion of investigation and filing of the charge sheet, there is no indication that the applicant has surrendered any travel documents or provided other assurances against absconding."
     },
     {
-     "label": "O4 against general (antecedents)",
-     "value": "UNANSWERED: While no criminal antecedents are formally recorded, the applicant's prior conduct and the fact that the charge sheet has been filed without trial commencement raise concerns about the character and behaviour of the accused, which must be weighed against the…"
+     "label": "O4 against G6 (weak prima facie)",
+     "value": "PARTLY: The quantity of 4 grams of heroin, while below the notified small quantity threshold, still establishes a prima facie case under NDPS section 21(a) and does not negate the prosecution's case."
     },
     {
-     "label": "O5 against general (statutory bar)",
-     "value": "UNANSWERED: The offence is triable under the NDPS Act, which attracts stringent statutory restrictions on bail, and the prosecution has not yet recorded satisfaction under Section 37(1) regarding reasonable grounds for believing the applicant is not guilty or not likely…"
+     "label": "O5 against G6 (weak prima facie)",
+     "value": "UNANSWERED: The charge sheet has been filed and the trial is in progress, and the applicant has been in custody for 136 days, indicating the prosecution has sufficient evidence to proceed."
+    },
+    {
+     "label": "O6 against general (flight risk)",
+     "value": "UNANSWERED: The applicant has remained in custody for 136 days since his first remand, and the investigation is still ongoing, indicating a potential flight risk if released on bail."
+    },
+    {
+     "label": "O7 against general (witness tampering)",
+     "value": "PARTLY: The applicant has been in custody for 136 days and the charge sheet has been filed, yet the trial is not at its conclusive end, leaving open the possibility of tampering with prosecution witnesses if released."
+    },
+    {
+     "label": "O8 against general (antecedents)",
+     "value": "ANSWERED: The applicant's antecedents are not stated, but the prosecution cannot rule out the possibility of prior criminal history, and the absence of a clean record weighs against bail."
+    },
+    {
+     "label": "O9 against general (statutory bar)",
+     "value": "ANSWERED: The applicant is charged under NDPS 21(a), and although the maximum punishment is one year, the NDPS Act contains stringent provisions that may attract a statutory bar to bail, requiring the court to record satisfaction that the applicant is not guilty and no…"
     }
    ],
    "hi": {
-    "title": "Abhiyojak दूसरी ओर से बहस करते हैं",
+    "title": "Abhiyojak दूसरी ओर से तर्क देते हैं",
     "src": {
      "title": "6b6690e3a72567b9",
-     "caption": "46319132903a29be",
-     "filled.0.label": "aceefd9ced8653a3",
-     "filled.0.value": "7b3b2b39a26171b6",
-     "filled.1.label": "6008d7d27bae5435",
-     "filled.1.value": "a1b76e01cd694f10",
-     "filled.2.label": "61344976ccc7ee1a",
-     "filled.2.value": "8e213ab310fc3c4e",
-     "filled.3.label": "77f5e2300bcc4ad1",
-     "filled.3.value": "110ef305d32e6d26",
-     "filled.4.label": "c809c0dec8f0d9f0",
-     "filled.4.value": "0089b427994c5c45"
+     "filled.0.label": "df16a064b157a212",
+     "caption": "0d90e230c6f57b08",
+     "filled.0.value": "6cde08b5d310bafc",
+     "filled.1.label": "568132163538e971",
+     "filled.1.value": "a9727de0e0556be0",
+     "filled.2.label": "eb1b54921b8a5630",
+     "filled.2.value": "0fa709113018ad6f",
+     "filled.3.label": "d94b8c8e0b1cc9c6",
+     "filled.3.value": "bb05f26b195d4a90",
+     "filled.4.label": "8f92e5ce80f15f3b",
+     "filled.4.value": "90399773a019a15a",
+     "filled.5.label": "1358148208f81b91",
+     "filled.5.value": "205e8a7dad18a337",
+     "filled.6.label": "bb569c3679b0a732",
+     "filled.6.value": "4f00efb6fd5aad68",
+     "filled.7.label": "d0e79a9232ccf450",
+     "filled.7.value": "61ceffb26886c93f",
+     "filled.8.label": "a7a8a204c3ea3ee7",
+     "filled.8.value": "2f4d0f1682cb45e8"
     },
-    "caption": "Abhiyojak, अभियोजन पक्ष के विरोधी, ने 2 दौर में 5 आपत्तियाँ उठाईं, प्रत्येक तुलनीय आदेशों से अभियोजन तर्क या मामले के तथ्य पर आधारित थी; 6 आधारहीन आपत्तियाँ खारिज कर दी गईं। Abhiyojak ने Vakeel के उत्तरों में से 0 का मूल्यांकन किया: 0 उत्तर दिए गए, 0 आंशिक रूप से उत्तर दिए गए, 0 UNANSWERED; 5 आपत्तियों का मूल्यांकन नहीं किया जा सका क्योंकि स्पैरिंग टोकन बजट समाप्त हो गया था, और UNANSWERED रहती हैं। जो भी खुला रहता है वह GATE_2 पर सूचीबद्ध होता है, और अधिवक्ता अनुमोदन से पहले इसका उत्तर देता है।",
     "filled": [
      {
-      "label": "G5 (flight risk) के विरुद्ध O1",
-      "value": "UNANSWERED: अभियुक्त 136 दिनों से हिरासत में है और charge sheet केवल 25.08.2026 को दाखिल की गई थी, जो बिना मुकदमे की शुरुआत के लंबे समय तक पूर्व-विचारणीय हिरासत को इंगित करता है।"
+      "label": "O1 और G1 (गंभीरता और सजा) के बीच",
+      "value": "PARTLY: NDPS 21(a) के तहत अपराध में अधिकतम एक वर्ष की सजा का प्रावधान है, लेकिन अपराध की गंभीरता को इस तथ्य को भी ध्यान में रखना चाहिए कि आवेदक 136 दिनों से हिरासत में है, जो कि एक महत्वपूर्ण पूर्व-विचारण हिरासत अवधि है जो इसके विरुद्ध जाती है..."
      },
      {
-      "label": "G5 (flight risk) के विरुद्ध O2",
-      "value": "UNANSWERED: अपराध NDPS 21(a) के अंतर्गत है जिसमें अधिकतम 1 वर्ष की सजा है, और आवेदक पर इस section के तहत आरोप लगाया गया था, जो अपराध की प्रकृति और छेड़छाड़ की संभावना सहित वैधानिक कारकों पर विचार करने की वारंट देता है।"
+      "label": "G3 के विरुद्ध O2 (आरोप-पत्र दाखिल)",
+      "value": "PARTLY: इस अपराध में NDPS Act के तहत एक नियंत्रित पदार्थ शामिल है, जिसमें महत्वपूर्ण दंड का प्रावधान है, और बरामद मात्रा, भले ही बचाव पक्ष द्वारा कम होने का दावा किया गया हो, नशीली दवाओं को नियंत्रित करने वाले वैधानिक ढांचे के संदर्भ में मूल्यांकित की जानी चाहिए।"
      },
      {
-      "label": "सामान्य (gravity and punishment) के विरुद्ध O3",
-      "value": "UNANSWERED: NDPS 21(a) के तहत अपराध में अधिकतम 20 वर्ष की सजा के साथ एक गैर-जमानती प्रावधान शामिल है, और कानून द्वारा प्रदान की गई कड़ी सजा के साथ आरोप की गंभीरता इस चरण में जमानत देने के खिलाफ भारी पड़ती है।"
+      "label": "G3 के विरुद्ध O3 (आरोप-पत्र दाखिल)",
+      "value": "UNANSWERED: आवेदक 136 दिनों से हिरासत में है, और जांच पूरी होने तथा आरोप-पत्र दाखिल होने के बावजूद, इस बात का कोई संकेत नहीं है कि आवेदक ने कोई यात्रा दस्तावेज सौंपे हैं या भागने के खिलाफ अन्य आश्वासन दिए हैं।"
      },
      {
-      "label": "सामान्य (antecedents) के विरुद्ध O4",
-      "value": "UNANSWERED: हालांकि कोई आपराधिक पूर्ववृत्त औपचारिक रूप से दर्ज नहीं किया गया है, आवेदक के पूर्व आचरण और इस तथ्य ने कि trial शुरू किए बिना charge sheet दायर कर दी गई है, अभियुक्त के चरित्र और व्यवहार के बारे में चिंताएँ बढ़ा दी हैं, जिन्हें इसके खिलाफ तौला जाना चाहिए..."
+      "label": "G6 के विरुद्ध O4 (कमजोर प्रथम दृष्टया मामला)",
+      "value": "PARTLY: 4 ग्राम हेरोइन की मात्रा, हालांकि अधिसूचित कम मात्रा की सीमा से कम है, फिर भी NDPS section 21(a) के तहत एक prima facie मामला स्थापित करती है और अभियोजन पक्ष के मामले को खारिज नहीं करती है।"
      },
      {
-      "label": "सामान्य (वैधानिक रोक) के विरुद्ध O5",
-      "value": "UNANSWERED: यह अपराध NDPS Act के अंतर्गत विचारणीय है, जिसमें जमानत पर कड़े वैधानिक प्रतिबंध हैं, और अभियोजन पक्ष ने अभी तक धारा 37(1) के तहत इस बात पर संतोष दर्ज नहीं किया है कि आवेदक के निर्दोष होने या संभावना न होने के..."
+      "label": "G6 के विरुद्ध O5 (कमजोर प्रथम दृष्टया मामला)",
+      "value": "UNANSWERED: आरोप-पत्र दाखिल कर दिया गया है और विचारอด प्रगति पर है, और आवेदक 136 दिनों से हिरासत में है, जो यह दर्शाता है कि अभियोजन पक्ष के पास आगे बढ़ने के लिए पर्याप्त साक्ष्य हैं।"
+     },
+     {
+      "label": "सामान्य के विरुद्ध O6 (फरार होने का जोखिम)",
+      "value": "UNANSWERED: अभियुक्त अपनी पहली रिमांड से 136 दिनों से हिरासत में है और जांच अभी भी जारी है, जो जमानत पर रिहा होने पर संभावित रूप से भागने के जोखिम को इंगित करता है।"
+     },
+     {
+      "label": "O7 सामान्य के विरुद्ध (गवाहों से छेड़छाड़)",
+      "value": "PARTLY: अभियुक्त 136 दिनों से हिरासत में है और आरोप-पत्र दायर किया जा चुका है, फिर भी विचारण अपने निर्णायक अंत पर नहीं है, जिससे रिहा होने पर अभियोजन पक्ष के गवाहों के साथ छेड़छाड़ की संभावना खुली रहती है।"
+     },
+     {
+      "label": "O8 सामान्य के विरुद्ध (पूर्ववृत्त)",
+      "value": "ANSWERED: अभियुक्त के पूर्ववृत्त बताए नहीं गए हैं, लेकिन अभियोजन पक्ष पूर्व आपराधिक इतिहास की संभावना से इंकार नहीं कर सकता है, और स्वच्छ रिकॉर्ड की अनुपस्थिति जमानत के विरुद्ध जाती है।"
+     },
+     {
+      "label": "O9 सामान्य के विरुद्ध (वैधानिक रोक)",
+      "value": "ANSWERED: अभियुक्त पर NDPS 21(a) के तहत आरोप है, और हालांकि अधिकतम सजा एक वर्ष है, NDPS अधिनियम में कड़े प्रावधान हैं जो जमानत पर एक सांविधिक रोक आकर्षित कर सकते हैं, जिसके लिए अदालत को यह संतुष्टि दर्ज करने की आवश्यकता है कि अभियुक्त दोषी नहीं है और नहीं..."
      }
-    ]
+    ],
+    "caption": "Abhiyojak, जो अभियोजन पक्ष के विरोधी हैं, ने 2 दौर में 9 आपत्तियां उठाईं, जिनमें से प्रत्येक तुलनीय आदेशों के अभियोजन तर्क या मामले के किसी तथ्य पर आधारित थी; 3 आधारहीन आपत्तियों को खारिज कर दिया गया। Vakeel ने उनमें से 9 का उत्तर दिया और Abhiyojak ने प्रत्येक उत्तर का मूल्यांकन किया: 2 उत्तर दिए गए, 4 आंशिक रूप से उत्तर दिए गए, 3 UNANSWERED। जो भी खुला रहता है उसे Gate 2 पर सूचीबद्ध किया जाता है, और अधिवक्ता अनुमोदन करने से पहले उसका उत्तर देता है।"
    }
   },
   {
@@ -569,31 +642,35 @@
    "title": "Hearing card",
    "agent": "VAKEEL",
    "action": null,
-   "caption": "Vakeel turned the brief and the sparring into a card for the hearing: 3 likely questions from the bench with answers, 3 grounds to lead with and 1 bail condition counsel can offer. It predicts nothing and gives no grant rate.",
+   "caption": "Vakeel turned the brief and the sparring into a card for the hearing: 4 likely questions from the bench with answers, 3 grounds to lead with and 1 bail condition counsel can offer. It predicts nothing and gives no grant rate.",
    "filled": [
     {
+     "label": "Lead with G1 (gravity and punishment)",
+     "value": "The quantity of the recovered contraband, 4 grams of heroin, is less than the notified small quantity of 5 grams."
+    },
+    {
      "label": "Lead with G3 (charge sheet filed)",
-     "value": "The charge sheet was filed on 25.08.2026, which is within the 60-day limit prescribed under Section 187(3) of the BNSS, meaning the right to default bail never arose.The investigation is complete, as confirmed by the final report.The quantity of the recovered…"
+     "value": "The quantity of contraband recovered is a small quantity of 4.0 grams."
     },
     {
-     "label": "Lead with G5 (flight risk)",
-     "value": "The accused has no previous involvement in any criminal case and is a first-time offender.The accused has no criminal antecedents."
-    },
-    {
-     "label": "Lead with G7 (statutory bar)",
-     "value": "The twin conditions under Section 37 of the NDPS Act are satisfied where there are reasonable grounds to believe that the applicant is not guilty of committing the alleged offence, after taking a broad and prima facie view of the case, and particularly the fa…"
+     "label": "Lead with G6 (weak prima facie)",
+     "value": "The forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity, and the recovered quantity of 4 grams of heroin is below the notified small quantity of 5 grams."
     },
     {
      "label": "Bench may raise: statutory bar",
-     "value": "The twin conditions under Section 37 of the NDPS Act are satisfied where there are reasonable grounds to believe that the applicant is not guilty of committing the alleged offence, after taking a broad and prima facie view of the case, and particularly the fa…"
+     "value": "The charge sheet was filed on 25.08.2026, and investigation is complete.The charge sheet was filed on 25.08.2026."
     },
     {
      "label": "Bench may raise: charge sheet filed",
-     "value": "The charge sheet was filed on 25.08.2026, which is within the 60-day limit prescribed under Section 187(3) of the BNSS, meaning the right to default bail never arose.The investigation is complete, as confirmed by the final report.The quantity of the recovered…"
+     "value": "The quantity of contraband recovered is a small quantity of 4.0 grams."
     },
     {
-     "label": "Bench may raise: flight risk",
-     "value": "The accused has no previous involvement in any criminal case and is a first-time offender.The accused has no criminal antecedents."
+     "label": "Bench may raise: gravity and punishment",
+     "value": "The quantity of the recovered contraband, 4 grams of heroin, is less than the notified small quantity of 5 grams."
+    },
+    {
+     "label": "Bench may raise: weak prima facie",
+     "value": "The forensic report confirms diacetylmorphine (heroin), net weight 4.0 grams, a small quantity, and the recovered quantity of 4 grams of heroin is below the notified small quantity of 5 grams."
     },
     {
      "label": "Condition counsel can offer",
@@ -604,53 +681,59 @@
     "title": "सुनवाई कार्ड",
     "src": {
      "title": "aa0e58a1edb0eae2",
-     "filled.0.label": "d75c7a6a19fc28a2",
+     "filled.0.label": "d6d4f9972da5a0c3",
+     "filled.1.label": "d75c7a6a19fc28a2",
      "filled.4.label": "fa0d6dc0a45001d4",
-     "filled.6.label": "50174a7fcb4e72c8",
-     "filled.6.value": "d1b34ed8a231a244",
-     "caption": "5fc8f2a403dc708a",
-     "filled.0.value": "8cca5368bad64590",
-     "filled.1.label": "b5d7a595f476e07f",
-     "filled.1.value": "275ee96aa44bd6c4",
-     "filled.2.label": "ea3953aba7b148aa",
-     "filled.2.value": "ab321f62d3750b03",
+     "filled.5.label": "ad80dbffefc540b9",
+     "filled.7.label": "50174a7fcb4e72c8",
+     "filled.7.value": "d1b34ed8a231a244",
+     "caption": "468b902d1e96d0eb",
+     "filled.0.value": "f3da891216a9337c",
+     "filled.1.value": "b9cc147033f65e94",
+     "filled.4.value": "b9cc147033f65e94",
+     "filled.5.value": "f3da891216a9337c",
+     "filled.2.label": "7e939b9f5f8259d8",
+     "filled.2.value": "920a43b8da03983f",
      "filled.3.label": "ebeb0cb84a7278e6",
-     "filled.3.value": "ab321f62d3750b03",
-     "filled.4.value": "8cca5368bad64590",
-     "filled.5.label": "ed6ee9a8dc84c29e",
-     "filled.5.value": "275ee96aa44bd6c4"
+     "filled.3.value": "bb4192e42b29b737",
+     "filled.6.label": "3170196246cf6a34",
+     "filled.6.value": "920a43b8da03983f"
     },
     "filled": [
      {
-      "label": "G3 (charge sheet filed) के साथ अग्रणी बनें।",
-      "value": "आरोप-पत्र 25.08.2026 को दाखिल किया गया था, जो BNSS की धारा 187(3) के तहत निर्धारित 60 दिन की सीमा के भीतर है, जिसका अर्थ है कि default bail का अधिकार कभी उत्पन्न नहीं हुआ। अंतिम रिपोर्ट द्वारा पुष्टि किए जाने के बाद, जांच पूरी हो चुकी है। बरामद की गई मात्रा..."
+      "label": "G1 (गंभीरता और सजा) के साथ शुरुआत करें",
+      "value": "बरामद मादक पदार्थ की मात्रा, 4 ग्राम हेरोइन, 5 ग्राम की अधिसूचित अल्प मात्रा से कम है।"
      },
      {
-      "label": "G5 (भागने का जोखिम) के साथ शुरुआत करें",
-      "value": "अभियुक्त की किसी भी आपराधिक मामले में कोई पूर्व संलिप्तता नहीं है और वह पहली बार का अपराधी है। अभियुक्त का कोई आपराधिक इतिहास नहीं है।"
+      "label": "G3 (आरोप-पत्र दाखिल) के साथ शुरुआत करें",
+      "value": "बरामद मादक पदार्थ की मात्रा 4.0 ग्राम की अल्प मात्रा है।"
      },
      {
-      "label": "G7 (वैधानिक रोक) के साथ शुरुआत करें",
-      "value": "NDPS Act की धारा 37 के तहत दोहरी शर्तें पूरी होती हैं जहाँ मामले का व्यापक और प्रथम दृष्टया दृष्टिकोण अपनाने के बाद, और विशेष रूप से तथ्यों..."
+      "label": "G6 (कमजोर प्रथम दृष्टया मामला) के साथ आगे बढ़ें",
+      "value": "विधि-विज्ञान रिपोर्ट डायसेटाइलमॉर्फिन (हेरोइन) की पुष्टि करती है, कुल वजन 4.0 ग्राम, एक अल्प मात्रा, और हेरोइन की बरामद 4 ग्राम मात्रा 5 ग्राम की अधिसूचित अल्प मात्रा से कम है।"
      },
      {
-      "label": "पीठ उठा सकती है: वैधानिक रोक",
-      "value": "NDPS Act की धारा 37 के तहत दोहरी शर्तें पूरी होती हैं जहाँ मामले का व्यापक और प्रथम दृष्टया दृष्टिकोण अपनाने के बाद, और विशेष रूप से तथ्यों..."
+      "label": "न्यायपीठ उठा सकती है: सांविधिक रोक",
+      "value": "आरोप-पत्र 25.08.2026 को दाखिल किया गया था, और अन्वेषण पूर्ण है। आरोप-पत्र 25.08.2026 को दाखिल किया गया था।"
      },
      {
-      "label": "पीठ यह उठा सकती है: charge sheet filed",
-      "value": "आरोप-पत्र 25.08.2026 को दाखिल किया गया था, जो BNSS की धारा 187(3) के तहत निर्धारित 60 दिन की सीमा के भीतर है, जिसका अर्थ है कि default bail का अधिकार कभी उत्पन्न नहीं हुआ। अंतिम रिपोर्ट द्वारा पुष्टि किए जाने के बाद, जांच पूरी हो चुकी है। बरामद की गई मात्रा..."
+      "label": "पीठ यह उठा सकती है: आरोप-पत्र दाखिल",
+      "value": "बरामद मादक पदार्थ की मात्रा 4.0 ग्राम की अल्प मात्रा है।"
      },
      {
-      "label": "पीठ उठा सकती है: भागने का जोखिम",
-      "value": "अभियुक्त की किसी भी आपराधिक मामले में कोई पूर्व संलिप्तता नहीं है और वह पहली बार का अपराधी है। अभियुक्त का कोई आपराधिक इतिहास नहीं है।"
+      "label": "पीठ यह उठा सकती है: गंभीरता और सजा",
+      "value": "बरामद मादक पदार्थ की मात्रा, 4 ग्राम हेरोइन, 5 ग्राम की अधिसूचित अल्प मात्रा से कम है।"
      },
      {
-      "label": "शर्त जो अधिवक्ता प्रस्तुत कर सकता है",
-      "value": "गवाहों को प्रभावित न करना या साक्ष्यों के साथ छेड़छाड़ न करना"
+      "label": "न्यायपीठ उठा सकती है: कमजोर प्रथम दृष्टया मामला",
+      "value": "विधि-विज्ञान रिपोर्ट डायसेटाइलमॉर्फिन (हेरोइन) की पुष्टि करती है, कुल वजन 4.0 ग्राम, एक अल्प मात्रा, और हेरोइन की बरामद 4 ग्राम मात्रा 5 ग्राम की अधिसूचित अल्प मात्रा से कम है।"
+     },
+     {
+      "label": "वह शर्त जो अधिवक्ता पेश कर सकता है",
+      "value": "गवाहों को प्रभावित न करना या साक्ष्य के साथ छेड़छाड़ न करना"
      }
     ],
-    "caption": "Vakeel ने सुनवाई के लिए मसौदे और बहस को एक कार्ड में बदल दिया: पीठ से 3 संभावित प्रश्न उत्तरों के साथ, शुरुआत करने के लिए 3 आधार और 1 जमानत की शर्त जो अधिवक्ता पेश कर सकते हैं। यह कुछ भी अनुमान नहीं लगाता है और कोई মঞ্জूर दर नहीं देता है।"
+    "caption": "Vakeel ने संक्षिप्त विवरण और जिरह को सुनवाई के लिए एक कार्ड में बदल दिया: पीठ से संभावित 4 प्रश्न उत्तरों के साथ, आगे रखने के लिए 3 आधार और 1 जमानत शर्त जो अधिवक्ता पेश कर सकता है। यह कुछ भी पूर्वानुमानित नहीं करता है और कोई अनुदान दर नहीं देता है।"
    }
   },
   {
@@ -659,78 +742,68 @@
    "title": "Gate 2: your approval",
    "agent": null,
    "action": "approve_gate_2",
-   "caption": "Export is impossible until counsel approves Gate 2: in this run the export call before approval was refused (403). The checklist has 6 items for counsel (1 unsupported field and 5 unanswered objections); approving records that counsel has read them. Next approves Gate 2 as counsel.",
+   "caption": "Export is impossible until counsel approves Gate 2: in this run the export call before approval was refused (403). The checklist has 5 items for counsel (2 unsupported fields and 3 unanswered objections); approving records that counsel has read them. Next approves Gate 2 as counsel.",
    "filled": [
+    {
+     "label": "fir",
+     "value": "FIR: not supported by the papers; counsel acknowledges"
+    },
     {
      "label": "trial_stage",
      "value": "Trial stage: not supported by the papers; counsel acknowledges"
-    },
-    {
-     "label": "UNANSWERED:O1",
-     "value": "objection O1: no supported reply; counsel has read it"
-    },
-    {
-     "label": "UNANSWERED:O2",
-     "value": "objection O2: no supported reply; counsel has read it"
     },
     {
      "label": "UNANSWERED:O3",
      "value": "objection O3: no supported reply; counsel has read it"
     },
     {
-     "label": "UNANSWERED:O4",
-     "value": "objection O4: no supported reply; counsel has read it"
-    },
-    {
      "label": "UNANSWERED:O5",
      "value": "objection O5: no supported reply; counsel has read it"
+    },
+    {
+     "label": "UNANSWERED:O6",
+     "value": "objection O6: no supported reply; counsel has read it"
     }
    ],
    "hi": {
     "filled": [
      {
-      "label": "विचारण चरण",
-      "value": "विचारण चरण: कागजातों द्वारा समर्थित नहीं; अधिवक्ता स्वीकार करता है"
+      "label": "fir",
+      "value": "FIR: कागज़ात द्वारा समर्थित नहीं है; अधिवक्ता स्वीकार करते हैं"
      },
      {
-      "label": "UNANSWERED:O1",
-      "value": "आपत्ति O1: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है"
-     },
-     {
-      "label": "UNANSWERED:O2",
-      "value": "आपत्ति O2: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है"
+      "label": "trial_stage",
+      "value": "विचारण चरण: कागजातों द्वारा समर्थित नहीं है; अधिवक्ता स्वीकार करते हैं"
      },
      {
       "label": "UNANSWERED:O3",
       "value": "आपत्ति O3: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है"
      },
      {
-      "label": "UNANSWERED:O4",
-      "value": "आपत्ति O4: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है"
+      "label": "UNANSWERED:O5",
+      "value": "आपत्ति O5: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है"
      },
      {
-      "label": "UNANSWERED:O5",
-      "value": "आपत्ति O5: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है।"
+      "label": "UNANSWERED:O6",
+      "value": "आपत्ति O6: कोई समर्थित उत्तर नहीं; अधिवक्ता ने इसे पढ़ लिया है"
      }
     ],
     "src": {
-     "filled.1.label": "2297325853ed80d4",
-     "filled.2.label": "15b4cc2f36d2e923",
-     "filled.3.label": "4fe2213becfde785",
-     "filled.4.label": "7cd2b05de56847ff",
-     "filled.5.label": "079f7770ed5383cd",
+     "filled.0.label": "3434547a02d1f09f",
+     "filled.2.label": "4fe2213becfde785",
+     "filled.3.label": "079f7770ed5383cd",
+     "filled.4.label": "ea7bb9de9897eef8",
      "title": "82bfb6512e590980",
-     "filled.1.value": "78e62c6610ceb4fa",
-     "filled.2.value": "82dcc34a2c0af304",
-     "filled.3.value": "aee81c0912393bc0",
-     "filled.4.value": "b7579390b2545a6c",
-     "filled.5.value": "df3602c8ef05bb82",
-     "filled.0.label": "bec81e9e4ef07299",
-     "filled.0.value": "55807470cbc46864",
-     "caption": "bf92931ce5673af9"
+     "filled.0.value": "ad9a37927ce91498",
+     "filled.3.value": "df3602c8ef05bb82",
+     "filled.4.value": "807ad7569955de98",
+     "caption": "b1b4eb6ffe1fc919",
+     "filled.1.value": "55807470cbc46864",
+     "filled.2.value": "aee81c0912393bc0",
+     "filled.1.label": "bec81e9e4ef07299"
     },
-    "title": "Gate 2: आपका अनुमोदन",
-    "caption": "निर्यात तब तक असंभव है जब तक अधिवक्ता GATE_2 का अनुमोदन नहीं करता: इस रन में अनुमोदन से पहले किए गए निर्यात कॉल को अस्वीकार कर दिया गया (403)। चेकलिस्ट में अधिवक्ता के लिए 6 आइटम हैं (1 असमर्थित फ़ीールド और 5 UNANSWERED आपत्तियां); अनुमोदन यह दर्ज करता है कि अधिवक्ता ने इन्हें पढ़ लिया है। अगला अधिवक्ता के रूप में GATE_2 का अनुमोदन करता है।"
+    "title": "GATE_2: आपका अनुमोदन",
+    "caption": "जब तक अधिवक्ता Gate 2 का अनुमोदन नहीं करते निर्यात असंभव है: इस रन में अनुमोदन से पूर्व निर्यात कॉल अस्वीकार कर दी गई थी (403)। चेकलिस्ट में अधिवक्ता के लिए 5 मद हैं (2 असर्थित क्षेत्र और 3 अनुत्तरित आपत्तियाँ); अनुमोदन यह अभिलिखित करता है कि अधिवक्ता ने उन्हें पढ़ लिया है। इसके बाद अधिवक्ता के रूप में Gate 2 का अनुमोदन होता है।"
    }
   },
   {
@@ -766,11 +839,11 @@
      },
      {
       "label": "list_of_dates.docx",
-      "value": "तारीखों और घटनाओं की सूची"
+      "value": "दिनांक और घटनाओं की सूची"
      },
      {
       "label": "objections_sheet.docx",
-      "value": "आपत्तियां और उत्तर"
+      "value": "आपत्तियां और जवाब"
      },
      {
       "label": "hearing_card.docx",
@@ -790,7 +863,7 @@
      "filled.3.value": "309e1d86df2d4c9f"
     },
     "title": "फ़ाइल: आवेदन डाउनलोड करें",
-    "caption": "GATE_2 अनुमोदन के साथ, निर्यात चार Word फ़ाइलें तैयार करता है: जमानत आवेदन, तारीखों की सूची, आपत्ति पत्र और सुनवाई कार्ड। प्रत्येक को एक मसौदा कहा जाता है; अधिवक्ता अंतिम पाठ को तय करके हस्ताक्षर करता है।"
+    "caption": "GATE_2 के अनुमोदन के साथ, निर्यात चार Word फ़ाइलें लिखता है: जमानत आवेदन, तारीखों की सूची, आपत्तियों की शीट और सुनवाई कार्ड। प्रत्येक को एक ड्राफ्ट के रूप में लेबल किया गया है; अधिवक्ता अंतिम पाठ को तय करता है और उस पर हस्ताक्षर करता है।"
    }
   }
  ],
@@ -800,16 +873,16 @@
    "title": "c4be5d53daf344bc",
    "story": "f60d6baf70eff540",
    "variant.offence": "a814f61534d2f973",
-   "variant.custody": "1161cb829e954dc4",
+   "variant.custody": "92ce714ae78828d6",
    "variant.record": "7106ec9bc0cb3572",
    "variant.parity": "330593bd49f0d1ad"
   },
-  "story": "Accused-1, 22 वर्षीय छात्र, 4 ग्राम हेरोइन, जो एक अल्प मात्रा है, के लिए NDPS 21(a) के तहत आरोपित है, इसलिए s.37 की बाधा लागू नहीं होती; FIR हिंदी में है। उसे 02.07.2026 को गिरफ्तार किया गया था और गिरफ्तारी के आधार केवल मौखिक रूप से बताए गए थे; आरोप-पत्र समय पर दाखिल किया गया था (60 में से 54वें दिन)। Rights Radar आरोपित धारा की अधिकतम अवधि को एक वर्ष के रूप में पढ़ता है: डिफ़ॉल्ट जमानत WINDOW_CLOSED है (आरोप-पत्र 60 दिनों के भीतर आया) और BNSS s.479 विचाराधीन कैदी सीमा ELIGIBLE है (पहली बार के अपराधी के लिए 122 की सीमा के मुकाबले हिरासत में 136 दिन)।",
+  "story": "Accused-1, जो 22 वर्ष का छात्र है, पर 4 ग्राम हेरोइन (जो कि एक अल्प मात्रा है) के लिए NDPS 21(a) के तहत आरोप है, इसलिए s.37 की बाधा लागू नहीं होती; FIR हिंदी में है। उसे 02.07.2026 को गिरफ्तार किया गया था और गिरफ्तारी के आधार केवल मौखिक रूप से बताए गए थे; आरोप-पत्र समय पर दाखिल किया गया था (60 का दिन 54)। Rights Radar आरोपित धारा की अधिकतम अवधि को एक वर्ष पढ़ता है: डिफ़ॉल्ट जमानत WINDOW_CLOSED है (आरोप-पत्र 60 दिनों के भीतर आ गया) और BNSS s.479 विचाराधीन कैदी सीमा ELIGIBLE है (प्रथम बार के अपराधी के लिए 122 की सीमा के मुकाबले हिरासत में 136 दिन)।",
   "variant": {
    "offence": "NDPS 21(a) अल्प मात्रा (अधिकतम 1 वर्ष); s.37 की दोहरी शर्तें लागू नहीं होती हैं",
-   "custody": "आरोप-पत्र 60 में से 54वें दिन, समय पर दाखिल किया गया, इसलिए डिफ़ॉल्ट जमानत WINDOW_CLOSED है; BNSS s.479 ELIGIBLE है (हिरासत में 136 दिन, सीमा 122 दिन); इस परिदृश्य में गिरफ्तारी के आधार केवल मौखिक रूप से दिए गए (रडार UNKNOWN दर्शाता है: डोजियर में उनका कोई रिकॉर्ड नहीं है)",
-   "record": "हिंदी FIR (देवनागरी पाठ परत) आठ अंग्रेजी दस्तावेजों के साथ",
-   "parity": "कोई सह-अभयुक्त नहीं; पहली बार का अपराधी; कोई पूर्व जमानत आवेदन नहीं"
+   "custody": "आरोप-पत्र 60 में से 54वें दिन दाखिल किया गया, समय पर, इसलिए डिफ़ॉल्ट जमानत WINDOW_CLOSED है; BNSS s.479 ELIGIBLE है ( हिरासत में 136 दिन, सीमा 122 दिन); उपस्थिति-सूचना पंक्ति में '7 वर्ष तक दण्डनीय' लिखा है, जो नियम का बैंड है (सात वर्ष या कम) जिसके अंतर्गत एक वर्ष की अधिकतम सीमा आती है, न कि धारा की अधिकतम सीमा; परिदृश्य में गिरफ्तारी के आधार केवल मौखिक रूप से दिए गए (रडार UNKNOWN दिखाता है: डोजियर में उनका कोई रिकॉर्ड नहीं है)",
+   "record": "आठ अंग्रेजी दस्तावेजों के साथ हिंदी FIR (देवनागरी पाठ परत)",
+   "parity": "कोई सह-अभयुक्त (co-accused) नहीं; पहली बार का अपराधी; कोई पूर्व जमानत आवेदन नहीं"
   }
  }
 }

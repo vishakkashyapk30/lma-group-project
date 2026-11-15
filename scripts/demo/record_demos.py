@@ -335,7 +335,7 @@ def build_tour(case: DemoCase, raw: dict[str, Any]) -> dict[str, Any]:
     for o in objections:
         key = str(o.get("verdict") or "pending").lower()
         verdicts[key] = verdicts.get(key, 0) + 1
-    not_judged = sum(1 for o in objections if str(o.get("reason") or "").startswith("The reply could not be judged"))
+    not_judged = sum(1 for o in objections if str(o.get("reason") or "").startswith(("NOT_REPLIED_BUDGET", "The reply could not be judged")))
     judged_n = len(objections) - not_judged
     judged_unanswered = verdicts.get("unanswered", 0) - not_judged
     gate2 = raw.get("gate2", {})
@@ -408,9 +408,9 @@ def build_tour(case: DemoCase, raw: dict[str, Any]) -> dict[str, Any]:
         "caption": (f"Abhiyojak, the prosecution sparring partner, raised {_n(len(objections), 'objection')} "
                     f"in {_n(spar.get('rounds', 0), 'round')}, each grounded in a prosecution argument from comparable orders or a fact of the case"
                     + (f"; {_n(len(spar.get('discarded', [])), 'ungrounded objection')} {'were' if len(spar.get('discarded', [])) != 1 else 'was'} discarded" if spar.get("discarded") else "")
-                    + ((f". Abhiyojak judged {judged_n} of Vakeel's replies: {verdicts.get('answered', 0)} answered, "
+                    + ((f". Vakeel replied to {judged_n} of them and Abhiyojak judged each reply: {verdicts.get('answered', 0)} answered, "
                         f"{verdicts.get('partly', 0)} partly answered, {judged_unanswered} unanswered"
-                        + (f"; {_n(not_judged, 'objection')} could not be judged because the sparring token budget was spent, and {'stays' if not_judged == 1 else 'stay'} unanswered" if not_judged else "")
+                        + (f"; {_n(not_judged, 'objection')} got no judged reply because the sparring token budget ran out, and {'is' if not_judged == 1 else 'are'} left for counsel to answer" if not_judged else "")
                         + ". Whatever stays open is listed at Gate 2, and counsel answers it before approving.")
                        if verdicts else ". There was nothing to reply to.")),
         "filled": [{"label": f"{o.get('id')} against {o.get('against')} ({str(o.get('factor', '')).replace('_', ' ')})",
