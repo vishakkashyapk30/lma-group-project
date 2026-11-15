@@ -1442,6 +1442,20 @@ class SutradharAgent(BaseAgent):
         objections = self._peer_call(AgentName.ABHIYOJAK, "raise_objections", state, default=None)
         if objections is None:
             return state
+        if int(getattr(self.budgets, "sparring_reserve_tokens", 0) or 0) > 0:
+            # reserve on: each reply is judged right after it is drafted (Abhiyojak.reply_and_judge); the replies still come from the Vakeel peer
+            self._decision("route_objections", f"{len(objections)} objection(s) routed back to Vakeel, one at a time with its judge call.", count=len(objections))
+
+            def one_reply(st: CaseGraphState, os_: list[Any]) -> list[Any]:
+                return list(self._peer_call(AgentName.VAKEEL, "reply_to_objections", st, os_, default=None) or [])
+
+            judged = self._peer_call(AgentName.ABHIYOJAK, "reply_and_judge", state, objections, one_reply, default=None)
+            if judged is None:
+                return state
+            discarded = list(getattr(self._peer(AgentName.ABHIYOJAK), "discarded", None) or (state.sparring.discarded if state.sparring else []))
+            record = SparringRecord(case_id=state.case_id, rounds=2, objections=judged, discarded=discarded)
+            self.write_view("sparring", record)
+            return state.model_copy(update={"sparring": record})
         replies = self._peer_call(AgentName.VAKEEL, "reply_to_objections", state, objections, default=None)
         if replies is None:
             return state

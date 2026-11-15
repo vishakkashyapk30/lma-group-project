@@ -14,6 +14,15 @@ def _reply(o) -> str:  # noqa: ANN001 - an Objection
     return o.reply.text + (f" ({cites})" if cites else "")
 
 
+NOT_REPLIED_PREFIX = "NOT_REPLIED_BUDGET:"  # the reason of an objection that got no reply because the sparring budget was spent (agents/abhiyojak/agent.py)
+
+
+def _verdict_cell(o) -> str:  # noqa: ANN001 - an Objection
+    if o.reason and o.reason.startswith(NOT_REPLIED_PREFIX):
+        return "No reply was drafted because the sparring budget was spent; counsel answers this one."
+    return (o.verdict.value.capitalize() if o.verdict is not None else "Not judged") + (f": {o.reason}" if o.reason else "")
+
+
 def write_objections_docx(sparring: SparringRecord, case_id: str, out_path: str) -> str:
     """One row per objection: what it is against, the objection, the reply and Abhiyojak's verdict.
 
@@ -31,7 +40,7 @@ def write_objections_docx(sparring: SparringRecord, case_id: str, out_path: str)
                    "with the drafted replies.", italic=True)
     if sparring.objections:
         rows = [[o.id, "General" if o.against == "general" else f"Ground {o.against}", o.objection, _reply(o),
-                 (o.verdict.value.capitalize() if o.verdict is not None else "Not judged") + (f": {o.reason}" if o.reason else "")]
+                 _verdict_cell(o)]
                 for o in sparring.objections]  # fmt: skip
         table(doc, ["No.", "Against", "Objection", "Reply", "Verdict"], rows, widths_cm=[1.2, 2.0, 5.0, 5.5, 2.3])
     else:

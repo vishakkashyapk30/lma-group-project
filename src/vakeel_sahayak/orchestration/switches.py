@@ -153,9 +153,12 @@ C1457_SWITCHES: dict[str, str] = {
     "draft_source": "facts_text",
     "objection_grounding": "by_id",
 }
-# Sparring reserve of the product flow only (docs/handoff/objections-unanswered-2026-11-15.md: about 3.9K tokens per objection, 7 to 10 objections).
+# Sparring reserve of the product flow only (docs/handoff/objections-unanswered-2026-11-15.md, "Second correction"). Measured on Sarvam-105B with the
+# product configuration: raising objections about 40K per case, each objection about 8K to 12K (reply plus repair, 3.4K to 3.9K per Vakeel call, one
+# factor made 13 calls; judge about 0.8K), so 14 objections need 150K to 180K. 60000 and 120000 were too small. 200000 is about 14 x 12K plus the raising
+# calls. With the reserve on, the judge runs right after each reply and objections the pool cannot cover are marked NOT_REPLIED_BUDGET.
 # Not part of C1457_SWITCHES, which describes the frozen evaluated arm; no evaluation variant sets it.
-PRODUCT_SPARRING_RESERVE_TOKENS = 120000
+PRODUCT_SPARRING_RESERVE_TOKENS = 200000
 ARCHITECTURE["H1"] = {k: v for part in H1_PARTS for k, v in ARCHITECTURE[part].items()}
 for _k in H1_PARTS:
     ARCHITECTURE[f"H1m{_k[1:]}"] = {k: v for part in H1_PARTS if part != _k for k, v in ARCHITECTURE[part].items()}
@@ -299,7 +302,7 @@ class Switches(BaseModel):
     # calls came, so they were refused with BudgetExhausted and the objection ended UNANSWERED ("could not be judged"): 40 of 41 judge calls in
     # the six demo runs, 68% of 599 objections on the blind slice. The sizing of that pool (12.0K to 12.8K per factor) came from a smaller
     # hosted model than the one in use (16.4K to 20.3K). Engineering fix for a measured budget misallocation
-    # (docs/handoff/objections-unanswered-2026-11-15.md); no paper. Enabled by `production_switches()` only (60000); never by an evaluation variant.
+    # (docs/handoff/objections-unanswered-2026-11-15.md); no paper. Enabled by `production_switches()` only (200000); never by an evaluation variant.
     sparring_reserve_tokens: int = Field(default=0, ge=0)
 
     @model_validator(mode="after")
@@ -491,7 +494,7 @@ def production_switches() -> Switches:
     named variant.  Product entry points use this factory so the selected
     architecture is visible at the boundary rather than changing experiment
     defaults globally. The product flow also turns on the sparring reserve
-    (`sparring_reserve_tokens`, 120000), which the frozen c1457 arm did not have.
+    (`sparring_reserve_tokens`, 200000), which the frozen c1457 arm did not have.
     """
     return Switches(**C1457_SWITCHES, sparring_reserve_tokens=PRODUCT_SPARRING_RESERVE_TOKENS)
 

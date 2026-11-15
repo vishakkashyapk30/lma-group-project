@@ -100,6 +100,7 @@ class BudgetTracker:
         self.log, self.case_id, self.actor = log, case_id, actor
         self._lock = threading.RLock()
         self._case_tokens = 0
+        self.spar_holdback_tokens = 0  # tokens of the reserve the reply calls may not touch (kept for the judge call of the reply in hand); 0 outside the interleaved sparring step
         self.sparring_reserve_tokens = 0  # opt-in separate pool for the sparring step (0: off, every behaviour as before)
         self._spar_tokens = 0
         self._factor_tokens: dict[str, int] = {}  # retrieval pool
@@ -159,6 +160,16 @@ class BudgetTracker:
         """Set the sparring pool (tokens added to the case cap for the sparring step only); 0 turns it off."""
         with self._lock:
             self.sparring_reserve_tokens = max(0, int(tokens))
+
+    def sparring_spent(self) -> int:
+        """Tokens the sparring step has spent from its reserve so far."""
+        with self._lock:
+            return self._spar_tokens
+
+    def set_spar_holdback(self, tokens: int) -> None:
+        """Keep `tokens` of the reserve back from calls that check the sparring pool (reply and repair), so the judge call of the reply in hand still fits; 0 releases it."""
+        with self._lock:
+            self.spar_holdback_tokens = max(0, int(tokens))
 
     def bind(self, log: Any, case_id: str) -> None:
         """Attach the case's event log (for trackers created before the log)."""
@@ -283,7 +294,7 @@ class BudgetTracker:
         key = _key(factor)
         if pool == "sparring" and self.sparring_reserve_tokens > 0:
             with self._lock:
-                spent = self._spar_tokens >= self.sparring_reserve_tokens
+                spent = self._spar_tokens + self.spar_holdback_tokens >= self.sparring_reserve_tokens
             self._check_hits(key, None)
             return spent
         want = "drafting_tokens" if _actor_name(actor) in DRAFTING_ACTORS else "tokens"

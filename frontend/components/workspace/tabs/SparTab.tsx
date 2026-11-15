@@ -10,7 +10,7 @@ import { TOUR_READ_ONLY_NOTE, useTourMode } from "@/lib/tourMode";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { fieldLabel } from "@/lib/fields";
-import { humanize, plural, toSelectedSource } from "@/lib/format";
+import { humanize, isNotRepliedBudget, plainReason, plural, toSelectedSource } from "@/lib/format";
 import { FACTOR_LABELS } from "@/lib/labels";
 import type { DossierFieldName, Factor, Ground, Objection, ObjectionGround } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -177,10 +177,10 @@ function ObjectionItem({ objection, focusedId }: { objection: Objection; focused
             {objection.reply ? (
               <Cited text={objection.reply.text} authorities={objection.reply.authorities} className="mt-1" />
             ) : (
-              <p className="mt-1 text-ink-soft">No reply could be drafted that the record supports.</p>
+              <p className="mt-1 text-ink-soft">{isNotRepliedBudget(objection.reason) ? "No reply was drafted." : "No reply could be drafted that the record supports."}</p>
             )}
           </div>
-          {objection.reason ? <p className="text-sm text-ink-soft">{objection.reason}</p> : null}
+          {objection.reason ? <p className="text-sm text-ink-soft">{plainReason(objection.reason)}</p> : null}
           <RestsOn grounds={objection.grounds} />
           {unanswered ? <ResolveControls objection={objection} /> : null}
         </div>
