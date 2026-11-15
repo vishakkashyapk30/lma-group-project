@@ -1,0 +1,47 @@
+table,arm,orders,raised,judged,answered,partly,unanswered_judged,not_judged,reply_drafted,not judged,not replied (budget),no supported reply,statutory bar (NDPS s.37),restates / no facts or authority,other,detail,reserve_orders,reserve_mean,reserve_budget_hits,metric,n,r0_mean,r1_mean,diff,lo,hi,p,excludes_zero,holm,higher_better,tokens_per_order,inr_total,calls,baseline,win,tie,loss,too_few,undefined
+objections,R0,30,207,53,15,8,30,154,143,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+objections,R1,30,233,227,72,58,97,6,232,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+objections,frozen D12 run 1,30,216,58,19,7,32,158,153,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+reason_classes,R0,,,,15,8,,,,154,0,0,10,19,1,,,,,,,,,,,,,,,,,,,,,,,,
+reason_classes,R1,,,,72,58,,,,6,0,0,17,74,6,,,,,,,,,,,,,,,,,,,,,,,,
+reason_classes,frozen D12 run 1,,,,19,7,,,,158,0,0,16,15,1,,,,,,,,,,,,,,,,,,,,,,,,
+failed_calls,R0,,,,,,,,,,,,,,,abhiyojak.judge_reply BudgetExhausted: 151; abhiyojak.judge_reply PrivacyBoundaryError: 3; vakeel.reply_objection BudgetExhausted: 61; vakeel.reply_objection PrivacyBoundaryError: 3,0,,0,,,,,,,,,,,,,,,,,,,,
+failed_calls,R1,,,,,,,,,,,,,,,abhiyojak.judge_reply ModelUnavailable: 1; abhiyojak.judge_reply PrivacyBoundaryError: 5; vakeel.reply_objection PrivacyBoundaryError: 1,30,75933,0,,,,,,,,,,,,,,,,,,,,
+failed_calls,frozen D12 run 1,,,,,,,,,,,,,,,abhiyojak.judge_reply BudgetExhausted: 155; abhiyojak.judge_reply PrivacyBoundaryError: 3; vakeel.reply_objection BudgetExhausted: 60; vakeel.reply_objection PrivacyBoundaryError: 3,0,,0,,,,,,,,,,,,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,factor_precision_strict,5,0.1,0.1,0,0,0,1,False,False,True,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,factor_precision_lenient,5,0.1,0.1,0,0,0,1,False,False,True,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,unsupported_fact_rate,29,0.878,0.89867,0.020674,-0.047902,0.09453,0.5797,False,False,False,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,unsupported_case_fact_rate,12,0.49802,0.33333,-0.16468,-0.52778,0.19643,0.4006,False,False,False,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,unsupported_fact_count,30,5.3,5.6,0.3,-0.9,1.5,0.6347,False,False,False,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,answerable_coverage,11,0.60606,0.51515,-0.090909,-0.36364,0.18182,0.7641,False,False,True,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,objection_recall,11,0.72727,1,0.27273,0,0.54545,0.06079,False,False,True,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,objection_precision,10,0.17167,0.19,0.018333,-0.038333,0.083333,0.5801,False,False,True,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,coverage,30,0.95,0.99167,0.041667,-0.016667,0.125,0.3262,False,False,True,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,fabricated_citation_rate,28,0,0,0,0,0,1,False,False,False,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,authority_reasoning_share,28,1,1,0,0,0,1,False,False,True,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,authority_sc_share,28,0.080669,0.060119,-0.02055,-0.062714,0.015221,0.3162,False,False,True,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,authority_before_share,28,1,1,0,0,0,1,False,False,True,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,good_law_violation_rate,28,0,0,0,0,0,1,False,False,False,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,known_treatment_share,28,0.032908,0.02381,-0.0090986,-0.029082,0.0047619,0.3484,False,False,True,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,citation_precision,28,0.73881,0.78554,0.046729,-0.066521,0.16592,0.4366,False,False,True,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,citation_recall,28,0.75946,0.78544,0.025985,-0.075926,0.13497,0.6455,False,False,True,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,over_search_rate,30,0.010667,0.025841,0.015174,0.0046263,0.027633,0.0012,True,True,False,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,unfinished_factor_share,30,0.42532,0.34952,-0.075794,-0.16167,0.0097619,0.09179,False,False,False,,,,,,,,,
+paired_metrics,,,,,,,,,,,,,,,,,,,,confident_wrong_rate,29,0.87346,0.89867,0.025213,-0.043067,0.097903,0.4862,False,False,False,,,,,,,,,
+cost,R0,30,,,,,,,,,,,,,,,,,,,,,,,,,,,,,120643,55.63,1812,,,,,,
+cost,R1,30,,,,,,,,,,,,,,,,,,,,,,,,,,,,,151434,68.99,2312,,,,,,
+cost,frozen D12 run 1,30,,,,,,,,,,,,,,,,,,,,,,,,,,,,,120035,,,,,,,,
+wlt_vs_baselines,R1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B0,3,3,0,4,15
+wlt_vs_baselines,R1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B1,3,10,0,4,8
+wlt_vs_baselines,R1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B2,3,3,0,8,11
+wlt_vs_baselines,R1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B3,3,3,0,12,7
+wlt_vs_baselines,R1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B4,8,6,2,6,3
+wlt_vs_baselines,R1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B5,6,9,2,5,3
+wlt_vs_baselines,R1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B6,4,2,0,4,15
+wlt_vs_baselines,R0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B0,3,3,0,4,15
+wlt_vs_baselines,R0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B1,3,10,0,4,8
+wlt_vs_baselines,R0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B2,4,2,0,8,11
+wlt_vs_baselines,R0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B3,4,2,0,12,7
+wlt_vs_baselines,R0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B4,7,7,2,6,3
+wlt_vs_baselines,R0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B5,4,12,1,5,3
+wlt_vs_baselines,R0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,B6,4,2,0,4,15
