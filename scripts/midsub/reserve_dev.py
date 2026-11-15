@@ -114,7 +114,7 @@ def main():
         arms[frozen] = str(next((Path(a.frozen_run) / "sarvam_var1/outputs").glob("s13_signal_source_merge_abstention_strict_draft_source_facts_text_objection_grounding_by_id")))
     stats = {k: objection_table(v) for k, v in arms.items()}
     md += ["## Objections by outcome (shares of objections raised)", "",
-           "| arm | orders | raised | judged | ANSWERED | PARTLY | UNANSWERED (judged) | not judged | reply drafted |", "|---|---|---|---|---|---|---|---|---|"]
+           "| arm | orders | raised | judged | ANSWERED | PARTLY | UNANSWERED (judged) | not judged | of which NOT_REPLIED_BUDGET | reply drafted |", "|---|---|---|---|---|---|---|---|---|---|"]
     for k, (c, jf, rs, rh) in stats.items():
         n = c["raised"] or 1
         nj = c["verdict:NOT_JUDGED"]
@@ -123,7 +123,7 @@ def main():
                          "partly": c["verdict:PARTLY"], "unanswered_judged": c["verdict:UNANSWERED"], "not_judged": nj, "reply_drafted": c["reply drafted"]})
         pct = lambda x, n=n: f"{x} ({x / n:.0%})"  # noqa: E731
         md.append(f"| {k} | {c['orders']} | {c['raised']} | {pct(judged)} | {pct(c['verdict:ANSWERED'])} | {pct(c['verdict:PARTLY'])} | "
-                  f"{pct(c['verdict:UNANSWERED'])} | {pct(nj)} | {pct(c['reply drafted'])} |")
+                  f"{pct(c['verdict:UNANSWERED'])} | {pct(nj)} | {c['class:not replied (budget)']} | {pct(c['reply drafted'])} |")
     md += ["", "Reason classes of the verdicts (keyword classes of the judge's reason text; 'not judged' is the fail-safe text of a refused reply or judge call):", "",
            "| arm | " + " | ".join(CLASSES) + " |", "|---|" + "---|" * len(CLASSES)]
     for k, (c, jf, rs, rh) in stats.items():
@@ -142,26 +142,29 @@ def main():
     md += ["", f"## Quality metrics: means and paired R1 minus R0 ({len(cases)} orders answered without error in both arms)", "",
            "Interval: 95% percentile interval of the seeded paired bootstrap (10,000 resamples), not adjusted for the metrics; the Holm column says whether the metric "
            "also survives Holm over all metrics (alpha 0.05). Exploratory.", "",
-           "| metric | better | R0 mean | R1 mean | R1 - R0 | 95% interval | p | excludes 0 | Holm |", "|---|---|---|---|---|---|---|---|---|"]
-    cells = []
+           "| metric | n | better | R0 mean | R1 mean | R1 - R0 | 95% interval | p | excludes 0 | Holm |", "|---|---|---|---|---|---|---|---|---|---|"]
+    cells, skipped = [], []
     for m in metrics:
         pairs = [(wlt.value(r1[c], m), wlt.value(r0[c], m)) for c in cases]
         pairs = [(x, y) for x, y in pairs if x is not None and y is not None]
         if len(pairs) < 5:
+            skipped.append(f"{wlt.DECIDING[m][0]} (n={len(pairs)})")
             continue
         d, boot, p = wlt.boot_p([x - y for x, y in pairs])
         cells.append(dict(metric=m, n=len(pairs), r0=st.mean(y for _, y in pairs), r1=st.mean(x for x, _ in pairs), diff=d,
                           lo=float(np.quantile(boot, 0.025)), hi=float(np.quantile(boot, 0.975)), p=p))
+    md_skip = skipped
     hol = wlt.holm({c["metric"]: c["p"] for c in cells})
     for c in cells:
         label, hb = wlt.DECIDING[c["metric"]]
         ex = c["lo"] > 0 or c["hi"] < 0
         exs = ("yes, " + ("better" if (c["diff"] > 0) == hb else "worse")) if ex else "no"
-        md.append(f"| {label} | {'higher' if hb else 'lower'} | {c['r0']:.4f} | {c['r1']:.4f} | {c['diff']:+.4f} | [{c['lo']:+.4f}, {c['hi']:+.4f}] | "
+        md.append(f"| {label} | {c['n']} | {'higher' if hb else 'lower'} | {c['r0']:.4f} | {c['r1']:.4f} | {c['diff']:+.4f} | [{c['lo']:+.4f}, {c['hi']:+.4f}] | "
                   f"{c['p']:.3f} | {exs} | {'yes' if hol[c['metric']][0] else 'no'} |")
         csv_rows.append({"table": "paired_metrics", "metric": c["metric"], "n": c["n"], "r0_mean": f"{c['r0']:.5g}", "r1_mean": f"{c['r1']:.5g}", "diff": f"{c['diff']:.5g}",
                          "lo": f"{c['lo']:.5g}", "hi": f"{c['hi']:.5g}", "p": f"{c['p']:.4g}", "excludes_zero": ex, "holm": hol[c["metric"]][0], "higher_better": hb})
 
+    md += ["", "Not compared (defined on fewer than 5 paired orders, as in the report): " + (", ".join(skipped) or "none") + "."]
     md += ["", "## Tokens and spend", "", "| arm | orders | tokens per order (mean, scorer; R1 includes the reserve) | INR total (ledger) | Sarvam ledger rows | INR per order |", "|---|---|---|---|---|---|"]
     ids = dict(zip(("R0", "R1"), a.runids.split(",")))
     rowsets = {"R0": r0, "R1": r1}
