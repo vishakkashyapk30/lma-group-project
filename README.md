@@ -39,7 +39,7 @@ The trade-off: against Full, VS-Final gives up citation precision (0.85 to 0.71)
 
 ![The six agents, the two counsel gates and the ten typed stores](docs/assets/architecture.png)
 
-*Figure 1 of the technical report. Dashed boxes are the two gates enforced in code; dotted frames show where each part runs; double-headed arrows are request and reply. Source: `docs/assets/architecture.tex` (rebuild with `bash docs/assets/build.sh`).*
+*Figure 1 of the technical report. Dashed boxes are the two gates enforced in code; dotted frames show where each part runs; double-headed arrows are request and reply.*
 
 Six agents, each named after a role in an Indian court office and each making one narrow decision:
 
@@ -105,7 +105,7 @@ SAMPLE=2000 EMBEDDER=hashed-ngram make stores   # quick sample build first
 make stores     # full build of the shared stores (took about 35 minutes)
 ```
 
-Some items need a person (HLDC on Hugging Face, the CrPC and NDPS statutes from India Code). See `data/README.md` and `docs/handoff/data-and-models.md`.
+Some items need a person (HLDC on Hugging Face, the CrPC and NDPS statutes from India Code). See `data/README.md`.
 </details>
 
 ## Run the full stack
@@ -143,7 +143,7 @@ The UI is in live mode: an unreachable API shows an error, never sample data. Th
 
 ## Evaluator demo
 
-Six recorded synthetic cases (no real record) load when the API starts, so the system can be walked through without a key or a model call. Start the stack, open http://localhost:3000, go to the Cases page and pick a case under **Guided demos**. Each tour has nine steps from the papers to the exported application. The Gate 2 step runs the real gate: export stays closed until you approve. The cases demonstrate the interface and workflow; they are not an evaluation. Details: [`docs/handoff/evaluator-demo.md`](docs/handoff/evaluator-demo.md).
+Six recorded synthetic cases (no real record) load when the API starts, so the system can be walked through without a key or a model call. Start the stack, open http://localhost:3000, go to the Cases page and pick a case under **Guided demos**. Each tour has nine steps from the papers to the exported application. The Gate 2 step runs the real gate: export stays closed until you approve. The cases demonstrate the interface and workflow; they are not an evaluation.
 
 ## Hosted models
 
@@ -154,7 +154,7 @@ Everything above runs on offline stand-ins. Real or hosted models need an explic
 | Sarvam, OpenAI (paid) | Locked: every call is refused in code | Name the provider in `VS_ALLOW_PAID` (for example `VS_ALLOW_PAID=sarvam`), set `VS_EXTERNAL=pseudonymised` and choose it with `VS_LLM_BACKEND`. Team members: do not unlock without the owner. Spend is capped in code (`make openai-spend`, `make sarvam-spend`) |
 | Gemini free tier | Off | Public data only (the provider may use free-tier prompts), so client text is refused in every mode. `GEMINI_API_KEY` in `.env`, then `make gemini-models MODEL=<id>` and `make gemini-usage` |
 
-Keys (`SARVAM_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`) live only in an untracked `.env` or the shell; never commit, print or log one. Every external payload must pass the pseudonymisation boundary. Details: `docs/handoff/pilot-hosted-model.md`, `docs/handoff/gemini-free-tier.md`, and `.env.example` for every variable.
+Keys (`SARVAM_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`) live only in an untracked `.env` or the shell; never commit, print or log one. Every external payload must pass the pseudonymisation boundary. See `.env.example` for every variable.
 
 ## Reproducing the results
 
@@ -173,8 +173,6 @@ VS_MODELS=auto VS_LLM_BACKEND=sarvam VS_EXTERNAL=pseudonymised \
 VS_M6_CHECKER=minicheck .venv/bin/python -m vakeel_sahayak.eval.scoring score --runs <arm outputs> --slice dev --gold-source agreed --out <scores>
 VS_RUNS=<runs root> .venv/bin/python scripts/midsub/final_tables.py     # writes docs/results/search/final_report/
 
-# rebuild the reports and check every number in the full report against the result files
-bash docs/technical-report/build.sh && bash docs/report/build.sh && .venv/bin/python scripts/check_consistency.py
 ```
 
 The tables in both reports are copied from `docs/results/search/final_report/` (`summary.md`, `hypotheses_blind.json`, `means_blind.csv`, `variance_d12.csv`, `reserve_dev.md`). Claims, baselines and metrics: `docs/evaluation-plan.md` and `docs/preregistration.md`.
@@ -205,19 +203,7 @@ Each test gets its own data directory, so no test depends on `data/`.
 | `src/vakeel_sahayak/api/`, `frontend/` | FastAPI app and routers; Next.js UI (design rules in `frontend/DESIGN.md`) |
 | `configs/`, `scripts/`, `tests/` | YAML configuration; data, model, sweep and report helpers; unit, integration and system tests |
 | `demo/`, `data/`, `models/` | Recorded evaluator demo cases; data and weights (contents gitignored, see `data/README.md`) |
-| `docs/` | Reports (`technical-report/`, `report/`), `plan.md`, `architecture/`, `results/`, `handoff/` (per-workstream notes), `proposal/` |
-
-Contributors and coding agents start with [`AGENTS.md`](AGENTS.md), then `split.md` (ownership) and the notes in [`docs/handoff/`](docs/handoff/).
-
-<details>
-<summary>Building the proposal PDF</summary>
-
-```bash
-./docs/proposal/build.sh
-```
-
-The script needs `pdflatex` (TeX Live). If the diagram source has changed, it also needs Node.js and Chrome or Chromium, because it re-renders the diagram with `@mermaid-js/mermaid-cli`.
-</details>
+| `docs/` | Reports (`technical-report/`, `report/`), design (`plan.md`, `architecture/`) and results (`results/`) |
 
 ## Privacy and safety rules
 
