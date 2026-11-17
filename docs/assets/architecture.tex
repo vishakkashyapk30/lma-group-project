@@ -12,10 +12,10 @@
 \begin{document}
 \begin{tikzpicture}[
   font=\fontsize{8}{9.5}\selectfont, >={Stealth[length=4pt,width=3.5pt]}, line width=0.6pt,
-  ag/.style={draw, rounded corners=2pt, align=center, minimum width=2.3cm, minimum height=1.0cm},
-  gt/.style={draw=acc, text=acc, dashed, rounded corners=6pt, align=center, minimum width=2.2cm, minimum height=1.0cm},
+  ag/.style={draw, fill=acc!6, rounded corners=2pt, align=center, minimum width=2.3cm, minimum height=1.0cm},
+  gt/.style={draw=acc, fill=acc!12, text=acc, dashed, rounded corners=6pt, align=center, minimum width=2.2cm, minimum height=1.0cm},
   io/.style={align=center, minimum width=2.3cm, minimum height=1.0cm},
-  sh/.style={draw, rounded corners=2pt, align=center, minimum width=3.86cm, minimum height=1.2cm},
+  sh/.style={draw, fill=black!4, rounded corners=2pt, align=center, minimum width=3.86cm, minimum height=1.2cm},
   lb/.style={font=\fontsize{7}{8}\selectfont, text=black!55, align=center, inner sep=1pt},
   fr/.style={draw=black!55, densely dotted, rounded corners=4pt}]
 % top lane (counsel's machine)
@@ -37,7 +37,7 @@
 \node[lb, anchor=south west, text=acc, inner sep=0pt] at ([yshift=2pt]lap.north west) {Counsel's machine: raw files stay here};
 \node[lb, anchor=south west, inner sep=0pt] at (5.95,-1.65) {Model side: pseudonymised text only};
 % pseudonymisation crossing
-\node[draw, fill=white, rounded corners=2pt, minimum width=1.75cm, minimum height=0.4cm, inner sep=1pt] (ps) at (14.6,-1.7) {\sm{pseudonymise}};
+\node[draw, fill=acc!15, rounded corners=2pt, minimum width=1.75cm, minimum height=0.4cm, inner sep=1pt] (ps) at (14.6,-1.7) {\sm{pseudonymise}};
 % stores: four shelves
 \draw[fr] (-1.2,-5.7) rectangle (15.8,-7.55);
 \node[lb, anchor=north west] at (-1.2,-5.7) {ten typed stores on four shelves};
@@ -45,7 +45,7 @@
 \node[sh] (s2) at (5.19,-6.75) {\textbf{Case law}\\\sm{reasoning, citations, similar orders}};
 \node[sh] (s3) at (9.40,-6.75) {\textbf{Advocacy}\\\sm{arguments, objections}};
 \node[sh] (s4) at (13.61,-6.75) {\textbf{Case} \sm{(private, laptop only)}\\\sm{documents, timeline, dossier}};
-\node[draw=black!55, minimum width=17cm, minimum height=0.4cm, anchor=north west, inner sep=0pt] (lg) at (-1.2,-7.95) {\sm{\color{black!55}append-only event log (every agent action; dossier, brief and sparring record are views of it)}};
+\node[draw=black!55, fill=black!4, minimum width=17cm, minimum height=0.4cm, anchor=north west, inner sep=0pt] (lg) at (-1.2,-7.95) {\sm{\color{black!55}append-only event log (every agent action; dossier, brief and sparring record are views of it)}};
 % flow arrows
 \draw[->] (pa) -- node[lb, above] {ordered\\files} (in);
 \draw[->] (in) -- node[lb, above] {pages} (mu);
