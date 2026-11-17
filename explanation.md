@@ -4,7 +4,7 @@ This guide explains the whole system in plain words, and then goes deeper where 
 
 ![The six agents, the two gates and the ten typed stores](docs/assets/architecture.png)
 
-*The six agents, the two approval gates (dashed) and the ten typed stores. The left half runs on counsel's machine, where the raw files stay. The right half works only on pseudonymised text.*
+*The six agents in two lanes (raw files stay on counsel's machine; the model side sees only pseudonymised text), the two approval gates (dashed), Vakeel's check-and-repair loop with abstention to open issues, the ten typed stores on four shelves, and the append-only event log.*
 
 Contents
 

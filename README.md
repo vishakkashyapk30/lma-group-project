@@ -39,7 +39,7 @@ The trade-off: against Full, VS-Final gives up citation precision (0.85 to 0.71)
 
 ![The six agents, the two counsel gates and the ten typed stores](docs/assets/architecture.png)
 
-*Figure 1 of the technical report. Dashed boxes are the two gates enforced in code; dotted frames show where each part runs; double-headed arrows are request and reply.*
+*The six agents in two lanes (raw files stay on counsel's machine; the model side sees only pseudonymised text), the two counsel gates (dashed), Vakeel's check-and-repair loop with abstention to open issues, the ten typed stores on four shelves, and the append-only event log.*
 
 Six agents, each named after a role in an Indian court office and each making one narrow decision:
 

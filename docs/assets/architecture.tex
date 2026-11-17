@@ -1,38 +1,69 @@
-% Standalone source of Figure 1 of docs/technical-report/technical_report.tex (the pipeline figure); the tikzpicture is copied unchanged.
-% Build: bash docs/assets/build.sh
+% Standalone architecture figure for README.md and explanation.md (a richer version of Figure 1 of docs/technical-report/technical_report.tex, which stays unchanged).
+% Natural width about 17 cm; smallest text 7 pt. Build: bash docs/assets/build.sh
 \documentclass[11pt,border=6pt]{standalone}
 \usepackage{times}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{xcolor}
 \usepackage{tikz}
-\usetikzlibrary{positioning,fit,backgrounds,arrows.meta}
+\usetikzlibrary{positioning,fit,backgrounds,arrows.meta,calc}
+\definecolor{acc}{HTML}{1F3A5F}
+\newcommand{\sm}[1]{{\fontsize{7}{8}\selectfont #1}}
 \begin{document}
 \begin{tikzpicture}[
-  font=\small, >=Stealth, line width=0.6pt,
-  ag/.style={draw, rounded corners=2pt, align=center, minimum width=2.75cm, minimum height=0.95cm},
-  st/.style={draw, align=center, minimum width=2.75cm, minimum height=0.95cm},
-  gt/.style={draw, dashed, rounded corners=6pt, align=center, minimum width=2.3cm, minimum height=0.9cm},
-  io/.style={align=center, minimum width=2.3cm}]
-\node[io] (pa) at (0,0) {Pairokar\\{\scriptsize batch desk}};
-\node[io] (in) at (3.1,0) {Files, photos,\\chat, voice};
-\node[ag] (mu) at (6.3,0) {Munshi\\{\scriptsize intake}};
-\node[ag] (pe) at (9.5,0) {Peshkar\\{\scriptsize dossier, Rights Radar}};
-\node[gt] (g1) at (12.7,0) {Gate 1\\{\scriptsize counsel: dossier}};
-\node[ag] (su) at (12.7,-2.1) {Sutradhar\\{\scriptsize plans retrieval}};
-\node[ag] (va) at (9.5,-2.1) {Vakeel\\{\scriptsize draft, check, repair}};
-\node[ag] (ab) at (6.3,-2.1) {Abhiyojak\\{\scriptsize prosecution sparring}};
-\node[gt] (g2) at (3.1,-2.1) {Gate 2\\{\scriptsize counsel: brief}};
-\node[io] (out) at (0,-2.1) {Brief, objections,\\open issues};
-\node[st] (stores) at (12.7,-4.0) {Ten typed stores\\{\scriptsize law, case law, advocacy, case}};
-\draw[->] (pa) -- (in); \draw[->] (in) -- (mu); \draw[->] (mu) -- (pe); \draw[->] (pe) -- (g1);
-\draw[->] (g1) -- (su); \draw[->] (su) -- (va); \draw[<->] (va) -- (ab); \draw[->] (ab) -- (g2); \draw[->] (g2) -- (out);
-\draw[<->] (su) -- (stores);
-\begin{scope}[on background layer]
- \node[draw, densely dotted, rounded corners, fit=(in)(mu)(pe), inner sep=0.3cm] (lap) {};
- \node[draw, densely dotted, rounded corners, fit=(su)(va)(ab)(stores), inner sep=0.3cm] (srv) {};
-\end{scope}
-\node[font=\scriptsize, anchor=south west] at ([yshift=1pt]lap.north west) {Counsel's machine: raw files stay here};
-\node[font=\scriptsize, anchor=north west] at ([yshift=-1pt]srv.south west) {Model side: pseudonymised text only};
+  font=\fontsize{8}{9.5}\selectfont, >={Stealth[length=4pt,width=3.5pt]}, line width=0.6pt,
+  ag/.style={draw, rounded corners=2pt, align=center, minimum width=2.3cm, minimum height=1.0cm},
+  gt/.style={draw=acc, text=acc, dashed, rounded corners=6pt, align=center, minimum width=2.2cm, minimum height=1.0cm},
+  io/.style={align=center, minimum width=2.3cm, minimum height=1.0cm},
+  sh/.style={draw, rounded corners=2pt, align=center, minimum width=3.86cm, minimum height=1.2cm},
+  lb/.style={font=\fontsize{7}{8}\selectfont, text=black!55, align=center, inner sep=1pt},
+  fr/.style={draw=black!55, densely dotted, rounded corners=4pt}]
+% top lane (counsel's machine)
+\node[io, minimum width=1.9cm] (pa) at (0,0) {Pairokar\\\sm{batch desk}};
+\node[io] (in) at (3.65,0) {Files, photos,\\chat, voice};
+\node[ag] (mu) at (7.3,0) {Munshi\\\sm{intake}};
+\node[ag] (pe) at (10.95,0) {Peshkar\\\sm{dossier, Rights Radar}};
+\node[gt] (g1) at (14.6,0) {Gate 1\\\sm{counsel: dossier}};
+% bottom lane (model side)
+\node[ag] (su) at (14.6,-3.2) {Sutradhar\\\sm{plans retrieval}};
+\node[ag] (va) at (10.95,-3.2) {Vakeel\\\sm{draft, check, repair}};
+\node[ag] (ab) at (7.3,-3.2) {Abhiyojak\\\sm{prosecution sparring}};
+\node[gt] (g2) at (3.65,-3.2) {Gate 2\\\sm{counsel: brief}};
+\node[io] (out) at (0,-3.2) {Brief, objections,\\open issues};
+\node[ag, minimum width=2.0cm, minimum height=0.6cm] (oi) at (10.95,-4.5) {\sm{Open issues}};
+% frames
+\draw[fr] (5.95,-1.7) rectangle (15.95,-5.25);
+\node[draw=black!55, densely dotted, rounded corners=4pt, fit=(in)(mu)(pe), inner ysep=0.3cm, inner xsep=0.1cm] (lap) {};
+\node[lb, anchor=south west, text=acc, inner sep=0pt] at ([yshift=2pt]lap.north west) {Counsel's machine: raw files stay here};
+\node[lb, anchor=south west, inner sep=0pt] at (5.95,-1.65) {Model side: pseudonymised text only};
+% pseudonymisation crossing
+\node[draw, fill=white, rounded corners=2pt, minimum width=1.75cm, minimum height=0.4cm, inner sep=1pt] (ps) at (14.6,-1.7) {\sm{pseudonymise}};
+% stores: four shelves
+\draw[fr] (-1.2,-5.7) rectangle (15.8,-7.55);
+\node[lb, anchor=north west] at (-1.2,-5.7) {ten typed stores on four shelves};
+\node[sh] (s1) at (0.98,-6.75) {\textbf{Law}\\\sm{statutes, concordance}};
+\node[sh] (s2) at (5.19,-6.75) {\textbf{Case law}\\\sm{reasoning, citations, similar orders}};
+\node[sh] (s3) at (9.40,-6.75) {\textbf{Advocacy}\\\sm{arguments, objections}};
+\node[sh] (s4) at (13.61,-6.75) {\textbf{Case} \sm{(private, laptop only)}\\\sm{documents, timeline, dossier}};
+\node[draw=black!55, minimum width=17cm, minimum height=0.4cm, anchor=north west, inner sep=0pt] (lg) at (-1.2,-7.95) {\sm{\color{black!55}append-only event log (every agent action; dossier, brief and sparring record are views of it)}};
+% flow arrows
+\draw[->] (pa) -- node[lb, above] {ordered\\files} (in);
+\draw[->] (in) -- node[lb, above] {pages} (mu);
+\draw[->] (mu) -- node[lb, above] {pages,\\doc types} (pe);
+\draw[->] (pe) -- node[lb, above] {dossier,\\quotes} (g1);
+\draw[->] (g1) -- node[lb, left] {approved\\dossier} (ps);
+\draw[->] (ps) -- (su);
+\draw[->] (su) -- node[lb, above] {evidence\\packs per\\factor} (va);
+\draw[->] ($(va.west)+(0,0.18)$) -- node[lb, above] {grounds,\\replies} ($(ab.east)+(0,0.18)$);
+\draw[->] ($(ab.east)+(0,-0.18)$) -- node[lb, below] {objections,\\verdicts} ($(va.west)+(0,-0.18)$);
+\draw[->] (ab) -- node[lb, above] {draft for\\approval} (g2);
+\draw[->] (g2) -- node[lb, above] {export} (out);
+% Vakeel check-and-repair loop and abstention exit
+\draw[->, rounded corners=3pt] ($(va.north)+(-0.6,0)$) -- ++(0,0.4) -- ++(1.2,0) -- ($(va.north)+(0.6,0)$);
+\node[lb, above] at ($(va.north)+(0,0.4)$) {check each sentence, repair};
+\draw[->] (va) -- node[lb, right] {abstain} (oi);
+% stores
+\draw[<->] (su) -- node[lb, left, align=right, pos=0.38] {evidence contract:\\factor $\to$ slots $\to$\\stores, until budget\\or sufficiency} (14.6,-5.7);
+\draw[->] ($(ab.south)+(0.8,0)$) -- node[lb, right] {allow-listed\\stores only} (8.1,-5.7);
 \end{tikzpicture}
 \end{document}
