@@ -8,21 +8,28 @@
 \usepackage{tikz}
 \usetikzlibrary{positioning,fit,backgrounds,arrows.meta,calc}
 \definecolor{acc}{HTML}{1F3A5F}
+\definecolor{locF}{HTML}{E3F1E0}\definecolor{locD}{HTML}{4E7D46}
+\definecolor{modF}{HTML}{DDEAF6}\definecolor{modD}{HTML}{2F5D8A}
+\definecolor{gtF}{HTML}{FCEBD0}\definecolor{gtD}{HTML}{A8690B}
+\definecolor{psF}{HTML}{F7DADA}\definecolor{psD}{HTML}{A23B3B}
+\definecolor{stF}{HTML}{ECE6F5}\definecolor{stD}{HTML}{6A5293}
+\definecolor{lgF}{HTML}{EFEFEF}
 \newcommand{\sm}[1]{{\fontsize{7}{8}\selectfont #1}}
 \begin{document}
 \begin{tikzpicture}[
   font=\fontsize{8}{9.5}\selectfont, >={Stealth[length=4pt,width=3.5pt]}, line width=0.6pt,
-  ag/.style={draw, fill=acc!6, rounded corners=2pt, align=center, minimum width=2.3cm, minimum height=1.0cm},
-  gt/.style={draw=acc, fill=acc!12, text=acc, dashed, rounded corners=6pt, align=center, minimum width=2.2cm, minimum height=1.0cm},
+  loc/.style={ag, draw=locD, fill=locF},
+  ag/.style={draw=modD, fill=modF, rounded corners=2pt, align=center, minimum width=2.3cm, minimum height=1.0cm},
+  gt/.style={draw=gtD, fill=gtF, text=gtD!70!black, dashed, rounded corners=6pt, align=center, minimum width=2.2cm, minimum height=1.0cm},
   io/.style={align=center, minimum width=2.3cm, minimum height=1.0cm},
-  sh/.style={draw, fill=black!4, rounded corners=2pt, align=center, minimum width=3.86cm, minimum height=1.2cm},
+  sh/.style={draw=stD, fill=stF, rounded corners=2pt, align=center, minimum width=3.86cm, minimum height=1.2cm},
   lb/.style={font=\fontsize{7}{8}\selectfont, text=black!55, align=center, inner sep=1pt},
   fr/.style={draw=black!55, densely dotted, rounded corners=4pt}]
 % top lane (counsel's machine)
 \node[io, minimum width=1.9cm] (pa) at (0,0) {Pairokar\\\sm{batch desk}};
 \node[io] (in) at (3.65,0) {Files, photos,\\chat, voice};
-\node[ag] (mu) at (7.3,0) {Munshi\\\sm{intake}};
-\node[ag] (pe) at (10.95,0) {Peshkar\\\sm{dossier, Rights Radar}};
+\node[loc] (mu) at (7.3,0) {Munshi\\\sm{intake}};
+\node[loc] (pe) at (10.95,0) {Peshkar\\\sm{dossier, Rights Radar}};
 \node[gt] (g1) at (14.6,0) {Gate 1\\\sm{counsel: dossier}};
 % bottom lane (model side)
 \node[ag] (su) at (14.6,-3.2) {Sutradhar\\\sm{plans retrieval}};
@@ -30,14 +37,14 @@
 \node[ag] (ab) at (7.3,-3.2) {Abhiyojak\\\sm{prosecution sparring}};
 \node[gt] (g2) at (3.65,-3.2) {Gate 2\\\sm{counsel: brief}};
 \node[io] (out) at (0,-3.2) {Brief, objections,\\open issues};
-\node[ag, minimum width=2.0cm, minimum height=0.6cm] (oi) at (10.95,-4.5) {\sm{Open issues}};
+\node[ag, draw=gtD, fill=gtF, minimum width=2.0cm, minimum height=0.6cm] (oi) at (10.95,-4.5) {\sm{Open issues}};
 % frames
 \draw[fr] (5.95,-1.7) rectangle (15.95,-5.25);
 \node[draw=black!55, densely dotted, rounded corners=4pt, fit=(in)(mu)(pe), inner ysep=0.3cm, inner xsep=0.1cm] (lap) {};
-\node[lb, anchor=south west, text=acc, inner sep=0pt] at ([yshift=2pt]lap.north west) {Counsel's machine: raw files stay here};
-\node[lb, anchor=south west, inner sep=0pt] at (5.95,-1.65) {Model side: pseudonymised text only};
+\node[lb, anchor=south west, text=locD, inner sep=0pt] at ([yshift=2pt]lap.north west) {Counsel's machine: raw files stay here};
+\node[lb, anchor=south west, text=modD, inner sep=0pt] at (5.95,-1.65) {Model side: pseudonymised text only};
 % pseudonymisation crossing
-\node[draw, fill=acc!15, rounded corners=2pt, minimum width=1.75cm, minimum height=0.4cm, inner sep=1pt] (ps) at (14.6,-1.7) {\sm{pseudonymise}};
+\node[draw=psD, fill=psF, rounded corners=2pt, minimum width=1.75cm, minimum height=0.4cm, inner sep=1pt] (ps) at (14.6,-1.7) {\sm{pseudonymise}};
 % stores: four shelves
 \draw[fr] (-1.2,-5.7) rectangle (15.8,-7.55);
 \node[lb, anchor=north west] at (-1.2,-5.7) {ten typed stores on four shelves};
@@ -45,7 +52,7 @@
 \node[sh] (s2) at (5.19,-6.75) {\textbf{Case law}\\\sm{reasoning, citations, similar orders}};
 \node[sh] (s3) at (9.40,-6.75) {\textbf{Advocacy}\\\sm{arguments, objections}};
 \node[sh] (s4) at (13.61,-6.75) {\textbf{Case} \sm{(private, laptop only)}\\\sm{documents, timeline, dossier}};
-\node[draw=black!55, fill=black!4, minimum width=17cm, minimum height=0.4cm, anchor=north west, inner sep=0pt] (lg) at (-1.2,-7.95) {\sm{\color{black!55}append-only event log (every agent action; dossier, brief and sparring record are views of it)}};
+\node[draw=black!55, fill=lgF, minimum width=17cm, minimum height=0.4cm, anchor=north west, inner sep=0pt] (lg) at (-1.2,-7.95) {\sm{\color{black!55}append-only event log (every agent action; dossier, brief and sparring record are views of it)}};
 % flow arrows
 \draw[->] (pa) -- node[lb, above] {ordered\\files} (in);
 \draw[->] (in) -- node[lb, above] {pages} (mu);
@@ -65,5 +72,12 @@
 % stores
 \draw[<->] (su) -- node[lb, left, align=right, pos=0.38] {evidence contract:\\factor $\to$ slots $\to$\\stores, until budget\\or sufficiency} (14.6,-5.7);
 \draw[->] ($(ab.south)+(0.8,0)$) -- node[lb, right] {allow-listed\\stores only} (8.1,-5.7);
+
+% legend
+\begin{scope}[shift={(-1.2,-8.75)}]
+\foreach \i/\f/\d/\t/\x in {0/locF/locD/agent on counsel's machine/0, 1/modF/modD/agent on the model side/3.45, 2/gtF/gtD/counsel's decision or task/6.75, 3/psF/psD/privacy boundary/10.05, 4/stF/stD/typed store/12.75, 5/lgF/black!55/audit log/14.95}
+  {\node[draw=\d, fill=\f, rounded corners=1pt, minimum width=0.38cm, minimum height=0.24cm, inner sep=0pt] (k\i) at (\x+0.19,0) {};
+   \node[lb, anchor=west, text=black!70] at ([xshift=1pt]k\i.east) {\t};}
+\end{scope}
 \end{tikzpicture}
 \end{document}
