@@ -72,13 +72,17 @@ describe("getTour", () => {
 });
 
 describe("the demo build", () => {
-  it("serves one tour over case-0007 and 404s an unknown slug", async () => {
+  // RECONCILED: the demo build now bundles the six recorded evaluator-demo runs (lib/mock/recorded.ts) before the sample tour,
+  // so a static deployment shows the same tours as the live server; the sample tour over case-0007 is still served, last.
+  it("serves the six recorded tours, then the sample tour over case-0007, and 404s an unknown slug", async () => {
     const demo = await import("@/lib/mock/server");
     const { parseTourList, parseTour } = await import("@/lib/tour");
     const list = parseTourList(await demo.listTours());
-    expect(list).toHaveLength(1);
-    expect(list[0].case_id).toBe("case-0007");
-    expect(parseTour(await demo.getTour(list[0].slug))?.steps).toHaveLength(9);
+    expect(list).toHaveLength(7);
+    expect(list.slice(0, 6).map((t) => t.case_id)).toEqual(["demo-01", "demo-02", "demo-03", "demo-04", "demo-05", "demo-06"]);
+    for (const t of list.slice(0, 6)) expect(parseTour(await demo.getTour(t.slug))?.steps.length).toBeGreaterThan(0);
+    expect(list[6].case_id).toBe("case-0007");
+    expect(parseTour(await demo.getTour(list[6].slug))?.steps).toHaveLength(9);
     await expect(demo.getTour("missing")).rejects.toMatchObject({ status: 404 });
   });
 });

@@ -24,12 +24,16 @@ const wsState = vi.hoisted(() => ({
   gate2: false,
   setStage: vi.fn(() => true),
   refresh: vi.fn(async () => {}),
+  exportCase: vi.fn(async () => ["/api/cases/case-demo-01/export/files/application.docx"]),
+  exports: [] as string[],
 }));
 vi.mock("@/lib/workspace", () => ({
   useWorkspace: () => ({
     loading: { summary: false, gates: false },
     setStage: wsState.setStage,
     refresh: wsState.refresh,
+    exportCase: wsState.exportCase,
+    exports: wsState.exports,
     gates: {
       approvals: { gate1: wsState.gate1, gate2: wsState.gate2 },
       checklists: {
@@ -154,6 +158,9 @@ describe("TourBar", () => {
     expect(apiMock.approveGate).toHaveBeenCalledWith("case-demo-01", "GATE_2_EXPORT", ["NEEDS_REVIEW:G5", "UNANSWERED:O2", "antecedents"]);
     expect(wsState.refresh).toHaveBeenCalledWith(["summary", "gates"]);
     expect(screen.getByTestId("tour-next").textContent).toMatch(/Finish/);
+    // The last step exports by itself once Gate 2 is approved, once, so the evaluator only finds the download links.
+    await waitFor(() => expect(wsState.exportCase).toHaveBeenCalledWith("DOCX"));
+    expect(wsState.exportCase).toHaveBeenCalledTimes(1);
     // Back to the gate and on again: the gate is approved, nothing is sent twice.
     await act(async () => {
       fireEvent.click(screen.getByTestId("tour-back"));
@@ -172,6 +179,7 @@ describe("TourBar", () => {
     for (let i = 0; i < 8; i++) await clickNext();
     expect(progress()).toBe("Step 9 of 9");
     expect(apiMock.approveGate).not.toHaveBeenCalled();
+    await waitFor(() => expect(wsState.exportCase).toHaveBeenCalledTimes(1));
   });
 
   it("stays on Gate 2 and shows the server's message when the approval is refused", async () => {

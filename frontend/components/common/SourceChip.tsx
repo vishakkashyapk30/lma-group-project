@@ -5,6 +5,8 @@ import type { ReactElement } from "react";
 import { cn } from "@/lib/utils";
 import type { SourceRef } from "@/lib/types";
 import { MOCK_DOC_TITLES } from "@/lib/mock/case0007";
+import { isRecorded } from "@/lib/mock/recorded";
+import { DOC_TYPE_LABELS } from "@/lib/labels";
 import { useOptionalWorkspace } from "@/lib/workspace";
 
 export interface SourceChipProps {
@@ -14,15 +16,18 @@ export interface SourceChipProps {
   className?: string;
 }
 
-export function sourceLabel(source: SourceRef): string {
-  const doc = source.doc ? (MOCK_DOC_TITLES[source.doc] ?? source.doc) : "source";
+/** `docTitle` names the document when the caller knows it (a recorded demo case names its own papers). */
+export function sourceLabel(source: SourceRef, docTitle?: string | null): string {
+  const doc = source.doc ? (docTitle ?? MOCK_DOC_TITLES[source.doc] ?? source.doc) : "source";
   return source.page != null ? `${doc} · p. ${source.page}` : doc;
 }
 
 export function SourceChip({ source, label, className }: SourceChipProps): ReactElement | null {
   const ws = useOptionalWorkspace();
   if (!source || (!source.doc && source.page == null)) return null;
-  const text = label ?? sourceLabel(source);
+  const recordedDoc =
+    ws && source.doc && isRecorded(ws.caseId) ? ws.data.ingestion?.documents.find((d) => d.doc_id === source.doc) : undefined;
+  const text = label ?? sourceLabel(source, recordedDoc ? `${DOC_TYPE_LABELS[recordedDoc.type] ?? recordedDoc.type} (${recordedDoc.doc_id})` : null);
   return (
     <button
       type="button"

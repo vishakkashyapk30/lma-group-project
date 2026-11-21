@@ -15,6 +15,27 @@ import { NeedsYou } from "../NeedsYou";
 import { StepFooter, StepFrame } from "../StepFrame";
 import { InlineNote, stepState } from "./shared";
 
+/**
+ * Start the download the button promises: one zip of the format when the server offers one (a single file, so the browser
+ * does not ask about several downloads), else each file of the format in turn.
+ */
+function downloadExport(files: string[], format: ExportFormat): void {
+  if (typeof document === "undefined") return;
+  const ext = format === "PDF" ? ".pdf" : ".docx";
+  const zip = files.find((f) => f.toLowerCase().endsWith(".zip"));
+  const picks = zip ? [zip] : files.filter((f) => f.toLowerCase().endsWith(ext));
+  picks.forEach((href, i) => {
+    window.setTimeout(() => {
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = decodeURIComponent(href.split("/").pop() ?? "");
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }, i * 400);
+  });
+}
+
 export function ExportTab({ caseId }: { caseId: string }): ReactElement {
   const ws = useWorkspace();
   const toast = useToast();
@@ -46,6 +67,7 @@ export function ExportTab({ caseId }: { caseId: string }): ReactElement {
     try {
       const files = await ws.exportCase(format);
       toast(`Exported ${plural(files.length, "file")}`);
+      downloadExport(files, format);
     } catch (e) {
       setMessage(errorMessage(e));
     } finally {

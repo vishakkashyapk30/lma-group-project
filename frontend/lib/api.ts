@@ -12,6 +12,7 @@ import { ApiError } from "./errors";
 import { isTourMode, tourAllows, TOUR_REFUSED_MESSAGE } from "./tourMode";
 export { ApiError };
 import * as demo from "./mock/server";
+import { recordedPageUrl } from "./mock/recorded";
 import { parseTour, parseTourList, type Tour, type TourSummary } from "./tour";
 import type {
   ApproveRequest, BailBrief, BridgeData, BudgetState, CaseDossier, CaseSummary, ChatMessage, CitationGraphData,
@@ -245,16 +246,12 @@ export function getDates(caseId: string): Promise<TimelineEvent[]> {
 
 /** GET /api/cases/{case_id}/rights: the RightsReport. Optional list fields the backend leaves out become empty lists. */
 export function getRights(caseId: string): Promise<RightsReport> {
-  return call(
-    async () => {
-      const report = await http<RightsReport>("GET", `${c(caseId)}/rights`);
-      return {
-        ...report,
-        checks: (report.checks ?? []).map((k) => ({ ...k, uses: k.uses ?? [], sources: k.sources ?? [], dates: k.dates ?? {} })),
-      };
-    },
-    () => demo.getRights(caseId),
-  );
+  const fill = (report: RightsReport): RightsReport => ({
+    ...report,
+    checks: (report.checks ?? []).map((k) => ({ ...k, uses: k.uses ?? [], sources: k.sources ?? [], dates: k.dates ?? {} })),
+  });
+  // The demo's recorded cases carry the backend's own report, so it is filled in the same way.
+  return call(async () => fill(await http<RightsReport>("GET", `${c(caseId)}/rights`)), async () => fill(await demo.getRights(caseId)));
 }
 
 /** POST /api/cases/{case_id}/draft: Sutradhar plans, Vakeel drafts, Abhiyojak spars (needs Gate 1). */
@@ -322,7 +319,7 @@ export function normalizePrep(raw: unknown): HearingPrepCard {
 
 /** GET /api/cases/{case_id}/prep: the hearing-prep card, in the UI's shape (normalizePrep). */
 export function getPrep(caseId: string): Promise<HearingPrepCard> {
-  return call(async () => normalizePrep(await http<unknown>("GET", `${c(caseId)}/prep`)), () => demo.getPrep(caseId));
+  return call(async () => normalizePrep(await http<unknown>("GET", `${c(caseId)}/prep`)), async () => normalizePrep(await demo.getPrep(caseId)));
 }
 
 /** GET /api/cases/{case_id}/budget: spend and budget hits. */
@@ -342,6 +339,9 @@ export function pageImageUrl(caseId: string, docId: string, page: number): strin
 export async function getPage(caseId: string, docId: string, page: number): Promise<PageSource> {
   const url = pageImageUrl(caseId, docId, page);
   if (url) return { kind: "image", url };
+  // A recorded demo case shows the page images captured from its run (public/demo-cases/).
+  const recorded = recordedPageUrl(caseId, docId, page);
+  if (recorded) return { kind: "image", url: recorded };
   return { kind: "mock", page: await demo.getPage(caseId, docId, page) };
 }
 

@@ -87,7 +87,9 @@ export function WorkspaceShell({ caseId, className }: WorkspaceShellProps): Reac
       ) : null}
       <ChangeBanner />
 
-      <div className="flex min-h-0 flex-1">
+      {/* A guided demo's narration sits to the right of the workspace on wide screens, and below it on narrow ones. */}
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+      <div className="flex min-h-0 min-w-0 flex-1">
         <div data-testid="pane-main" className="min-w-0 flex-1 scroll-pb-24 overflow-y-auto overscroll-contain">
           <StepView caseId={caseId} />
         </div>
@@ -99,8 +101,8 @@ export function WorkspaceShell({ caseId, className }: WorkspaceShellProps): Reac
           <SourcePanel caseId={caseId} />
         ) : null}
       </div>
-
       {tourSlug ? <TourBar slug={tourSlug} caseId={caseId} /> : null}
+      </div>
 
       <TraceDrawer caseId={caseId} open={ws.detailsOpen} onClose={() => ws.setDetailsOpen(false)} />
     </div>

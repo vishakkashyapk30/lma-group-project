@@ -29,6 +29,9 @@ import {
 import { mockBridgeFor, mockCitationGraphFor, mockSearchLibrary } from "./library";
 import { getMockPage } from "./pages";
 import { MOCK_TOUR, mockTourList } from "./tours";
+import {
+  isRecorded, loadRecorded, RECORDED_APPROVALS, RECORDED_SUMMARIES, RECORDED_TOURS, recordedExportUrls,
+} from "./recorded";
 import type { BridgeData, CitationGraphData, LibrarySearchHit } from "../types";
 
 /* ── State ──────────────────────────────────────────────────────────────────────────────────────────────────────── */
@@ -152,6 +155,9 @@ function persist(): void {
     const data: Persisted = {
       cases: [...cases.entries()].map(([id, c]) => {
         const { template: _t, ...rest } = c;
+        // A recorded case keeps only what changed in this session (approvals, resolutions, exports, new events); the
+        // recording itself is fetched again (sessionStorage could not hold six event logs).
+        if (isRecorded(id)) return [id, { ...rest, ...UNLOADED, events: rest.events.slice(recordedBase.get(id) ?? 0) }];
         return [id, rest];
       }),
       deskOpened: [...deskOpened],
@@ -184,6 +190,12 @@ function restore(): Map<string, DemoCase> | null {
 function store(): Map<string, DemoCase> {
   if (!cases) {
     cases = restore() ?? new Map(CASE_SEEDS.map((s) => [s.summary.case_id, fromSeed(s)]));
+    for (const s of RECORDED_SUMMARIES) {
+      if (cases.has(s.case_id)) continue;
+      const c = emptyCase({ case_id: s.case_id, title: s.title, stage: s.stage }, buildTemplate(s.case_id, pseudonymsFor(s.case_id)));
+      c.approvals = { ...RECORDED_APPROVALS[s.case_id] };
+      cases.set(s.case_id, c);
+    }
   }
   return cases;
 }
@@ -191,6 +203,7 @@ function store(): Map<string, DemoCase> {
 /** Forget every change made in the demo and start again from the seeds. */
 export function resetDemo(): void {
   cases = null;
+  recordedBase.clear();
   deskOpened = new Set();
   runners.clear();
   busy.clear();
@@ -212,6 +225,42 @@ function getCaseState(caseId: string): DemoCase {
   const c = store().get(caseId);
   if (!c) throw new ApiError(404, `No case ${caseId} in the demo.`);
   return c;
+}
+
+/* ── Recorded cases (lib/mock/recorded.ts) ──────────────────────────────────────────────────────────────────────── */
+
+const UNLOADED = { ingestion: null, dossier: null, dates: null, rights: null, brief: null, spar: null, prep: null, chat: [], budget: EMPTY_BUDGET };
+/** Number of recorded events at the head of each loaded recorded case's log. */
+const recordedBase = new Map<string, number>();
+
+/** The case, with a recorded case's responses fetched first (once per page load). */
+async function ready(caseId: string): Promise<void> {
+  if (isRecorded(caseId) && !recordedBase.has(caseId)) {
+    const snap = await loadRecorded(caseId).catch((e: unknown) => {
+      throw new ApiError(503, e instanceof Error ? e.message : `The recorded case ${caseId} could not be loaded.`);
+    });
+    const c = getCaseState(caseId);
+    if (!recordedBase.has(caseId)) {
+      c.ingestion = clone(snap.ingestion);
+      c.dossier = clone(snap.dossier);
+      c.dates = clone(snap.dates);
+      c.rights = clone(snap.rights);
+      c.brief = snap.brief ? clone(snap.brief) : null;
+      c.spar = snap.spar ? clone(snap.spar) : null;
+      c.prep = snap.prep ? (clone(snap.prep) as HearingPrepCard) : null;
+      c.chat = [...clone(snap.chat), ...c.chat];
+      c.budget = clone(snap.budget);
+      c.events = [...snap.events, ...c.events];
+      recordedBase.set(caseId, snap.events.length);
+    }
+  }
+}
+
+/** A recorded case is shared by everyone who opens the demo: only the Gate 2 approval and the export change it. */
+function refuseRecorded(caseId: string): void {
+  if (isRecorded(caseId)) {
+    throw new ApiError(423, "This is a recorded demo case, so this change was not made. Open the sample case or a new case to try it.", { recorded: true });
+  }
 }
 
 function bumpStage(c: DemoCase, stage: Stage): void {
@@ -395,7 +444,17 @@ function runScript(caseId: string, steps: ScriptStep[]): Promise<void> {
 export function subscribeDemoEvents(caseId: string, lastEventId: string | null, onEvent: (e: AgentEvent) => void): () => void {
   const c = store().get(caseId);
   let cancelled = false;
-  if (c) {
+  if (c && isRecorded(caseId)) {
+    void ready(caseId).then(
+      () => {
+        if (cancelled) return;
+        const rc = getCaseState(caseId);
+        const idx = lastEventId ? rc.events.findIndex((e) => e.event_id === lastEventId) : -1;
+        rc.events.slice(idx + 1).forEach(onEvent);
+      },
+      () => undefined,
+    );
+  } else if (c) {
     const idx = lastEventId ? c.events.findIndex((e) => e.event_id === lastEventId) : -1;
     const backlog = c.events.slice(idx + 1);
     queueMicrotask(() => {
@@ -442,6 +501,16 @@ function rightsChips(r: RightsReport | null): string[] {
 }
 
 function summaryOf(c: DemoCase): CaseSummary {
+  const recorded = RECORDED_SUMMARIES.find((s) => s.case_id === c.summary.case_id);
+  if (recorded) {
+    return {
+      ...recorded,
+      stage: c.summary.stage,
+      needs_attention: recordedBase.has(recorded.case_id)
+        ? attentionCount({ dossier: c.dossier, brief: c.brief, spar: c.spar }, c.resolutions, c.approvals) + c.pendingChange.length
+        : recorded.needs_attention,
+    };
+  }
   return {
     ...c.summary,
     rights_chips: rightsChips(c.rights),
@@ -473,6 +542,7 @@ export async function createCase(body: { title?: string | null } = {}): Promise<
 
 export async function getCase(caseId: string): Promise<CaseSummary> {
   await latency();
+  await ready(caseId);
   return summaryOf(getCaseState(caseId));
 }
 
@@ -483,16 +553,20 @@ function need<T>(value: T | null, what: string, caseId: string): T {
 
 export async function getIngestion(caseId: string): Promise<IngestionReport> {
   await latency();
+  await ready(caseId);
   return need(getCaseState(caseId).ingestion, "ingestion report", caseId);
 }
 
 export async function getDossier(caseId: string): Promise<CaseDossier> {
   await latency();
+  await ready(caseId);
   return need(getCaseState(caseId).dossier, "dossier", caseId);
 }
 
 export async function editField(caseId: string, field: string, body: { value: unknown }): Promise<CaseDossier> {
   await latency();
+  await ready(caseId);
+  refuseRecorded(caseId);
   const c = getCaseState(caseId);
   if (!c.dossier) throw new ApiError(404, `No dossier for ${caseId} yet.`);
   if (!(DOSSIER_FIELD_NAMES as readonly string[]).includes(field)) throw new ApiError(422, `Unknown dossier field ${field}.`);
@@ -510,16 +584,20 @@ export async function editField(caseId: string, field: string, body: { value: un
 
 export async function getDates(caseId: string): Promise<TimelineEvent[]> {
   await latency();
+  await ready(caseId);
   return need(getCaseState(caseId).dates, "List of Dates", caseId);
 }
 
 export async function getRights(caseId: string): Promise<RightsReport> {
   await latency();
+  await ready(caseId);
   return need(getCaseState(caseId).rights, "Rights Radar report", caseId);
 }
 
 export async function startDraft(caseId: string): Promise<Record<string, string>> {
   await latency();
+  await ready(caseId);
+  refuseRecorded(caseId);
   const c = getCaseState(caseId);
   if (!c.dossier) throw new ApiError(409, "Nothing to draft from yet: upload the case file first.");
   if (!c.approvals.gate1) throw new ApiError(409, "Gate 1 is not approved: counsel must approve the dossier before drafting.");
@@ -530,33 +608,38 @@ export async function startDraft(caseId: string): Promise<Record<string, string>
 
 export async function getBrief(caseId: string): Promise<BailBrief> {
   await latency();
+  await ready(caseId);
   return need(getCaseState(caseId).brief, "brief", caseId);
 }
 
 /** Change highlights for the Brief tab (plan §10). Demo-only helper; the real backend derives them from the log. */
 export async function getBriefRevisions(caseId: string): Promise<GroundRevision[]> {
   await latency();
+  await ready(caseId);
   return clone(getCaseState(caseId).revisions);
 }
 
 export async function getSpar(caseId: string): Promise<SparringRecord> {
   await latency();
+  await ready(caseId);
   return need(getCaseState(caseId).spar, "sparring record", caseId);
 }
 
 export async function getPrep(caseId: string): Promise<HearingPrepCard> {
   await latency();
+  await ready(caseId);
   return need(getCaseState(caseId).prep, "hearing-prep card", caseId);
 }
 
 export async function getBudget(caseId: string): Promise<BudgetState> {
   await latency();
+  await ready(caseId);
   return clone(getCaseState(caseId).budget);
 }
 
 /** Demo page facsimile for the PDF viewer (the real route returns a page image). */
 export async function getPage(caseId: string, docId: string, page: number): Promise<MockPage> {
-  getCaseState(caseId);
+  await ready(caseId);
   const p = getMockPage(docId, page);
   if (!p) throw new ApiError(404, `No page ${page} of ${docId} in the demo.`);
   return clone(p);
@@ -566,6 +649,8 @@ export async function getPage(caseId: string, docId: string, page: number): Prom
 
 export async function uploadFiles(caseId: string, fileNames: string[]): Promise<UploadResponse> {
   await latency();
+  await ready(caseId);
+  refuseRecorded(caseId);
   const c = getCaseState(caseId);
   if (fileNames.length === 0) throw new ApiError(422, "No files received.");
   const certificate = c.dossier !== null || fileNames.some((n) => /custody|certificate/i.test(n));
@@ -581,6 +666,8 @@ export async function uploadFiles(caseId: string, fileNames: string[]): Promise<
 /** Dictation (plan §4.5, flow 5): Munshi transcribes, reads back dates and sections, and files them as USER_STATED. */
 export async function uploadAudio(caseId: string, fileName = "dictation.webm"): Promise<UploadResponse> {
   await latency();
+  await ready(caseId);
+  refuseRecorded(caseId);
   const c = getCaseState(caseId);
   const readBack = "I heard: arrested on 20.08.2024; sections 318(4) and 316(2) BNS; he is the sole earning member of his family. Please confirm. These are filed as stated by counsel, not on record.";
   const turn = `turn ${c.chat.filter((m) => m.role === "counsel").length + 1}`;
@@ -694,6 +781,7 @@ function routeChat(text: string, c: DemoCase): Routed {
 }
 
 export async function postChat(caseId: string, body: { text: string }): Promise<ChatMessage> {
+  refuseRecorded(caseId);
   const c = getCaseState(caseId);
   const text = body.text.trim();
   if (!text) throw new ApiError(422, "Empty message.");
@@ -713,6 +801,7 @@ export async function postChat(caseId: string, body: { text: string }): Promise<
 
 export async function getChatHistory(caseId: string): Promise<ChatMessage[]> {
   await latency();
+  await ready(caseId);
   return clone(getCaseState(caseId).chat);
 }
 
@@ -732,6 +821,7 @@ function gateStatus(c: DemoCase, gate: GateId): GateStatus {
 
 export async function getGate(caseId: string, gate: GateId): Promise<GateStatus> {
   await latency();
+  await ready(caseId);
   return gateStatus(getCaseState(caseId), gate);
 }
 
@@ -751,7 +841,9 @@ function absorbAcknowledged(c: DemoCase, acknowledged: string[]): void {
 
 export async function approveGate(caseId: string, gate: GateId, body: { acknowledged_fields: string[] }): Promise<GateStatus> {
   await latency();
+  await ready(caseId);
   const c = getCaseState(caseId);
+  if (gate === "GATE_1_DOSSIER") refuseRecorded(caseId);
   if (gate === "GATE_1_DOSSIER" && !c.dossier) throw new ApiError(409, "There is no dossier to approve yet.");
   if (gate === "GATE_2_EXPORT" && !c.approvals.gate1) throw new ApiError(409, "Gate 2 needs Gate 1 first.");
   if (gate === "GATE_2_EXPORT" && !c.brief) throw new ApiError(409, "There is no draft to approve yet.");
@@ -783,11 +875,12 @@ export async function approveGate(caseId: string, gate: GateId, body: { acknowle
 
 export async function exportCase(caseId: string, body: { format: ExportFormat }): Promise<string[]> {
   await latency();
+  await ready(caseId);
   const c = getCaseState(caseId);
   // Enforced here as in the backend: nothing leaves without counsel's Gate 2 approval (plan §16).
   if (!c.approvals.gate2) throw new ApiError(403, "Export is blocked until counsel approves Gate 2.");
   const ext = body.format === "PDF" ? "pdf" : "docx";
-  const files = [
+  const files = isRecorded(caseId) ? recordedExportUrls(caseId, body.format) : [
     `exports/${caseId}/bail_application.${ext}`,
     `exports/${caseId}/list_of_dates.${ext}`,
     `exports/${caseId}/objections_sheet.${ext}`,
@@ -822,6 +915,7 @@ export async function getDeskBoard(): Promise<DeskBoard> {
 /** Open a desk case in the workspace: Munshi, Peshkar and the Rights Radar have run; it still needs its own Gate 1. */
 export async function openDeskCase(caseId: string): Promise<CaseSummary> {
   await latency();
+  await ready(caseId);
   const map = store();
   const card = MOCK_DESK_BOARD.cards.find((c) => c.case_id === caseId);
   if (!card && !map.has(caseId)) throw new ApiError(404, `No case ${caseId} on the desk.`);
@@ -865,11 +959,15 @@ export async function getBridge(code: string, section: string): Promise<BridgeDa
 
 export async function listTours(): Promise<unknown[]> {
   await latency();
-  return clone(mockTourList());
+  // The six recorded runs first, then the built-in sample case.
+  const recorded = RECORDED_TOURS.map(({ slug, case_id, title, story, variant, hi }) => ({ slug, case_id, title, story, variant, ...(hi ? { hi } : {}) }));
+  return clone([...recorded, ...mockTourList()]);
 }
 
 export async function getTour(slug: string): Promise<unknown> {
   await latency();
+  const recorded = RECORDED_TOURS.find((t) => t.slug === slug);
+  if (recorded) return clone(recorded);
   if (slug !== MOCK_TOUR.slug) throw new ApiError(404, `No guided demo ${slug} in the demo.`);
   return clone(MOCK_TOUR);
 }

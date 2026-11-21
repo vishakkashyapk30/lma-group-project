@@ -124,12 +124,25 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
     return revealSection(step);
   }, [step, summaryLoading]);
 
+  // The last step exports by itself once Gate 2 is approved, so the evaluator only presses Next and finds the download links.
+  const gate2Approved = ws.gates.approvals.gate2;
+  const exported = (ws.exports?.length ?? 0) > 0;
+  const autoExported = useRef(false);
+  useEffect(() => {
+    if (step?.stage !== "FILE" || !gate2Approved || exported || autoExported.current) return;
+    autoExported.current = true;
+    wsRef.current.exportCase("DOCX").catch(() => {
+      autoExported.current = false; // the workspace shows the error; Next or the export button can try again
+    });
+  }, [step, gate2Approved, exported]);
+
   // Toasts sit above the bar, not over its buttons (components/ui/toast.tsx reads --tour-bar-h).
   useEffect(() => {
     const el = barRef.current;
     const root = document.documentElement;
     if (!el) return;
-    const set = () => root.style.setProperty("--tour-bar-h", `${el.offsetHeight}px`);
+    // Beside the workspace (wide screens) the bar does not cover the bottom edge, so toasts need no extra room.
+    const set = () => root.style.setProperty("--tour-bar-h", `${el.offsetWidth < window.innerWidth * 0.6 ? 0 : el.offsetHeight}px`);
     set();
     root.dataset.tour = "1";
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(set) : null;
@@ -193,7 +206,7 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
       aria-label={t("Guided demo")}
       data-testid="tour-bar"
       data-print-hide
-      className="shrink-0 border-t border-line-strong/60 bg-cream outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-maroon"
+      className="shrink-0 border-t border-line-strong/60 bg-cream outline-none lg:flex lg:w-[24rem] lg:flex-col lg:border-l lg:border-t-0 xl:w-[28rem] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-maroon"
     >
       {body}
     </section>
@@ -239,8 +252,8 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
   const text = localizedStep(step, lang);
 
   return frame(
-    <div className="flex max-h-[42dvh] flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-end lg:gap-8">
-      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain lg:max-h-[calc(42dvh-1.5rem)]" data-testid="tour-step" data-stage={step.stage} data-index={state.index}>
+    <div className="flex max-h-[42dvh] flex-col gap-3 px-4 py-3 sm:px-6 lg:h-full lg:max-h-none lg:min-h-0 lg:px-5 lg:py-5">
+      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain" data-testid="tour-step" data-stage={step.stage} data-index={state.index}>
         <div className="flex items-start justify-between gap-2">
         <p className="text-sm text-ink-soft">
           <span className="font-medium text-ink">{t("Guided demo")}</span>
@@ -290,7 +303,7 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
         {text.filled.length > 0 ? (
           <div className={cn("mt-3", folded && "max-lg:hidden")}>
             <h3 className="font-sans text-sm font-semibold text-ink">{t("Filled in at this step")}</h3>
-            <dl data-testid="tour-filled" className="mt-1.5 grid gap-x-4 gap-y-2 sm:grid-cols-2">
+            <dl data-testid="tour-filled" className="mt-1.5 grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-1">
               {text.filled.map((f, i) => (
                 <div key={`${f.label}-${i}`} data-testid="tour-field" className="min-w-0">
                   <dt className="text-sm text-ink-soft">{f.label}</dt>
@@ -318,7 +331,7 @@ export function TourBar({ slug, caseId }: TourBarProps): ReactElement {
           </p>
         ) : null}
       </div>
-      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 [&_button]:max-lg:h-11 [&_button]:max-lg:min-w-11">
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 lg:border-t lg:border-line lg:pt-3 [&_button]:max-lg:h-11 [&_button]:max-lg:min-w-11">
         <Button variant="ghost" size="md" onClick={exit} data-testid="tour-exit" aria-keyshortcuts="Escape">
           {t("Exit the demo")}
         </Button>

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DOC_TYPE_LABELS, ROUTE_BADGES, langLabel, routeStepRung } from "@/lib/labels";
 import { MOCK_DOC_TITLES } from "@/lib/mock/case0007";
+import { isRecorded } from "@/lib/mock/recorded";
 import type { DocumentEntry, ParseRoute } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/lib/workspace";
@@ -44,7 +45,8 @@ export function DocumentList({ caseId, onPick, className }: DocumentListProps): 
   const [open, setOpen] = useState<string | null>(null);
   const report = ws.data.ingestion;
   const documents = report?.documents ?? [];
-  const demo = ws.mode === "demo";
+  // The sample titles describe the built-in sample papers; a recorded demo case keeps its own documents.
+  const demo = ws.mode === "demo" && !isRecorded(caseId);
 
   if (ws.loading.ingestion && !report) {
     return (

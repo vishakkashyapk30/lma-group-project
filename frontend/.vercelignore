@@ -1,0 +1,8 @@
+.next
+.next-build
+node_modules
+test-results
+playwright-report
+coverage
+shots
+tsconfig.tsbuildinfo
