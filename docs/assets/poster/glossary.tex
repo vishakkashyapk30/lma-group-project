@@ -1,0 +1,121 @@
+% One-page glossary of the poster's labels. Build: pdflatex glossary.tex
+\documentclass[9pt,a4paper,twocolumn]{extarticle}
+\usepackage[a4paper,margin=0.95cm,top=0.5cm,bottom=0.7cm,columnsep=0.5cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{booktabs,tabularx,array}
+\usepackage{amssymb}
+\usepackage{titlesec}
+\pagestyle{empty}
+\flushbottom
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.06}
+\setlength{\tabcolsep}{5pt}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\yes}{$\checkmark$}
+
+\begin{document}
+
+\twocolumn[{%
+\centering
+{\Large\bfseries Vakeel-Sahayak.ai\par}\vspace{2pt}
+Team Optimus Prompt\par
+LMA Group Project 2026, IIIT Hyderabad\par
+\vspace{8pt}}]
+
+\noindent\begin{tabularx}{\linewidth}{@{}L{1.32cm}Y@{}}
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\linewidth}@{}}{\textbf{The two systems}} \\
+\midrule
+VS-Final & Our final system: the Base with four fixes, X1, X4, X5 and X7. \\
+Base & Our first complete system: all six agents, the search indexes, retrieval planning, checking of every sentence, and a simulated prosecutor. \\
+\end{tabularx}\par\vspace{9pt plus 30pt}
+
+\noindent\begin{tabularx}{\linewidth}{@{}L{1.32cm}Y@{}}
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\linewidth}@{}}{\textbf{Baselines: simpler systems on the same model}} \\
+\midrule
+B0 & One model call from the case facts; no search. \\
+B1 & The top 10 paragraphs from one index, then one drafting call. \\
+B2 & The 3 most similar court orders in full, then one drafting call. \\
+B3 & B1 with plain text chunking (fixed size, recursive, semantic or by page). \\
+B4 & Every index searched and the results merged, with no plan. \\
+B5 & A learned router that picks which index to search, with no evidence checklist. \\
+B6 & A fixed rule template; no language model at all. \\
+\end{tabularx}\par\vspace{9pt plus 30pt}
+
+\noindent\begin{tabularx}{\linewidth}{@{}L{1.32cm}Y@{}}
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\linewidth}@{}}{\textbf{Ablations: the Base with one part switched off}} \\
+\midrule
+A1 & No fact summary (dossier): the planner and the drafter read the raw facts. \\
+A2 & No checking and repair of sentences (simulated prosecutor still on). \\
+A3 & No tools: the model maps sections, counts custody days and judges rights itself. \\
+A4 & Plain search: no section, part or factor filters, no old-to-new code flag. \\
+A5 & A fine-tuned small extractor. Not run: no model was trained. \\
+A6 & Fixed search order with fixed queries; no planning, no check that the evidence is enough. \\
+A7 & The model plans the search freely, with no evidence checklists. \\
+A8 & No simulated prosecutor (sentence checking still on). \\
+A9 & Neither the simulated prosecutor nor sentence checking. \\
+A10 & One search index removed at a time; measures search only, drafts nothing. \\
+\end{tabularx}\par\vspace{9pt plus 30pt}
+
+\noindent\begin{tabularx}{\linewidth}{@{}L{1.32cm}Y@{}}
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\linewidth}@{}}{\textbf{Intake variants: how Munshi, the intake agent, reads the papers}} \\
+\midrule
+P5 & A fixed reading cascade: no check for missing items, no re-reading, no questions to the lawyer. \\
+P6 & No splitting of a bundle into documents and no document labels. \\
+P7 & Pages read only as images by a vision model, with no OCR text. \\
+P8 & A partly readable text layer is kept as a low-confidence read instead of asking the lawyer. \\
+\end{tabularx}\par\vspace{9pt plus 30pt}
+
+\noindent\begin{tabularx}{\linewidth}{@{}L{1.5cm}Y@{}}
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\linewidth}@{}}{\textbf{Legal terms}} \\
+\midrule
+IPC, CrPC & Indian Penal Code and Code of Criminal Procedure: India's criminal codes until 1 July 2024. \\
+BNS, BNSS & Bharatiya Nyaya Sanhita and Bharatiya Nagarik Suraksha Sanhita, which replaced them. \\
+FIR & First Information Report: the police record that starts a criminal case. \\
+Charge sheet & The police report filed in court at the end of the investigation. \\
+Default bail & A right to bail when the charge sheet is not filed within 60 or 90 days of remand (BNSS s.187(3)). \\
+Undertrial & A person in custody whose trial has not ended. \\
+\end{tabularx}\par\vspace{9pt plus 30pt}
+
+\newpage
+
+\noindent\begin{tabularx}{\linewidth}{@{}L{1.32cm}YL{0.95cm}@{}}
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\linewidth}@{}}{\textbf{Fixes from the Base's mistakes, studied case by case}} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{\linewidth}@{}}{\footnotesize Right column: \yes{} part of VS-Final; ``no'' tried, not chosen; ``failed'' did not work with our model.} \\
+\midrule
+X1 & Gaps in the fact summary are filled from the raw case facts. & \yes \\
+X2 & Factual sentences must copy the facts nearly word for word; legal sentences carry only their citation. & failed \\
+X3 & One more prosecutor call for bail factors that got neither an argument nor an objection. & no \\
+X4 & A sentence that still fails its check after repair, or only says the record is silent, is moved out of the argument and listed for the lawyer. & \yes \\
+X5 & The arguments are drafted from the raw case facts; the fact summary still drives planning and Gate 1. & \yes \\
+X6 & The prosecutor's indexes are searched a second time using the facts. & no \\
+X7 & When the prosecutor names offered evidence under a wrong label, it is matched by its id instead of being discarded. & \yes \\
+X8 & A factual sentence that paraphrases the record is replaced by the record's own sentence. & no \\
+\end{tabularx}\par\vspace{9pt plus 30pt}
+
+\noindent\begin{tabularx}{\linewidth}{@{}L{1.32cm}Y@{}}
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{\linewidth}@{}}{\textbf{Literature variants: one published idea each, tried on the Base}} \\
+\midrule
+S1 & A critic judges the retrieved paragraphs and triggers a corrective search (Self-RAG, CRAG). \\
+S2 & Search depth chosen per bail factor: none, one step or several (Adaptive-RAG). \\
+S3, S3b & Stop searching once the evidence is sufficient: rules then a model rater (S3), or the model rater alone (S3b). \\
+S4 & A flag for weak evidence from how skewed the search scores are (SkewRoute). \\
+S5 & Follow the citation graph from retrieved paragraphs to the Supreme Court judgments behind them (HippoRAG 2). \\
+S6 & A learned estimate of which index will fill an evidence slot orders the searches. \\
+S7 & The intake agent re-reads the most likely pages first when something is missing. \\
+S8 & The drafter critiques and edits its own draft, with no outside checker (CRITIC). \\
+S9 & Several sampled critics at the same token budget instead of the simulated prosecutor (Debate or Vote). \\
+S10 & The simulated prosecutor also sees the drafter's reasoning (no isolation). \\
+S11 & A three-role review (grader, critic, defender), a two-drafter debate, or a three-sample vote. \\
+S12 & All bail factors in one growing context, or a single agent that searches and drafts alone. \\
+S13 & An automatically searched workflow over the other switches (AFlow, ADAS). \\
+S14 & Reuse of search plans and scheduling for batches of cases. \\
+S15 & Structured output with a reasoning field first, or free text that is parsed afterwards. \\
+S16 & Smaller text units: propositions, or late chunking. \\
+S17 & Defences against instructions hidden in documents switched off, one at a time or all together. \\
+S18 & Prefer judgments from orders that granted bail; mark refusals as authority to distinguish. \\
+\end{tabularx}\par\vspace{9pt plus 30pt}
+
+\end{document}

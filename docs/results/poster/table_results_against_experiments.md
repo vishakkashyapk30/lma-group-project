@@ -1,0 +1,20 @@
+| architecture | wins | ties | losses | claims per order | writes less |
+|---|---|---|---|---|---|
+| VS-Final, free planner | 38 | 19 | 1 | 4.07 | yes |
+| Base + X4 X5 X7 | 38 | 29 | 3 | 5.07 | yes |
+| VS-Final (Base + X1 X4 X5 X7) | 30 | 37 | 3 | 6.83 | no |
+| VS-Final + X6 | 27 | 40 | 3 | 6.77 | no |
+| Base + X1 X4 X5 | 22 | 45 | 3 | 6.83 | no |
+| VS-Final + X8 | 33 | 33 | 4 | 6.83 | no |
+| Base + X1 X4 X7 | 31 | 35 | 4 | 7.4 | no |
+| Base + X2 | 15 | 14 | 4 | 9.0 | no |
+| Base + X5 | 13 | 53 | 4 | 6.8 | no |
+| Base harness, free planner | 7 | 47 | 5 | 5.03 | yes |
+| Base + X1 X5 X7 | 19 | 45 | 6 | 9.03 | no |
+| Base + X1 | 12 | 52 | 6 | 9.33 | no |
+| Base + X4 X6 X7 | 31 | 31 | 8 | 4.73 | yes |
+| Base + X4 | 25 | 37 | 8 | 4.73 | yes |
+| Base + X7 | 19 | 41 | 10 | 6.93 | no |
+| Base + X6 | 17 | 43 | 10 | 6.93 | no |
+| Base harness | 11 | 49 | 10 | 6.93 | no |
+| Base + X3 | 11 | 49 | 10 | 6.93 | no |

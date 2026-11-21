@@ -1,0 +1,10 @@
+| system | baseline | wins | ties | losses |
+|---|---|---|---|---|
+| VS-Final | B0 | 4 | 8 | 0 |
+| VS-Final | B1 | 6 | 10 | 0 |
+| VS-Final | B2 | 7 | 12 | 0 |
+| VS-Final | B3 | 7 | 9 | 0 |
+| VS-Final | B4 | 10 | 9 | 2 |
+| VS-Final | B5 | 7 | 15 | 2 |
+| VS-Final | B6 | 5 | 6 | 1 |
+| VS-Final | total | 46 | 69 | 5 |

@@ -62,3 +62,6 @@ configs/providers.local.yaml
 # LaTeX build output of the report versions
 docs/report/build/
 docs/report/build_v1/
+
+# Claude Code local settings and agent worktrees (machine-local, about 1.5 GB)
+.claude/

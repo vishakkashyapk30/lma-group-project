@@ -4,3 +4,4 @@ playwright-report/
 coverage/
 next-env.d.ts
 .next-build/
+.vercel
