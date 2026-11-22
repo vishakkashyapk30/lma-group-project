@@ -102,7 +102,7 @@ workspace data retention to the shortest option before using anything above `pub
 By default the API trusts every caller as counsel (it listens on localhost). To require a shared secret for everything that changes the record (create case, upload, draft, field edit,
 gate approval, export, chat), set `VS_API_TOKEN` in the environment of the backend container (for example in `.env`; never commit it) and send `Authorization: Bearer <token>`: a missing
 header gives 401, a wrong token 403 (compared in constant time; the token is never logged or echoed). `/healthz`, the docs routes and every read-only GET stay open; set `VS_API_TOKEN_READS=1`
-to require the token on reads too. The Next.js frontend does not send the header yet, so leave the variable unset when you use the bundled UI (see `docs/handoff/code-final.md`).
+to require the token on reads too. The Next.js frontend does not send the header yet, so leave the variable unset when you use the bundled UI.
 
 ## Make targets
 

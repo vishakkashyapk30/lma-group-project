@@ -81,7 +81,7 @@ Maps `docs/plan.md` (v5) onto the code. Every module is a stub: typed signatures
 ### Architecture variants implemented (literature sweep 1)
 
 Opt-in switches of `orchestration/switches.py`, default off (outputs identical to the full system); the paper behind each is cited in
-the module docstring and in `docs/literature-to-code-map.md`. Status and next steps: `docs/handoff/literature-sweep-1.md`.
+the module docstring and in `docs/literature-to-code-map.md`. Status and next steps: `docs/handoff/literature-sweeps.md`.
 
 | Variant | Switch | Module |
 |---|---|---|
@@ -94,7 +94,7 @@ the module docstring and in `docs/literature-to-code-map.md`. Status and next st
 ### Architecture variants implemented (literature sweep 2: verification and adversarial)
 
 Same rules as above (default off, byte-identical default pinned by `tests/unit/agents/vakeel/test_variants_golden.py`). Signals go to
-`CaseGraphState.variant_signals` (empty by default) and to labelled events. Status: `docs/handoff/literature-sweep-2.md`.
+`CaseGraphState.variant_signals` (empty by default) and to labelled events. Status: `docs/handoff/literature-sweeps.md`.
 
 | Variant | Switch | Module |
 |---|---|---|
@@ -108,7 +108,7 @@ Same rules as above (default off, byte-identical default pinned by `tests/unit/a
 ### Architecture variants implemented (literature sweep 3: intake, safety, serving)
 
 Same rules (default off, byte-identical default pinned by `tests/unit/agents/peshkar/test_variants_golden.py` and `tests/unit/agents/munshi/test_variants_golden.py`).
-Status: `docs/handoff/literature-sweep-3.md`.
+Status: `docs/handoff/literature-sweeps.md`.
 
 | Variant | Switch | Module |
 |---|---|---|
@@ -121,7 +121,7 @@ Status: `docs/handoff/literature-sweep-3.md`.
 
 ### Architecture variants implemented (literature sweep 4: routing, topology, chunking, workflow search)
 
-Same rules (default off, byte-identical default pinned by `tests/unit/agents/sutradhar/golden_default_run.json`). Status: `docs/handoff/literature-sweep-4.md`.
+Same rules (default off, byte-identical default pinned by `tests/unit/agents/sutradhar/golden_default_run.json`). Status: `docs/handoff/literature-sweeps.md`.
 
 | Variant | Switch | Module |
 |---|---|---|

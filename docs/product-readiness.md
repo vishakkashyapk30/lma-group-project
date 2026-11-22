@@ -1,6 +1,6 @@
 # Product readiness: what is left to present Vakeel-Sahayak.ai as a finished product
 
-> **13 Nov 2026:** the pass over this file was done by Vishak for Shravani's sweep item: **section 9 at the end gives every task PR-01 to PR-86 its status** (22 done with a file, test or commit; 32 partly; 32 open, each with an owner and the next step). Sections 0 to 3 keep their 24 Oct wording (`docs/handoff/team-todo-2026-11-02.md`).
+> **13 Nov 2026:** the pass over this file was done by Vishak for Shravani's sweep item: **section 9 at the end gives every task PR-01 to PR-86 its status** (22 done with a file, test or commit; 32 partly; 32 open, each with an owner and the next step). Sections 0 to 3 keep their 24 Oct wording (the team to-do of 2 Nov 2026, now removed; see the archive note).
 
 Status date: 2026-10-24. Branch `ideation-v1`. This document is a planning note. It changes no code. Task IDs `PR-01` to `PR-86` are stable and are used by the team-plan document that follows.
 
@@ -532,7 +532,7 @@ PR-01, 03, 10, 12, 13, 14, 20, 26, 28, 37, 45, 46, 47, 58, 60, 61, 63, 68, 69, 7
 
 <!-- SECTION:9 -->
 ## 9. Status of every task on 13 November 2026 (gap sweep)
-Done by Vishak on 13 Nov for Shravani's sweep item (`docs/handoff/team-todo-2026-11-02.md`). Rule: **Done** only where a file and a passing test or a commit shows it; everything else is **Partly** or **Open** with an owner and the next step. Tests named "passed on 13 Nov" were run on that day against this tree: `tests/unit/orchestration` 287, `tests/unit/api` 140, `tests/unit/export` 73, `tests/integration` 133, the system files `test_flow1_messy_bundle.py` 21, `test_flow3_brief_spar_export.py` 18, `test_t7_bulk_export.py` 15, `test_t7_prediction_lay_advice.py` 36, the ingestion, Munshi, intake-tool and statute tests 395 passed with 1 known failure (Pillow test, see PR-23). The frontend suites (Vitest, Playwright) were not run in this sweep. Sections 0 to 3 above keep their 24 Oct wording; this table is the current state. Counts: 22 Done, 32 Partly, 32 Open (86 tasks).
+Done by Vishak on 13 Nov for Shravani's sweep item (the team to-do of 2 Nov 2026, now removed; see the archive note). Rule: **Done** only where a file and a passing test or a commit shows it; everything else is **Partly** or **Open** with an owner and the next step. Tests named "passed on 13 Nov" were run on that day against this tree: `tests/unit/orchestration` 287, `tests/unit/api` 140, `tests/unit/export` 73, `tests/integration` 133, the system files `test_flow1_messy_bundle.py` 21, `test_flow3_brief_spar_export.py` 18, `test_t7_bulk_export.py` 15, `test_t7_prediction_lay_advice.py` 36, the ingestion, Munshi, intake-tool and statute tests 395 passed with 1 known failure (Pillow test, see PR-23). The frontend suites (Vitest, Playwright) were not run in this sweep. Sections 0 to 3 above keep their 24 Oct wording; this table is the current state. Counts: 22 Done, 32 Partly, 32 Open (86 tasks).
 
 | Task | Status | Evidence, or owner and next step |
 |---|---|---|

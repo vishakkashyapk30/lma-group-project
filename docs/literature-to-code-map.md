@@ -48,7 +48,7 @@ and `tests/unit/agents/munshi/test_variants_golden.py` (the 14-page bundle). Sig
 ## Sweep 4: routing, topology, chunking and workflow search
 
 Same conventions. Defaults are the current behaviour and are pinned by `tests/unit/agents/sutradhar/golden_default_run.json` (case-0007 and a second-parity world). Signals of the routing and topology arms are in
-`SutradharAgent.retrieval_signals[factor]` (and `CaseGraphState.retrieval_signals`), emitted as `retrieval_signals` events. Status: `docs/handoff/literature-sweep-4.md`.
+`SutradharAgent.retrieval_signals[factor]` (and `CaseGraphState.retrieval_signals`), emitted as `retrieval_signals` events. Status: `docs/handoff/literature-sweeps.md`.
 
 | Idea | Paper (authors, venue, year, link) | Variant and switch | Module and function | What is adapted | Evaluation hook | Test file | Status |
 |---|---|---|---|---|---|---|---|

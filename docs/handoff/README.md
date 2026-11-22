@@ -1,19 +1,22 @@
 # Handoff notes: index
 
-Read the note for an area before editing it; update or add one when you stop. Newest state first.
+Each note records a decision, a measurement or the working steps of a live workflow. Read the note for an area before editing it, and update or add one when you stop.
+
+Notes that only logged finished work ("built X in file Y"), old status and to-do files, and design reviews were removed on 23 Nov 2026. They stay in git history: `git show af58a17:docs/handoff/<file>.md` (list them with `git show --stat af58a17..HEAD`).
 
 | Area | Notes |
 |---|---|
-| Run the stack, use it, run the live end-to-end test | `run-and-live-test.md` |
-| Evaluator demo: six synthetic cases recorded on Sarvam, pre-loaded at API start-up, tours (`/api/demo/tours`), re-recording | `evaluator-demo.md` |
-| Where the project stands now (phase 2, to 10 Nov) | `team-todo-2026-11-02.md` (who does what), `phase2-2026-11-01.md`, `status-2026-10-30.md`, `midsub-split-2026-10-30.md` |
-| Sessions | `session-2026-10-29.md`, `session-2026-10-29-b.md` |
-| Models, providers, privacy boundary, budgets | `pilot-hosted-model.md`, `gemini-free-tier.md`, `adding-an-llm-provider.md`, `privacy-hardening-2026-10-27.md`, `ada-qwen32b.md` |
-| Data, models, intake, citations | `data-and-models.md`, `munshi-real-pdf-reading.md`, `citation-sc-metadata.md`, `bge-vectors-2026-10-28.md`, `testsets-t2-t9.md` |
-| Evaluation: switches, scoring, sweeps | `ev-01-switches.md`, `eval-infrastructure.md`, `eval-scoring.md`, `eval-features.md`, `eval-jobs.md`, `eval-complete.md`, `eval-unblocked.md`, `literature-sweep-1.md` to `-4.md`, `sweep-dev.md`, `sweep-5.md`, `sweep-satvik.md`, `dev-baselines.md` |
+| Where everything lives, and how to restore a deleted working copy | `archive-2026-11-21.md` |
+| What was decided and measured in the 27 to 29 Oct sessions (owner decisions, Gemini free tier, limits) | `session-2026-10-29.md` |
+| Models, providers, privacy boundary, budgets | `pilot-hosted-model.md`, `gemini-free-tier.md`, `adding-an-llm-provider.md`, `privacy-hardening-2026-10-27.md`, `python-and-defaults.md` |
+| Data, intake, citations, vectors, test sets | `data-and-models.md`, `munshi-real-pdf-reading.md`, `citation-sc-metadata.md`, `bge-vectors-2026-10-28.md`, `testsets-t2-t9.md`, `first-schedule.md` |
+| Evaluation harness: switches, runners, scoring | `eval-infrastructure.md`, `eval-scoring.md`, `eval-complete.md` |
+| Evaluation runs: the sweeps, spend and ledgers, baselines | `sweep-dev.md`, `sweep-satvik.md`, `dev-baselines.md`, `literature-sweeps.md`, `prereg.md` |
 | Gold labels | `gold-labeler.md`, `gold-source-sweep.md` |
-| Rights Radar | `rights-fixes.md`, `../qa/rights-verification.md` |
-| Frontend and product | `workspace-redesign.md`, `landing-colour-motion.md`, `product-complete.md`, `design-review-2026-10-27.md` |
-| Fine-tuning, regression, setup | `finetune.md`, `regression-2026-10-26-b.md`, `fresh-clone-fixes.md`, `python-and-defaults.md`, `code-final.md`, `docs-check-2026-10-27.md` |
+| The final method: failure analysis, the four fixes, results | `architecture-search-2026-11-01.md`, `arch-search-results.md` |
+| Sparring reserve (post-freeze fix for unjudged objections) | `objections-unanswered-2026-11-15.md`, `sparring-reserve-measurement.md` |
+| Rights Radar and statute tables | `rights-fixes.md`, `first-schedule.md`, `../qa/rights-verification.md` |
+| Frontend, Hindi interface, evaluator demo | `workspace-redesign.md`, `landing-colour-motion.md`, `hindi-labels.md`, `evaluator-demo.md` |
+| Fine-tuning pipeline (not run; the "train on the verifier" direction) | `finetune.md` |
 
-The report is in `docs/report/` (`main.pdf`, `midsubmission_v1.pdf`; build with `docs/report/build.sh`, regenerate result tables with `docs/report/tools/regen.sh`).
+Report: `../technical-report/` (build with `build.sh`). Result tables: `../results/`. Poster material: `../assets/poster/`, `../results/poster/`, `../Vakeel-Sahayak.ai_Final_Poster_Digital.pdf`.

@@ -65,3 +65,10 @@ docs/report/build_v1/
 
 # Claude Code local settings and agent worktrees (machine-local, about 1.5 GB)
 .claude/
+
+# Local-only project notes (kept on disk, not in git; a copy is in the private snapshot dataset)
+/split.md
+/progress.md
+/explanation.md
+/AGENTS.md
+/CLAUDE.md
