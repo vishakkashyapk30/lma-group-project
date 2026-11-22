@@ -239,7 +239,9 @@ Each test gets its own data directory, so no test depends on `data/`.
 
 ## Team
 
-Vishak Kashyap K, Shravani K, Satvik Rao, Harshita Kumari. IIIT Hyderabad, CL3.410 Language Models and Agents (group project, 2026).
+Team Optimus Prompt: Harshita Kumari, Satvik Rao, Shravani K, Vishak Kashyap K.
+
+Group Project for CL3.410 Language Models and Agents, Monsoon 2026 semester, IIIT Hyderabad.
 
 ## Licences
 
