@@ -59,3 +59,10 @@ docs/proposal/build/
 *.out
 *.toc
 configs/providers.local.yaml
+
+# Local-only project notes (kept on disk, not in git)
+/split.md
+/progress.md
+/explanation.md
+/AGENTS.md
+/CLAUDE.md
