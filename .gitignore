@@ -62,3 +62,10 @@ configs/providers.local.yaml
 # LaTeX build output of the report versions
 docs/report/build/
 docs/report/build_v1/
+
+# Local-only project notes (kept on disk, not in git)
+/split.md
+/progress.md
+/explanation.md
+/AGENTS.md
+/CLAUDE.md
