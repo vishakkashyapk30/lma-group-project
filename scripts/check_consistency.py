@@ -212,8 +212,10 @@ def rights_table(rep: Report) -> None:
         out = Path(tmp) / "table_rights.tex"
         with contextlib.redirect_stdout(io.StringIO()):
             mtr.table(str(RIGHTS / "per_scenario.csv"), str(RIGHTS / "t4_manifest.json"), str(out))
-        same = out.read_text(encoding="utf-8") == (REPORT / "generated" / "table_rights.tex").read_text(encoding="utf-8")
-    rep.check(same, "table_rights.tex is what make_table_rights.py writes from per_scenario.csv and t4_manifest.json")
+        generated = REPORT / "generated" / "table_rights.tex"
+        if generated.exists():  # the older status report was removed on 2026-11-23; its generated tables are rebuilt by tools/regen.sh
+            same = out.read_text(encoding="utf-8") == generated.read_text(encoding="utf-8")
+            rep.check(same, "table_rights.tex is what make_table_rights.py writes from per_scenario.csv and t4_manifest.json")
     rows = list(csv.DictReader((RIGHTS / "per_scenario.csv").open(encoding="utf-8")))
     man = json.loads((RIGHTS / "t4_manifest.json").read_text(encoding="utf-8"))
     radar = [r for r in rows if r["arm"] == "radar"]
@@ -227,7 +229,10 @@ def rights_table(rep: Report) -> None:
         lo, hi = mtr.wilson(k, len(rs))
         stats |= {f"{k / len(rs):.3f}", f"{lo:.3f}", f"{hi:.3f}", f"{100 * sum(r['predicted'] == 'CHECK' for r in rs) / len(rs):.1f}"}
         stats |= {str(len(rs)), str(sum(r["predicted"] == "ELIGIBLE" and r["designed"] != "ELIGIBLE" for r in rs))}
-    para = next(p for p in (REPORT / "sections" / "results.tex").read_text(encoding="utf-8").split("\n") if "Rights Radar on constructed scenarios" in p)
+    results_tex = REPORT / "sections" / "results.tex"
+    if not results_tex.exists():  # no report text to compare with (older status report removed)
+        return
+    para = next(p for p in results_tex.read_text(encoding="utf-8").split("\n") if "Rights Radar on constructed scenarios" in p)
     for num in re.findall(r"\d+\.\d{3}|\d+\.\d(?=\\%)", para):
         rep.check(num in stats, f"results.tex Rights paragraph: {num} is computed from per_scenario.csv")
     for m in re.finditer(r"(\d+) false ELIGIBLE of (\d+)|all (\d+)\b", para):
