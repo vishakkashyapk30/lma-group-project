@@ -23,9 +23,9 @@ Report: [8-page technical report](docs/technical-report/technical_report.pdf). P
 
 ## Results in brief
 
-Tested once on 80 sealed public High Court orders, with one model (Sarvam-105B). The input is the facts part of each order, and the reference labels are derived automatically from the rest of the order. VS-Final is the selected system; Full is the first full system; B4 and B5 are the two baselines that retrieve comparably.
+Tested once on 80 sealed public High Court orders, with one model (Sarvam-105B). The input is the facts part of each order, and the reference labels are derived automatically from the rest of the order. VS-Final is the selected system; Base is the first complete system it was built from (the technical report and the code call it Full); B4 and B5 are the two baselines that retrieve comparably.
 
-| Metric (sealed slice) | VS-Final | Full | B4 | B5 |
+| Metric (sealed slice) | VS-Final | Base | B4 | B5 |
 |---|---|---|---|---|
 | Objection recall (higher is better) | 0.73 | 0.52 | 0.36 | 0.35 |
 | Answerable coverage (higher is better) | 0.61 | 0.36 | 0.20 | 0.23 |
@@ -33,7 +33,32 @@ Tested once on 80 sealed public High Court orders, with one model (Sarvam-105B).
 | Citation precision (higher is better) | 0.71 | 0.85 | 0.02 | 0.10 |
 | Time per order, seconds | 719 | 398 | 269 | 160 |
 
-The trade-off: against Full, VS-Final gives up citation precision (0.85 to 0.71) and takes longer per order (398 to 719 s). Four of the five registered hypotheses hold. These are automated metrics on public orders; use in a legal-aid office has not been studied. Definitions, intervals and all seven baselines are in the technical report.
+The trade-off: against the Base, VS-Final gives up citation precision (0.85 to 0.71) and takes longer per order (398 to 719 s). Four of the five registered hypotheses hold. These are automated metrics on public orders; use in a legal-aid office has not been studied. Definitions, intervals and all seven baselines are in the technical report.
+
+### Base and VS-Final: what is the difference
+
+**Base** is the first complete system. It has all six agents, the ten stores, retrieval planned from evidence contracts, per-sentence checking and repair, and the simulated prosecutor, with every optional switch left at its default. Run against seven simpler baselines, it did not beat them all, on any of the three hosted models tried.
+
+**VS-Final** is the Base plus four fixes, chosen after reading the Base's outputs case by case. Nothing else changes; the same agents, stores and gates run.
+
+| Fix | What it changes | The problem it answers |
+|---|---|---|
+| **X1** gap-filling | When the dossier lacks a field, the factor picker reads the raw facts text for it | Intake filled only about 2.8 of 13 dossier fields per case, so grounds on custody, parity or delay were never proposed |
+| **X4** strict abstention | A sentence that still fails its check after repair, or that only says "the record is silent", leaves the argument and becomes an open issue for counsel | Failed sentences stayed in the brief |
+| **X5** draft from facts | Vakeel drafts from the raw facts text; the dossier still drives planning and Gate 1 | The only single fix that lowered the unsupported-fact rate (M6) with an interval that excludes zero |
+| **X7** objections by id | An objection that names offered material under the wrong store label is matched by its id instead of being discarded | The Base kept 66 objections and discarded 230; most dropped references named material that had been offered |
+
+| | Base | VS-Final |
+|---|---|---|
+| Wins / ties / losses against B0 to B6, 80 sealed orders | 29 / 76 / 15 | 46 / 69 / 5 |
+| Objection recall (higher is better) | 0.52 | 0.73 |
+| Answerable coverage (higher is better) | 0.36 | 0.61 |
+| Unsupported-fact rate M6 (lower is better) | 0.99 | 0.89 |
+| Citation precision (higher is better) | 0.85 | 0.71 |
+| Unfinished-factor share (lower is better) | 0.17 | 0.40 |
+| Time per order, seconds | 398 | 719 |
+
+The last three rows are the price: citation precision falls because drafting from the facts ties sentences less tightly to the cited paragraph, the unfinished-factor share rises because unmet factors are listed for counsel instead of filled, and each order takes longer. In the code the Base is the default `Switches()` (called `full` in the report and tags); VS-Final is those four switches, `c1457`. Both are opt-in, so the default behaviour never changes.
 
 ## Architecture
 
@@ -92,7 +117,7 @@ make models
 
 # 4. Offline end-to-end checks
 make smoke            # case-0007 through the agents: Gate 1 approved, Gate 2 left closed, export blocked
-make eval-smoke       # 3 development cases through the Full system (needs the data from step 2)
+make eval-smoke       # 3 development cases through the Base system (needs the data from step 2)
 ```
 
 <details>
@@ -175,11 +200,11 @@ VS_RUNS=<runs root> .venv/bin/python scripts/midsub/final_tables.py     # writes
 
 ```
 
-The tables in both reports are copied from `docs/results/search/final_report/` (`summary.md`, `hypotheses_blind.json`, `means_blind.csv`, `variance_d12.csv`, `reserve_dev.md`). Claims, baselines and metrics: `docs/evaluation-plan.md` and `docs/preregistration.md`.
+The tables in the technical report are copied from `docs/results/search/final_report/` (`summary.md`, `hypotheses_blind.json`, `means_blind.csv`, `variance_d12.csv`, `reserve_dev.md`). Claims, baselines and metrics: `docs/evaluation-plan.md` and `docs/preregistration.md`.
 
 ## Tests
 
-The full suite is slow (about 4,950 tests), so run it by area. Per-area commands are in `progress.md` section 5; see also `tests/README.md`.
+The full suite is slow (about 4,950 tests), so run it by area. Per-area commands are in `tests/README.md`.
 
 ```bash
 make test-collect                              # collection must be clean
@@ -203,7 +228,7 @@ Each test gets its own data directory, so no test depends on `data/`.
 | `src/vakeel_sahayak/api/`, `frontend/` | FastAPI app and routers; Next.js UI (design rules in `frontend/DESIGN.md`) |
 | `configs/`, `scripts/`, `tests/` | YAML configuration; data, model, sweep and report helpers; unit, integration and system tests |
 | `demo/`, `data/`, `models/` | Recorded evaluator demo cases; data and weights (contents gitignored, see `data/README.md`) |
-| `docs/` | Reports (`technical-report/`, `report/`), design (`plan.md`, `architecture/`) and results (`results/`) |
+| `docs/` | The technical report (`technical-report/`), the poster, design (`plan.md`, `architecture/`), handoff notes (`handoff/`) and results (`results/`) |
 
 ## Privacy and safety rules
 
