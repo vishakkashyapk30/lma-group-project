@@ -4,7 +4,7 @@
 
 Vakeel-Sahayak.ai helps a legal-aid lawyer in India prepare a regular bail application from the case file: it reads the papers, builds a source-checked dossier, drafts grounds that cite only the record and real judgments, and rehearses the prosecution's objections. It is a research prototype (course project, IIIT Hyderabad) built to answer one question: **does a structured multi-agent harness ground bail drafting better than simpler systems on the same model?**
 
-Report: [8-page technical report](docs/technical-report/technical_report.pdf). Poster: [digital PDF](docs/Vakeel-Sahayak.ai_Final_Poster_Digital.pdf).
+Report: [8-page technical report](docs/technical-report/technical_report.pdf). Poster: [PDF](docs/Vakeel-Sahayak.ai_Final_Poster_Digital.pdf).
 
 ## Contents
 
